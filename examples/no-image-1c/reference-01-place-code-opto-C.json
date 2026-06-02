@@ -1,0 +1,63 @@
+{
+  "schema": "no_image_panel_reconstruction.v2",
+  "id": "reference-01-place-code-opto-C",
+  "source_reference": "../../assets/reference/reference-01-place-code-opto-C-reference.png",
+  "source_reference_usage": "QA-only; not used by generated candidate.",
+  "canvas": {"width": 560, "height": 512},
+  "panel": {
+    "label": {"text": "C", "x": 0, "y": 15, "font_size": 28, "font_weight": 700},
+    "title": {"text": "Event-aligned responses to light onset", "x": 34, "y": 22, "font_size": 18, "font_weight": 700}
+  },
+  "event": {
+    "x": 251,
+    "label": {"text": "532 nm light ON", "center_x": 251, "y": 51, "width": 130, "font_size": 16, "color": "#009da3"}
+  },
+  "raster_panel": {
+    "axis": {"x1": 95, "x2": 532, "y": 262},
+    "control": {"x": 95, "y": 75, "width": 435, "height": 82, "seed": 1301},
+    "opto": {"x": 95, "y": 168, "width": 435, "height": 82, "seed": 1309},
+    "tick_labels": [
+      {"value": "-1.0", "x": 95},
+      {"value": "-0.5", "x": 166},
+      {"value": "0", "x": 251},
+      {"value": "0.5", "x": 321},
+      {"value": "1.0", "x": 391},
+      {"value": "1.5", "x": 462},
+      {"value": "2.0", "x": 532}
+    ],
+    "x_label": {"text": "Time from light onset (s)", "center_x": 288, "y": 289, "width": 220, "font_size": 16},
+    "side_labels": [
+      {"text": "Control\n(no light)", "center_x": 44, "y": 82, "width": 74, "font_size": 14, "color": "#111111"},
+      {"text": "n = 123\ncells", "center_x": 44, "y": 124, "width": 72, "font_size": 14, "color": "#111111"},
+      {"text": "Optogenetic\ninhibition\n(ArchT)", "center_x": 44, "y": 181, "width": 88, "font_size": 14, "color": "#008f96"},
+      {"text": "n = 123\ncells", "center_x": 44, "y": 240, "width": 72, "font_size": 14, "color": "#111111"}
+    ]
+  },
+  "line_panel": {
+    "plot": {"x": 80, "y": 310, "width": 450, "height": 108},
+    "domain_y": [0, 30],
+    "axis": {"x1": 80, "x2": 532, "y": 419, "y_axis_x": 80, "y_axis_y1": 310, "y_axis_y2": 419},
+    "x_ticks": [
+      {"value": "-1.0", "x": 80},
+      {"value": "-0.5", "x": 166},
+      {"value": "0", "x": 251},
+      {"value": "0.5", "x": 324},
+      {"value": "1.0", "x": 400},
+      {"value": "1.5", "x": 468},
+      {"value": "2.0", "x": 532}
+    ],
+    "y_ticks": [
+      {"value": 30, "label": "30"},
+      {"value": 20, "label": "20"},
+      {"value": 10, "label": "10"},
+      {"value": 0, "label": "0"}
+    ],
+    "y_label": {"text": "Mean firing rate\n(Hz)", "center_x": 17, "center_y": 365, "width": 132, "font_size": 16},
+    "x_label": {"text": "Time from light onset (s)", "center_x": 291, "y": 482, "width": 230, "font_size": 16},
+    "light_bar": {"x": 251, "y": 448, "width": 132, "height": 8, "label": {"text": "Light ON", "center_x": 316, "y": 462, "width": 90, "font_size": 16}},
+    "legend": {
+      "control": {"line_x": 342, "line_y": 322, "text": "Control (no light)", "text_x": 381, "text_y": 314},
+      "opto": {"line_x": 342, "line_y": 342, "text": "Opto inhibition (ArchT)", "text_x": 381, "text_y": 335}
+    }
+  }
+}
