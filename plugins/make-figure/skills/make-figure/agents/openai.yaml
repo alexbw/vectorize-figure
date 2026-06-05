@@ -1,0 +1,7 @@
+interface:
+  display_name: "Make Figure"
+  short_description: "Reconstruct raster scientific figures"
+  default_prompt: "Use $make-figure to reconstruct this raster scientific figure as configurable HTML and JSON."
+
+policy:
+  allow_implicit_invocation: true

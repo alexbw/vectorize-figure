@@ -1,0 +1,318 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-01-place-code-opto-F",
+  "source": {
+    "path": "../../assets/reference/reference-01-place-code-opto-F-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Two spatial rate maps reconstructed from visual inspection. Rate fields and trajectories are generated recipes approximating the source raster, not copied from it."
+  },
+  "canvas": {
+    "width": 560,
+    "height": 512,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "Known font mismatch is tracked in GitHub issue #1."
+    }
+  },
+  "styles": {
+    "axis": "#111111",
+    "boundary": "#ffffff",
+    "trajectory": "rgba(255,255,255,0.78)",
+    "colormap": [
+      {"value": 0.08, "color": "#440154"},
+      {"value": 0.2, "color": "#414487"},
+      {"value": 0.5, "color": "#2a788e"},
+      {"value": 1, "color": "#22a884"},
+      {"value": 2, "color": "#5ec962"},
+      {"value": 5, "color": "#aadc32"},
+      {"value": 10, "color": "#e5e419"},
+      {"value": 20, "color": "#fde725"}
+    ]
+  },
+  "panels": [
+    {
+      "id": "panel-f",
+      "type": "dual_spatial_rate_maps",
+      "label": {
+        "text": "F",
+        "x": 3,
+        "y": 28,
+        "fontSize": 24,
+        "fontWeight": 700
+      },
+      "title": {
+        "text": "Example spatial rate map (same session)",
+        "x": 38,
+        "y": 29,
+        "fontSize": 18,
+        "fontWeight": 700
+      },
+      "xAxis": {
+        "domain": [0, 210],
+        "ticks": [
+          {"value": 0, "label": "0"},
+          {"value": 100, "label": "100"},
+          {"value": 200, "label": "200"}
+        ],
+        "label": {
+          "text": "X position (cm)",
+          "fontSize": 17
+        }
+      },
+      "yAxis": {
+        "domain": [0, 200],
+        "ticks": [
+          {"value": 0, "label": "0"},
+          {"value": 50, "label": "50"},
+          {"value": 100, "label": "100"},
+          {"value": 150, "label": "150"},
+          {"value": 200, "label": "200"}
+        ],
+        "label": {
+          "text": "Y position (cm)",
+          "anchorTo": "yAxis",
+          "targetMapId": "control-rate-map",
+          "targetPoint": "middle-left",
+          "anchorPoint": "center",
+          "dx": -37,
+          "dy": 0,
+          "fontSize": 17,
+          "anchor": "middle",
+          "rotation": -90
+        }
+      },
+      "rateMaps": [
+        {
+          "id": "control-rate-map",
+          "title": {
+            "text": "Control (no light)",
+            "x": 150,
+            "y": 82,
+            "fontSize": 14,
+            "anchor": "middle"
+          },
+          "dataBbox": {
+            "x": 51,
+            "y": 96,
+            "width": 197,
+            "height": 280
+          },
+          "axes": {
+            "xAxis": {
+              "id": "control-x-axis",
+              "line": {"x1": 51, "y1": 382, "x2": 248, "y2": 382},
+              "tickLength": 7
+            },
+            "yAxis": {
+              "id": "control-y-axis",
+              "line": {"x1": 45, "y1": 96, "x2": 45, "y2": 376},
+              "tickLength": 7
+            },
+            "dataBorder": ["top", "right", "bottom", "left"]
+          },
+          "xLabel": {
+            "text": "X position (cm)",
+            "anchorTo": "xAxis",
+            "targetAxisId": "control-x-axis",
+            "targetPoint": "bottom-center",
+            "anchorPoint": "top-center",
+            "dx": 0,
+            "dy": 36,
+            "fontSize": 17,
+            "anchor": "middle",
+            "baseline": "hanging"
+          },
+          "recipe": {
+            "kind": "spatialRateMap",
+            "seed": 2021,
+            "cols": 150,
+            "rows": 210,
+            "background": 0.10,
+            "noise": 0.15,
+            "smooth": 0.12,
+            "fields": [
+              {"x": 78, "y": 150, "sigmaX": 19, "sigmaY": 22, "amplitude": 9.0},
+              {"x": 82, "y": 68, "sigmaX": 21, "sigmaY": 22, "amplitude": 8.2},
+              {"x": 135, "y": 128, "sigmaX": 35, "sigmaY": 30, "amplitude": 1.8},
+              {"x": 54, "y": 174, "sigmaX": 20, "sigmaY": 18, "amplitude": 2.8}
+            ]
+          },
+          "arenaBoundary": {
+            "type": "roundedRectPath",
+            "x": 68,
+            "y": 117,
+            "width": 166,
+            "height": 232,
+            "scaleToDataBox": false,
+            "dasharray": "8 7",
+            "strokeWidth": 2.4
+          },
+          "trajectory": {
+            "seed": 2121,
+            "count": 2,
+            "points": 115,
+            "strokeWidth": 0.9,
+            "opacity": 0.72
+          }
+        },
+        {
+          "id": "opto-rate-map",
+          "title": {
+            "text": "Optogenetic inhibition\n(ArchT, 532 nm)",
+            "x": 366,
+            "y": 64,
+            "fontSize": 14,
+            "anchor": "middle",
+            "lineHeight": 1.1
+          },
+          "dataBbox": {
+            "x": 266,
+            "y": 96,
+            "width": 207,
+            "height": 280
+          },
+          "axes": {
+            "xAxis": {
+              "id": "opto-x-axis",
+              "line": {"x1": 266, "y1": 382, "x2": 473, "y2": 382},
+              "tickLength": 7
+            },
+            "yAxis": {
+              "id": "opto-y-axis",
+              "line": {"x1": 260, "y1": 96, "x2": 260, "y2": 376},
+              "tickLength": 0
+            },
+            "dataBorder": ["top", "right", "bottom", "left"]
+          },
+          "xLabel": {
+            "text": "X position (cm)",
+            "anchorTo": "xAxis",
+            "targetAxisId": "opto-x-axis",
+            "targetPoint": "bottom-center",
+            "anchorPoint": "top-center",
+            "dx": 0,
+            "dy": 36,
+            "fontSize": 17,
+            "anchor": "middle",
+            "baseline": "hanging"
+          },
+          "recipe": {
+            "kind": "spatialRateMap",
+            "seed": 2037,
+            "cols": 155,
+            "rows": 210,
+            "background": 0.10,
+            "noise": 0.13,
+            "smooth": 0.11,
+            "fields": [
+              {"x": 106, "y": 92, "sigmaX": 25, "sigmaY": 25, "amplitude": 5.2},
+              {"x": 141, "y": 55, "sigmaX": 31, "sigmaY": 23, "amplitude": 3.1},
+              {"x": 94, "y": 133, "sigmaX": 29, "sigmaY": 27, "amplitude": 2.4},
+              {"x": 157, "y": 104, "sigmaX": 20, "sigmaY": 22, "amplitude": 2.0}
+            ]
+          },
+          "arenaBoundary": {
+            "type": "roundedRectPath",
+            "x": 282,
+            "y": 119,
+            "width": 170,
+            "height": 232,
+            "scaleToDataBox": false,
+            "dasharray": "8 7",
+            "strokeWidth": 2.4
+          },
+          "trajectory": {
+            "seed": 2137,
+            "count": 2,
+            "points": 120,
+            "strokeWidth": 0.9,
+            "opacity": 0.72
+          }
+        }
+      ],
+      "colorbar": {
+        "bbox": {
+          "x": 491,
+          "y": 96,
+          "width": 20,
+          "height": 280
+        },
+        "domain": [0.08, 20],
+        "scale": "log",
+        "label": {
+          "text": "Rate\n(Hz)",
+          "anchorTo": "colorbar",
+          "targetPoint": "top-center",
+          "anchorPoint": "bottom-center",
+          "dx": 0,
+          "dy": -8,
+          "fontSize": 15,
+          "anchor": "middle",
+          "baseline": "hanging",
+          "lineHeight": 1.04
+        },
+        "ticks": [
+          {"value": 0.1, "label": "0.1"},
+          {"value": 0.2, "label": "0.2"},
+          {"value": 0.5, "label": "0.5"},
+          {"value": 1, "label": "1"},
+          {"value": 2, "label": "2"},
+          {"value": 5, "label": "5"},
+          {"value": 10, "label": "10"},
+          {"value": 20, "label": "20"}
+        ]
+      },
+      "legend": [
+        {
+          "id": "arena-boundary-legend",
+          "type": "line",
+          "x1": 76,
+          "y1": 458,
+          "x2": 122,
+          "y2": 458,
+          "stroke": "#111111",
+          "strokeWidth": 2,
+          "dasharray": "8 6",
+          "label": {"text": "Arena boundary", "x": 137, "y": 463, "fontSize": 14}
+        },
+        {
+          "id": "trajectory-legend",
+          "type": "line",
+          "x1": 273,
+          "y1": 458,
+          "x2": 315,
+          "y2": 458,
+          "stroke": "#111111",
+          "strokeWidth": 2,
+          "label": {"text": "Example trajectory", "x": 327, "y": 463, "fontSize": 14}
+        }
+      ],
+      "provenance": [
+        {
+          "target": "panel-f.rateMaps",
+          "confidence": "medium",
+          "note": "Spatial rate fields and trajectories are generated from recipes to match the visual grammar; exact occupancy/rate data are unavailable."
+        },
+        {
+          "target": "panel-f.layout",
+          "confidence": "high",
+          "note": "Panel label, title, axes, colorbar, and legend layout are inferred directly from the source image."
+        }
+      ]
+    }
+  ],
+  "confidence": [
+    {
+      "target": "reference-01-place-code-opto-F",
+      "confidence": "medium",
+      "note": "Rate map textures and trajectories are approximate; structural layout and labels are high-confidence."
+    }
+  ]
+}

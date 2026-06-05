@@ -1,0 +1,240 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-01-place-code-opto-B",
+  "source": {
+    "path": "../../assets/reference/reference-01-place-code-opto-B-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Single cropped line-chart panel. Curves, bands, and individual traces are visually inferred from the raster source; source image is not reused in generated layers."
+  },
+  "canvas": {
+    "width": 464,
+    "height": 512,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111"
+  },
+  "styles": {
+    "axis": "#111111",
+    "control": "#111111",
+    "opto": "#009a9b",
+    "controlTrace": "rgba(180,180,180,0.32)",
+    "optoTrace": "rgba(0,154,155,0.22)",
+    "controlBand": "rgba(0,0,0,0.24)",
+    "optoBand": "rgba(0,154,155,0.26)"
+  },
+  "panels": [
+    {
+      "id": "panel-b",
+      "type": "population_place_fields_line_chart",
+      "label": {
+        "text": "B",
+        "x": 7,
+        "y": 32,
+        "fontSize": 24,
+        "fontWeight": 700
+      },
+      "title": {
+        "text": "Population place fields",
+        "x": 42,
+        "y": 33,
+        "fontSize": 17,
+        "fontWeight": 700
+      },
+      "plot": {
+        "bbox": {
+          "x": 58,
+          "y": 70,
+          "width": 347,
+          "height": 369
+        },
+        "x": {
+          "domain": [0, 210],
+          "ticks": [
+            {"value": 0, "label": "0"},
+            {"value": 50, "label": "50"},
+            {"value": 100, "label": "100"},
+            {"value": 150, "label": "150"},
+            {"value": 200, "label": "200"}
+          ],
+          "label": {
+            "text": "Position (cm)",
+            "x": 232,
+            "y": 489,
+            "fontSize": 17,
+            "anchor": "middle"
+          }
+        },
+        "y": {
+          "domain": [0, 20],
+          "ticks": [
+            {"value": 0, "label": "0"},
+            {"value": 5, "label": "5"},
+            {"value": 10, "label": "10"},
+            {"value": 15, "label": "15"},
+            {"value": 20, "label": "20"}
+          ],
+          "label": {
+            "text": "Mean firing rate (Hz)",
+            "x": 20,
+            "y": 255,
+            "fontSize": 17,
+            "anchor": "middle",
+            "rotation": -90
+          }
+        }
+      },
+      "legend": [
+        {
+          "id": "control-legend",
+          "seriesId": "control-mean",
+          "x": 71,
+          "y": 76,
+          "lineLength": 28,
+          "textX": 109,
+          "textY": 81,
+          "fontSize": 14
+        },
+        {
+          "id": "opto-legend",
+          "seriesId": "opto-mean",
+          "x": 71,
+          "y": 98,
+          "lineLength": 28,
+          "textX": 109,
+          "textY": 103,
+          "fontSize": 14
+        }
+      ],
+      "marks": [
+        {
+          "id": "control-traces",
+          "type": "traceCloud",
+          "seriesId": "control-mean",
+          "count": 32,
+          "seed": 4001,
+          "stroke": "rgba(180,180,180,0.30)",
+          "strokeWidth": 0.8,
+          "amplitude": 2.2,
+          "peakJitter": 18,
+          "baselineJitter": 0.7,
+          "notes": "Approximate individual-cell traces inferred from pale gray curves in source raster."
+        },
+        {
+          "id": "opto-traces",
+          "type": "traceCloud",
+          "seriesId": "opto-mean",
+          "count": 30,
+          "seed": 4011,
+          "stroke": "rgba(0,154,155,0.24)",
+          "strokeWidth": 0.8,
+          "amplitude": 1.35,
+          "peakJitter": 18,
+          "baselineJitter": 0.45,
+          "notes": "Approximate individual-cell traces inferred from pale teal curves in source raster."
+        },
+        {
+          "id": "control-band",
+          "type": "uncertaintyBand",
+          "seriesId": "control-mean",
+          "fill": "rgba(0,0,0,0.24)",
+          "halfWidth": [
+            [0, 0.30],
+            [30, 0.36],
+            [60, 0.62],
+            [85, 0.90],
+            [95, 0.94],
+            [110, 0.82],
+            [140, 0.58],
+            [175, 0.36],
+            [210, 0.26]
+          ]
+        },
+        {
+          "id": "opto-band",
+          "type": "uncertaintyBand",
+          "seriesId": "opto-mean",
+          "fill": "rgba(0,154,155,0.26)",
+          "halfWidth": [
+            [0, 0.20],
+            [35, 0.25],
+            [65, 0.38],
+            [90, 0.52],
+            [100, 0.50],
+            [120, 0.38],
+            [155, 0.28],
+            [210, 0.18]
+          ]
+        },
+        {
+          "id": "control-mean",
+          "type": "lineSeries",
+          "label": "Control (no light)",
+          "stroke": "#111111",
+          "strokeWidth": 4.2,
+          "points": [
+            [0, 1.7],
+            [12, 2.2],
+            [28, 3.4],
+            [45, 5.6],
+            [62, 8.4],
+            [78, 10.9],
+            [92, 12.5],
+            [100, 12.8],
+            [112, 11.9],
+            [126, 10.4],
+            [143, 8.0],
+            [160, 5.6],
+            [178, 3.5],
+            [198, 2.1],
+            [210, 1.6]
+          ]
+        },
+        {
+          "id": "opto-mean",
+          "type": "lineSeries",
+          "label": "Optogenetic inhibition (ArchT)",
+          "stroke": "#009a9b",
+          "strokeWidth": 4.2,
+          "points": [
+            [0, 1.2],
+            [15, 1.6],
+            [32, 2.2],
+            [50, 3.0],
+            [66, 4.0],
+            [82, 5.2],
+            [94, 5.7],
+            [104, 5.6],
+            [118, 4.8],
+            [136, 3.8],
+            [154, 3.0],
+            [174, 2.1],
+            [195, 1.4],
+            [210, 1.1]
+          ]
+        }
+      ],
+      "provenance": [
+        {
+          "target": "panel-b.plot.bbox",
+          "confidence": "high",
+          "note": "Plot box inferred from visible axes and tick locations in the 464 x 512 raster."
+        },
+        {
+          "target": "panel-b.marks",
+          "confidence": "medium",
+          "note": "Mean curves, uncertainty bands, and trace distributions are visually approximated; raw data are unavailable."
+        }
+      ]
+    }
+  ],
+  "confidence": [
+    {
+      "target": "reference-01-place-code-opto-B",
+      "confidence": "medium",
+      "note": "Scientific chart grammar and labels are clear; fine trace-level data and exact uncertainty widths are approximate."
+    }
+  ]
+}

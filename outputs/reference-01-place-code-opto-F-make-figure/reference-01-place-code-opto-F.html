@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-01-place-code-opto-F reconstruction</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #aaaaaa;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .surface,
+    .reference {
+      position: absolute;
+      inset: 0;
+    }
+
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+    }
+
+    .show-reference .surface {
+      display: none;
+    }
+
+    .show-reference .reference {
+      display: block;
+    }
+
+    canvas,
+    svg {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-01-place-code-opto-F</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="Reference source image">
+    </div>
+  </main>
+
+  <script>
+    const SPEC_URL = './reference-01-place-code-opto-F.json';
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function byId(id) {
+      return document.getElementById(id);
+    }
+
+    function svgNode(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function textNode(spec, defaults = {}) {
+      const node = svgNode('text', {
+        x: spec.x,
+        y: spec.y,
+        fill: spec.fill || spec.color || defaults.color || '#111111',
+        'font-size': spec.fontSize || defaults.defaultSize || 14,
+        'font-weight': spec.fontWeight || 400,
+        'font-family': spec.fontFamily || defaults.fontFamily || 'Arial, Helvetica, sans-serif',
+        'letter-spacing': spec.letterSpacing ?? defaults.calibration?.letterSpacing,
+        'text-anchor': spec.anchor || 'start',
+        'dominant-baseline': spec.baseline || 'alphabetic',
+        transform: spec.rotation ? `rotate(${spec.rotation} ${spec.x} ${spec.y})` : undefined,
+        'data-role': spec.role || 'text'
+      });
+
+      const lines = String(spec.text || '').split('\n');
+      lines.forEach((lineText, index) => {
+        const tspan = svgNode('tspan', {
+          x: spec.x,
+          dy: index === 0 ? 0 : (spec.lineHeight || defaults.calibration?.lineHeight || 1.08) * (spec.fontSize || defaults.defaultSize || 14)
+        });
+        tspan.textContent = lineText;
+        node.appendChild(tspan);
+      });
+      return node;
+    }
+
+    function line(svg, attrs) {
+      const node = svgNode('line', {
+        x1: attrs.x1,
+        y1: attrs.y1,
+        x2: attrs.x2,
+        y2: attrs.y2,
+        stroke: attrs.stroke || '#111111',
+        'stroke-width': attrs.strokeWidth || 1.25,
+        'stroke-linecap': attrs.linecap || 'butt',
+        'stroke-dasharray': attrs.dasharray,
+        'data-role': attrs.role || 'line'
+      });
+      svg.appendChild(node);
+      return node;
+    }
+
+    function rect(svg, attrs) {
+      const node = svgNode('rect', {
+        x: attrs.x,
+        y: attrs.y,
+        width: attrs.width,
+        height: attrs.height,
+        rx: attrs.rx,
+        ry: attrs.ry,
+        fill: attrs.fill || 'none',
+        stroke: attrs.stroke || 'none',
+        'stroke-width': attrs.strokeWidth,
+        'stroke-dasharray': attrs.dasharray,
+        'data-role': attrs.role || 'rect'
+      });
+      svg.appendChild(node);
+      return node;
+    }
+
+    function path(svg, attrs) {
+      const node = svgNode('path', {
+        d: attrs.d,
+        fill: attrs.fill || 'none',
+        stroke: attrs.stroke || '#111111',
+        'stroke-width': attrs.strokeWidth || 1,
+        'stroke-linecap': attrs.linecap || 'round',
+        'stroke-linejoin': attrs.linejoin || 'round',
+        'stroke-dasharray': attrs.dasharray,
+        opacity: attrs.opacity,
+        'clip-path': attrs.clipPath,
+        'data-role': attrs.role || 'path',
+        'data-mark-id': attrs.markId
+      });
+      svg.appendChild(node);
+      return node;
+    }
+
+    function scale(domain, range, value) {
+      return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+    }
+
+    function logScale(domain, range, value) {
+      return scale([Math.log10(domain[0]), Math.log10(domain[1])], range, Math.log10(value));
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function rng(seed) {
+      return function random() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function hexToRgb(hex) {
+      const clean = hex.replace('#', '');
+      return [
+        parseInt(clean.slice(0, 2), 16),
+        parseInt(clean.slice(2, 4), 16),
+        parseInt(clean.slice(4, 6), 16)
+      ];
+    }
+
+    function colorForValue(value, stops) {
+      const sorted = stops.slice().sort((a, b) => a.value - b.value);
+      if (value <= sorted[0].value) return hexToRgb(sorted[0].color);
+      for (let index = 1; index < sorted.length; index += 1) {
+        const prev = sorted[index - 1];
+        const next = sorted[index];
+        if (value <= next.value) {
+          const t = (Math.log10(value) - Math.log10(prev.value)) / (Math.log10(next.value) - Math.log10(prev.value));
+          const p = hexToRgb(prev.color);
+          const n = hexToRgb(next.color);
+          return [
+            Math.round(p[0] + (n[0] - p[0]) * t),
+            Math.round(p[1] + (n[1] - p[1]) * t),
+            Math.round(p[2] + (n[2] - p[2]) * t)
+          ];
+        }
+      }
+      return hexToRgb(sorted[sorted.length - 1].color);
+    }
+
+    function renderRateMap(ctx, rateMap, styles) {
+      const box = rateMap.dataBbox;
+      const recipe = rateMap.recipe;
+      const width = Math.round(box.width);
+      const height = Math.round(box.height);
+      const image = ctx.createImageData(width, height);
+      const random = rng(recipe.seed);
+      const fieldJitter = recipe.fields.map(field => ({
+        ...field,
+        x: field.x + (random() - 0.5) * 10,
+        y: field.y + (random() - 0.5) * 10
+      }));
+
+      for (let y = 0; y < height; y += 1) {
+        const yCm = scale([0, height - 1], [200, 0], y);
+        const rowRandom = rng(recipe.seed + y * 31);
+        for (let x = 0; x < width; x += 1) {
+          const xCm = scale([0, width - 1], [0, 210], x);
+          let value = recipe.background;
+          for (const field of fieldJitter) {
+            const dx = (xCm - field.x) / field.sigmaX;
+            const dy = (yCm - field.y) / field.sigmaY;
+            value += field.amplitude * Math.exp(-(dx * dx + dy * dy) / 2);
+          }
+          value += Math.sin(xCm * 0.055 + yCm * 0.03) * recipe.smooth;
+          value += (rowRandom() - 0.5) * recipe.noise;
+          value = clamp(value, 0.08, 20);
+          const color = colorForValue(value, styles.colormap);
+          const offset = (y * width + x) * 4;
+          image.data[offset] = color[0];
+          image.data[offset + 1] = color[1];
+          image.data[offset + 2] = color[2];
+          image.data[offset + 3] = 255;
+        }
+      }
+      ctx.putImageData(image, box.x, box.y);
+    }
+
+    function renderColorbar(ctx, colorbar, styles) {
+      const box = colorbar.bbox;
+      const width = Math.round(box.width);
+      const height = Math.round(box.height);
+      const image = ctx.createImageData(width, height);
+      for (let y = 0; y < height; y += 1) {
+        const t = y / Math.max(1, height - 1);
+        const value = Math.pow(10, Math.log10(colorbar.domain[1]) * (1 - t) + Math.log10(colorbar.domain[0]) * t);
+        const color = colorForValue(value, styles.colormap);
+        for (let x = 0; x < width; x += 1) {
+          const offset = (y * width + x) * 4;
+          image.data[offset] = color[0];
+          image.data[offset + 1] = color[1];
+          image.data[offset + 2] = color[2];
+          image.data[offset + 3] = 255;
+        }
+      }
+      ctx.putImageData(image, box.x, box.y);
+    }
+
+    function xForMap(panel, rateMap, value) {
+      const box = rateMap.dataBbox;
+      return scale(panel.xAxis.domain, [box.x, box.x + box.width], value);
+    }
+
+    function yForMap(panel, rateMap, value) {
+      const box = rateMap.dataBbox;
+      return scale(panel.yAxis.domain, [box.y + box.height, box.y], value);
+    }
+
+    function pointOnBox(box, point) {
+      const [verticalRaw, horizontalRaw] = point.includes('-') ? point.split('-') : ['middle', point];
+      const horizontal = horizontalRaw || 'center';
+      const vertical = verticalRaw || 'middle';
+      const x = horizontal === 'right' ? box.x + box.width : horizontal === 'center' ? box.x + box.width / 2 : box.x;
+      const y = vertical === 'bottom' ? box.y + box.height : vertical === 'middle' || vertical === 'center' ? box.y + box.height / 2 : box.y;
+      return {x, y};
+    }
+
+    function lineBox(x1, y1, x2, y2) {
+      return {
+        x: Math.min(x1, x2),
+        y: Math.min(y1, y2),
+        width: Math.abs(x2 - x1),
+        height: Math.abs(y2 - y1)
+      };
+    }
+
+    function axisLineBox(axis) {
+      const l = axis.line;
+      return lineBox(l.x1, l.y1, l.x2, l.y2);
+    }
+
+    function anchoredLabel(label, box) {
+      const resolved = {...label};
+      const target = pointOnBox(box, label.targetPoint || 'top-left');
+      const anchorPoint = label.anchorPoint || 'top-left';
+      const [, horizontalRaw] = anchorPoint.includes('-') ? anchorPoint.split('-') : ['middle', anchorPoint];
+      const horizontal = horizontalRaw || 'left';
+      const lines = String(label.text || '').split('\n');
+      const fontSize = label.fontSize || 14;
+      const lineHeight = label.lineHeight || 1.08;
+      const blockHeight = label.height || lines.length * fontSize * lineHeight;
+
+      resolved.x = target.x + (label.dx || 0);
+      resolved.y = target.y + (label.dy || 0);
+      resolved.anchor = label.anchor || (horizontal === 'right' ? 'end' : horizontal === 'center' ? 'middle' : 'start');
+      resolved.baseline = label.baseline || 'hanging';
+
+      if (label.rotation) {
+        resolved.baseline = label.baseline || (anchorPoint === 'center' ? 'middle' : 'alphabetic');
+        return resolved;
+      }
+
+      if (anchorPoint.startsWith('bottom')) {
+        resolved.y -= blockHeight;
+      } else if (anchorPoint.startsWith('middle') || anchorPoint.startsWith('center')) {
+        resolved.y -= blockHeight / 2;
+      }
+      return resolved;
+    }
+
+    function axisLabel(label, axisBox) {
+      return anchoredLabel(label, axisBox);
+    }
+
+    function renderAxes(svg, panel, defaults) {
+      for (const rateMap of panel.rateMaps) {
+        const box = rateMap.dataBbox;
+        const axes = rateMap.axes;
+        const xAxis = axes.xAxis;
+        const yAxis = axes.yAxis;
+        rect(svg, {x: box.x, y: box.y, width: box.width, height: box.height, stroke: '#111111', strokeWidth: 1, role: 'rate-map-frame'});
+        svg.appendChild(textNode(rateMap.title, defaults));
+        line(svg, {...xAxis.line, role: 'x-axis'});
+        line(svg, {...yAxis.line, role: 'y-axis'});
+
+        for (const tick of panel.xAxis.ticks) {
+          const x = xForMap(panel, rateMap, tick.value);
+          line(svg, {x1: x, y1: xAxis.line.y1, x2: x, y2: xAxis.line.y1 + xAxis.tickLength, role: 'x-tick'});
+          svg.appendChild(textNode({text: tick.label, x, y: xAxis.line.y1 + 22, fontSize: 16, anchor: 'middle'}, defaults));
+        }
+
+        if (yAxis.tickLength > 0) {
+          for (const tick of panel.yAxis.ticks) {
+            const y = yForMap(panel, rateMap, tick.value);
+            line(svg, {x1: yAxis.line.x1 - yAxis.tickLength, y1: y, x2: yAxis.line.x1, y2: y, role: 'y-tick'});
+            svg.appendChild(textNode({text: tick.label, x: yAxis.line.x1 - yAxis.tickLength - 5, y: y + 5, fontSize: 16, anchor: 'end'}, defaults));
+          }
+        }
+        svg.appendChild(textNode(axisLabel(rateMap.xLabel, axisLineBox(xAxis)), defaults));
+      }
+      const yLabelMap = panel.rateMaps.find(rateMap => rateMap.id === panel.yAxis.label.targetMapId) || panel.rateMaps[0];
+      svg.appendChild(textNode(axisLabel(panel.yAxis.label, axisLineBox(yLabelMap.axes.yAxis)), defaults));
+    }
+
+    function trajectoryPath(rateMap, recipe) {
+      const random = rng(recipe.seed);
+      const box = rateMap.dataBbox;
+      const paths = [];
+      for (let trace = 0; trace < recipe.count; trace += 1) {
+        const points = [];
+        for (let index = 0; index < recipe.points; index += 1) {
+          const t = index / Math.max(1, recipe.points - 1);
+          const phase = trace * 1.7 + recipe.seed * 0.001;
+          const xWave = 0.5 + 0.34 * Math.sin(t * Math.PI * 5.2 + phase) + 0.18 * Math.sin(t * Math.PI * 13.5 + phase * 2.1);
+          const yWave = 0.5 + 0.34 * Math.cos(t * Math.PI * 4.6 + phase * 1.3) + 0.15 * Math.sin(t * Math.PI * 12.0 + phase);
+          const x = clamp(box.x + box.width * xWave + (random() - 0.5) * 18, box.x + 14, box.x + box.width - 14);
+          const y = clamp(box.y + box.height * yWave + (random() - 0.5) * 18, box.y + 22, box.y + box.height - 22);
+          points.push([x, y]);
+        }
+        paths.push(points.map((point, idx) => `${idx ? 'L' : 'M'}${point[0].toFixed(1)} ${point[1].toFixed(1)}`).join(' '));
+      }
+      return paths;
+    }
+
+    function renderOverlays(svg, panel) {
+      for (const rateMap of panel.rateMaps) {
+        const boundary = rateMap.arenaBoundary;
+        rect(svg, {
+          x: boundary.x,
+          y: boundary.y,
+          width: boundary.width,
+          height: boundary.height,
+          rx: 6,
+          ry: 6,
+          stroke: '#ffffff',
+          strokeWidth: boundary.strokeWidth,
+          dasharray: boundary.dasharray,
+          role: 'arena-boundary'
+        });
+
+        for (const d of trajectoryPath(rateMap, rateMap.trajectory)) {
+          path(svg, {
+            d,
+            stroke: 'rgba(255,255,255,0.76)',
+            strokeWidth: rateMap.trajectory.strokeWidth,
+            opacity: rateMap.trajectory.opacity,
+            role: 'example-trajectory'
+          });
+        }
+      }
+    }
+
+    function renderColorbarAxes(svg, panel, defaults) {
+      const colorbar = panel.colorbar;
+      const box = colorbar.bbox;
+      svg.appendChild(textNode(anchoredLabel(colorbar.label, box), defaults));
+      rect(svg, {x: box.x, y: box.y, width: box.width, height: box.height, stroke: '#111111', strokeWidth: 0.9, role: 'colorbar-frame'});
+      for (const tick of colorbar.ticks) {
+        const y = logScale(colorbar.domain, [box.y + box.height, box.y], tick.value);
+        line(svg, {x1: box.x + box.width, y1: y, x2: box.x + box.width + 6, y2: y, role: 'colorbar-tick'});
+        svg.appendChild(textNode({text: tick.label, x: box.x + box.width + 10, y: y + 5, fontSize: 15, anchor: 'start'}, defaults));
+      }
+    }
+
+    function renderLegend(svg, panel, defaults) {
+      for (const item of panel.legend) {
+        line(svg, item);
+        svg.appendChild(textNode(item.label, defaults));
+      }
+    }
+
+    function render(spec) {
+      const frame = byId('frame');
+      const surface = byId('surface');
+      const reference = byId('reference');
+      const defaults = spec.typography || {};
+      const canvasSpec = spec.canvas;
+
+      byId('title').textContent = spec.id;
+      document.title = `${spec.id} reconstruction`;
+      frame.style.width = `${canvasSpec.width}px`;
+      frame.style.height = `${canvasSpec.height}px`;
+      frame.style.background = canvasSpec.background || '#ffffff';
+      surface.innerHTML = '';
+      reference.src = spec.source.path;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = canvasSpec.width;
+      canvas.height = canvasSpec.height;
+      canvas.setAttribute('data-role', 'generated-rate-maps');
+      surface.appendChild(canvas);
+      const ctx = canvas.getContext('2d');
+
+      const svg = svgNode('svg', {
+        width: canvasSpec.width,
+        height: canvasSpec.height,
+        viewBox: `0 0 ${canvasSpec.width} ${canvasSpec.height}`,
+        role: 'img',
+        'aria-label': `${spec.id} generated reconstruction`
+      });
+      surface.appendChild(svg);
+
+      for (const panel of spec.panels) {
+        for (const rateMap of panel.rateMaps) renderRateMap(ctx, rateMap, spec.styles);
+        renderColorbar(ctx, panel.colorbar, spec.styles);
+
+        const group = svgNode('g', {'data-panel-id': panel.id, 'data-role': panel.type});
+        svg.appendChild(group);
+        group.appendChild(textNode(panel.label, defaults));
+        group.appendChild(textNode(panel.title, defaults));
+        renderAxes(group, panel, defaults);
+        renderOverlays(group, panel);
+        renderColorbarAxes(group, panel, defaults);
+        renderLegend(group, panel, defaults);
+      }
+    }
+
+    byId('generatedButton').onclick = () => {
+      byId('frame').classList.remove('show-reference');
+      byId('generatedButton').classList.add('active');
+      byId('referenceButton').classList.remove('active');
+    };
+
+    byId('referenceButton').onclick = () => {
+      byId('frame').classList.add('show-reference');
+      byId('referenceButton').classList.add('active');
+      byId('generatedButton').classList.remove('active');
+    };
+
+    fetch(SPEC_URL)
+      .then(response => response.json())
+      .then(render)
+      .catch(error => {
+        byId('surface').textContent = `Failed to load ${SPEC_URL}: ${error.message}`;
+      });
+  </script>
+</body>
+</html>

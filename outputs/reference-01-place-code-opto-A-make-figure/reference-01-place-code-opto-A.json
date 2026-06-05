@@ -1,0 +1,234 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-01-place-code-opto-A",
+  "source": {
+    "path": "../../assets/reference/reference-01-place-code-opto-A-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Two heatmap subplots reconstructed from visual inspection. Heatmap values are generated from editable recipes approximating sorted place fields, not copied from the source raster."
+  },
+  "canvas": {
+    "width": 512,
+    "height": 512,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.04,
+      "notes": "Use regular Arial/Helvetica globally; apply targetWidth only to individual labels that need fitting."
+    }
+  },
+  "styles": {
+    "axis": "#111111",
+    "heatmapBorder": "#111111",
+    "colormap": [
+      {"value": -2.2, "color": "#481567"},
+      {"value": -1.1, "color": "#3f4788"},
+      {"value": 0, "color": "#26828e"},
+      {"value": 1.0, "color": "#36b779"},
+      {"value": 2.2, "color": "#fde725"}
+    ]
+  },
+  "panels": [
+    {
+      "id": "panel-a",
+      "type": "dual_sorted_place_cell_heatmaps",
+      "label": {
+        "text": "A",
+        "x": 17,
+        "y": 35,
+        "fontSize": 26,
+        "fontWeight": 700
+      },
+      "title": {
+        "text": "Hippocampal CA1 place cells (n = 162)",
+        "x": 58,
+        "y": 34,
+        "fontSize": 18,
+        "fontWeight": 700,
+        "fit": "scaleX",
+        "targetWidth": 321
+      },
+      "yAxis": {
+        "domain": [1, 162],
+        "label": {
+          "text": "Neurons (sorted by peak position)",
+          "x": 38,
+          "y": 267,
+          "fontSize": 17,
+          "anchor": "middle",
+          "rotation": -90
+        },
+        "ticks": [
+          {"value": 1, "label": "1"},
+          {"value": 162, "label": "162"}
+        ]
+      },
+      "xAxis": {
+        "domain": [0, 210],
+        "ticks": [
+          {"value": 0, "label": "0"},
+          {"value": 100, "label": "100"},
+          {"value": 200, "label": "200"}
+        ],
+        "label": {
+          "text": "Position (cm)",
+          "fontSize": 17
+        }
+      },
+      "heatmaps": [
+        {
+          "id": "control-heatmap",
+          "title": {
+            "text": "Control (no light)",
+            "x": 155,
+            "y": 73,
+            "fontSize": 14,
+            "anchor": "middle"
+          },
+          "dataBbox": {
+            "x": 70,
+            "y": 91,
+            "width": 170,
+            "height": 354
+          },
+          "axes": {
+            "yAxisX": 64,
+            "xAxisY": 445,
+            "xTickLength": 7,
+            "yTickLength": 6,
+            "dataBorder": ["top", "right", "bottom"]
+          },
+          "xLabel": {
+            "text": "Position (cm)",
+            "x": 155,
+            "y": 489,
+            "fontSize": 17,
+            "anchor": "middle"
+          },
+          "recipe": {
+            "kind": "sortedPlaceFieldHeatmap",
+            "seed": 1101,
+            "rows": 162,
+            "cols": 210,
+            "background": -1.72,
+            "backgroundNoise": 0.26,
+            "rowBanding": 0.13,
+            "peakStart": 17,
+            "peakEnd": 191,
+            "peakJitter": 6.8,
+            "ridgeWidth": 10.5,
+            "ridgeAmplitude": 3.55,
+            "haloWidth": 21,
+            "haloAmplitude": 0.40,
+            "secondaryFieldProbability": 0.10,
+            "secondaryAmplitude": 0.48,
+            "horizontalStreakProbability": 0.24,
+            "horizontalStreakAmplitude": 0.28
+          }
+        },
+        {
+          "id": "opto-heatmap",
+          "title": {
+            "text": "Optogenetic inhibition\n(ArchT, 532 nm)",
+            "x": 343,
+            "y": 65,
+            "fontSize": 14,
+            "anchor": "middle",
+            "lineHeight": 1.12
+          },
+          "dataBbox": {
+            "x": 258,
+            "y": 91,
+            "width": 168,
+            "height": 354
+          },
+          "axes": {
+            "yAxisX": 258,
+            "xAxisY": 445,
+            "xTickLength": 7,
+            "yTickLength": 0,
+            "dataBorder": ["top", "right", "bottom", "left"]
+          },
+          "xLabel": {
+            "text": "Position (cm)",
+            "x": 342,
+            "y": 489,
+            "fontSize": 17,
+            "anchor": "middle"
+          },
+          "recipe": {
+            "kind": "sortedPlaceFieldHeatmap",
+            "seed": 1117,
+            "rows": 162,
+            "cols": 210,
+            "background": -1.74,
+            "backgroundNoise": 0.24,
+            "rowBanding": 0.12,
+            "peakStart": 18,
+            "peakEnd": 190,
+            "peakJitter": 7.4,
+            "ridgeWidth": 9.6,
+            "ridgeAmplitude": 2.95,
+            "haloWidth": 19,
+            "haloAmplitude": 0.32,
+            "secondaryFieldProbability": 0.07,
+            "secondaryAmplitude": 0.36,
+            "horizontalStreakProbability": 0.22,
+            "horizontalStreakAmplitude": 0.25
+          }
+        }
+      ],
+      "colorbar": {
+        "label": {
+          "text": "Firing rate\n(z-scored)",
+          "anchorTo": "colorbar",
+          "targetPoint": "left-top",
+          "anchorPoint": "left-top",
+          "dx": -11,
+          "dy": -41,
+          "fontSize": 15,
+          "anchor": "start",
+          "baseline": "hanging",
+          "lineHeight": 1.03
+        },
+        "bbox": {
+          "x": 443,
+          "y": 250,
+          "width": 19,
+          "height": 189
+        },
+        "domain": [-2.2, 2.2],
+        "ticks": [
+          {"value": -2, "label": "-2"},
+          {"value": -1, "label": "-1"},
+          {"value": 0, "label": "0"},
+          {"value": 1, "label": "1"},
+          {"value": 2, "label": "2"}
+        ]
+      },
+      "provenance": [
+        {
+          "target": "panel-a.heatmaps",
+          "confidence": "medium",
+          "note": "Heatmaps use generated noisy diagonal place-field recipes; exact source matrix values are unavailable."
+        },
+        {
+          "target": "panel-a.heatmaps[].bbox",
+          "confidence": "high",
+          "note": "Subplot bounds inferred from visible heatmap frames and axes."
+        }
+      ]
+    }
+  ],
+  "confidence": [
+    {
+      "target": "reference-01-place-code-opto-A",
+      "confidence": "medium",
+      "note": "Layout, labels, axes, and color scale are high-confidence; heatmap texture and individual row intensities are approximate generated data."
+    }
+  ]
+}
