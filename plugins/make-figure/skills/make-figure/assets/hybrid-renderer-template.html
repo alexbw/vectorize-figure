@@ -101,9 +101,6 @@
       inset: 0;
     }
 
-    text {
-      font-family: inherit;
-    }
   </style>
 </head>
 <body>
@@ -134,7 +131,14 @@
     "usage": "QA-only; not used by generated candidate."
   },
   "canvas": {"width": 640, "height": 420, "background": "#ffffff"},
-  "typography": {"fontFamily": "Arial, Helvetica, sans-serif", "defaultSize": 12, "color": "#111111"},
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Source Sans 3", "Roboto", "Noto Sans"]
+  },
   "panels": [
     {
       "id": "panel-a",
@@ -196,20 +200,324 @@
       };
     }
 
+    function appendStylesheet(href) {
+      return new Promise(resolve => {
+        if (!href) return resolve();
+        const existing = document.querySelector(`link[data-font-import="${CSS.escape(href)}"]`);
+        if (existing) return resolve();
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = href;
+        link.dataset.fontImport = href;
+        link.onload = () => resolve();
+        link.onerror = () => {
+          console.warn(`Font stylesheet failed to load: ${href}`);
+          resolve();
+        };
+        document.head.appendChild(link);
+      });
+    }
+
+    async function setupTypography(typography = {}) {
+      for (const href of typography.fontImports || []) {
+        await appendStylesheet(href);
+      }
+
+      if ('FontFace' in window) {
+        for (const face of typography.fontFaces || []) {
+          if (!face.family || !face.src) continue;
+          const descriptor = {
+            style: face.style || 'normal',
+            weight: String(face.weight || 400),
+            stretch: face.stretch || face.fontStretch || 'normal',
+            display: face.display || 'swap'
+          };
+          try {
+            const fontFace = new FontFace(face.family, `url(${face.src})`, descriptor);
+            document.fonts.add(fontFace);
+            await fontFace.load();
+          } catch (error) {
+            console.warn(`Font face failed to load: ${face.family}`, error);
+          }
+        }
+      }
+    }
+
+    function resolveTypography(spec, defaults = {}) {
+      const calibration = defaults.calibration || {};
+      return {
+        fontFamily: spec.fontFamily || spec.font_family || defaults.fontFamily || 'Arial, Helvetica, sans-serif',
+        fontSize: spec.fontSize || spec.font_size || defaults.defaultSize || 12,
+        fontWeight: spec.fontWeight || spec.font_weight || defaults.fontWeight || 400,
+        fontStyle: spec.fontStyle || spec.font_style || defaults.fontStyle || undefined,
+        fontStretch: spec.fontStretch || spec.font_stretch || calibration.fontStretch || undefined,
+        fontVariationSettings: spec.fontVariationSettings || spec.font_variation_settings || calibration.fontVariationSettings || undefined,
+        letterSpacing: spec.letterSpacing ?? spec.letter_spacing ?? calibration.letterSpacing,
+        lineHeight: spec.lineHeight || spec.line_height || calibration.lineHeight || 1.08
+      };
+    }
+
+    function textLines(text) {
+      return String(text ?? '').split('\n');
+    }
+
+    function composeTransform(spec) {
+      const parts = [];
+      if (spec.rotation) parts.push(`rotate(${spec.rotation} ${spec.x} ${spec.y})`);
+      if (spec.transform) parts.push(spec.transform);
+      return parts.length ? parts.join(' ') : undefined;
+    }
+
     function textNode(spec, defaults = {}) {
+      const type = resolveTypography(spec, defaults);
       const node = make('text', {
         x: spec.x,
         y: spec.y,
         fill: spec.fill || spec.color || defaults.color || '#111111',
-        'font-size': spec.fontSize || spec.font_size || defaults.defaultSize || 12,
-        'font-weight': spec.fontWeight || spec.font_weight || 400,
+        'font-family': type.fontFamily,
+        'font-size': type.fontSize,
+        'font-weight': type.fontWeight,
+        'font-style': type.fontStyle,
+        'font-stretch': type.fontStretch,
+        'font-variation-settings': type.fontVariationSettings,
+        'letter-spacing': type.letterSpacing,
         'text-anchor': spec.anchor || (spec.align === 'center' ? 'middle' : 'start'),
         'dominant-baseline': spec.baseline || 'alphabetic',
-        transform: spec.rotation ? `rotate(${spec.rotation} ${spec.x} ${spec.y})` : undefined,
-        'data-role': spec.role || 'text'
+        transform: composeTransform(spec),
+        'data-role': spec.role || 'text',
+        'data-text-id': spec.id || undefined,
+        'data-axis': spec.axis || undefined,
+        'data-value': spec.value ?? undefined,
+        'data-anchor-to': spec.anchorTo || spec.anchor_to || undefined,
+        'data-fit': spec.fit || undefined,
+        'data-target-width': spec.targetWidth ?? spec.target_width,
+        'data-target-height': spec.targetHeight ?? spec.target_height,
+        'data-fit-tolerance-px': spec.fitTolerancePx ?? spec.fit_tolerance_px,
+        'data-min-scale': spec.minScale ?? spec.min_scale,
+        'data-max-scale': spec.maxScale ?? spec.max_scale,
+        'data-source-box': spec.sourceBox || spec.source_box ? JSON.stringify(spec.sourceBox || spec.source_box) : undefined
       });
-      node.textContent = spec.text || '';
+
+      if (spec.textLength || spec.text_length) {
+        node.setAttribute('textLength', spec.textLength || spec.text_length);
+        node.setAttribute('lengthAdjust', spec.lengthAdjust || spec.length_adjust || 'spacingAndGlyphs');
+      }
+
+      const lines = textLines(spec.text);
+      if (lines.length > 1) {
+        lines.forEach((line, index) => {
+          const tspan = make('tspan', {
+            x: spec.x,
+            dy: index === 0 ? 0 : type.fontSize * type.lineHeight
+          });
+          tspan.textContent = line;
+          node.appendChild(tspan);
+        });
+      } else {
+        node.textContent = lines[0] || '';
+      }
       return node;
+    }
+
+    function measuredBox(node) {
+      try {
+        const svg = node.ownerSVGElement;
+        const rect = node.getBoundingClientRect();
+        const ctm = svg && svg.getScreenCTM ? svg.getScreenCTM() : null;
+        if (svg && svg.createSVGPoint && ctm && (rect.width || rect.height)) {
+          const matrix = ctm.inverse();
+          const corners = [
+            [rect.left, rect.top],
+            [rect.right, rect.top],
+            [rect.right, rect.bottom],
+            [rect.left, rect.bottom]
+          ].map(([x, y]) => {
+            const point = svg.createSVGPoint();
+            point.x = x;
+            point.y = y;
+            return point.matrixTransform(matrix);
+          });
+          const xs = corners.map(point => point.x);
+          const ys = corners.map(point => point.y);
+          const x = Math.min(...xs);
+          const y = Math.min(...ys);
+          return {
+            x,
+            y,
+            width: Math.max(...xs) - x,
+            height: Math.max(...ys) - y
+          };
+        }
+        const box = node.getBBox();
+        return {x: box.x, y: box.y, width: box.width, height: box.height};
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function applyScaleXFit(node, targetWidth, tolerancePx) {
+      const box = measuredBox(node);
+      if (!box || !box.width || !targetWidth) return;
+      if (Math.abs(box.width - targetWidth) <= tolerancePx) return;
+
+      const minScale = Number(node.dataset.minScale || 0.65);
+      const maxScale = Number(node.dataset.maxScale || 1.35);
+      const scale = clamp(targetWidth / box.width, minScale, maxScale);
+      const x = Number(node.getAttribute('x') || 0);
+      const y = Number(node.getAttribute('y') || 0);
+      const existing = node.getAttribute('transform') || '';
+      const fitTransform = `translate(${x} ${y}) scale(${scale} 1) translate(${-x} ${-y})`;
+      node.setAttribute('transform', [existing, fitTransform].filter(Boolean).join(' '));
+      node.dataset.appliedScaleX = scale.toFixed(4);
+    }
+
+    function applyTextFitting(svg) {
+      for (const node of svg.querySelectorAll('text[data-fit]')) {
+        const fit = node.dataset.fit;
+        const targetWidth = Number(node.dataset.targetWidth || 0);
+        const tolerancePx = Number(node.dataset.fitTolerancePx || 0.75);
+        if (fit === 'scaleX') {
+          applyScaleXFit(node, targetWidth, tolerancePx);
+        } else if (fit === 'textLength' && targetWidth) {
+          node.setAttribute('textLength', targetWidth);
+          node.setAttribute('lengthAdjust', node.getAttribute('lengthAdjust') || 'spacingAndGlyphs');
+        } else if (fit === 'fontSize') {
+          const box = measuredBox(node);
+          const targetHeight = Number(node.dataset.targetHeight || 0);
+          if (box && targetHeight && Math.abs(box.height - targetHeight) > tolerancePx) {
+            const current = Number(node.getAttribute('font-size') || 12);
+            node.setAttribute('font-size', clamp(current * targetHeight / box.height, current * 0.65, current * 1.35));
+          }
+        }
+      }
+    }
+
+    function collectTextQa(svg, spec) {
+      const rows = [];
+      for (const node of svg.querySelectorAll('text[data-source-box]')) {
+        const generated = measuredBox(node);
+        if (!generated) continue;
+        const source = JSON.parse(node.dataset.sourceBox);
+        rows.push({
+          id: node.dataset.textId || node.textContent,
+          generated,
+          source,
+          delta: {
+            x: +(generated.x - source.x).toFixed(2),
+            y: +(generated.y - source.y).toFixed(2),
+            width: +(generated.width - source.width).toFixed(2),
+            height: +(generated.height - source.height).toFixed(2)
+          }
+        });
+      }
+      window.figureTextQa = {id: spec.id, rows};
+      if (rows.length) console.table(rows.map(row => ({id: row.id, ...row.delta})));
+    }
+
+    function drawQaOverlay(svg) {
+      if (new URLSearchParams(window.location.search).get('qaOverlay') !== '1') return;
+      const existing = svg.querySelector('[data-role="text-qa-overlay"]');
+      if (existing) existing.remove();
+      const group = make('g', {'data-role': 'text-qa-overlay', 'pointer-events': 'none'});
+      for (const node of svg.querySelectorAll('text[data-source-box]')) {
+        const generated = measuredBox(node);
+        if (!generated) continue;
+        const source = JSON.parse(node.dataset.sourceBox);
+        group.appendChild(make('rect', {
+          x: source.x,
+          y: source.y,
+          width: source.width,
+          height: source.height,
+          fill: 'none',
+          stroke: '#0a7f35',
+          'stroke-width': 1.25,
+          'stroke-dasharray': '4 3',
+          'vector-effect': 'non-scaling-stroke'
+        }));
+        group.appendChild(make('rect', {
+          x: generated.x,
+          y: generated.y,
+          width: generated.width,
+          height: generated.height,
+          fill: 'none',
+          stroke: '#c00078',
+          'stroke-width': 1,
+          'vector-effect': 'non-scaling-stroke'
+        }));
+      }
+      svg.appendChild(group);
+    }
+
+    function scoreFontCandidates(svg, spec) {
+      const candidates = (spec.typography && spec.typography.fontCandidates) || [];
+      const nodes = Array.from(svg.querySelectorAll('text[data-source-box]'));
+      if (!candidates.length || !nodes.length) {
+        window.figureFontQa = {id: spec.id, candidates: []};
+        return;
+      }
+
+      const originalFamilies = nodes.map(node => node.getAttribute('font-family'));
+      const restoreFamily = (node, family) => {
+        if (family === null) node.removeAttribute('font-family');
+        else node.setAttribute('font-family', family);
+      };
+      const scores = candidates.map(candidate => {
+        let total = 0;
+        const samples = [];
+        nodes.forEach((node, index) => {
+          node.setAttribute('font-family', candidate);
+          const generated = measuredBox(node);
+          const source = JSON.parse(node.dataset.sourceBox);
+          if (!generated) {
+            restoreFamily(node, originalFamilies[index]);
+            return;
+          }
+          const widthDelta = Math.abs(generated.width - source.width);
+          const heightDelta = Math.abs(generated.height - source.height);
+          const score = widthDelta + heightDelta;
+          total += score;
+          samples.push({
+            id: node.dataset.textId || node.textContent,
+            widthDelta: +widthDelta.toFixed(2),
+            heightDelta: +heightDelta.toFixed(2),
+            score: +score.toFixed(2)
+          });
+          restoreFamily(node, originalFamilies[index]);
+        });
+        return {candidate, score: +total.toFixed(2), samples};
+      }).sort((a, b) => a.score - b.score);
+
+      nodes.forEach((node, index) => restoreFamily(node, originalFamilies[index]));
+      window.figureFontQa = {id: spec.id, candidates: scores};
+      console.table(scores.map(row => ({fontFamily: row.candidate, score: row.score})));
+    }
+
+    function validateTickPairs(svg) {
+      const labels = new Set();
+      const marks = new Set();
+      svg.querySelectorAll('[data-role="tick-label"][data-axis][data-value]').forEach(node => {
+        labels.add(`${node.getAttribute('data-axis')}/${node.getAttribute('data-value')}`);
+      });
+      svg.querySelectorAll('[data-role="axis-tick-mark"][data-axis][data-value]').forEach(node => {
+        marks.add(`${node.getAttribute('data-axis')}/${node.getAttribute('data-value')}`);
+      });
+      const missingMarks = [...labels].filter(key => !marks.has(key));
+      const missingLabels = [...marks].filter(key => !labels.has(key));
+      const mismatches = [...missingMarks.map(key => `missing-mark:${key}`), ...missingLabels.map(key => `missing-label:${key}`)];
+      svg.setAttribute('data-tick-pair-validation', mismatches.length ? 'mismatch' : 'ok');
+      if (mismatches.length) console.warn('Tick label/mark pair mismatch', mismatches);
+    }
+
+    function publishQaDom() {
+      if (new URLSearchParams(window.location.search).get('qaDom') !== '1') return;
+      const node = document.createElement('script');
+      node.id = 'figure-qa-output';
+      node.type = 'application/json';
+      node.textContent = JSON.stringify({
+        textQa: window.figureTextQa || null,
+        fontQa: window.figureFontQa || null
+      });
+      document.body.appendChild(node);
     }
 
     function renderAxes(svg, panel, defaults) {
@@ -224,22 +532,24 @@
 
       for (const tick of plot.x.ticks || []) {
         const x = scales.x(tick.value);
-        svg.appendChild(make('line', {...axisStyle, x1: x, y1: box.y + box.height, x2: x, y2: box.y + box.height + 6, 'data-role': 'x-tick'}));
-        svg.appendChild(textNode({text: tick.label ?? String(tick.value), x, y: box.y + box.height + 20, fontSize: 12, anchor: 'middle'}, defaults));
+        const axisId = plot.x.id || 'x';
+        svg.appendChild(make('line', {...axisStyle, x1: x, y1: box.y + box.height, x2: x, y2: box.y + box.height + 6, 'data-role': 'axis-tick-mark', 'data-axis': axisId, 'data-value': tick.value}));
+        svg.appendChild(textNode({...tick, text: tick.label ?? String(tick.value), x, y: tick.y ?? box.y + box.height + 20, fontSize: tick.fontSize || tick.font_size || 12, anchor: tick.anchor || 'middle', role: 'tick-label', axis: axisId, value: tick.value}, defaults));
       }
 
       for (const tick of plot.y.ticks || []) {
         const y = scales.y(tick.value);
-        svg.appendChild(make('line', {...axisStyle, x1: box.x - 6, y1: y, x2: box.x, y2: y, 'data-role': 'y-tick'}));
-        svg.appendChild(textNode({text: tick.label ?? String(tick.value), x: box.x - 10, y: y + 4, fontSize: 12, anchor: 'end'}, defaults));
+        const axisId = plot.y.id || 'y';
+        svg.appendChild(make('line', {...axisStyle, x1: box.x - 6, y1: y, x2: box.x, y2: y, 'data-role': 'axis-tick-mark', 'data-axis': axisId, 'data-value': tick.value}));
+        svg.appendChild(textNode({...tick, text: tick.label ?? String(tick.value), x: tick.x ?? box.x - 10, y: tick.y ?? y + 4, fontSize: tick.fontSize || tick.font_size || 12, anchor: tick.anchor || 'end', role: 'tick-label', axis: axisId, value: tick.value}, defaults));
       }
 
       if (plot.x.label) {
-        svg.appendChild(textNode({text: plot.x.label.text, x: box.x + box.width / 2, y: box.y + box.height + 45, fontSize: 14, anchor: 'middle'}, defaults));
+        svg.appendChild(textNode({...plot.x.label, text: plot.x.label.text, x: plot.x.label.x ?? box.x + box.width / 2, y: plot.x.label.y ?? box.y + box.height + 45, fontSize: plot.x.label.fontSize || plot.x.label.font_size || 14, anchor: plot.x.label.anchor || 'middle', role: plot.x.label.role || 'x-axis-label'}, defaults));
       }
 
       if (plot.y.label) {
-        svg.appendChild(textNode({text: plot.y.label.text, x: box.x - 48, y: box.y + box.height / 2, fontSize: 14, anchor: 'middle', rotation: -90}, defaults));
+        svg.appendChild(textNode({...plot.y.label, text: plot.y.label.text, x: plot.y.label.x ?? box.x - 48, y: plot.y.label.y ?? box.y + box.height / 2, fontSize: plot.y.label.fontSize || plot.y.label.font_size || 14, anchor: plot.y.label.anchor || 'middle', rotation: plot.y.label.rotation ?? -90, role: plot.y.label.role || 'y-axis-label'}, defaults));
       }
     }
 
@@ -334,6 +644,8 @@
         renderAxes(group, panel, defaults);
         renderMarks(group, canvas, panel, defaults);
       }
+      validateTickPairs(svg);
+      return svg;
     }
 
     async function loadSpec() {
@@ -361,7 +673,18 @@
       $('generatedButton').classList.remove('active');
     };
 
-    loadSpec().then(render);
+    loadSpec().then(async spec => {
+      await setupTypography(spec.typography || {});
+      const svg = render(spec);
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      if (new URLSearchParams(window.location.search).get('fontQa') === '1') {
+        scoreFontCandidates(svg, spec);
+      }
+      applyTextFitting(svg);
+      collectTextQa(svg, spec);
+      drawQaOverlay(svg);
+      publishQaDom();
+    });
   </script>
 </body>
 </html>

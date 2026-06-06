@@ -1,0 +1,1053 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-02-decision-dynamics-B",
+  "source": {
+    "path": "../../assets/reference/reference-02-decision-dynamics-B-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Single 3D state-space trajectory panel. Axes, grid, trajectories, time points, labels, and legend are generated from semantic 3D/SVG instructions."
+  },
+  "canvas": {
+    "width": 356,
+    "height": 514,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Known font mismatch is tracked in GitHub issue #1."
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-b",
+      "type": "state_space_3d_trajectory",
+      "label": {
+        "text": "B",
+        "x": 8,
+        "y": 30,
+        "fontSize": 23,
+        "fontWeight": 700
+      },
+      "title": {
+        "text": "Neural state-space trajectories\n(population activity)",
+        "x": 34,
+        "y": 30,
+        "fontSize": 18,
+        "fontWeight": 700,
+        "lineHeight": 1.03
+      },
+      "legend": {
+        "y": 86,
+        "items": [
+          {
+            "id": "left",
+            "label": "Left choice",
+            "x": 52,
+            "color": "#124fbe"
+          },
+          {
+            "id": "right",
+            "label": "Right choice",
+            "x": 150,
+            "color": "#dd1717"
+          },
+          {
+            "id": "timepoints",
+            "label": "Time points",
+            "x": 256,
+            "marker": "circle",
+            "color": "#000000"
+          }
+        ]
+      },
+      "scene": {
+        "projection": {
+          "type": "trilinearProjectedCube",
+          "vertices": {
+            "pc1Min_pc2Min_pc3Min": {
+              "x": 57,
+              "y": 327
+            },
+            "pc1Min_pc2Min_pc3Max": {
+              "x": 57,
+              "y": 143
+            },
+            "pc1Min_pc2Max_pc3Min": {
+              "x": 202,
+              "y": 417
+            },
+            "pc1Min_pc2Max_pc3Max": {
+              "x": 202,
+              "y": 233
+            },
+            "pc1Max_pc2Min_pc3Min": {
+              "x": 172,
+              "y": 267
+            },
+            "pc1Max_pc2Min_pc3Max": {
+              "x": 202,
+              "y": 110
+            },
+            "pc1Max_pc2Max_pc3Min": {
+              "x": 316,
+              "y": 357
+            },
+            "pc1Max_pc2Max_pc3Max": {
+              "x": 316,
+              "y": 172
+            }
+          }
+        },
+        "domains": {
+          "pc1": [
+            -2,
+            2
+          ],
+          "pc2": [
+            -2,
+            2
+          ],
+          "pc3": [
+            -2,
+            2
+          ]
+        },
+        "box": {
+          "projectedVertices": {
+            "leftTop": {
+              "x": 57,
+              "y": 143
+            },
+            "leftTopShoulder": {
+              "x": 79,
+              "y": 157
+            },
+            "topBack": {
+              "x": 202,
+              "y": 110
+            },
+            "rightTop": {
+              "x": 316,
+              "y": 172
+            },
+            "leftBottom": {
+              "x": 57,
+              "y": 327
+            },
+            "bottomFront": {
+              "x": 202,
+              "y": 417
+            },
+            "rightBottom": {
+              "x": 316,
+              "y": 357
+            }
+          },
+          "projectedEdges": [
+            [
+              "leftTop",
+              "leftTopShoulder"
+            ],
+            [
+              "leftTopShoulder",
+              "topBack"
+            ],
+            [
+              "topBack",
+              "rightTop"
+            ],
+            [
+              "rightTop",
+              "rightBottom"
+            ],
+            [
+              "rightBottom",
+              "bottomFront"
+            ],
+            [
+              "bottomFront",
+              "leftBottom"
+            ],
+            [
+              "leftBottom",
+              "leftTop"
+            ]
+          ],
+          "edges": [
+            [
+              "min",
+              "min",
+              "min",
+              "max",
+              "min",
+              "min"
+            ],
+            [
+              "min",
+              "min",
+              "min",
+              "min",
+              "max",
+              "min"
+            ],
+            [
+              "min",
+              "min",
+              "min",
+              "min",
+              "min",
+              "max"
+            ],
+            [
+              "max",
+              "min",
+              "min",
+              "max",
+              "min",
+              "max"
+            ],
+            [
+              "min",
+              "max",
+              "min",
+              "min",
+              "max",
+              "max"
+            ],
+            [
+              "min",
+              "min",
+              "max",
+              "max",
+              "min",
+              "max"
+            ],
+            [
+              "min",
+              "min",
+              "max",
+              "min",
+              "max",
+              "max"
+            ],
+            [
+              "max",
+              "min",
+              "max",
+              "max",
+              "max",
+              "max"
+            ],
+            [
+              "min",
+              "max",
+              "max",
+              "max",
+              "max",
+              "max"
+            ]
+          ],
+          "stroke": "#111111",
+          "strokeWidth": 1.05
+        },
+        "grid": {
+          "stroke": "#c6c6c6",
+          "strokeWidth": 0.72,
+          "dasharray": "1.4 3",
+          "opacity": 0.95,
+          "planeFills": [
+            {
+              "id": "floor-pc1-pc2-fill",
+              "fixed": {
+                "pc3": -2
+              },
+              "u": "pc1",
+              "v": "pc2",
+              "fill": "#f2f2f2",
+              "opacity": 0.42
+            }
+          ],
+          "sourceInventory": {
+            "method": "Native-resolution visual inspection of gray dashed source linework, counted before projection/style tuning.",
+            "notes": "Boundary-aligned guide counts identify grid guides at domain min/max that are visually merged with, hidden under, or adjacent to black box edges. They are encoded as grid guides but rendered behind the protected box-edge layer.",
+            "planes": [
+              {
+                "id": "floor-pc1-pc2",
+                "families": [
+                  {
+                    "axis": "pc1",
+                    "interiorVisible": 1,
+                    "boundaryAligned": 2,
+                    "encodedValues": [
+                      -2,
+                      0,
+                      2
+                    ]
+                  },
+                  {
+                    "axis": "pc2",
+                    "interiorVisible": 1,
+                    "boundaryAligned": 2,
+                    "encodedValues": [
+                      -2,
+                      0,
+                      2
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "back-wall-pc1-pc3",
+                "families": [
+                  {
+                    "axis": "pc1",
+                    "interiorVisible": 1,
+                    "boundaryAligned": 2,
+                    "encodedValues": [
+                      -2,
+                      0,
+                      2
+                    ]
+                  },
+                  {
+                    "axis": "pc3",
+                    "interiorVisible": 1,
+                    "boundaryAligned": 2,
+                    "encodedValues": [
+                      -2,
+                      0,
+                      2
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "side-wall-pc2-pc3",
+                "families": [
+                  {
+                    "axis": "pc2",
+                    "interiorVisible": 1,
+                    "boundaryAligned": 2,
+                    "encodedValues": [
+                      -2,
+                      0,
+                      2
+                    ]
+                  },
+                  {
+                    "axis": "pc3",
+                    "interiorVisible": 1,
+                    "boundaryAligned": 2,
+                    "encodedValues": [
+                      -2,
+                      0,
+                      2
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "tickInventory": {
+            "method": "Native-resolution visual inspection of source tick-label baselines and short tick marks. Values remain semantic; mark and label anchors are paired because the reference tick text does not follow a single projected offset from the inferred cube anchors.",
+            "axes": [
+              {
+                "id": "pc1",
+                "ticks": [
+                  {
+                    "value": -2,
+                    "markAnchor": {
+                      "x": 225,
+                      "y": 406
+                    },
+                    "labelAnchor": {
+                      "x": 229,
+                      "y": 423
+                    }
+                  },
+                  {
+                    "value": 0,
+                    "markAnchor": {
+                      "x": 271,
+                      "y": 382
+                    },
+                    "labelAnchor": {
+                      "x": 274,
+                      "y": 401
+                    }
+                  },
+                  {
+                    "value": 2,
+                    "markAnchor": {
+                      "x": 313,
+                      "y": 360
+                    },
+                    "labelAnchor": {
+                      "x": 316,
+                      "y": 381
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "pc2",
+                "ticks": [
+                  {
+                    "value": -2,
+                    "markAnchor": {
+                      "x": 65,
+                      "y": 333
+                    },
+                    "labelAnchor": {
+                      "x": 60,
+                      "y": 359
+                    }
+                  },
+                  {
+                    "value": 0,
+                    "markAnchor": {
+                      "x": 111,
+                      "y": 362
+                    },
+                    "labelAnchor": {
+                      "x": 99,
+                      "y": 388
+                    }
+                  },
+                  {
+                    "value": 2,
+                    "markAnchor": {
+                      "x": 157,
+                      "y": 391
+                    },
+                    "labelAnchor": {
+                      "x": 143,
+                      "y": 415
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "pc3",
+                "ticks": [
+                  {
+                    "value": -2,
+                    "markAnchor": {
+                      "x": 57,
+                      "y": 327
+                    },
+                    "labelAnchor": {
+                      "x": 39,
+                      "y": 327
+                    }
+                  },
+                  {
+                    "value": 0,
+                    "markAnchor": {
+                      "x": 57,
+                      "y": 235
+                    },
+                    "labelAnchor": {
+                      "x": 42,
+                      "y": 248
+                    }
+                  },
+                  {
+                    "value": 2,
+                    "markAnchor": {
+                      "x": 57,
+                      "y": 143
+                    },
+                    "labelAnchor": {
+                      "x": 42,
+                      "y": 148
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "generatedPlanes": [
+            {
+              "id": "floor-pc1-pc2",
+              "fixed": {
+                "pc3": -2
+              },
+              "u": "pc1",
+              "v": "pc2",
+              "families": [
+                {
+                  "id": "pc1-guides",
+                  "axis": "pc1",
+                  "values": [
+                    -2,
+                    0,
+                    2
+                  ],
+                  "includeBoundary": true
+                },
+                {
+                  "id": "pc2-guides",
+                  "axis": "pc2",
+                  "values": [
+                    -2,
+                    0,
+                    2
+                  ],
+                  "includeBoundary": true
+                }
+              ]
+            },
+            {
+              "id": "back-wall-pc1-pc3",
+              "fixed": {
+                "pc2": -2
+              },
+              "u": "pc1",
+              "v": "pc3",
+              "families": [
+                {
+                  "id": "pc1-guides",
+                  "axis": "pc1",
+                  "values": [
+                    -2,
+                    0,
+                    2
+                  ],
+                  "includeBoundary": true
+                },
+                {
+                  "id": "pc3-guides",
+                  "axis": "pc3",
+                  "values": [
+                    -2,
+                    0,
+                    2
+                  ],
+                  "includeBoundary": true
+                }
+              ]
+            },
+            {
+              "id": "side-wall-pc2-pc3",
+              "fixed": {
+                "pc1": 2
+              },
+              "u": "pc2",
+              "v": "pc3",
+              "families": [
+                {
+                  "id": "pc2-guides",
+                  "axis": "pc2",
+                  "values": [
+                    -2,
+                    0,
+                    2
+                  ],
+                  "includeBoundary": true
+                },
+                {
+                  "id": "pc3-guides",
+                  "axis": "pc3",
+                  "values": [
+                    -2,
+                    0,
+                    2
+                  ],
+                  "includeBoundary": true
+                }
+              ]
+            }
+          ]
+        },
+        "axes": [
+          {
+            "id": "pc1",
+            "dimension": "pc1",
+            "tickLabelPlacement": {
+              "avoid": [
+                "axis-spine"
+              ],
+              "minGap": 5,
+              "nudge": {
+                "x": 8,
+                "y": 7
+              },
+              "maxSteps": 6
+            },
+            "tickGeometry": {
+              "fixed": {
+                "pc2": 2,
+                "pc3": -2
+              },
+              "markVector": {
+                "x": 3,
+                "y": 4
+              },
+              "labelOffset": {
+                "x": 0,
+                "y": 21
+              },
+              "labelFontSize": 14
+            },
+            "label": {
+              "text": "PC 1\n(25%)",
+              "x": 286,
+              "y": 449,
+              "fontSize": 15,
+              "anchor": "middle"
+            },
+            "ticks": [
+              {
+                "value": -2,
+                "label": "-2",
+                "markAnchor": {
+                  "x": 225,
+                  "y": 406
+                },
+                "markVector": {
+                  "x": 5,
+                  "y": 4
+                },
+                "labelAnchor": {
+                  "x": 229,
+                  "y": 423,
+                  "locked": true
+                }
+              },
+              {
+                "value": 0,
+                "label": "0",
+                "markAnchor": {
+                  "x": 271,
+                  "y": 382
+                },
+                "markVector": {
+                  "x": 5,
+                  "y": 4
+                },
+                "labelAnchor": {
+                  "x": 274,
+                  "y": 401,
+                  "locked": true
+                }
+              },
+              {
+                "value": 2,
+                "label": "2",
+                "markAnchor": {
+                  "x": 313,
+                  "y": 360
+                },
+                "markVector": {
+                  "x": 5,
+                  "y": 4
+                },
+                "labelAnchor": {
+                  "x": 316,
+                  "y": 381,
+                  "locked": true
+                }
+              }
+            ]
+          },
+          {
+            "id": "pc2",
+            "dimension": "pc2",
+            "tickLabelPlacement": {
+              "avoid": [
+                "axis-spine"
+              ],
+              "minGap": 5,
+              "nudge": {
+                "x": -7,
+                "y": 7
+              },
+              "maxSteps": 6
+            },
+            "tickGeometry": {
+              "fixed": {
+                "pc1": -2,
+                "pc3": -2
+              },
+              "markVector": {
+                "x": -4,
+                "y": 3
+              },
+              "labelOffset": {
+                "x": -11,
+                "y": 19
+              },
+              "labelFontSize": 14
+            },
+            "label": {
+              "text": "PC 2\n(12%)",
+              "x": 82,
+              "y": 412,
+              "fontSize": 15,
+              "anchor": "middle"
+            },
+            "ticks": [
+              {
+                "value": -2,
+                "label": "-2",
+                "markAnchor": {
+                  "x": 65,
+                  "y": 333
+                },
+                "markVector": {
+                  "x": -5,
+                  "y": 4
+                },
+                "labelAnchor": {
+                  "x": 60,
+                  "y": 359,
+                  "locked": true
+                }
+              },
+              {
+                "value": 0,
+                "label": "0",
+                "markAnchor": {
+                  "x": 111,
+                  "y": 362
+                },
+                "markVector": {
+                  "x": -5,
+                  "y": 4
+                },
+                "labelAnchor": {
+                  "x": 99,
+                  "y": 388,
+                  "locked": true
+                }
+              },
+              {
+                "value": 2,
+                "label": "2",
+                "markAnchor": {
+                  "x": 157,
+                  "y": 391
+                },
+                "markVector": {
+                  "x": -5,
+                  "y": 4
+                },
+                "labelAnchor": {
+                  "x": 143,
+                  "y": 415,
+                  "locked": true
+                }
+              }
+            ]
+          },
+          {
+            "id": "pc3",
+            "dimension": "pc3",
+            "tickLabelPlacement": {
+              "avoid": [
+                "axis-spine"
+              ],
+              "minGap": 5,
+              "nudge": {
+                "x": -7,
+                "y": 0
+              },
+              "maxSteps": 6
+            },
+            "tickGeometry": {
+              "fixed": {
+                "pc1": -2,
+                "pc2": -2
+              },
+              "markVector": {
+                "x": -6,
+                "y": 0
+              },
+              "labelOffset": {
+                "x": -16,
+                "y": 4
+              },
+              "labelFontSize": 14
+            },
+            "label": {
+              "text": "PC 3\n(8%)",
+              "x": 16,
+              "y": 245,
+              "fontSize": 15,
+              "anchor": "middle"
+            },
+            "ticks": [
+              {
+                "value": -2,
+                "label": "-2",
+                "markAnchor": {
+                  "x": 57,
+                  "y": 327
+                },
+                "markVector": {
+                  "x": -8,
+                  "y": -4
+                },
+                "labelAnchor": {
+                  "x": 39,
+                  "y": 327,
+                  "locked": true
+                }
+              },
+              {
+                "value": 0,
+                "label": "0",
+                "markAnchor": {
+                  "x": 57,
+                  "y": 235
+                },
+                "markVector": {
+                  "x": -8,
+                  "y": -4
+                },
+                "labelAnchor": {
+                  "x": 42,
+                  "y": 248,
+                  "locked": true
+                }
+              },
+              {
+                "value": 2,
+                "label": "2",
+                "markAnchor": {
+                  "x": 57,
+                  "y": 143
+                },
+                "markVector": {
+                  "x": -8,
+                  "y": -4
+                },
+                "labelAnchor": {
+                  "x": 42,
+                  "y": 148,
+                  "locked": true
+                }
+              }
+            ]
+          }
+        ],
+        "trajectories": [
+          {
+            "id": "left-choice",
+            "label": "Left choice",
+            "color": "#124fbe",
+            "faintOpacity": 0.22,
+            "faintStrokeWidth": 0.75,
+            "meanStrokeWidth": 3.0,
+            "count": 58,
+            "seed": 3201,
+            "jitter": {
+              "pc1": 0.26,
+              "pc2": 0.22,
+              "pc3": 0.26
+            },
+            "mean": [
+              [
+                -1.44,
+                -1.22,
+                -0.21
+              ],
+              [
+                -0.29,
+                -1.18,
+                0.53
+              ],
+              [
+                0.28,
+                -0.66,
+                1.45
+              ],
+              [
+                0.89,
+                -0.08,
+                1.74
+              ],
+              [
+                1.38,
+                0.26,
+                1.83
+              ]
+            ],
+            "timepoints": [
+              {
+                "id": "stim",
+                "label": "Stim\n(0 ms)",
+                "pointIndex": 0,
+                "labelDx": -33,
+                "labelDy": -28
+              },
+              {
+                "id": "left-mid-1",
+                "pointIndex": 1
+              },
+              {
+                "id": "left-mid-2",
+                "pointIndex": 2
+              },
+              {
+                "id": "go",
+                "label": "Go",
+                "pointIndex": 4,
+                "labelDx": 12,
+                "labelDy": 4
+              }
+            ]
+          },
+          {
+            "id": "right-choice",
+            "label": "Right choice",
+            "color": "#dd1717",
+            "faintOpacity": 0.21,
+            "faintStrokeWidth": 0.75,
+            "meanStrokeWidth": 3.0,
+            "count": 62,
+            "seed": 4107,
+            "jitter": {
+              "pc1": 0.28,
+              "pc2": 0.3,
+              "pc3": 0.22
+            },
+            "mean": [
+              [
+                -1.44,
+                -1.22,
+                -0.21
+              ],
+              [
+                -0.94,
+                -0.49,
+                0.16
+              ],
+              [
+                -0.43,
+                -0.22,
+                0.14
+              ],
+              [
+                0.0,
+                0.4,
+                -0.08
+              ],
+              [
+                0.22,
+                1.65,
+                -0.52
+              ],
+              [
+                1.54,
+                2.0,
+                -0.64
+              ]
+            ],
+            "timepoints": [
+              {
+                "id": "stim",
+                "pointIndex": 0
+              },
+              {
+                "id": "right-mid-1",
+                "pointIndex": 1
+              },
+              {
+                "id": "right-mid-2",
+                "pointIndex": 2
+              },
+              {
+                "id": "right-mid-3",
+                "pointIndex": 3
+              },
+              {
+                "id": "right-mid-4",
+                "pointIndex": 4
+              },
+              {
+                "id": "outcome",
+                "label": "Outcome",
+                "pointIndex": 5,
+                "labelDx": -36,
+                "labelDy": -18
+              }
+            ]
+          }
+        ],
+        "annotations": [
+          {
+            "text": "Stim\n(0 ms)",
+            "anchorTo": "timepoint:left-choice:stim",
+            "dx": -33,
+            "dy": -28,
+            "fontSize": 14
+          },
+          {
+            "text": "Go",
+            "anchorTo": "timepoint:left-choice:go",
+            "dx": 12,
+            "dy": 4,
+            "fontSize": 14
+          },
+          {
+            "text": "Outcome",
+            "anchorTo": "timepoint:right-choice:outcome",
+            "dx": -36,
+            "dy": -18,
+            "fontSize": 14
+          }
+        ]
+      },
+      "provenance": [
+        {
+          "target": "panel-b.scene.projection",
+          "confidence": "medium",
+          "note": "3D projection basis inferred from visible box corners and axis directions."
+        },
+        {
+          "target": "panel-b.scene.trajectories",
+          "confidence": "medium",
+          "note": "Mean paths and trial clouds are generated approximations matching the visual envelopes; source data unavailable."
+        }
+      ]
+    }
+  ],
+  "confidence": [
+    {
+      "target": "reference-02-decision-dynamics-B",
+      "confidence": "medium",
+      "note": "3D plot grammar, labels, legend, and trajectory classes are high-confidence. Exact state-space coordinates are inferred."
+    }
+  ],
+  "semanticFigureIR": {
+    "version": "relationship-inventory.v1",
+    "status": "metadata-only migration; renderer-visible output must remain unchanged",
+    "coordinateSystems": [
+      "panel-b.scene.projected3d",
+      "panel-b.scene.domains"
+    ],
+    "layoutObjects": [
+      "panel-b.scene.box",
+      "panel-b.scene.axes",
+      "panel-b.scene.gridPlanes",
+      "panel-b.legend"
+    ],
+    "derivedRelationships": [
+      "trajectories, grid planes, axis ticks, and timepoint markers share the projected3d scene",
+      "grid lines belong to named plane/family groups and never double as box edges",
+      "tick records own paired markAnchor and labelAnchor values",
+      "annotations anchor to semantic timepoint markers"
+    ],
+    "validationConstraints": [
+      "source raster is QA-only",
+      "grid counts validate by plane/family",
+      "labeled ticks validate one-to-one mark/label pairs"
+    ]
+  }
+}

@@ -27,12 +27,13 @@ Before creating files:
 ## Commands
 
 1. Create a semantic JSON specification first.
-2. Represent panels, plot boxes, axes, domains, ticks, labels, legends, marks, annotations, style tokens, provenance, and confidence notes.
-3. Use SVG or DOM for editable structure such as axes, labels, paths, brackets, and legends.
-4. Use canvas only for generated dense fields such as heatmaps, rasters, matrix textures, and large point sets.
-5. Build HTML that renders from the JSON spec. Prefer an adjacent JSON file over hard-coded values.
-6. Include a clearly labeled QA/reference view if the source image is included in the HTML.
-7. Never use the source raster as a generated visual layer, CSS background, or canvas `drawImage` source.
+2. Record a semantic relationship inventory: coordinate systems, layout objects, derived marks/text, source-calibrated anchors, and validation constraints.
+3. Represent panels, plot boxes, axes, domains, ticks, labels, legends, marks, annotations, style tokens, provenance, and confidence notes.
+4. Use SVG or DOM for editable structure such as axes, labels, paths, brackets, and legends.
+5. Use canvas only for generated dense fields such as heatmaps, rasters, matrix textures, and large point sets.
+6. Build HTML that renders from the JSON spec. Prefer an adjacent JSON file over hard-coded values.
+7. Include a clearly labeled QA/reference view if the source image is included in the HTML.
+8. Never use the source raster as a generated visual layer, CSS background, or canvas `drawImage` source.
 
 ## Verification
 

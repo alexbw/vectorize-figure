@@ -230,6 +230,28 @@
       ]
     }
   ],
+  "semanticFigureIR": {
+    "version": "relationship-inventory.v1",
+    "status": "metadata-only migration; renderer-visible output must remain unchanged",
+    "coordinateSystems": [
+      "panel-b.plot.xy"
+    ],
+    "layoutObjects": [
+      "panel-b.plot.xAxis",
+      "panel-b.plot.yAxis",
+      "panel-b.legend"
+    ],
+    "derivedRelationships": [
+      "mean curves, individual traces, and uncertainty bands derive from the same plot.xy transform",
+      "legend entries reference concrete series ids",
+      "axis titles derive from their corresponding axes"
+    ],
+    "validationConstraints": [
+      "source raster is QA-only",
+      "visible quantitative axes keep tick marks and tick labels",
+      "uncertainty bands follow series grammar and are not rectangular stand-ins"
+    ]
+  },
   "confidence": [
     {
       "target": "reference-01-place-code-opto-B",

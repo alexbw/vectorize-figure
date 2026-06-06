@@ -8,6 +8,11 @@ This is a draft approach to refine by testing against many subpanel types. Do no
 
 The durable artifact should be a semantic figure specification, not a particular renderer.
 
+The specification is a semantic figure IR: source detections become evidence for
+a graph of panels, coordinate systems, layout objects, data, marks,
+annotations, and validation constraints. Bounding boxes are not the final
+architecture; they are measurements that help infer relationships.
+
 Generated HTML reconstructions must not reuse source figure PNGs as visual layers. Source PNGs can be used for inspection, QA comparison, and visual judging, but the candidate HTML itself should be built from generated DOM/SVG/canvas marks and editable data/spec recipes. Do not embed source PNGs with `<img>`, CSS backgrounds, or canvas `drawImage`.
 
 The renderer can be SVG, DOM, canvas, or hybrid. The source of truth should be a JSON sidecar that describes the figure in editable terms:
@@ -21,6 +26,10 @@ The renderer can be SVG, DOM, canvas, or hybrid. The source of truth should be a
 - provenance and confidence for inferred pieces
 
 The same spec should support multiple renderers and quality-assurance overlays.
+
+Relationship correctness precedes pixel tuning. If a visible element drifts,
+first identify whether it is missing a parent object, transform, anchor, or
+validation constraint before adjusting its absolute coordinates.
 
 ## Renderer Strategy
 

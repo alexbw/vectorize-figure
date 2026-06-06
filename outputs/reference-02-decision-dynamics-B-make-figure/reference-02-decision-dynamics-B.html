@@ -1,0 +1,883 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-02-decision-dynamics-B reconstruction</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #aaaaaa;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .surface,
+    .reference {
+      position: absolute;
+      inset: 0;
+    }
+
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+    }
+
+    .show-reference .surface {
+      display: none;
+    }
+
+    .show-reference .reference {
+      display: block;
+    }
+
+    svg {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-02-decision-dynamics-B</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="Reference source image">
+    </div>
+  </main>
+
+  <script>
+    const SPEC_URL = './reference-02-decision-dynamics-B.json';
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function byId(id) {
+      return document.getElementById(id);
+    }
+
+    function svgNode(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function textNode(spec, defaults = {}) {
+      const node = svgNode('text', {
+        x: spec.x,
+        y: spec.y,
+        fill: spec.fill || spec.color || defaults.color || '#111111',
+        'font-size': spec.fontSize || defaults.defaultSize || 12,
+        'font-weight': spec.fontWeight || 400,
+        'font-family': spec.fontFamily || defaults.fontFamily || 'Arial, Helvetica, sans-serif',
+        'letter-spacing': spec.letterSpacing ?? defaults.calibration?.letterSpacing,
+        'text-anchor': spec.anchor || 'start',
+        'dominant-baseline': spec.baseline || 'alphabetic',
+        transform: spec.rotation ? `rotate(${spec.rotation} ${spec.x} ${spec.y})` : undefined,
+        'data-role': spec.role || 'text',
+        'data-id': spec.id
+      });
+
+      String(spec.text || '').split('\n').forEach((line, index) => {
+        const tspan = svgNode('tspan', {
+          x: spec.x,
+          dy: index === 0 ? 0 : (spec.lineHeight || defaults.calibration?.lineHeight || 1.08) * (spec.fontSize || defaults.defaultSize || 12)
+        });
+        tspan.textContent = line;
+        node.appendChild(tspan);
+      });
+      return node;
+    }
+
+    function line(parent, attrs) {
+      const node = svgNode('line', {
+        x1: attrs.x1,
+        y1: attrs.y1,
+        x2: attrs.x2,
+        y2: attrs.y2,
+        stroke: attrs.stroke || '#111111',
+        'stroke-width': attrs.strokeWidth || 1,
+        'stroke-dasharray': attrs.dasharray,
+        'stroke-linecap': attrs.linecap || 'butt',
+        opacity: attrs.opacity,
+        'data-role': attrs.role || 'line',
+        'data-plane': attrs.plane,
+        'data-family': attrs.family,
+        'data-axis': attrs.axis,
+        'data-value': attrs.value,
+        'data-boundary': attrs.boundary
+      });
+      parent.appendChild(node);
+      return node;
+    }
+
+    function circle(parent, attrs) {
+      const node = svgNode('circle', {
+        cx: attrs.cx,
+        cy: attrs.cy,
+        r: attrs.r,
+        fill: attrs.fill || '#000000',
+        stroke: attrs.stroke || 'none',
+        'stroke-width': attrs.strokeWidth,
+        opacity: attrs.opacity,
+        'data-role': attrs.role || 'circle'
+      });
+      parent.appendChild(node);
+      return node;
+    }
+
+    function path(parent, attrs) {
+      const node = svgNode('path', {
+        d: attrs.d,
+        fill: 'none',
+        stroke: attrs.stroke || '#111111',
+        'stroke-width': attrs.strokeWidth || 1,
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round',
+        opacity: attrs.opacity,
+        'data-role': attrs.role || 'path'
+      });
+      parent.appendChild(node);
+      return node;
+    }
+
+    function polygon(parent, attrs) {
+      const node = svgNode('polygon', {
+        points: attrs.points,
+        fill: attrs.fill || 'none',
+        stroke: attrs.stroke || 'none',
+        'stroke-width': attrs.strokeWidth,
+        opacity: attrs.opacity,
+        'data-role': attrs.role || 'polygon'
+      });
+      parent.appendChild(node);
+      return node;
+    }
+
+    function nodeBox(node) {
+      const box = node.getBBox();
+      return {x: box.x, y: box.y, width: box.width, height: box.height};
+    }
+
+    function shiftText(node, dx, dy) {
+      node.setAttribute('x', Number(node.getAttribute('x')) + dx);
+      node.setAttribute('y', Number(node.getAttribute('y')) + dy);
+      for (const tspan of node.querySelectorAll('tspan')) {
+        tspan.setAttribute('x', Number(tspan.getAttribute('x')) + dx);
+      }
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function pointSegmentDistance(point, segment) {
+      const dx = segment.x2 - segment.x1;
+      const dy = segment.y2 - segment.y1;
+      const lengthSq = dx * dx + dy * dy;
+      if (!lengthSq) return Math.hypot(point.x - segment.x1, point.y - segment.y1);
+      const t = clamp(((point.x - segment.x1) * dx + (point.y - segment.y1) * dy) / lengthSq, 0, 1);
+      return Math.hypot(point.x - (segment.x1 + t * dx), point.y - (segment.y1 + t * dy));
+    }
+
+    function lineIntersectsBox(segment, box, padding) {
+      const padded = {
+        x: box.x - padding,
+        y: box.y - padding,
+        width: box.width + padding * 2,
+        height: box.height + padding * 2
+      };
+      const points = [
+        {x: padded.x, y: padded.y},
+        {x: padded.x + padded.width, y: padded.y},
+        {x: padded.x + padded.width, y: padded.y + padded.height},
+        {x: padded.x, y: padded.y + padded.height}
+      ];
+      const center = {x: padded.x + padded.width / 2, y: padded.y + padded.height / 2};
+      if (
+        segment.x1 >= padded.x && segment.x1 <= padded.x + padded.width &&
+        segment.y1 >= padded.y && segment.y1 <= padded.y + padded.height
+      ) return true;
+      if (
+        segment.x2 >= padded.x && segment.x2 <= padded.x + padded.width &&
+        segment.y2 >= padded.y && segment.y2 <= padded.y + padded.height
+      ) return true;
+      return [center, ...points].some(point => pointSegmentDistance(point, segment) < padding);
+    }
+
+    function protectedAxisSegments(scene) {
+      const vertices = scene.box.projectedVertices;
+      if (!vertices) return [];
+      const pairs = [
+        ['leftBottom', 'bottomFront'],
+        ['bottomFront', 'rightBottom'],
+        ['leftBottom', 'leftTop']
+      ];
+      return pairs.map(([from, to]) => ({
+        x1: vertices[from].x,
+        y1: vertices[from].y,
+        x2: vertices[to].x,
+        y2: vertices[to].y,
+        role: 'axis-spine'
+      }));
+    }
+
+    function axisTickPoint(axis, tick) {
+      if (axis.tickGeometry?.fixed) {
+        const point = {
+          pc1: axis.tickGeometry.fixed.pc1 ?? 0,
+          pc2: axis.tickGeometry.fixed.pc2 ?? 0,
+          pc3: axis.tickGeometry.fixed.pc3 ?? 0
+        };
+        point[axis.dimension] = tick.value;
+        return point;
+      }
+      if (axis.dimension === 'pc1') return {pc1: tick.value, pc2: -2, pc3: -2};
+      if (axis.dimension === 'pc2') return {pc1: -2, pc2: tick.value, pc3: -2};
+      return {pc1: -2, pc2: -2, pc3: tick.value};
+    }
+
+    function resolveTickAgainstGeometry(node, placement, geometry) {
+      const nudge = placement?.nudge || {x: 0, y: 0};
+      const minGap = placement?.minGap ?? 4;
+      const maxSteps = placement?.maxSteps ?? 0;
+      for (let step = 0; step < maxSteps; step += 1) {
+        const box = nodeBox(node);
+        const collides = geometry.some(segment => lineIntersectsBox(segment, box, minGap));
+        if (!collides) return;
+        shiftText(node, nudge.x || 0, nudge.y || 0);
+      }
+    }
+
+    function mulberry32(seed) {
+      return function next() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function normalish(rng) {
+      return (rng() + rng() + rng() + rng() - 2) / 2;
+    }
+
+    function domainValue(scene, token, dimension) {
+      if (typeof token === 'number') return token;
+      const domain = scene.domains[dimension];
+      if (token === 'min') return domain[0];
+      if (token === 'max') return domain[1];
+      return 0;
+    }
+
+    function pointFromTokens(scene, tokens) {
+      return {
+        pc1: domainValue(scene, tokens[0], 'pc1'),
+        pc2: domainValue(scene, tokens[1], 'pc2'),
+        pc3: domainValue(scene, tokens[2], 'pc3')
+      };
+    }
+
+    function pointFromArray(values) {
+      return {pc1: values[0], pc2: values[1], pc3: values[2]};
+    }
+
+    function project(scene, point) {
+      const projection = scene.projection;
+      if (projection.type === 'trilinearProjectedCube') {
+        return projectTrilinearCube(scene, point);
+      }
+      const corner = projection.corner;
+      const domainCorner = projection.domainCorner;
+      const domains = scene.domains;
+      const nx = (point.pc1 - domainCorner.pc1) / (domains.pc1[1] - domains.pc1[0]);
+      const ny = (point.pc2 - domainCorner.pc2) / (domains.pc2[1] - domains.pc2[0]);
+      const nz = (point.pc3 - domainCorner.pc3) / (domains.pc3[1] - domains.pc3[0]);
+      return {
+        x: corner.x + nx * projection.basis.pc1.x + ny * projection.basis.pc2.x + nz * projection.basis.pc3.x,
+        y: corner.y + nx * projection.basis.pc1.y + ny * projection.basis.pc2.y + nz * projection.basis.pc3.y,
+        depth: nx + ny + nz * 0.35
+      };
+    }
+
+    function mix(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function cubeVertex(projection, pc1Token, pc2Token, pc3Token) {
+      return projection.vertices[`pc1${pc1Token}_pc2${pc2Token}_pc3${pc3Token}`];
+    }
+
+    function projectTrilinearCube(scene, point) {
+      const projection = scene.projection;
+      const domains = scene.domains;
+      const u = (point.pc1 - domains.pc1[0]) / (domains.pc1[1] - domains.pc1[0]);
+      const v = (point.pc2 - domains.pc2[0]) / (domains.pc2[1] - domains.pc2[0]);
+      const w = (point.pc3 - domains.pc3[0]) / (domains.pc3[1] - domains.pc3[0]);
+      const v000 = cubeVertex(projection, 'Min', 'Min', 'Min');
+      const v001 = cubeVertex(projection, 'Min', 'Min', 'Max');
+      const v010 = cubeVertex(projection, 'Min', 'Max', 'Min');
+      const v011 = cubeVertex(projection, 'Min', 'Max', 'Max');
+      const v100 = cubeVertex(projection, 'Max', 'Min', 'Min');
+      const v101 = cubeVertex(projection, 'Max', 'Min', 'Max');
+      const v110 = cubeVertex(projection, 'Max', 'Max', 'Min');
+      const v111 = cubeVertex(projection, 'Max', 'Max', 'Max');
+
+      function coord(key) {
+        const c00 = mix(v000[key], v100[key], u);
+        const c01 = mix(v001[key], v101[key], u);
+        const c10 = mix(v010[key], v110[key], u);
+        const c11 = mix(v011[key], v111[key], u);
+        const c0 = mix(c00, c10, v);
+        const c1 = mix(c01, c11, v);
+        return mix(c0, c1, w);
+      }
+
+      return {x: coord('x'), y: coord('y'), depth: u + v + w * 0.35};
+    }
+
+    function pointForPlane(scene, plane, uValue, vValue) {
+      const point = {
+        pc1: plane.fixed.pc1 ?? 0,
+        pc2: plane.fixed.pc2 ?? 0,
+        pc3: plane.fixed.pc3 ?? 0
+      };
+      point[plane.u] = uValue;
+      point[plane.v] = vValue;
+      return point;
+    }
+
+    function isBoundaryValue(domain, value) {
+      return value === domain[0] || value === domain[1];
+    }
+
+    function gridFamiliesForPlane(plane) {
+      if (plane.families) return plane.families;
+      const values = plane.values || [-2, 0, 2];
+      const includeBoundary = plane.drawBoundary !== false;
+      return [
+        {id: `${plane.u}-guides`, axis: plane.u, values, includeBoundary},
+        {id: `${plane.v}-guides`, axis: plane.v, values, includeBoundary}
+      ];
+    }
+
+    function valuesForGridFamily(scene, plane, family) {
+      const domain = scene.domains[family.axis];
+      const values = family.values || plane.values || domain;
+      if (family.includeBoundary === false) {
+        return values.filter(value => !isBoundaryValue(domain, value));
+      }
+      return values;
+    }
+
+    function renderGeneratedGridPlane(parent, scene, plane) {
+      const domains = scene.domains;
+      for (const family of gridFamiliesForPlane(plane)) {
+        const constantAxis = family.axis;
+        const varyingAxis = family.along || (constantAxis === plane.u ? plane.v : plane.u);
+        const constantDomain = domains[constantAxis];
+        const varyingDomain = domains[varyingAxis];
+        if (!constantDomain || !varyingDomain) continue;
+
+        for (const value of valuesForGridFamily(scene, plane, family)) {
+          const start = {
+            pc1: plane.fixed.pc1 ?? 0,
+            pc2: plane.fixed.pc2 ?? 0,
+            pc3: plane.fixed.pc3 ?? 0
+          };
+          const end = {...start};
+          start[constantAxis] = value;
+          end[constantAxis] = value;
+          start[varyingAxis] = varyingDomain[0];
+          end[varyingAxis] = varyingDomain[1];
+          const a = project(scene, start);
+          const b = project(scene, end);
+          line(parent, {
+            x1: a.x,
+            y1: a.y,
+            x2: b.x,
+            y2: b.y,
+            stroke: family.stroke || scene.grid.stroke,
+            strokeWidth: family.strokeWidth || scene.grid.strokeWidth,
+            dasharray: family.dasharray || scene.grid.dasharray,
+            opacity: family.opacity ?? scene.grid.opacity,
+            role: `grid-line ${plane.id}`,
+            plane: plane.id,
+            family: family.id || `${constantAxis}-guides`,
+            axis: constantAxis,
+            value,
+            boundary: isBoundaryValue(constantDomain, value)
+          });
+        }
+      }
+    }
+
+    function validateGeneratedGrid(svg, scene) {
+      const expected = {};
+      for (const plane of scene.grid.generatedPlanes || []) {
+        for (const family of gridFamiliesForPlane(plane)) {
+          const familyId = family.id || `${family.axis}-guides`;
+          expected[`${plane.id}/${familyId}`] = valuesForGridFamily(scene, plane, family).length;
+        }
+      }
+      const actual = {};
+      svg.querySelectorAll('[data-role^="grid-line"][data-plane][data-family]').forEach(node => {
+        const key = `${node.getAttribute('data-plane')}/${node.getAttribute('data-family')}`;
+        actual[key] = (actual[key] || 0) + 1;
+      });
+      const mismatches = Object.entries(expected).filter(([key, count]) => actual[key] !== count);
+      svg.setAttribute('data-grid-validation', mismatches.length ? 'mismatch' : 'ok');
+      if (mismatches.length) {
+        console.warn('3D grid count mismatch', {expected, actual, mismatches});
+      }
+    }
+
+    function validateTickPairs(svg, scene) {
+      const expected = [];
+      for (const axis of scene.axes || []) {
+        for (const tick of axis.ticks || []) {
+          if (tick.label !== undefined && tick.label !== '') {
+            expected.push(`${axis.id}/${tick.value}`);
+          }
+        }
+      }
+      const labels = new Set();
+      const marks = new Set();
+      svg.querySelectorAll('[data-role="tick-label"][data-axis][data-value]').forEach(node => {
+        labels.add(`${node.getAttribute('data-axis')}/${node.getAttribute('data-value')}`);
+      });
+      svg.querySelectorAll('[data-role="axis-tick-mark"][data-axis][data-value]').forEach(node => {
+        marks.add(`${node.getAttribute('data-axis')}/${node.getAttribute('data-value')}`);
+      });
+      const missingLabels = expected.filter(key => !labels.has(key));
+      const missingMarks = expected.filter(key => !marks.has(key));
+      const mismatches = [...missingLabels.map(key => `missing-label:${key}`), ...missingMarks.map(key => `missing-mark:${key}`)];
+      svg.setAttribute('data-tick-pair-validation', mismatches.length ? 'mismatch' : 'ok');
+      if (mismatches.length) {
+        console.warn('Tick label/mark pair mismatch', {expected, labels: [...labels], marks: [...marks], mismatches});
+      }
+    }
+
+    function renderPlaneFill(parent, scene, plane) {
+      const domains = scene.domains;
+      const uDomain = domains[plane.u];
+      const vDomain = domains[plane.v];
+      const corners = [
+        pointForPlane(scene, plane, uDomain[0], vDomain[0]),
+        pointForPlane(scene, plane, uDomain[1], vDomain[0]),
+        pointForPlane(scene, plane, uDomain[1], vDomain[1]),
+        pointForPlane(scene, plane, uDomain[0], vDomain[1])
+      ].map(point => project(scene, point));
+      polygon(parent, {
+        points: corners.map(point => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(' '),
+        fill: plane.fill,
+        opacity: plane.opacity,
+        role: `grid-plane-fill ${plane.id}`
+      });
+    }
+
+    function makePath(scene, points) {
+      return points.map((point, index) => {
+        const projected = project(scene, point);
+        return `${index === 0 ? 'M' : 'L'}${projected.x.toFixed(1)} ${projected.y.toFixed(1)}`;
+      }).join(' ');
+    }
+
+    function interpolate(points, stepsPerSegment = 6) {
+      const output = [];
+      for (let index = 0; index < points.length - 1; index += 1) {
+        const a = points[index];
+        const b = points[index + 1];
+        for (let step = 0; step < stepsPerSegment; step += 1) {
+          const t = step / stepsPerSegment;
+          output.push({
+            pc1: a.pc1 + (b.pc1 - a.pc1) * t,
+            pc2: a.pc2 + (b.pc2 - a.pc2) * t,
+            pc3: a.pc3 + (b.pc3 - a.pc3) * t
+          });
+        }
+      }
+      output.push(points[points.length - 1]);
+      return output;
+    }
+
+    function generatedTrial(meanPoints, trajectory, trialIndex) {
+      const rng = mulberry32(trajectory.seed + trialIndex * 97);
+      const jitter = trajectory.jitter || {};
+      let drift1 = normalish(rng) * (jitter.pc1 || 0.15) * 0.45;
+      let drift2 = normalish(rng) * (jitter.pc2 || 0.15) * 0.45;
+      let drift3 = normalish(rng) * (jitter.pc3 || 0.15) * 0.45;
+      return interpolate(meanPoints, 5).map((point, index) => {
+        const phase = index / Math.max(1, meanPoints.length - 1);
+        drift1 = drift1 * 0.82 + normalish(rng) * (jitter.pc1 || 0.15) * 0.28;
+        drift2 = drift2 * 0.82 + normalish(rng) * (jitter.pc2 || 0.15) * 0.28;
+        drift3 = drift3 * 0.82 + normalish(rng) * (jitter.pc3 || 0.15) * 0.28;
+        const wiggle = Math.sin(index * 0.76 + rng() * 2.4);
+        return {
+          pc1: point.pc1 + drift1 + wiggle * 0.06,
+          pc2: point.pc2 + drift2 - Math.cos(index * 0.63) * 0.05,
+          pc3: point.pc3 + drift3 + Math.sin(phase * Math.PI) * normalish(rng) * 0.10
+        };
+      });
+    }
+
+    function renderLegend(svg, panel, defaults) {
+      const legend = panel.legend;
+      for (const item of legend.items) {
+        if (item.marker === 'circle') {
+          circle(svg, {cx: item.x, cy: legend.y - 2, r: 3.5, fill: item.color, role: 'legend-marker'});
+        } else {
+          line(svg, {x1: item.x, y1: legend.y - 2, x2: item.x + 18, y2: legend.y - 2, stroke: item.color, strokeWidth: 2.4, role: 'legend-line'});
+        }
+        svg.appendChild(textNode({text: item.label, x: item.x + 26, y: legend.y + 2, fontSize: 12, role: 'legend-label'}, defaults));
+      }
+    }
+
+    function renderBoxAndGrid(svg, scene) {
+      const gridLayer = svgNode('g', {'data-role': 'grid-layer'});
+      const boxLayer = svgNode('g', {'data-role': 'box-layer'});
+      svg.appendChild(gridLayer);
+      svg.appendChild(boxLayer);
+
+      if (scene.grid.planeFills) {
+        for (const plane of scene.grid.planeFills) {
+          renderPlaneFill(gridLayer, scene, plane);
+        }
+      }
+
+      if (scene.grid.generatedPlanes) {
+        for (const plane of scene.grid.generatedPlanes) {
+          renderGeneratedGridPlane(gridLayer, scene, plane);
+        }
+        validateGeneratedGrid(svg, scene);
+      } else if (scene.grid.projectedPlanes) {
+        for (const plane of scene.grid.projectedPlanes) {
+          for (const segment of plane.lines) {
+            line(gridLayer, {
+              x1: segment.x1,
+              y1: segment.y1,
+              x2: segment.x2,
+              y2: segment.y2,
+              stroke: segment.stroke || scene.grid.stroke,
+              strokeWidth: segment.strokeWidth || scene.grid.strokeWidth,
+              dasharray: segment.dasharray || scene.grid.dasharray,
+              opacity: segment.opacity,
+              role: `grid-line ${plane.id}`
+            });
+          }
+        }
+      } else if (scene.grid.projectedSegments) {
+        for (const segment of scene.grid.projectedSegments) {
+          line(gridLayer, {
+            x1: segment.x1,
+            y1: segment.y1,
+            x2: segment.x2,
+            y2: segment.y2,
+            stroke: scene.grid.stroke,
+            strokeWidth: scene.grid.strokeWidth,
+            dasharray: scene.grid.dasharray,
+            role: 'grid-line'
+          });
+        }
+      } else {
+      for (const plane of scene.grid.planes) {
+        if (plane.id === 'pc1-pc2-bottom') {
+          for (const pc1 of plane.pc1Values) {
+            const a = project(scene, {pc1, pc2: scene.domains.pc2[0], pc3: plane.pc3});
+            const b = project(scene, {pc1, pc2: scene.domains.pc2[1], pc3: plane.pc3});
+            line(gridLayer, {x1: a.x, y1: a.y, x2: b.x, y2: b.y, stroke: scene.grid.stroke, strokeWidth: scene.grid.strokeWidth, dasharray: scene.grid.dasharray, role: 'grid-line'});
+          }
+          for (const pc2 of plane.pc2Values) {
+            const a = project(scene, {pc1: scene.domains.pc1[0], pc2, pc3: plane.pc3});
+            const b = project(scene, {pc1: scene.domains.pc1[1], pc2, pc3: plane.pc3});
+            line(gridLayer, {x1: a.x, y1: a.y, x2: b.x, y2: b.y, stroke: scene.grid.stroke, strokeWidth: scene.grid.strokeWidth, dasharray: scene.grid.dasharray, role: 'grid-line'});
+          }
+        }
+        if (plane.id === 'pc1-pc3-back') {
+          for (const pc1 of plane.pc1Values) {
+            const a = project(scene, {pc1, pc2: plane.pc2, pc3: scene.domains.pc3[0]});
+            const b = project(scene, {pc1, pc2: plane.pc2, pc3: scene.domains.pc3[1]});
+            line(gridLayer, {x1: a.x, y1: a.y, x2: b.x, y2: b.y, stroke: scene.grid.stroke, strokeWidth: scene.grid.strokeWidth, dasharray: scene.grid.dasharray, role: 'grid-line'});
+          }
+          for (const pc3 of plane.pc3Values) {
+            const a = project(scene, {pc1: scene.domains.pc1[0], pc2: plane.pc2, pc3});
+            const b = project(scene, {pc1: scene.domains.pc1[1], pc2: plane.pc2, pc3});
+            line(gridLayer, {x1: a.x, y1: a.y, x2: b.x, y2: b.y, stroke: scene.grid.stroke, strokeWidth: scene.grid.strokeWidth, dasharray: scene.grid.dasharray, role: 'grid-line'});
+          }
+        }
+      }
+      }
+
+      if (scene.box.projectedVertices && scene.box.projectedEdges) {
+        for (const edge of scene.box.projectedEdges) {
+          const a = scene.box.projectedVertices[edge[0]];
+          const b = scene.box.projectedVertices[edge[1]];
+          line(boxLayer, {x1: a.x, y1: a.y, x2: b.x, y2: b.y, stroke: scene.box.stroke, strokeWidth: scene.box.strokeWidth, role: 'box-edge'});
+        }
+        return;
+      }
+      for (const edge of scene.box.edges) {
+        const a = project(scene, pointFromTokens(scene, edge.slice(0, 3)));
+        const b = project(scene, pointFromTokens(scene, edge.slice(3, 6)));
+        line(boxLayer, {x1: a.x, y1: a.y, x2: b.x, y2: b.y, stroke: scene.box.stroke, strokeWidth: scene.box.strokeWidth, role: 'box-edge'});
+      }
+    }
+
+    function renderAxes(svg, scene, defaults) {
+      const tickLayer = svgNode('g', {'data-role': 'axis-ticks'});
+      svg.appendChild(tickLayer);
+      const axisGeometry = protectedAxisSegments(scene);
+      for (const axis of scene.axes) {
+        for (const tick of axis.ticks) {
+          const point = axisTickPoint(axis, tick);
+          const projectedTick = project(scene, point);
+          const p = tick.markAnchor || (tick.x !== undefined && tick.y !== undefined ? {x: tick.x, y: tick.y} : projectedTick);
+          const markVector = tick.markVector || axis.tickGeometry?.markVector || {x: 0, y: 0};
+          const labelOffset = axis.tickGeometry?.labelOffset || (axis.dimension === 'pc3' ? {x: -12, y: 4} : axis.dimension === 'pc2' ? {x: -8, y: 18} : {x: 0, y: 20});
+          const shouldRenderTickMark = tick.mark !== false && (axis.tickGeometry || tick.markAnchor || tick.label !== undefined);
+          if (shouldRenderTickMark) {
+            const tickMark = {
+              x1: p.x,
+              y1: p.y,
+              x2: p.x + markVector.x,
+              y2: p.y + markVector.y
+            };
+            line(tickLayer, {
+              ...tickMark,
+              stroke: '#111111',
+              strokeWidth: 1,
+              role: 'axis-tick-mark',
+              axis: axis.id,
+              value: tick.value,
+              boundary: false
+            });
+            axisGeometry.push({...tickMark, role: 'axis-tick-mark'});
+          }
+          const labelAnchor = tick.labelAnchor || {
+            x: p.x + labelOffset.x,
+            y: p.y + labelOffset.y
+          };
+          const tickText = textNode({
+            text: tick.label,
+            x: labelAnchor.x,
+            y: labelAnchor.y,
+            fontSize: axis.tickGeometry?.labelFontSize || 14,
+            anchor: 'middle',
+            role: 'tick-label'
+          }, defaults);
+          tickText.setAttribute('data-axis', axis.id);
+          tickText.setAttribute('data-value', tick.value);
+          tickText.setAttribute('data-source-calibrated', tick.labelAnchor ? 'true' : 'false');
+          tickLayer.appendChild(tickText);
+          if (!tick.labelAnchor?.locked) {
+            resolveTickAgainstGeometry(tickText, axis.tickLabelPlacement, axisGeometry);
+          }
+        }
+        const anchor = axis.label.x !== undefined && axis.label.y !== undefined
+          ? {x: axis.label.x, y: axis.label.y}
+          : project(scene, pointFromArray(axis.label.anchorPoint));
+        tickLayer.appendChild(textNode({
+          text: axis.label.text,
+          x: anchor.x + (axis.label.dx || 0),
+          y: anchor.y + (axis.label.dy || 0),
+          fontSize: axis.label.fontSize,
+          anchor: axis.label.anchor,
+          role: 'axis-title'
+        }, defaults));
+      }
+      validateTickPairs(svg, scene);
+    }
+
+    function renderTrajectories(svg, scene) {
+      const faintLayer = svgNode('g', {'data-role': 'trajectory-cloud'});
+      const meanLayer = svgNode('g', {'data-role': 'mean-trajectories'});
+      const markerLayer = svgNode('g', {'data-role': 'timepoints'});
+      svg.appendChild(faintLayer);
+      svg.appendChild(meanLayer);
+      svg.appendChild(markerLayer);
+
+      const timepointRefs = new Map();
+      for (const trajectory of scene.trajectories) {
+        const meanPoints = trajectory.mean.map(pointFromArray);
+        for (let index = 0; index < trajectory.count; index += 1) {
+          const trialPoints = generatedTrial(meanPoints, trajectory, index);
+          path(faintLayer, {
+            d: makePath(scene, trialPoints),
+            stroke: trajectory.color,
+            strokeWidth: trajectory.faintStrokeWidth,
+            opacity: trajectory.faintOpacity,
+            role: 'trial-trajectory'
+          });
+        }
+      }
+
+      const means = scene.trajectories.map(trajectory => ({
+        trajectory,
+        meanPoints: trajectory.mean.map(pointFromArray),
+        depth: trajectory.mean.reduce((sum, point) => sum + project(scene, pointFromArray(point)).depth, 0) / trajectory.mean.length
+      })).sort((a, b) => a.depth - b.depth);
+
+      for (const item of means) {
+        path(meanLayer, {
+          d: makePath(scene, interpolate(item.meanPoints, 8)),
+          stroke: item.trajectory.color,
+          strokeWidth: item.trajectory.meanStrokeWidth,
+          opacity: 1,
+          role: 'mean-trajectory'
+        });
+        for (const marker of item.trajectory.timepoints) {
+          const point = item.meanPoints[marker.pointIndex];
+          const p = project(scene, point);
+          circle(markerLayer, {cx: p.x, cy: p.y, r: 4.2, fill: '#000000', stroke: '#000000', strokeWidth: 1, role: 'timepoint'});
+          timepointRefs.set(`timepoint:${item.trajectory.id}:${marker.id}`, {point, projected: p});
+        }
+      }
+      return timepointRefs;
+    }
+
+    function renderAnnotations(svg, panel, timepointRefs, defaults) {
+      for (const annotation of panel.scene.annotations) {
+        const ref = timepointRefs.get(annotation.anchorTo);
+        if (!ref) continue;
+        svg.appendChild(textNode({
+          text: annotation.text,
+          x: ref.projected.x + (annotation.dx || 0),
+          y: ref.projected.y + (annotation.dy || 0),
+          fontSize: annotation.fontSize || 12,
+          role: 'annotation-label'
+        }, defaults));
+      }
+    }
+
+    function renderPanel(svg, panel, defaults) {
+      svg.appendChild(textNode({...panel.label, role: 'panel-label'}, defaults));
+      svg.appendChild(textNode({...panel.title, role: 'panel-title'}, defaults));
+      renderLegend(svg, panel, defaults);
+      renderBoxAndGrid(svg, panel.scene);
+      const timepointRefs = renderTrajectories(svg, panel.scene);
+      renderAxes(svg, panel.scene, defaults);
+      renderAnnotations(svg, panel, timepointRefs, defaults);
+    }
+
+    function render(spec) {
+      const frame = byId('frame');
+      const surface = byId('surface');
+      const reference = byId('reference');
+      const defaults = spec.typography || {};
+
+      byId('title').textContent = spec.id;
+      document.title = `${spec.id} reconstruction`;
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      frame.style.background = spec.canvas.background || '#ffffff';
+      surface.innerHTML = '';
+      reference.src = spec.source.path;
+
+      const svg = svgNode('svg', {
+        width: spec.canvas.width,
+        height: spec.canvas.height,
+        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
+        role: 'img',
+        'aria-label': `${spec.id} generated reconstruction`
+      });
+      surface.appendChild(svg);
+
+      for (const panel of spec.panels) renderPanel(svg, panel, defaults);
+    }
+
+    byId('generatedButton').onclick = () => {
+      byId('frame').classList.remove('show-reference');
+      byId('generatedButton').classList.add('active');
+      byId('referenceButton').classList.remove('active');
+    };
+
+    byId('referenceButton').onclick = () => {
+      byId('frame').classList.add('show-reference');
+      byId('referenceButton').classList.add('active');
+      byId('generatedButton').classList.remove('active');
+    };
+
+    fetch(SPEC_URL)
+      .then(response => response.json())
+      .then(render)
+      .catch(error => {
+        byId('surface').textContent = `Failed to load ${SPEC_URL}: ${error.message}`;
+      });
+  </script>
+</body>
+</html>

@@ -2,6 +2,10 @@
 
 Use this contract when converting a raster scientific figure into configurable HTML and JSON.
 
+Read `semantic-figure-ir.md` alongside this contract. The JSON may be
+panel-specific, but it must preserve semantic relationships between data,
+transforms, layout objects, marks, labels, and validation constraints.
+
 ## JSON Shape
 
 Minimum top-level fields:
@@ -24,6 +28,14 @@ Minimum top-level fields:
     "fontFamily": "Arial, Helvetica, sans-serif",
     "defaultSize": 12,
     "color": "#111111",
+    "fontImports": [
+      "https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&display=swap"
+    ],
+    "fontFaces": [
+      {"family": "FigureSans", "weight": 400, "src": "./fonts/FigureSans-Regular.woff2"},
+      {"family": "FigureSans", "weight": 700, "src": "./fonts/FigureSans-Bold.woff2"}
+    ],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Source Sans 3", "Roboto", "Noto Sans"],
     "calibration": {
       "fontStretch": "normal",
       "letterSpacing": 0,
@@ -35,6 +47,12 @@ Minimum top-level fields:
   "confidence": []
 }
 ```
+
+`fontImports` is for lightweight browser-based experimentation with external
+CSS font providers such as Google Fonts. `fontFaces` is for reproducible local
+or adjacent font files when a typeface has been selected. Do not introduce a
+build system only to test fonts; use browser-native font loading and SVG text
+measurement first.
 
 ## Panel Shape
 
@@ -48,7 +66,10 @@ Represent each subpanel explicitly. For a single cropped panel, use one item in 
   "bbox": {"x": 0, "y": 0, "width": 400, "height": 300},
   "plot": {
     "dataBbox": {"x": 64, "y": 48, "width": 300, "height": 210},
-    "axes": {"xAxisY": 258, "yAxisX": 64, "xTickLength": 6, "yTickLength": 6},
+    "axes": {
+      "xAxis": {"id": "panel-a-x-axis", "line": {"x1": 64, "y1": 258, "x2": 364, "y2": 258}, "tickLength": 6},
+      "yAxis": {"id": "panel-a-y-axis", "line": {"x1": 64, "y1": 48, "x2": 64, "y2": 258}, "tickLength": 6}
+    },
     "x": {
       "scale": "linear",
       "domain": [0, 10],
@@ -96,6 +117,120 @@ Define named transforms before rendering marks:
 - `colorScale.domain` maps heatmaps and colorbars.
 
 Avoid mixing hard-coded pixel marks with data-space marks unless the mark is truly an annotation. Ticks, event lines, and data marks should share the same transform.
+
+### 3D Scientific Plots
+
+Recognize 3D plots from visual cues such as three nonparallel labeled axes,
+isometric or perspective box frames, oblique grid planes, tick labels attached
+to multiple axis directions, and data paths or markers that overlap within a
+projected volume. Do not require the user to identify a panel as 3D.
+
+For static publication-style 3D plots made of axes, grid lines, trajectories,
+markers, and labels, prefer semantic 3D data rendered into SVG through an
+explicit projection function. Reserve WebGL or Three.js for genuinely complex
+surfaces, dense point clouds, lighting, meshes, or interactive rotation.
+
+Represent 3D scenes with explicit camera or projection metadata:
+
+```json
+{
+  "scene": {
+    "projection": {
+      "type": "orthographicBasis",
+      "corner": {"x": 58, "y": 327},
+      "domainCorner": {"pc1": -2, "pc2": -2, "pc3": -2},
+      "basis": {
+        "pc1": {"x": 258, "y": 30},
+        "pc2": {"x": 145, "y": 90},
+        "pc3": {"x": 0, "y": -184}
+      }
+    },
+    "domains": {"pc1": [-2, 2], "pc2": [-2, 2], "pc3": [-2, 2]},
+    "trajectories": [{"points": [[-1.5, -1.6, -0.3], [0.7, -1.1, 1.8]]}]
+  }
+}
+```
+
+`fontImports` is for lightweight browser-based experimentation with external
+CSS font providers such as Google Fonts. `fontFaces` is for reproducible local
+or adjacent font files when a typeface has been selected. Do not introduce a
+build system only to test fonts; use browser-native font loading and SVG text
+measurement first.
+
+Axes, grid planes, trajectories, markers, and annotations must use the same
+3D-to-2D projection. Depth-sort generated marks when overlap matters: back grid
+and box edges first, faint trial clouds, mean trajectories, timepoint markers,
+then text labels. Labels should anchor to projected 3D points or axis objects
+and then participate in the normal text-collision pass.
+
+When using source-calibrated projected grid segments, avoid segments that
+duplicate solid box edges or accidentally close into polygons. Grid lines should
+read as independent faint plane guides unless the source explicitly shows a
+closed projected face.
+
+Prefer named 3D grid planes over a flat list of projected line segments. For
+example, encode separate `floor`, `backWall`, and `sideWall` grid groups so each
+axis pair has its own Cartesian grid. Inventory the source grid before tuning:
+for every plane, count visible interior guides separately from boundary-aligned
+guides that are merged with or hidden under box edges. Encode grid lines as
+per-family values, such as independent `pc1`, `pc2`, and `pc3` guide families,
+instead of one shared plane-level value list. Each family should state whether
+domain-boundary values are included, and generated SVG lines should expose
+stable plane/family attributes so count validation can catch drift. A 3D
+state-space panel with PC1, PC2, and PC3 axes should not collapse into one wall
+plus a triangular base.
+
+If the source uses faint face shading, encode plane fills separately from grid
+lines and generate the fill polygon from the same 3D projection. Do not bake the
+shading into arbitrary background shapes. Tick labels in 3D plots are layout
+text: allow source-calibrated text positions or offsets from projected ticks so
+labels do not collide with each other, axis titles, or spines.
+
+3D tick labels should be placed by semantic layout rules, not by one-shot
+coordinates alone. Treat axis spines and tick marks as protected geometry with
+padded hit zones. Treat faint grid lines and trajectory clouds as non-protected
+unless the source clearly reserves label space around them. Tick labels may use
+source-calibrated initial positions, but renderers should measure the final text
+box and apply a constrained outward nudge if it intersects protected axis
+geometry:
+
+```json
+{
+  "axis": {
+    "id": "pc1",
+    "tickLabelPlacement": {
+      "avoid": ["axis-spine"],
+      "minGap": 5,
+      "nudge": {"x": 8, "y": 7},
+      "maxSteps": 6
+    }
+  }
+}
+```
+
+3D axes with visible tick labels should also render visible tick marks unless
+the source suppresses them. Store tick geometry as a projected tick anchor, a
+short `markVector`, and a label offset or outward normal. The label should be
+placed from the tick mark first; collision correction is a secondary adjustment,
+not the primary placement mechanism.
+
+When a source-fitted frame or projection still does not reproduce the source's
+tick text positions, keep the numeric tick `value` semantic but add separate
+source-calibrated `markAnchor` and/or `labelAnchor` fields. Do not force tick
+labels through one shared offset vector if the source clearly uses
+axis-specific manual or backend-specific layout. Locked label anchors should be
+recorded as measured source layout, not as inferred data geometry.
+
+Treat each tick as a paired object. If the source has both tick labels and tick
+marks, every encoded tick with a label must render a corresponding mark, and
+every rendered mark should be associated with the same axis/value as the label.
+Renderers should expose stable axis/value attributes for both nodes and validate
+that labeled ticks have one-to-one mark/label pairs. A source-calibrated label
+must not leave its mark behind on an older inferred projection anchor.
+
+Use semantic collision groups and priorities rather than collision-detecting
+all visible marks. Fixed structural geometry should remain fixed; layout text
+can move within source-faithful limits.
 
 ### Data Boxes Versus Axis Boxes
 
@@ -200,6 +335,116 @@ Do not place text with only top-left coordinates when alignment matters. Use:
 
 Separate semantically distinct labels even when they are visually grouped.
 
+## Typeface Matching
+
+Do not solve raster typography mismatch by applying one condensed or alternate
+font globally unless most source labels clearly use that face. Use a calibrated
+candidate workflow:
+
+1. Select representative source labels: panel letter, title, tick labels, axis
+   titles, legends, colorbar labels, table labels, and compact multiline text.
+2. Try likely scientific-paper sans faces first: Arial/Helvetica fallbacks,
+   Arimo, Liberation Sans, TeX Gyre Heros/Nimbus-like alternatives, Source Sans
+   3, Roboto, and Noto Sans.
+3. Compare browser-measured generated SVG text boxes with measured source text
+   boxes. Choose a panel-level default only when most labels improve.
+4. Use local fitting fields for outlier labels instead of distorting the whole
+   panel.
+
+Text objects may include:
+
+```json
+{
+  "id": "x-axis-title",
+  "text": "Time from light onset (s)",
+  "x": 291,
+  "y": 482,
+  "fontFamily": "Arimo",
+  "fontSize": 16,
+  "lineHeight": 1.05,
+  "letterSpacing": 0,
+  "targetWidth": 224,
+  "targetHeight": 18,
+  "fit": "scaleX",
+  "fitTolerancePx": 0.75,
+  "minScale": 0.65,
+  "maxScale": 1.35,
+  "sourceBox": {"x": 181, "y": 467, "width": 224, "height": 18}
+}
+```
+
+Supported fitting modes:
+
+- `scaleX`: horizontally scales the rendered text around its anchor point to
+  match `targetWidth`.
+- `textLength`: uses SVG `textLength`/`lengthAdjust` for browser-managed
+  width fitting.
+- `fontSize`: adjusts font size to match `targetHeight`; use sparingly because
+  it changes hierarchy.
+
+Renderers should wait for `document.fonts.ready`, measure text with
+`getBBox()` or `getComputedTextLength()`, and expose a QA report of generated
+versus `sourceBox` dimensions when source boxes are provided. Optional font
+metric libraries such as `opentype.js` can help inspect candidate fonts, but
+browser-measured SVG output is the source of truth for rendered HTML
+reconstructions. The shared template exposes `window.figureTextQa` whenever
+`sourceBox` fields are present, and `?fontQa=1` also scores
+`typography.fontCandidates` in `window.figureFontQa`.
+
+## Text Collision Rules
+
+Text overlap is a reconstruction failure for protected layout text. Axis
+titles, tick labels, colorbar titles, legend labels, table headers, and table
+cell labels must reserve space from each other with measured or estimated text
+boxes. Do not rely on a single fixed `x`/`y` offset when a label is visually
+attached to another text row.
+
+For axes with tick labels, model the axis title as anchored to a
+`tickLabelBand` rather than directly to the axis line whenever the source places
+the title below or beside tick labels:
+
+```json
+{
+  "xAxis": {
+    "line": {"x1": 64, "y1": 258, "x2": 364, "y2": 258},
+    "tickLabels": {
+      "fontSize": 12,
+      "dy": 18,
+      "minGap": 2,
+      "collision": {"strategy": "fit-or-stagger", "minScale": 0.72}
+    },
+    "label": {
+      "text": "Time from stimulus onset (ms)",
+      "anchorTo": "tickLabelBand",
+      "targetPoint": "bottom-center",
+      "anchorPoint": "top-center",
+      "dy": 7
+    }
+  }
+}
+```
+
+Renderers should measure SVG/DOM text boxes with the browser when possible. If
+adjacent tick labels overlap, first apply source-faithful local calibration such
+as `targetWidth`, `textLength`, `fontStretch`, or a smaller tick-label font.
+Only stagger, rotate, abbreviate, or suppress tick labels when the source uses
+that convention or when fitting would distort text beyond the declared
+`minScale`.
+
+For schematic timelines, event axes, or task diagrams, do not assume that tick
+positions are linearly spaced just because labels contain numeric values. If the
+source visually compresses or expands intervals, preserve semantics with
+`value`/`label` but encode source-derived visual anchors such as `x`, `y`, or
+`anchorTo` for ticks, guides, brackets, and phase boundaries. Renderers should
+prefer explicit visual anchors over numeric transforms for these schematic
+objects, while retaining the numeric values for editability and provenance.
+
+Table-like rows should separate shared row rules from individual cell
+boundaries. If the source shows strong horizontal rules but weak or absent
+vertical strokes, encode a row/band object with top and bottom rules plus
+optional separators and highlighted cells. Do not force every cell into an
+identical full-stroke rectangle.
+
 ## Provenance And Confidence
 
 Record uncertainty at the object level:
@@ -220,6 +465,12 @@ Prefer approximate data or a generation recipe over fake exact values. If a sour
 - Keep the source raster out of generated layers.
 - Put QA/reference source image behind a clearly labeled toggle or separate view.
 - Provide stable selectors: `data-panel-id`, `data-mark-id`, `data-role`.
+- Provide relationship selectors where applicable, such as `data-axis`,
+  `data-value`, `data-plane`, `data-family`, `data-series-id`, and
+  `data-anchor-to`.
+- Emit `data-*-validation="ok"` or `data-*-validation="mismatch"` for renderer
+  checks that can be evaluated in the browser, such as grid counts, protected
+  text collisions, and tick mark/label pairing.
 - Keep CSS local to the output file unless the user requests a bundled app.
 - Avoid external dependencies unless the figure genuinely needs them.
 
@@ -232,3 +483,7 @@ python3 -m http.server 8765
 ```
 
 Then open the output at native dimensions, or capture a headless screenshot. Check for blank canvases, missing JSON loads, broken source paths, overlapped labels, and accidental source-raster reuse.
+
+For existing generated outputs, use `scripts/validate_make_figure_outputs.py`
+to capture baselines and check structural relationship invariants before and
+after schema or renderer changes.

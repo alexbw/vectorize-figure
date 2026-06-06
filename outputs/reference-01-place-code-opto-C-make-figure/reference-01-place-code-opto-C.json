@@ -216,6 +216,32 @@
       }
     }
   ],
+  "semanticFigureIR": {
+    "version": "relationship-inventory.v1",
+    "status": "metadata-only migration; renderer-visible output must remain unchanged",
+    "coordinateSystems": [
+      "panel-c.event-time-domain",
+      "panel-c.rasterPlot.time-scale",
+      "panel-c.linePlot.time-scale"
+    ],
+    "layoutObjects": [
+      "panel-c.eventAnchor",
+      "panel-c.rasterPlot.axis",
+      "panel-c.linePlot.xAxis",
+      "panel-c.linePlot.yAxis",
+      "panel-c.groupLabels"
+    ],
+    "derivedRelationships": [
+      "raster event line, raster zero tick, line plot zero tick, and event annotation derive from the same event anchor",
+      "group labels and sample-size labels are separate layout objects because their centering differs",
+      "line plot marks and uncertainty bands share the linePlot time scale"
+    ],
+    "validationConstraints": [
+      "source raster is QA-only",
+      "event-aligned objects share one event anchor",
+      "visible axes render tick marks and tick labels"
+    ]
+  },
   "confidence": [
     {
       "target": "panel-c.rasterPlot.groups",

@@ -18,13 +18,14 @@ The generated candidate must not reuse the source raster as a visual layer. The 
 
 1. Inspect the source raster at native resolution. Determine whether the input is a single panel, multipanel figure, chart, schematic, heatmap, raster plot, microscopy image, or mixed figure.
 2. Create or infer a panel inventory with pixel dimensions, plot boxes, axes, labels, legends, colorbars, annotations, and visible mark types.
-3. Choose renderers by layer: SVG/DOM for axes, labels, legends, paths, brackets, and annotations; canvas for heatmaps, rasters, dense dots, generated textures, and pixel-native fields.
-4. Write the JSON spec first. Include dimensions, scales, domains, ticks, text, marks, renderer hints, style tokens, provenance, and confidence notes.
-5. Build the HTML so every visible element is generated from the JSON. Keep stable IDs/classes/data attributes for programmatic edits.
-6. Include an optional QA toggle that shows the source image separately from the generated candidate. Label it clearly as reference-only.
-7. Verify in a browser at source dimensions. Compare alignment, plot grammar, text hierarchy, mark density, axes, tick positions, and annotations. Iterate until the reconstruction is plausibly editable and visually close.
+3. Create a semantic relationship inventory: coordinate systems, layout objects, derived marks/text, source-calibrated anchors, and validation constraints.
+4. Choose renderers by layer: SVG/DOM for axes, labels, legends, paths, brackets, and annotations; canvas for heatmaps, rasters, dense dots, generated textures, and pixel-native fields.
+5. Write the JSON spec first. Include dimensions, scales, domains, ticks, text, marks, renderer hints, style tokens, provenance, and confidence notes.
+6. Build the HTML so every visible element is generated from the JSON. Keep stable IDs/classes/data attributes for programmatic edits.
+7. Include an optional QA toggle that shows the source image separately from the generated candidate. Label it clearly as reference-only.
+8. Verify in a browser at source dimensions. Compare alignment, plot grammar, text hierarchy, mark density, axes, tick positions, and annotations. Iterate until the reconstruction is plausibly editable and visually close.
 
-Read `references/reconstruction-contract.md` when implementing a nontrivial panel or when deciding schema fields.
+Read `references/semantic-figure-ir.md` and `references/reconstruction-contract.md` when implementing a nontrivial panel or when deciding schema fields.
 
 Use `assets/hybrid-renderer-template.html` as a starting point for new outputs when no better project-local renderer exists.
 
@@ -61,6 +62,7 @@ Before finishing, verify:
 - Native canvas/page dimensions match the source crop.
 - Plot boxes, tick labels, event anchors, and annotations share the same coordinate transforms.
 - Visible axes have editable ticks and labels unless intentionally suppressed.
+- Related objects remain linked in the rendered DOM, such as tick mark/label pairs, legends to series, colorbars to color scales, and grid lines to grid planes.
 - Text has explicit alignment and does not overlap neighboring labels.
 - The JSON can be edited to change labels, domains, colors, or data recipes without rewriting HTML.
 - Any QA reference layer is visually and semantically separate from the generated candidate.

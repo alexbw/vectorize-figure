@@ -224,6 +224,33 @@
       ]
     }
   ],
+  "semanticFigureIR": {
+    "version": "relationship-inventory.v1",
+    "status": "metadata-only migration; renderer-visible output must remain unchanged",
+    "coordinateSystems": [
+      "panel-a.shared-position-domain",
+      "panel-a.control-heatmap-image-grid",
+      "panel-a.opto-heatmap-image-grid",
+      "panel-a.color-scale"
+    ],
+    "layoutObjects": [
+      "panel-a.yAxis",
+      "panel-a.xAxis",
+      "panel-a.control-heatmap.axes",
+      "panel-a.opto-heatmap.axes",
+      "panel-a.colorbar"
+    ],
+    "derivedRelationships": [
+      "each heatmap canvas field derives from its heatmap recipe and dataBbox",
+      "x/y tick labels and marks derive from shared xAxis/yAxis domains",
+      "colorbar gradient and colorbar ticks derive from styles.colormap"
+    ],
+    "validationConstraints": [
+      "source raster is QA-only",
+      "heatmap axes remain separate from dataBbox when source shows gaps",
+      "colorbar owns its ticks and title"
+    ]
+  },
   "confidence": [
     {
       "target": "reference-01-place-code-opto-A",

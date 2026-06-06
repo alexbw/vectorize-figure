@@ -308,6 +308,31 @@
       ]
     }
   ],
+  "semanticFigureIR": {
+    "version": "relationship-inventory.v1",
+    "status": "metadata-only migration; renderer-visible output must remain unchanged",
+    "coordinateSystems": [
+      "panel-f.control-rate-map-image-grid",
+      "panel-f.opto-rate-map-image-grid",
+      "panel-f.color-scale"
+    ],
+    "layoutObjects": [
+      "panel-f.xAxis",
+      "panel-f.yAxis",
+      "panel-f.legend",
+      "panel-f.colorbar"
+    ],
+    "derivedRelationships": [
+      "rate-map canvas fields derive from editable map recipes and map bboxes",
+      "axis labels and ticks derive from map axes rather than page-positioned text",
+      "legend and colorbar are layout objects linked to map classes and color scale"
+    ],
+    "validationConstraints": [
+      "source raster is QA-only",
+      "colorbar owns ticks/title",
+      "axes remain editable and separate from dense canvas map layers"
+    ]
+  },
   "confidence": [
     {
       "target": "reference-01-place-code-opto-F",
