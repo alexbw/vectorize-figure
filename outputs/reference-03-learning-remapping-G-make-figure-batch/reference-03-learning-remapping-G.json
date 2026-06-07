@@ -1,0 +1,166 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-03-learning-remapping-G",
+  "source": {
+    "path": "../../../assets/reference/reference-03-learning-remapping-G-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Single text summary panel reconstructed from editable text and SVG rule marks. Source raster is only exposed by the HTML reference toggle."
+  },
+  "canvas": {
+    "width": 329,
+    "height": 498,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Roboto Condensed", "Nimbus Sans Narrow"],
+    "calibration": {
+      "fontStretch": "condensed-like",
+      "letterSpacing": 0,
+      "lineHeight": 1.22,
+      "notes": "Source resembles a narrow sans-serif. Browser-safe Arial is used with explicit sizes, weights, and line heights for a first-pass visual reconstruction."
+    }
+  },
+  "styleTokens": {
+    "purple": "#4b0099",
+    "black": "#111111",
+    "rule": "#8f8f8f"
+  },
+  "panels": [
+    {
+      "id": "panel-g",
+      "type": "statistical-summary",
+      "bbox": {"x": 0, "y": 0, "width": 329, "height": 498},
+      "label": {
+        "id": "panel-label",
+        "type": "text",
+        "text": "G",
+        "x": 9,
+        "y": 29,
+        "fontSize": 18,
+        "fontWeight": 700,
+        "anchor": "start",
+        "fill": "#000000",
+        "sourceBox": {"x": 8, "y": 13, "width": 14, "height": 18}
+      },
+      "title": {
+        "id": "panel-title",
+        "type": "text",
+        "text": "Statistical summary",
+        "x": 32,
+        "y": 29,
+        "fontSize": 16,
+        "fontWeight": 700,
+        "anchor": "start",
+        "fill": "#111111",
+        "sourceBox": {"x": 32, "y": 14, "width": 130, "height": 18}
+      },
+      "layoutObjects": [
+        {
+          "id": "section-stability",
+          "type": "textBlock",
+          "anchor": {"x": 36, "y": 79},
+          "lineGap": 23,
+          "lines": [
+            {"id": "stability-heading", "text": "Stability change across days", "fontSize": 14, "fontWeight": 700, "fill": "#4b0099"},
+            {"id": "stability-subheading", "text": "(linear mixed-effects model)", "fontSize": 14, "fontWeight": 400, "fill": "#4b0099"},
+            {"id": "stability-slope", "text": "Slope (\u0394r / day): -0.015", "fontSize": 14, "fontWeight": 400, "fill": "#111111", "dy": 51},
+            {"id": "stability-ci", "text": "95% CI: [-0.026, -0.004]", "fontSize": 14, "fontWeight": 400, "fill": "#111111"},
+            {"id": "stability-p", "text": "p = 0.009", "fontSize": 14, "fontWeight": 400, "fontStyle": "italic", "fill": "#4b0099"}
+          ],
+          "sourceEvidence": ["source-text-stability"],
+          "provenance": {"confidence": "high", "note": "Text transcribed from source; positions visually estimated."}
+        },
+        {
+          "id": "rule-after-stability",
+          "type": "rule",
+          "x1": 34,
+          "y1": 195,
+          "x2": 295,
+          "y2": 195,
+          "stroke": "#8f8f8f",
+          "strokeWidth": 1
+        },
+        {
+          "id": "section-day-comparison",
+          "type": "textBlock",
+          "anchor": {"x": 36, "y": 224},
+          "lineGap": 24,
+          "lines": [
+            {"id": "day-heading", "text": "Day 1 vs Day 7 (paired)", "fontSize": 14, "fontWeight": 700, "fill": "#4b0099"},
+            {"id": "day-within", "text": "Within-cell r: 0.62 \u00b1 0.02 vs 0.63 \u00b1 0.02", "fontSize": 14, "fontWeight": 400, "fill": "#111111"},
+            {"id": "day-delta", "text": "\u0394r:  +0.01 \u00b1 0.02, p = 0.64", "fontSize": 14, "fontWeight": 400, "fill": "#111111"}
+          ],
+          "sourceEvidence": ["source-text-day-comparison"],
+          "provenance": {"confidence": "high", "note": "Text transcribed from source; positions visually estimated."}
+        },
+        {
+          "id": "rule-after-day",
+          "type": "rule",
+          "x1": 34,
+          "y1": 292,
+          "x2": 295,
+          "y2": 292,
+          "stroke": "#8f8f8f",
+          "strokeWidth": 1
+        },
+        {
+          "id": "section-remapping",
+          "type": "textBlock",
+          "anchor": {"x": 36, "y": 321},
+          "lineGap": 23,
+          "lines": [
+            {"id": "remapping-heading", "text": "Remapping (Day 1 vs Day 7)", "fontSize": 14, "fontWeight": 700, "fill": "#4b0099"},
+            {"id": "remapping-low", "text": "Cells with r < 0.3: 61% (191 / 312)", "fontSize": 14, "fontWeight": 400, "fill": "#111111"},
+            {"id": "remapping-high", "text": "Cells with r \u2265 0.7: 17% (53 / 312)", "fontSize": 14, "fontWeight": 400, "fill": "#111111"}
+          ],
+          "sourceEvidence": ["source-text-remapping"],
+          "provenance": {"confidence": "high", "note": "Text transcribed from source; positions visually estimated."}
+        },
+        {
+          "id": "footnote",
+          "type": "text",
+          "text": "Mean \u00b1 SEM unless noted",
+          "x": 146,
+          "y": 442,
+          "fontSize": 14,
+          "fontWeight": 400,
+          "anchor": "start",
+          "fill": "#111111",
+          "sourceBox": {"x": 146, "y": 429, "width": 138, "height": 15}
+        }
+      ],
+      "marks": [],
+      "annotations": [],
+      "provenance": [
+        {
+          "target": "panel-g",
+          "confidence": "medium",
+          "note": "First-pass reconstruction focuses on semantic editability and approximate source layout. Exact font metrics may differ from the raster."
+        }
+      ]
+    }
+  ],
+  "sourceEvidence": [
+    {"id": "source-text-stability", "type": "ocrTranscription", "confidence": "high"},
+    {"id": "source-text-day-comparison", "type": "ocrTranscription", "confidence": "high"},
+    {"id": "source-text-remapping", "type": "ocrTranscription", "confidence": "high"}
+  ],
+  "constraints": [
+    {"id": "candidate-no-source-raster", "type": "rendering", "rule": "Generated candidate must not render source image as an image, canvas drawImage, or CSS background."},
+    {"id": "rules-editable", "type": "layout", "rule": "Horizontal separators remain independent SVG line marks."},
+    {"id": "text-editable", "type": "layout", "rule": "All visible text strings are separate editable JSON text objects."}
+  ],
+  "validation": {
+    "expectedTextCount": 14,
+    "expectedRuleCount": 2,
+    "nativeSize": {"width": 329, "height": 498}
+  },
+  "confidence": [
+    {"target": "typography", "confidence": "medium", "note": "Source font appears condensed; no full font calibration pass was run for this first-pass output."}
+  ]
+}

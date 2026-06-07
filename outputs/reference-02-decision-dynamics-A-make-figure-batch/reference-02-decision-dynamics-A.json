@@ -1,0 +1,393 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-02-decision-dynamics-A",
+  "source": {
+    "path": "../../assets/reference/reference-02-decision-dynamics-A-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "First-pass reconstruction of a single trial-timeline schematic. Source was used for visual inspection only; generated layers are SVG text, lines, rectangles, circles, paths, and synthetic dot recipes."
+  },
+  "canvas": {
+    "width": 430,
+    "height": 514,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial Narrow, Helvetica Neue, Arial, sans-serif",
+    "defaultSize": 13,
+    "color": "#111111",
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Narrow sans-serif selected to approximate compact source labels; no source raster is used during rendering."
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-a",
+      "type": "trial_timeline_schematic",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 430,
+        "height": 514
+      },
+      "label": {
+        "id": "panel-label",
+        "text": "A",
+        "x": 13,
+        "y": 31,
+        "fontSize": 24,
+        "fontWeight": 700
+      },
+      "title": {
+        "id": "panel-title",
+        "text": "Trial timeline",
+        "x": 38,
+        "y": 30,
+        "fontSize": 18,
+        "fontWeight": 700
+      },
+      "coordinateSystems": [
+        {
+          "id": "trial-time",
+          "type": "eventAnchor",
+          "domain": [
+            -600,
+            1950
+          ],
+          "range": [
+            13,
+            411
+          ],
+          "events": [
+            {
+              "id": "fixation-onset",
+              "value": -500,
+              "x": 28
+            },
+            {
+              "id": "stimulus-onset",
+              "value": 0,
+              "x": 106
+            },
+            {
+              "id": "stimulus-offset",
+              "value": 200,
+              "x": 160
+            },
+            {
+              "id": "go-onset",
+              "value": 1200,
+              "x": 266
+            },
+            {
+              "id": "response-end",
+              "value": 1400,
+              "x": 329
+            },
+            {
+              "id": "outcome-end",
+              "value": 1900,
+              "x": 396
+            }
+          ]
+        }
+      ],
+      "timeline": {
+        "id": "trial-time-axis",
+        "usesTransform": "trial-time",
+        "line": {
+          "x1": 13,
+          "y1": 249,
+          "x2": 411,
+          "y2": 249
+        },
+        "strokeWidth": 2,
+        "tickLength": 7,
+        "guideStyle": {
+          "stroke": "#111111",
+          "strokeWidth": 1,
+          "dasharray": "4 3"
+        },
+        "ticks": [
+          {
+            "value": -500,
+            "label": "-500",
+            "x": 28
+          },
+          {
+            "value": 0,
+            "label": "0",
+            "x": 106
+          },
+          {
+            "value": 200,
+            "label": "200",
+            "x": 160
+          },
+          {
+            "value": 1200,
+            "label": "1,200",
+            "x": 266
+          },
+          {
+            "value": 1400,
+            "label": "1,400",
+            "x": 329
+          },
+          {
+            "value": 1900,
+            "label": "1,900",
+            "x": 396
+          }
+        ],
+        "guides": [
+          {
+            "event": "fixation-onset",
+            "x": 28,
+            "y1": 211,
+            "y2": 257
+          },
+          {
+            "event": "stimulus-onset",
+            "x": 106,
+            "y1": 211,
+            "y2": 257
+          },
+          {
+            "event": "stimulus-offset",
+            "x": 160,
+            "y1": 211,
+            "y2": 257
+          },
+          {
+            "event": "go-onset",
+            "x": 266,
+            "y1": 211,
+            "y2": 257
+          },
+          {
+            "event": "response-end",
+            "x": 329,
+            "y1": 211,
+            "y2": 257
+          },
+          {
+            "event": "outcome-end",
+            "x": 396,
+            "y1": 211,
+            "y2": 257
+          }
+        ],
+        "label": {
+          "text": "Time from stimulus onset (ms)",
+          "x": 215,
+          "y": 296,
+          "fontSize": 16,
+          "anchor": "middle"
+        }
+      },
+      "epochs": [
+        {
+          "id": "fixate",
+          "title": "Fixate\n500 ms",
+          "titleX": 51,
+          "titleY": 93,
+          "screen": {
+            "x": 16,
+            "y": 136,
+            "width": 72,
+            "height": 73
+          },
+          "screenType": "fixation"
+        },
+        {
+          "id": "stimulus",
+          "title": "Stimulus\n200 ms",
+          "titleX": 136,
+          "titleY": 93,
+          "screen": {
+            "x": 100,
+            "y": 136,
+            "width": 72,
+            "height": 73
+          },
+          "screenType": "stimulus",
+          "dotRecipe": {
+            "seed": 17,
+            "count": 34,
+            "blueCount": 7,
+            "redCount": 8
+          }
+        },
+        {
+          "id": "delay",
+          "title": "Delay\n~1,000 ms",
+          "titleX": 220,
+          "titleY": 93,
+          "screen": {
+            "x": 183,
+            "y": 136,
+            "width": 72,
+            "height": 73
+          },
+          "screenType": "fixation"
+        },
+        {
+          "id": "response",
+          "title": "Go\n(response)",
+          "titleX": 303,
+          "titleY": 93,
+          "screen": {
+            "x": 269,
+            "y": 136,
+            "width": 68,
+            "height": 73
+          },
+          "screenType": "response",
+          "border": {
+            "stroke": "#ff1717",
+            "strokeWidth": 2.5
+          }
+        },
+        {
+          "id": "outcome",
+          "title": "Outcome\n500 ms",
+          "titleX": 378,
+          "titleY": 93,
+          "screen": {
+            "x": 346,
+            "y": 136,
+            "width": 64,
+            "height": 73
+          },
+          "screenType": "outcome"
+        }
+      ],
+      "processTable": {
+        "id": "trial-process-table",
+        "x": 15,
+        "topY": 312,
+        "columnWidth": 78,
+        "headerHeight": 36,
+        "rowGap": 50,
+        "columns": [
+          {
+            "id": "baseline",
+            "header": "Baseline",
+            "accent": "#bfbfbf",
+            "process": "Cognitive\nprocess",
+            "behavior": "Example behavior"
+          },
+          {
+            "id": "stim",
+            "header": "Stim",
+            "accent": "#3769b1",
+            "process": "Evidence\nencoding",
+            "behaviorRich": [
+              {
+                "text": "L",
+                "fill": "#1f5aaa"
+              },
+              {
+                "text": " / ",
+                "fill": "#111111"
+              },
+              {
+                "text": "R",
+                "fill": "#d51919"
+              }
+            ]
+          },
+          {
+            "id": "delay",
+            "header": "Delay",
+            "accent": "#bfbfbf",
+            "process": "Evidence\naccumulation",
+            "behavior": "Hold"
+          },
+          {
+            "id": "response",
+            "header": "Response",
+            "accent": "#ff1717",
+            "process": "Decision\nexecution",
+            "behaviorRich": [
+              {
+                "text": "Saccade\n",
+                "fill": "#111111"
+              },
+              {
+                "text": "L",
+                "fill": "#1f5aaa"
+              },
+              {
+                "text": " or ",
+                "fill": "#111111"
+              },
+              {
+                "text": "R",
+                "fill": "#d51919"
+              }
+            ]
+          },
+          {
+            "id": "outcome",
+            "header": "Outcome",
+            "accent": "#bfbfbf",
+            "process": "Feedback\nprocessing",
+            "behavior": "Reward\nor no reward"
+          }
+        ],
+        "columnGap": 4,
+        "headerStrokeWidth": 1,
+        "accentStrokeWidth": 2.4,
+        "headerFontSize": 12,
+        "cellFontSize": 10.5,
+        "richCellFontSize": 10.5,
+        "processY": 60,
+        "behaviorY": 116
+      },
+      "provenance": [
+        {
+          "target": "stimulus.dots",
+          "confidence": "medium",
+          "note": "Dot counts and positions are generated to match approximate density and red/blue/white balance, not measured point-for-point."
+        },
+        {
+          "target": "typography",
+          "confidence": "medium",
+          "note": "Font and line spacing visually approximated from the raster."
+        },
+        {
+          "target": "timeline",
+          "confidence": "high",
+          "note": "Major event anchors and tick labels are source-calibrated pixel positions."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "expectedCanvas": {
+      "width": 430,
+      "height": 514
+    },
+    "expectedCounts": {
+      "timelineTicks": 6,
+      "timelineGuides": 6,
+      "epochs": 5,
+      "tableColumns": 5
+    },
+    "forbiddenGeneratedRasterReuse": [
+      "canvas blitting of the source raster",
+      "CSS background that points at the source raster",
+      "source PNG/JPEG as generated candidate layer"
+    ]
+  },
+  "confidence": [
+    {
+      "target": "overall",
+      "confidence": "first-pass",
+      "note": "Independent editable reconstruction intended for visual inspection, not pixel-identical tracing."
+    }
+  ]
+}

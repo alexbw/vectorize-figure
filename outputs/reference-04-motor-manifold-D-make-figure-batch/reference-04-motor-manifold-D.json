@@ -1,0 +1,184 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-04-motor-manifold-D",
+  "source": {
+    "path": "../../assets/reference/reference-04-motor-manifold-D-reference.png",
+    "usage": "QA/reference only; not rendered by generated candidate.",
+    "notes": "Single heatmap panel D showing peristimulus time aligned to movement onset. Dense field is reconstructed from semantic recipes, not the source raster."
+  },
+  "canvas": {
+    "width": 382,
+    "height": 296,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Roboto"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Approximate Arial-like sizing matched visually to the source crop."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "panel-d.xy",
+      "type": "cartesian",
+      "xDomain": [-1, 1],
+      "yDomain": [1, 200],
+      "dataBbox": {"x": 57, "y": 58, "width": 292, "height": 194}
+    },
+    {
+      "id": "panel-d.z",
+      "type": "divergingColorScale",
+      "domain": [-2, 0, 2],
+      "negative": "#1945d8",
+      "neutral": "#f3f3f3",
+      "positive": "#d7191c"
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-d",
+      "bbox": {"x": 0, "y": 0, "width": 382, "height": 296},
+      "label": {
+        "id": "panel-d-label",
+        "text": "D",
+        "x": 8,
+        "y": 25,
+        "fontFamily": "Arial, Helvetica, sans-serif",
+        "fontSize": 20,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 7, "y": 8, "width": 15, "height": 21}
+      },
+      "title": {
+        "id": "panel-d-title",
+        "text": "Peristimulus time (aligned to movement onset)",
+        "x": 35,
+        "y": 25,
+        "fontFamily": "Arial, Helvetica, sans-serif",
+        "fontSize": 16,
+        "fontWeight": 400,
+        "anchor": "start",
+        "sourceBox": {"x": 35, "y": 12, "width": 286, "height": 18}
+      },
+      "plot": {
+        "id": "panel-d-heatmap-plot",
+        "usesTransform": "panel-d.xy",
+        "bbox": {"x": 57, "y": 58, "width": 292, "height": 194},
+        "x": {
+          "domain": [-1, 1],
+          "ticks": [
+            {"value": -1, "label": "-1.0"},
+            {"value": -0.5, "label": "-0.5"},
+            {"value": 0, "label": "0"},
+            {"value": 0.5, "label": "0.5"},
+            {"value": 1, "label": "1.0"}
+          ],
+          "label": {"id": "panel-d-x-label", "text": "Time (s)", "x": 203, "y": 293, "fontSize": 14, "anchor": "middle"}
+        },
+        "y": {
+          "domain": [1, 200],
+          "ticks": [
+            {"value": 1, "label": "1"},
+            {"value": 50, "label": "50"},
+            {"value": 100, "label": "100"},
+            {"value": 150, "label": "150"},
+            {"value": 200, "label": "200"}
+          ],
+          "label": {"id": "panel-d-y-label", "text": "Neuron (sorted)", "x": 17, "y": 157, "fontSize": 14, "anchor": "middle", "rotation": -90}
+        },
+        "axes": {
+          "xAxis": {"id": "panel-d-x-axis", "line": {"x1": 57, "y1": 252, "x2": 349, "y2": 252}, "tickLength": 4},
+          "yAxis": {"id": "panel-d-y-axis", "line": {"x1": 57, "y1": 58, "x2": 57, "y2": 252}, "tickLength": 4}
+        }
+      },
+      "layoutObjects": [
+        {
+          "id": "panel-d-phase-labels",
+          "type": "phaseLabels",
+          "anchorTo": "panel-d.x",
+          "items": [
+            {"text": "Cue", "x": 92, "y": 51, "fontSize": 14, "anchor": "middle"},
+            {"text": "Delay", "x": 158, "y": 51, "fontSize": 14, "anchor": "middle"},
+            {"text": "Move", "x": 229, "y": 51, "fontSize": 14, "anchor": "middle"},
+            {"text": "Hold", "x": 306, "y": 51, "fontSize": 14, "anchor": "middle"}
+          ]
+        },
+        {
+          "id": "panel-d-colorbar",
+          "type": "colorbar",
+          "colorScale": "panel-d.z",
+          "bbox": {"x": 372, "y": 147, "width": 10, "height": 93},
+          "label": {"text": "z-score", "x": 366, "y": 135, "fontSize": 13, "anchor": "start"},
+          "ticks": []
+        }
+      ],
+      "marks": [
+        {
+          "id": "panel-d-synthetic-heatmap",
+          "type": "heatmap",
+          "renderer": "canvasImageData",
+          "usesTransform": "panel-d.xy",
+          "colorScale": "panel-d.z",
+          "matrix": {"rows": 200, "cols": 292},
+          "interpolation": false,
+          "recipe": {
+            "type": "rankedPeristimulusField",
+            "seed": 40518,
+            "backgroundNoise": 0.28,
+            "rowSmoothing": 0.42,
+            "timeSmoothing": 0.22,
+            "features": [
+              {"kind": "blueDelayBand", "centerTime": -0.22, "width": 0.23, "amplitude": -0.9, "rowCenter": 92, "rowWidth": 120},
+              {"kind": "redMoveRidge", "centerTime": 0.16, "slope": 0.0027, "width": 0.12, "amplitude": 1.55, "rowCenter": 92, "rowWidth": 82},
+              {"kind": "bluePostMoveBand", "centerTime": 0.43, "width": 0.25, "amplitude": -1.05, "rowCenter": 45, "rowWidth": 72},
+              {"kind": "redHoldPatch", "centerTime": 0.48, "width": 0.16, "amplitude": 1.2, "rowCenter": 162, "rowWidth": 34},
+              {"kind": "earlyMixedStripes", "centerTime": -0.72, "width": 0.22, "amplitude": 0.55, "rowPeriod": 23}
+            ]
+          },
+          "provenance": {"confidence": "medium", "note": "Approximates sorted neuron heatmap texture and broad red/blue temporal structure."}
+        },
+        {
+          "id": "panel-d-movement-onset",
+          "type": "eventLine",
+          "anchorTo": "x=0",
+          "xValue": 0,
+          "y1": 58,
+          "y2": 252,
+          "stroke": "#000000",
+          "strokeWidth": 2
+        }
+      ],
+      "annotations": [],
+      "provenance": [
+        {"target": "panel-d.xy", "confidence": "high", "note": "Plot bounds and ticks estimated from visible axes."},
+        {"target": "panel-d-z", "confidence": "low", "note": "Colorbar numeric ticks are cropped/absent in source crop; only label and diverging scale are represented."}
+      ]
+    }
+  ],
+  "rendering": {
+    "layerOrder": ["background", "heatmap", "axes", "eventLine", "labels", "colorbar"],
+    "styleTokens": {
+      "axisStroke": "#111111",
+      "axisWidth": 1,
+      "tickFontSize": 14,
+      "phaseFontSize": 14
+    }
+  },
+  "validation": {
+    "expectedCanvas": {"width": 382, "height": 296},
+    "mustNotUseSourceRasterAsLayer": true,
+    "expectedEventAnchors": [{"id": "panel-d-movement-onset", "xValue": 0}],
+    "expectedTickCounts": {"x": 5, "y": 5}
+  },
+  "confidence": [
+    {"target": "heatmap-data", "confidence": "medium", "note": "Generated statistical texture, semantic and editable but not source pixel data."},
+    {"target": "typography", "confidence": "medium", "note": "Approximate Arial-compatible publication typography."}
+  ]
+}

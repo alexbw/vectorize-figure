@@ -1,0 +1,5147 @@
+Reading additional input from stdin...
+OpenAI Codex v0.137.0
+--------
+workdir: /Users/alex/Code/scientific-figure-reconstruction
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: low
+reasoning summaries: none
+session id: 019e9e85-99af-74d0-aab0-431a39798ce7
+--------
+user
+$make-figure assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png. Generate an independent first-pass reconstruction for visual inspection. Write outputs only to outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json and outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html. Use the make-figure skill contract and the repository command/skill code: generated visual layers must not reuse the source raster; the source may appear only as a clearly labeled QA/reference view. Keep the JSON semantic and editable. Verify JSON validity and search the output for accidental drawImage/background source reuse. Do not modify existing output directories, docs, skills, plugins, source assets, or unrelated files.
+codex
+I’m using the `make-figure` skill and will keep the outputs constrained to the two requested files. I’ll inspect the source dimensions and existing repo patterns first, then write the semantic JSON and renderer HTML, and run the requested validity/source-reuse checks.
+exec
+/bin/zsh -lc "sed -n '1,220p' skills/make-figure/references/semantic-figure-ir.md" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+# Semantic Figure IR
+
+Use this document with `reconstruction-contract.md`. The reconstruction output
+is a semantic figure intermediate representation, not a collection of detected
+bounding boxes.
+
+## Core Model
+
+A scientific figure reconstruction is a typed scene graph:
+
+```text
+source evidence
+  -> semantic figure objects
+  -> named coordinate systems and transforms
+  -> derived layout objects
+  -> renderable marks and text
+  -> validation constraints
+```
+
+Bounding boxes, OCR text, detected line segments, and color samples are source
+evidence. They help infer the graph, but they are not the graph itself.
+
+## Common Object Fields
+
+Any semantic object may use these fields:
+
+```json
+{
+  "id": "panel-a-x-tick-0",
+  "type": "axisTick",
+  "parent": "panel-a-x-axis",
+  "children": ["panel-a-x-tick-0-mark", "panel-a-x-tick-0-label"],
+  "usesTransform": "panel-a.xy",
+  "anchorTo": "panel-a-x-axis",
+  "derivesFrom": "panel-a.x.ticks[0]",
+  "sourceEvidence": ["bbox-17", "line-04"],
+  "provenance": {"confidence": "medium", "note": "Tick position measured from source."}
+}
+```
+
+Prefer stable ids and explicit relationships over free-floating pixel objects.
+When an object needs source-calibrated coordinates, keep those coordinates on
+the semantic object as measured anchors instead of detaching the rendered mark
+or text.
+
+## Top-Level IR Concepts
+
+- `sourceEvidence`: source bboxes, OCR snippets, measured line segments, color
+  samples, and notes. These are evidence records, not render instructions.
+- `coordinateSystems`: named transforms such as Cartesian data scales,
+  categorical scales, event anchors, color scales, image/matrix ranges, and
+  projected 3D scenes.
+- `layoutObjects`: axes, tick-label bands, legends, colorbars, tables, insets,
+  panel titles, scale bars, and other objects that reserve space or anchor text.
+- `data`: exact data, approximate data, or generation recipes.
+- `marks`: visual encodings derived from data or layout objects.
+- `annotations`: labels, arrows, brackets, callouts, and event labels anchored
+  to data points, marks, or layout objects.
+- `constraints`: relationship and layout invariants that must survive rendering.
+- `rendering`: renderer hints, layer order, and style tokens.
+- `validation`: renderer- or harness-readable checks and expected counts.
+- `provenance`: object-level confidence and unresolved inferences.
+
+Panel-specific schemas may organize these concepts differently, but they should
+preserve the same relationships.
+
+## Required Relationship Invariants
+
+Renderers and validation scripts should enforce these when the source shows the
+corresponding objects:
+
+- Labeled ticks render one tick mark and one tick label with matching
+  `axis`/`value` metadata.
+- Axis titles anchor to an axis, tick-label band, or measured source anchor;
+  they are not independent guessed text.
+- Event-aligned ticks, event lines, brackets, and annotations share a named
+  event anchor or explicit measured visual anchor.
+- Grid lines belong to named grid planes and families; grid lines must not be
+  confused with solid box edges.
+- Legends reference real series, marker classes, or mark groups.
+- Colorbars reference a color scale and own their ticks and title.
+- Table cell text, row rules, separators, and highlights remain separate
+  objects when their visual styles differ.
+- Annotations anchor to data coordinates, generated marks, or layout objects
+  unless they are explicitly page-positioned.
+- Generated visuals never reuse the source raster as a generated layer.
+
+## Relationship Inventory Step
+
+Before writing the final JSON for a nontrivial panel, produce a short inventory:
+
+- plot type and renderer strategy
+- coordinate systems and named anchors
+- layout objects and their children
+- data-driven marks and their series/group ownership
+- annotations and what each one anchors to
+- source-calibrated overrides and why the transform alone is insufficient
+- validation constraints that should be checked in the rendered DOM
+
+Do this before visual tuning. If a generated object looks wrong, first ask which
+relationship or transform is missing before changing pixels.
+
+
+exec
+/bin/zsh -lc "sed -n '1,220p' skills/make-figure/references/reconstruction-contract.md" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+# Reconstruction Contract
+
+Use this contract when converting a raster scientific figure into configurable HTML and JSON.
+
+Read `semantic-figure-ir.md` alongside this contract. The JSON may be
+panel-specific, but it must preserve semantic relationships between data,
+transforms, layout objects, marks, labels, and validation constraints.
+
+## JSON Shape
+
+Minimum top-level fields:
+
+```json
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "figure-id",
+  "source": {
+    "path": "./source.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "What was inferred visually."
+  },
+  "canvas": {
+    "width": 800,
+    "height": 600,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [
+      "https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&display=swap"
+    ],
+    "fontFaces": [
+      {"family": "FigureSans", "weight": 400, "src": "./fonts/FigureSans-Regular.woff2"},
+      {"family": "FigureSans", "weight": 700, "src": "./fonts/FigureSans-Bold.woff2"}
+    ],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Source Sans 3", "Roboto", "Noto Sans"],
+    "calibration": {
+      "fontStretch": "normal",
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Use measured source text boxes to tune font family, stretch, size, and line height."
+    }
+  },
+  "panels": [],
+  "confidence": []
+}
+```
+
+`fontImports` is for lightweight browser-based experimentation with external
+CSS font providers such as Google Fonts. `fontFaces` is for reproducible local
+or adjacent font files when a typeface has been selected. Do not introduce a
+build system only to test fonts; use browser-native font loading and SVG text
+measurement first.
+
+## Panel Shape
+
+Represent each subpanel explicitly. For a single cropped panel, use one item in `panels`.
+
+```json
+{
+  "id": "panel-a",
+  "label": {"text": "A", "x": 16, "y": 20, "fontSize": 24, "fontWeight": 700},
+  "title": {"text": "Panel title", "x": 56, "y": 24, "fontSize": 16, "fontWeight": 700},
+  "bbox": {"x": 0, "y": 0, "width": 400, "height": 300},
+  "plot": {
+    "dataBbox": {"x": 64, "y": 48, "width": 300, "height": 210},
+    "axes": {
+      "xAxis": {"id": "panel-a-x-axis", "line": {"x1": 64, "y1": 258, "x2": 364, "y2": 258}, "tickLength": 6},
+      "yAxis": {"id": "panel-a-y-axis", "line": {"x1": 64, "y1": 48, "x2": 64, "y2": 258}, "tickLength": 6}
+    },
+    "x": {
+      "scale": "linear",
+      "domain": [0, 10],
+      "ticks": [{"value": 0, "label": "0"}, {"value": 5, "label": "5"}, {"value": 10, "label": "10"}],
+      "label": {"text": "Time (s)"}
+    },
+    "y": {
+      "scale": "linear",
+      "domain": [0, 1],
+      "ticks": [{"value": 0, "label": "0"}, {"value": 0.5, "label": "0.5"}, {"value": 1, "label": "1"}],
+      "label": {"text": "Response"}
+    }
+  },
+  "marks": [],
+  "annotations": [],
+  "provenance": []
+}
+```
+
+## Mark Types
+
+Use semantic mark objects. Add fields as needed, but keep the meaning explicit.
+
+- `lineSeries`: data points plus stroke, width, optional uncertainty band.
+- `scatter`: points, marker shape, size, fill, stroke, opacity.
+- `bar`: categorical or numeric bars with baseline, fill, stroke.
+- `heatmap`: matrix, color scale, bounds, interpolation flag.
+- `raster`: event times by row or a generation recipe with seed and density.
+- `violin`: category, outline path or generated KDE recipe, median/quantile marks.
+- `path`: editable SVG path data for contours, arrows, outlines, or schematic curves.
+- `rect`, `circle`, `ellipse`, `text`, `bracket`, `arrow`: annotations and schematics.
+- `imageRecipe`: generated texture or synthetic field; never point this at the source raster.
+
+## Coordinate Systems
+
+Define named transforms before rendering marks:
+
+- `plot.dataBbox` maps data to pixels.
+- For charts where the visual data rectangle is offset from axes, split
+  `dataBbox` from `axisBbox` or explicit axis anchors such as `yAxisX` and
+  `xAxisY`. Do not force source axis offsets into the data transform.
+- `x.domain` and `y.domain` map quantitative axes.
+- `categories` map categorical positions.
+- `eventAnchor` maps event-aligned plots.
+- `colorScale.domain` maps heatmaps and colorbars.
+
+Avoid mixing hard-coded pixel marks with data-space marks unless the mark is truly an annotation. Ticks, event lines, and data marks should share the same transform.
+
+### 3D Scientific Plots
+
+Recognize 3D plots from visual cues such as three nonparallel labeled axes,
+isometric or perspective box frames, oblique grid planes, tick labels attached
+to multiple axis directions, and data paths or markers that overlap within a
+projected volume. Do not require the user to identify a panel as 3D.
+
+For static publication-style 3D plots made of axes, grid lines, trajectories,
+markers, and labels, prefer semantic 3D data rendered into SVG through an
+explicit projection function. Reserve WebGL or Three.js for genuinely complex
+surfaces, dense point clouds, lighting, meshes, or interactive rotation.
+
+Represent 3D scenes with explicit camera or projection metadata:
+
+```json
+{
+  "scene": {
+    "projection": {
+      "type": "orthographicBasis",
+      "corner": {"x": 58, "y": 327},
+      "domainCorner": {"pc1": -2, "pc2": -2, "pc3": -2},
+      "basis": {
+        "pc1": {"x": 258, "y": 30},
+        "pc2": {"x": 145, "y": 90},
+        "pc3": {"x": 0, "y": -184}
+      }
+    },
+    "domains": {"pc1": [-2, 2], "pc2": [-2, 2], "pc3": [-2, 2]},
+    "trajectories": [{"points": [[-1.5, -1.6, -0.3], [0.7, -1.1, 1.8]]}]
+  }
+}
+```
+
+`fontImports` is for lightweight browser-based experimentation with external
+CSS font providers such as Google Fonts. `fontFaces` is for reproducible local
+or adjacent font files when a typeface has been selected. Do not introduce a
+build system only to test fonts; use browser-native font loading and SVG text
+measurement first.
+
+Axes, grid planes, trajectories, markers, and annotations must use the same
+3D-to-2D projection. Depth-sort generated marks when overlap matters: back grid
+and box edges first, faint trial clouds, mean trajectories, timepoint markers,
+then text labels. Labels should anchor to projected 3D points or axis objects
+and then participate in the normal text-collision pass.
+
+When using source-calibrated projected grid segments, avoid segments that
+duplicate solid box edges or accidentally close into polygons. Grid lines should
+read as independent faint plane guides unless the source explicitly shows a
+closed projected face.
+
+Prefer named 3D grid planes over a flat list of projected line segments. For
+example, encode separate `floor`, `backWall`, and `sideWall` grid groups so each
+axis pair has its own Cartesian grid. Inventory the source grid before tuning:
+for every plane, count visible interior guides separately from boundary-aligned
+guides that are merged with or hidden under box edges. Encode grid lines as
+per-family values, such as independent `pc1`, `pc2`, and `pc3` guide families,
+instead of one shared plane-level value list. Each family should state whether
+domain-boundary values are included, and generated SVG lines should expose
+stable plane/family attributes so count validation can catch drift. A 3D
+state-space panel with PC1, PC2, and PC3 axes should not collapse into one wall
+plus a triangular base.
+
+If the source uses faint face shading, encode plane fills separately from grid
+lines and generate the fill polygon from the same 3D projection. Do not bake the
+shading into arbitrary background shapes. Tick labels in 3D plots are layout
+text: allow source-calibrated text positions or offsets from projected ticks so
+labels do not collide with each other, axis titles, or spines.
+
+3D tick labels should be placed by semantic layout rules, not by one-shot
+coordinates alone. Treat axis spines and tick marks as protected geometry with
+padded hit zones. Treat faint grid lines and trajectory clouds as non-protected
+unless the source clearly reserves label space around them. Tick labels may use
+source-calibrated initial positions, but renderers should measure the final text
+box and apply a constrained outward nudge if it intersects protected axis
+geometry:
+
+```json
+{
+  "axis": {
+    "id": "pc1",
+    "tickLabelPlacement": {
+      "avoid": ["axis-spine"],
+      "minGap": 5,
+      "nudge": {"x": 8, "y": 7},
+      "maxSteps": 6
+    }
+  }
+}
+```
+
+3D axes with visible tick labels should also render visible tick marks unless
+the source suppresses them. Store tick geometry as a projected tick anchor, a
+short `markVector`, and a label offset or outward normal. The label should be
+placed from the tick mark first; collision correction is a secondary adjustment,
+not the primary placement mechanism.
+
+When a source-fitted frame or projection still does not reproduce the source's
+tick text positions, keep the numeric tick `value` semantic but add separate
+source-calibrated `markAnchor` and/or `labelAnchor` fields. Do not force tick
+labels through one shared offset vector if the source clearly uses
+
+exec
+/bin/zsh -lc 'file assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png && identify -verbose assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png | head -80' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png: PNG image data, 440 x 198, 8-bit/color RGB, non-interlaced
+Image:
+  Filename: assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png
+  Permissions: rw-r--r--
+  Format: PNG (Portable Network Graphics)
+  Mime type: image/png
+  Class: DirectClass
+  Geometry: 440x198+0+0
+  Units: Undefined
+  Colorspace: sRGB
+  Type: TrueColor
+  Endianness: Undefined
+  Depth: 8-bit
+  Channels: 3.0
+  Channel depth:
+    Red: 8-bit
+    Green: 8-bit
+    Blue: 8-bit
+  Channel statistics:
+    Pixels: 87120
+    Red:
+      min: 0  (0)
+      max: 255 (1)
+      mean: 235.206 (0.922377)
+      median: 253 (0.992157)
+      standard deviation: 46.4638 (0.182211)
+      kurtosis: 11.7652
+      skewness: -3.43329
+      entropy: 0.514058
+    Green:
+      min: 0  (0)
+      max: 255 (1)
+      mean: 238.206 (0.93414)
+      median: 253 (0.992157)
+      standard deviation: 40.8553 (0.160217)
+      kurtosis: 16.058
+      skewness: -3.93574
+      entropy: 0.50885
+    Blue:
+      min: 0  (0)
+      max: 255 (1)
+      mean: 238.019 (0.933408)
+      median: 253 (0.992157)
+      standard deviation: 40.9 (0.160392)
+      kurtosis: 15.7852
+      skewness: -3.89583
+      entropy: 0.509807
+  Image statistics:
+    Overall:
+      min: 0  (0)
+      max: 255 (1)
+      mean: 237.144 (0.929975)
+      median: 253 (0.992157)
+      standard deviation: 42.7397 (0.167607)
+      kurtosis: 14.5362
+      skewness: -3.75495
+      entropy: 0.510905
+  Rendering intent: Perceptual
+  Gamma: 0.454545
+  Chromaticity:
+    red primary: (0.64,0.33,0.03)
+    green primary: (0.3,0.6,0.1)
+    blue primary: (0.15,0.06,0.79)
+    white point: (0.3127,0.329,0.3583)
+  Matte color: grey74
+  Background color: white
+  Border color: srgb(223,223,223)
+  Transparent color: black
+  Interlace: None
+  Intensity: Undefined
+  Compose: Over
+  Page geometry: 440x198+0+0
+  Dispose: Undefined
+  Iterations: 0
+  Compression: Zip
+  Orientation: Undefined
+  Properties:
+    date:create: 2026-06-04T09:38:12+00:00
+    date:modify: 2026-06-04T09:38:12+00:00
+    date:timestamp: 2026-06-06T20:00:26+00:00
+    png:IHDR.bit-depth-orig: 8
+
+exec
+/bin/zsh -lc 'ls -la outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch 2>/dev/null || true' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+total 0
+drwxr-xr-x   2 alex  staff    64 Jun  6 16:00 .
+drwxr-xr-x  72 alex  staff  2304 Jun  6 16:00 ..
+
+codex
+The source is a 440x198 cropped single chart panel. The target output directory exists but is empty, so I can add only the requested JSON and HTML there without touching other outputs.
+codex
+I’m going to encode this as a semantic single-panel line chart: editable axes/ticks, alternating vertical condition bands, an observed line with a curve-following uncertainty band, chance trace, and legend labels. The QA source will be an optional `<img>` in a labeled reference area, separate from the generated SVG candidate.
+apply patch
+patch: completed
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html b/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..3983452c5dcaeccc92a9201e06116a6710e15afc
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html
+@@ -0,0 +1,356 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-08-neuropixels-central-heatmap-D reconstruction</title>
++  <style>
++    :root {
++      color-scheme: light;
++      --page-bg: #f5f5f5;
++      --ink: #111111;
++      --muted: #666666;
++      --panel-bg: #ffffff;
++      --rule: #d9d9d9;
++    }
++    * {
++      box-sizing: border-box;
++    }
++    body {
++      margin: 0;
++      min-height: 100vh;
++      background: var(--page-bg);
++      color: var(--ink);
++      font-family: Arial, Helvetica, sans-serif;
++      padding: 16px;
++    }
++    .wrap {
++      display: grid;
++      gap: 12px;
++      align-items: start;
++      width: max-content;
++      max-width: 100%;
++    }
++    .toolbar {
++      display: flex;
++      align-items: center;
++      gap: 10px;
++      font-size: 13px;
++      color: var(--muted);
++    }
++    .toolbar label {
++      display: inline-flex;
++      align-items: center;
++      gap: 6px;
++      user-select: none;
++    }
++    .stage {
++      display: grid;
++      grid-template-columns: auto;
++      gap: 12px;
++    }
++    .candidate,
++    .qa-reference {
++      width: 440px;
++      max-width: 100%;
++      background: var(--panel-bg);
++    }
++    .candidate {
++      box-shadow: 0 0 0 1px var(--rule);
++    }
++    .qa-reference {
++      display: none;
++      padding: 8px;
++      border: 1px solid var(--rule);
++    }
++    .qa-reference.is-visible {
++      display: block;
++    }
++    .qa-reference strong {
++      display: block;
++      margin: 0 0 6px;
++      font-size: 12px;
++      color: var(--muted);
++      font-weight: 700;
++    }
++    .qa-reference img {
++      display: block;
++      width: 440px;
++      height: 198px;
++      max-width: 100%;
++      object-fit: contain;
++    }
++    svg {
++      display: block;
++      width: 440px;
++      height: 198px;
++      max-width: 100%;
++      background: #ffffff;
++      overflow: visible;
++    }
++    .axis-line,
++    .tick-mark {
++      stroke: #1a1a1a;
++      stroke-linecap: square;
++      shape-rendering: crispEdges;
++    }
++    .tick-label,
++    .axis-label,
++    .panel-title,
++    .panel-label,
++    .annotation-text {
++      font-family: Arial, Helvetica, sans-serif;
++      letter-spacing: 0;
++    }
++  </style>
++</head>
++<body>
++  <main class="wrap">
++    <div class="toolbar">
++      <label><input id="qaToggle" type="checkbox"> Show QA reference</label>
++      <span>Generated SVG candidate is rendered from semantic JSON.</span>
++    </div>
++    <section class="stage" aria-label="Figure reconstruction">
++      <div id="candidate" class="candidate" aria-label="Generated reconstruction"></div>
++      <aside id="qaReference" class="qa-reference" aria-label="QA reference only">
++        <strong>QA reference only: source raster is not used in the generated candidate</strong>
++        <img alt="Reference raster for QA only" src="../../../assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png">
++      </aside>
++    </section>
++  </main>
++
++  <script type="application/json" id="fallback-spec">
++  {
++    "schema": "scientific_figure_reconstruction.v1",
++    "id": "reference-08-neuropixels-central-heatmap-D",
++    "source": {
++      "path": "../../../assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png",
++      "usage": "QA-only; not used by generated candidate."
++    }
++  }
++  </script>
++  <script>
++    const specUrl = './reference-08-neuropixels-central-heatmap-D.json';
++    const ns = 'http://www.w3.org/2000/svg';
++
++    function el(name, attrs = {}, children = []) {
++      const node = document.createElementNS(ns, name);
++      Object.entries(attrs).forEach(([key, value]) => {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      });
++      children.forEach((child) => node.appendChild(child));
++      return node;
++    }
++
++    function textEl(attrs, text) {
++      const node = el('text', attrs);
++      node.textContent = text;
++      return node;
++    }
++
++    function linePath(points, xScale, yScale) {
++      return points.map((point, index) => {
++        const cmd = index === 0 ? 'M' : 'L';
++        return `${cmd}${xScale(point[0]).toFixed(2)},${yScale(point[1]).toFixed(2)}`;
++      }).join(' ');
++    }
++
++    function bandPath(points, lowerOffset, upperOffset, xScale, yScale) {
++      const upper = points.map((point) => [point[0], Math.min(1, point[1] + upperOffset)]);
++      const lower = points.slice().reverse().map((point) => [point[0], Math.max(0, point[1] - lowerOffset)]);
++      const joined = upper.concat(lower);
++      return joined.map((point, index) => {
++        const cmd = index === 0 ? 'M' : 'L';
++        return `${cmd}${xScale(point[0]).toFixed(2)},${yScale(point[1]).toFixed(2)}`;
++      }).join(' ') + ' Z';
++    }
++
++    function render(spec) {
++      const panel = spec.panels[0];
++      const plot = panel.plot;
++      const bbox = plot.dataBbox;
++      const xDomain = plot.x.domain;
++      const yDomain = plot.y.domain;
++      const xScale = (value) => bbox.x + ((value - xDomain[0]) / (xDomain[1] - xDomain[0])) * bbox.width;
++      const yScale = (value) => bbox.y + bbox.height - ((value - yDomain[0]) / (yDomain[1] - yDomain[0])) * bbox.height;
++
++      const svg = el('svg', {
++        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
++        role: 'img',
++        'aria-labelledby': 'svg-title svg-desc',
++        'data-figure-id': spec.id
++      });
++      svg.appendChild(textEl({id: 'svg-title'}, 'Decoding position reconstruction'));
++      svg.appendChild(textEl({id: 'svg-desc'}, 'Editable reconstruction of line chart panel D'));
++      svg.appendChild(el('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
++
++      const context = el('g', {'data-layer': 'context-bands'});
++      const bandGroup = panel.marks.find((mark) => mark.id === 'panel-d-context-bands');
++      bandGroup.bands.forEach((band, index) => {
++        context.appendChild(el('rect', {
++          id: `${bandGroup.id}-${index}`,
++          'data-mark-type': 'rectBand',
++          'data-axis': 'x',
++          x: xScale(band.x0).toFixed(2),
++          y: yScale(bandGroup.y1).toFixed(2),
++          width: (xScale(band.x1) - xScale(band.x0)).toFixed(2),
++          height: (yScale(bandGroup.y0) - yScale(bandGroup.y1)).toFixed(2),
++          fill: bandGroup.fill,
++          opacity: bandGroup.opacity
++        }));
++      });
++      svg.appendChild(context);
++
++      const axes = el('g', {'data-layer': 'axes'});
++      axes.appendChild(el('line', {...plot.axes.xAxis.line, id: plot.axes.xAxis.id, class: 'axis-line', stroke: plot.axes.xAxis.stroke, 'stroke-width': plot.axes.xAxis.strokeWidth}));
++      axes.appendChild(el('line', {...plot.axes.yAxis.line, id: plot.axes.yAxis.id, class: 'axis-line', stroke: plot.axes.yAxis.stroke, 'stroke-width': plot.axes.yAxis.strokeWidth}));
++      plot.x.ticks.forEach((tick) => {
++        const x = xScale(tick.value);
++        axes.appendChild(el('line', {
++          class: 'tick-mark',
++          'data-axis': 'x',
++          'data-value': tick.value,
++          x1: x.toFixed(2),
++          y1: plot.axes.xAxis.line.y1,
++          x2: x.toFixed(2),
++          y2: plot.axes.xAxis.line.y1 + plot.axes.xAxis.tickLength,
++          stroke: plot.axes.xAxis.stroke,
++          'stroke-width': plot.axes.xAxis.strokeWidth
++        }));
++        axes.appendChild(textEl({
++          class: 'tick-label',
++          'data-axis': 'x',
++          'data-value': tick.value,
++          x: x.toFixed(2),
++          y: 197,
++          'font-size': 14,
++          fill: '#111111',
++          'text-anchor': 'middle'
++        }, tick.label));
++      });
++      plot.y.ticks.forEach((tick) => {
++        const y = yScale(tick.value);
++        axes.appendChild(el('line', {
++          class: 'tick-mark',
++          'data-axis': 'y',
++          'data-value': tick.value,
++          x1: plot.axes.yAxis.line.x1,
++          y1: y.toFixed(2),
++          x2: plot.axes.yAxis.line.x1 - plot.axes.yAxis.tickLength,
++          y2: y.toFixed(2),
++          stroke: plot.axes.yAxis.stroke,
++          'stroke-width': plot.axes.yAxis.strokeWidth
++        }));
++        axes.appendChild(textEl({
++          class: 'tick-label',
++          'data-axis': 'y',
++          'data-value': tick.value,
++          x: 89,
++          y: (y + 5).toFixed(2),
++          'font-size': 14,
++          fill: '#111111',
++          'text-anchor': 'end'
++        }, tick.label));
++      });
++      axes.appendChild(textEl({
++        id: plot.y.label.id,
++        class: 'axis-label',
++        x: plot.y.label.x,
++        y: plot.y.label.y,
++        transform: `rotate(${plot.y.label.rotation} ${plot.y.label.x} ${plot.y.label.y})`,
++        'font-size': plot.y.label.fontSize,
++        fill: '#111111',
++        'text-anchor': plot.y.label.textAnchor
++      }, plot.y.label.text));
++      svg.appendChild(axes);
++
++      const seriesLayer = el('g', {'data-layer': 'series'});
++      const observed = panel.marks.find((mark) => mark.id === 'observed-line');
++      const uncertainty = panel.marks.find((mark) => mark.id === 'observed-uncertainty');
++      seriesLayer.appendChild(el('path', {
++        id: uncertainty.id,
++        'data-mark-type': uncertainty.type,
++        'data-series': uncertainty.series,
++        d: bandPath(observed.points, uncertainty.lowerOffset, uncertainty.upperOffset, xScale, yScale),
++        fill: uncertainty.fill,
++        opacity: uncertainty.opacity,
++        stroke: 'none'
++      }));
++      [observed, panel.marks.find((mark) => mark.id === 'chance-line')].forEach((mark) => {
++        seriesLayer.appendChild(el('path', {
++          id: mark.id,
++          'data-mark-type': mark.type,
++          'data-series': mark.series,
++          d: linePath(mark.points, xScale, yScale),
++          fill: mark.fill,
++          stroke: mark.stroke,
++          'stroke-width': mark.strokeWidth,
++          'stroke-dasharray': mark.dashArray || null,
++          'stroke-linejoin': 'round',
++          'stroke-linecap': 'round'
++        }));
++      });
++      svg.appendChild(seriesLayer);
++
++      const labels = el('g', {'data-layer': 'labels'});
++      labels.appendChild(textEl({
++        id: panel.label.id,
++        class: 'panel-label',
++        x: panel.label.x,
++        y: panel.label.y,
++        'font-size': panel.label.fontSize,
++        'font-weight': panel.label.fontWeight,
++        fill: '#000000',
++        'text-anchor': panel.label.textAnchor
++      }, panel.label.text));
++      labels.appendChild(textEl({
++        id: panel.title.id,
++        class: 'panel-title',
++        x: panel.title.x,
++        y: panel.title.y,
++        'font-size': panel.title.fontSize,
++        'font-weight': panel.title.fontWeight,
++        fill: '#111111',
++        'text-anchor': panel.title.textAnchor
++      }, panel.title.text));
++      panel.annotations.forEach((annotation) => {
++        labels.appendChild(textEl({
++          id: annotation.id,
++          class: 'annotation-text',
++          'data-annotation-type': annotation.type,
++          x: annotation.x,
++          y: annotation.y,
++          'font-size': annotation.fontSize,
++          fill: annotation.fill,
++          'text-anchor': annotation.textAnchor
++        }, annotation.text));
++      });
++      svg.appendChild(labels);
++
++      const target = document.getElementById('candidate');
++      target.innerHTML = '';
++      target.appendChild(svg);
++    }
++
++    async function loadSpec() {
++      try {
++        const response = await fetch(specUrl);
++        if (!response.ok) throw new Error(`Unable to load ${specUrl}`);
++        return await response.json();
++      } catch (error) {
++        const fallback = JSON.parse(document.getElementById('fallback-spec').textContent);
++        fallback.panels = [];
++        throw new Error(`Spec load failed and fallback is metadata only: ${error.message}`);
++      }
++    }
++
++    document.getElementById('qaToggle').addEventListener('change', (event) => {
++      document.getElementById('qaReference').classList.toggle('is-visible', event.target.checked);
++    });
++
++    loadSpec().then(render).catch((error) => {
++      document.getElementById('candidate').textContent = error.message;
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json b/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..74c7d41b4ee2ca66964b1877d7caad403a4a3e66
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json
+@@ -0,0 +1,297 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-08-neuropixels-central-heatmap-D",
++  "source": {
++    "path": "../../../assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "dimensions": {
++      "width": 440,
++      "height": 198
++    },
++    "notes": "Single cropped panel D. Chart geometry and series were visually estimated from the raster; generated marks are editable SVG paths and shapes."
++  },
++  "canvas": {
++    "width": 440,
++    "height": 198,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 14,
++    "color": "#111111",
++    "fontCandidates": ["Arial", "Helvetica", "Liberation Sans", "Nimbus Sans"],
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "First-pass visual match to compact sans-serif figure typography; no font-calibration harness was run."
++    }
++  },
++  "coordinateSystems": [
++    {
++      "id": "panel-d.xy",
++      "type": "cartesian",
++      "xDomain": [0, 220],
++      "yDomain": [0, 1],
++      "dataBbox": {
++        "x": 99,
++        "y": 24,
++        "width": 260,
++        "height": 155
++      }
++    }
++  ],
++  "panels": [
++    {
++      "id": "panel-d",
++      "label": {
++        "id": "panel-d-label",
++        "text": "D",
++        "x": 42,
++        "y": 8,
++        "fontSize": 20,
++        "fontWeight": 700,
++        "textAnchor": "middle",
++        "dominantBaseline": "alphabetic"
++      },
++      "title": {
++        "id": "panel-d-title",
++        "text": "Decoding position",
++        "x": 70,
++        "y": 10,
++        "fontSize": 16,
++        "fontWeight": 700,
++        "textAnchor": "start",
++        "dominantBaseline": "alphabetic",
++        "sourceBox": {
++          "x": 70,
++          "y": 0,
++          "width": 136,
++          "height": 16
++        }
++      },
++      "bbox": {
++        "x": 0,
++        "y": 0,
++        "width": 440,
++        "height": 198
++      },
++      "plot": {
++        "id": "panel-d-plot",
++        "usesTransform": "panel-d.xy",
++        "dataBbox": {
++          "x": 99,
++          "y": 24,
++          "width": 260,
++          "height": 155
++        },
++        "axes": {
++          "xAxis": {
++            "id": "panel-d-x-axis",
++            "line": {
++              "x1": 99,
++              "y1": 179,
++              "x2": 359,
++              "y2": 179
++            },
++            "tickLength": 7,
++            "stroke": "#1a1a1a",
++            "strokeWidth": 1.2
++          },
++          "yAxis": {
++            "id": "panel-d-y-axis",
++            "line": {
++              "x1": 99,
++              "y1": 24,
++              "x2": 99,
++              "y2": 179
++            },
++            "tickLength": 7,
++            "stroke": "#1a1a1a",
++            "strokeWidth": 1.2
++          }
++        },
++        "x": {
++          "scale": "linear",
++          "domain": [0, 220],
++          "ticks": [
++            {"value": 0, "label": "0"},
++            {"value": 50, "label": "50"},
++            {"value": 100, "label": "100"},
++            {"value": 150, "label": "150"},
++            {"value": 200, "label": "200"}
++          ]
++        },
++        "y": {
++          "scale": "linear",
++          "domain": [0, 1],
++          "ticks": [
++            {"value": 0, "label": "0.0"},
++            {"value": 0.2, "label": "0.2"},
++            {"value": 0.4, "label": "0.4"},
++            {"value": 0.6, "label": "0.6"},
++            {"value": 0.8, "label": "0.8"},
++            {"value": 1.0, "label": "1.0"}
++          ],
++          "label": {
++            "id": "panel-d-y-label",
++            "text": "Decoding accuracy",
++            "x": 55,
++            "y": 101,
++            "rotation": -90,
++            "fontSize": 15,
++            "textAnchor": "middle"
++          }
++        }
++      },
++      "marks": [
++        {
++          "id": "panel-d-context-bands",
++          "type": "rectBandGroup",
++          "usesTransform": "panel-d.xy",
++          "axis": "x",
++          "bands": [
++            {"x0": 28, "x1": 48},
++            {"x0": 78, "x1": 104},
++            {"x0": 130, "x1": 153},
++            {"x0": 168, "x1": 191},
++            {"x0": 207, "x1": 219}
++          ],
++          "y0": 0,
++          "y1": 1,
++          "fill": "#eeeeee",
++          "opacity": 0.72
++        },
++        {
++          "id": "observed-uncertainty",
++          "type": "uncertaintyBand",
++          "series": "observed",
++          "usesTransform": "panel-d.xy",
++          "fill": "#66bdb8",
++          "opacity": 0.42,
++          "lowerOffset": 0.065,
++          "upperOffset": 0.075
++        },
++        {
++          "id": "observed-line",
++          "type": "lineSeries",
++          "usesTransform": "panel-d.xy",
++          "series": "observed",
++          "stroke": "#0e6f71",
++          "strokeWidth": 2,
++          "fill": "none",
++          "points": [
++            [0, 0.38], [5, 0.36], [10, 0.42], [15, 0.39], [20, 0.48], [25, 0.62],
++            [30, 0.68], [35, 0.64], [40, 0.66], [45, 0.63], [50, 0.65], [55, 0.71],
++            [60, 0.64], [65, 0.59], [70, 0.55], [75, 0.51], [80, 0.48], [85, 0.43],
++            [90, 0.38], [95, 0.45], [100, 0.57], [105, 0.64], [110, 0.63],
++            [115, 0.66], [120, 0.65], [125, 0.66], [130, 0.69], [135, 0.71],
++            [140, 0.72], [145, 0.76], [150, 0.66], [155, 0.60], [160, 0.63],
++            [165, 0.54], [170, 0.62], [175, 0.66], [180, 0.69], [185, 0.67],
++            [190, 0.71], [195, 0.72], [200, 0.75], [205, 0.77], [210, 0.80],
++            [215, 0.78], [220, 0.84]
++          ]
++        },
++        {
++          "id": "chance-line",
++          "type": "lineSeries",
++          "usesTransform": "panel-d.xy",
++          "series": "chance",
++          "stroke": "#7a7a7a",
++          "strokeWidth": 2,
++          "dashArray": "5 4",
++          "fill": "none",
++          "points": [
++            [0, 0.21], [10, 0.20], [20, 0.205], [30, 0.198], [40, 0.203],
++            [50, 0.198], [60, 0.205], [70, 0.201], [80, 0.207], [90, 0.205],
++            [100, 0.204], [110, 0.206], [120, 0.202], [130, 0.208], [140, 0.20],
++            [150, 0.207], [160, 0.202], [170, 0.209], [180, 0.205], [190, 0.207],
++            [200, 0.211], [210, 0.208], [220, 0.214]
++          ]
++        }
++      ],
++      "annotations": [
++        {
++          "id": "observed-label",
++          "type": "text",
++          "text": "Observed",
++          "x": 365,
++          "y": 52,
++          "fontSize": 14,
++          "fill": "#0e6f71",
++          "textAnchor": "start"
++        },
++        {
++          "id": "chance-label",
++          "type": "text",
++          "text": "Chance",
++          "x": 367,
++          "y": 144,
++          "fontSize": 14,
++          "fill": "#666666",
++          "textAnchor": "start"
++        },
++        {
++          "id": "chance-sublabel",
++          "type": "text",
++          "text": "(5 cm bins)",
++          "x": 367,
++          "y": 164,
++          "fontSize": 14,
++          "fill": "#666666",
++          "textAnchor": "start"
++        }
++      ],
++      "provenance": [
++        {
++          "object": "observed-line",
++          "confidence": "medium",
++          "note": "Series shape is hand-traced from the raster at approximate 5 cm steps; local jaggedness is stylized but editable."
++        },
++        {
++          "object": "observed-uncertainty",
++          "confidence": "medium-low",
++          "note": "Band follows the observed curve using uniform offsets; source band width varies slightly."
++        },
++        {
++          "object": "context-bands",
++          "confidence": "medium",
++          "note": "Vertical shaded regions were approximated from visible light gray spans."
++        }
++      ]
++    }
++  ],
++  "rendering": {
++    "renderer": "svg-dom",
++    "layerOrder": ["background", "context-bands", "uncertainty", "axes", "series", "labels"],
++    "styleTokens": {
++      "axis": "#1a1a1a",
++      "observed": "#0e6f71",
++      "observedBand": "#66bdb8",
++      "chance": "#7a7a7a",
++      "contextBand": "#eeeeee"
++    }
++  },
++  "validation": {
++    "expected": {
++      "panels": 1,
++      "xTicks": 5,
++      "yTicks": 6,
++      "lineSeries": 2,
++      "uncertaintyBands": 1,
++      "contextBands": 5
++    },
++    "constraints": [
++      "Generated candidate must not render the source raster as a visual layer.",
++      "QA reference image, if shown, must be labeled reference-only and outside the generated SVG candidate.",
++      "Observed line and observed uncertainty band share the panel-d.xy coordinate transform.",
++      "Tick marks and tick labels are rendered as separate editable SVG elements with axis/value metadata."
++    ]
++  },
++  "confidence": [
++    {
++      "scope": "overall",
++      "level": "medium",
++      "note": "First-pass reconstruction prioritizes editable chart grammar and approximate visual similarity over exact digitization."
++    }
++  ]
++}
+
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html b/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..3983452c5dcaeccc92a9201e06116a6710e15afc
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html
+@@ -0,0 +1,356 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-08-neuropixels-central-heatmap-D reconstruction</title>
++  <style>
++    :root {
++      color-scheme: light;
++      --page-bg: #f5f5f5;
++      --ink: #111111;
++      --muted: #666666;
++      --panel-bg: #ffffff;
++      --rule: #d9d9d9;
++    }
++    * {
++      box-sizing: border-box;
++    }
++    body {
++      margin: 0;
++      min-height: 100vh;
++      background: var(--page-bg);
++      color: var(--ink);
++      font-family: Arial, Helvetica, sans-serif;
++      padding: 16px;
++    }
++    .wrap {
++      display: grid;
++      gap: 12px;
++      align-items: start;
++      width: max-content;
++      max-width: 100%;
++    }
++    .toolbar {
++      display: flex;
++      align-items: center;
++      gap: 10px;
++      font-size: 13px;
++      color: var(--muted);
++    }
++    .toolbar label {
++      display: inline-flex;
++      align-items: center;
++      gap: 6px;
++      user-select: none;
++    }
++    .stage {
++      display: grid;
++      grid-template-columns: auto;
++      gap: 12px;
++    }
++    .candidate,
++    .qa-reference {
++      width: 440px;
++      max-width: 100%;
++      background: var(--panel-bg);
++    }
++    .candidate {
++      box-shadow: 0 0 0 1px var(--rule);
++    }
++    .qa-reference {
++      display: none;
++      padding: 8px;
++      border: 1px solid var(--rule);
++    }
++    .qa-reference.is-visible {
++      display: block;
++    }
++    .qa-reference strong {
++      display: block;
++      margin: 0 0 6px;
++      font-size: 12px;
++      color: var(--muted);
++      font-weight: 700;
++    }
++    .qa-reference img {
++      display: block;
++      width: 440px;
++      height: 198px;
++      max-width: 100%;
++      object-fit: contain;
++    }
++    svg {
++      display: block;
++      width: 440px;
++      height: 198px;
++      max-width: 100%;
++      background: #ffffff;
++      overflow: visible;
++    }
++    .axis-line,
++    .tick-mark {
++      stroke: #1a1a1a;
++      stroke-linecap: square;
++      shape-rendering: crispEdges;
++    }
++    .tick-label,
++    .axis-label,
++    .panel-title,
++    .panel-label,
++    .annotation-text {
++      font-family: Arial, Helvetica, sans-serif;
++      letter-spacing: 0;
++    }
++  </style>
++</head>
++<body>
++  <main class="wrap">
++    <div class="toolbar">
++      <label><input id="qaToggle" type="checkbox"> Show QA reference</label>
++      <span>Generated SVG candidate is rendered from semantic JSON.</span>
++    </div>
++    <section class="stage" aria-label="Figure reconstruction">
++      <div id="candidate" class="candidate" aria-label="Generated reconstruction"></div>
++      <aside id="qaReference" class="qa-reference" aria-label="QA reference only">
++        <strong>QA reference only: source raster is not used in the generated candidate</strong>
++        <img alt="Reference raster for QA only" src="../../../assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png">
++      </aside>
++    </section>
++  </main>
++
++  <script type="application/json" id="fallback-spec">
++  {
++    "schema": "scientific_figure_reconstruction.v1",
++    "id": "reference-08-neuropixels-central-heatmap-D",
++    "source": {
++      "path": "../../../assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png",
++      "usage": "QA-only; not used by generated candidate."
++    }
++  }
++  </script>
++  <script>
++    const specUrl = './reference-08-neuropixels-central-heatmap-D.json';
++    const ns = 'http://www.w3.org/2000/svg';
++
++    function el(name, attrs = {}, children = []) {
++      const node = document.createElementNS(ns, name);
++      Object.entries(attrs).forEach(([key, value]) => {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      });
++      children.forEach((child) => node.appendChild(child));
++      return node;
++    }
++
++    function textEl(attrs, text) {
++      const node = el('text', attrs);
++      node.textContent = text;
++      return node;
++    }
++
++    function linePath(points, xScale, yScale) {
++      return points.map((point, index) => {
++        const cmd = index === 0 ? 'M' : 'L';
++        return `${cmd}${xScale(point[0]).toFixed(2)},${yScale(point[1]).toFixed(2)}`;
++      }).join(' ');
++    }
++
++    function bandPath(points, lowerOffset, upperOffset, xScale, yScale) {
++      const upper = points.map((point) => [point[0], Math.min(1, point[1] + upperOffset)]);
++      const lower = points.slice().reverse().map((point) => [point[0], Math.max(0, point[1] - lowerOffset)]);
++      const joined = upper.concat(lower);
++      return joined.map((point, index) => {
++        const cmd = index === 0 ? 'M' : 'L';
++        return `${cmd}${xScale(point[0]).toFixed(2)},${yScale(point[1]).toFixed(2)}`;
++      }).join(' ') + ' Z';
++    }
++
++    function render(spec) {
++      const panel = spec.panels[0];
++      const plot = panel.plot;
++      const bbox = plot.dataBbox;
++      const xDomain = plot.x.domain;
++      const yDomain = plot.y.domain;
++      const xScale = (value) => bbox.x + ((value - xDomain[0]) / (xDomain[1] - xDomain[0])) * bbox.width;
++      const yScale = (value) => bbox.y + bbox.height - ((value - yDomain[0]) / (yDomain[1] - yDomain[0])) * bbox.height;
++
++      const svg = el('svg', {
++        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
++        role: 'img',
++        'aria-labelledby': 'svg-title svg-desc',
++        'data-figure-id': spec.id
++      });
++      svg.appendChild(textEl({id: 'svg-title'}, 'Decoding position reconstruction'));
++      svg.appendChild(textEl({id: 'svg-desc'}, 'Editable reconstruction of line chart panel D'));
++      svg.appendChild(el('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
++
++      const context = el('g', {'data-layer': 'context-bands'});
++      const bandGroup = panel.marks.find((mark) => mark.id === 'panel-d-context-bands');
++      bandGroup.bands.forEach((band, index) => {
++        context.appendChild(el('rect', {
++          id: `${bandGroup.id}-${index}`,
++          'data-mark-type': 'rectBand',
++          'data-axis': 'x',
++          x: xScale(band.x0).toFixed(2),
++          y: yScale(bandGroup.y1).toFixed(2),
++          width: (xScale(band.x1) - xScale(band.x0)).toFixed(2),
++          height: (yScale(bandGroup.y0) - yScale(bandGroup.y1)).toFixed(2),
++          fill: bandGroup.fill,
++          opacity: bandGroup.opacity
++        }));
++      });
++      svg.appendChild(context);
++
++      const axes = el('g', {'data-layer': 'axes'});
++      axes.appendChild(el('line', {...plot.axes.xAxis.line, id: plot.axes.xAxis.id, class: 'axis-line', stroke: plot.axes.xAxis.stroke, 'stroke-width': plot.axes.xAxis.strokeWidth}));
++      axes.appendChild(el('line', {...plot.axes.yAxis.line, id: plot.axes.yAxis.id, class: 'axis-line', stroke: plot.axes.yAxis.stroke, 'stroke-width': plot.axes.yAxis.strokeWidth}));
++      plot.x.ticks.forEach((tick) => {
++        const x = xScale(tick.value);
++        axes.appendChild(el('line', {
++          class: 'tick-mark',
++          'data-axis': 'x',
++          'data-value': tick.value,
++          x1: x.toFixed(2),
++          y1: plot.axes.xAxis.line.y1,
++          x2: x.toFixed(2),
++          y2: plot.axes.xAxis.line.y1 + plot.axes.xAxis.tickLength,
++          stroke: plot.axes.xAxis.stroke,
++          'stroke-width': plot.axes.xAxis.strokeWidth
++        }));
++        axes.appendChild(textEl({
++          class: 'tick-label',
++          'data-axis': 'x',
++          'data-value': tick.value,
++          x: x.toFixed(2),
++          y: 197,
++          'font-size': 14,
++          fill: '#111111',
++          'text-anchor': 'middle'
++        }, tick.label));
++      });
++      plot.y.ticks.forEach((tick) => {
++        const y = yScale(tick.value);
++        axes.appendChild(el('line', {
++          class: 'tick-mark',
++          'data-axis': 'y',
++          'data-value': tick.value,
++          x1: plot.axes.yAxis.line.x1,
++          y1: y.toFixed(2),
++          x2: plot.axes.yAxis.line.x1 - plot.axes.yAxis.tickLength,
++          y2: y.toFixed(2),
++          stroke: plot.axes.yAxis.stroke,
++          'stroke-width': plot.axes.yAxis.strokeWidth
++        }));
++        axes.appendChild(textEl({
++          class: 'tick-label',
++          'data-axis': 'y',
++          'data-value': tick.value,
++          x: 89,
++          y: (y + 5).toFixed(2),
++          'font-size': 14,
++          fill: '#111111',
++          'text-anchor': 'end'
++        }, tick.label));
++      });
++      axes.appendChild(textEl({
++        id: plot.y.label.id,
++        class: 'axis-label',
++        x: plot.y.label.x,
++        y: plot.y.label.y,
++        transform: `rotate(${plot.y.label.rotation} ${plot.y.label.x} ${plot.y.label.y})`,
++        'font-size': plot.y.label.fontSize,
++        fill: '#111111',
++        'text-anchor': plot.y.label.textAnchor
++      }, plot.y.label.text));
++      svg.appendChild(axes);
++
++      const seriesLayer = el('g', {'data-layer': 'series'});
++      const observed = panel.marks.find((mark) => mark.id === 'observed-line');
++      const uncertainty = panel.marks.find((mark) => mark.id === 'observed-uncertainty');
++      seriesLayer.appendChild(el('path', {
++        id: uncertainty.id,
++        'data-mark-type': uncertainty.type,
++        'data-series': uncertainty.series,
++        d: bandPath(observed.points, uncertainty.lowerOffset, uncertainty.upperOffset, xScale, yScale),
++        fill: uncertainty.fill,
++        opacity: uncertainty.opacity,
++        stroke: 'none'
++      }));
++      [observed, panel.marks.find((mark) => mark.id === 'chance-line')].forEach((mark) => {
++        seriesLayer.appendChild(el('path', {
++          id: mark.id,
++          'data-mark-type': mark.type,
++          'data-series': mark.series,
++          d: linePath(mark.points, xScale, yScale),
++          fill: mark.fill,
++          stroke: mark.stroke,
++          'stroke-width': mark.strokeWidth,
++          'stroke-dasharray': mark.dashArray || null,
++          'stroke-linejoin': 'round',
++          'stroke-linecap': 'round'
++        }));
++      });
++      svg.appendChild(seriesLayer);
++
++      const labels = el('g', {'data-layer': 'labels'});
++      labels.appendChild(textEl({
++        id: panel.label.id,
++        class: 'panel-label',
++        x: panel.label.x,
++        y: panel.label.y,
++        'font-size': panel.label.fontSize,
++        'font-weight': panel.label.fontWeight,
++        fill: '#000000',
++        'text-anchor': panel.label.textAnchor
++      }, panel.label.text));
++      labels.appendChild(textEl({
++        id: panel.title.id,
++        class: 'panel-title',
++        x: panel.title.x,
++        y: panel.title.y,
++        'font-size': panel.title.fontSize,
++        'font-weight': panel.title.fontWeight,
++        fill: '#111111',
++        'text-anchor': panel.title.textAnchor
++      }, panel.title.text));
++      panel.annotations.forEach((annotation) => {
++        labels.appendChild(textEl({
++          id: annotation.id,
++          class: 'annotation-text',
++          'data-annotation-type': annotation.type,
++          x: annotation.x,
++          y: annotation.y,
++          'font-size': annotation.fontSize,
++          fill: annotation.fill,
++          'text-anchor': annotation.textAnchor
++        }, annotation.text));
++      });
++      svg.appendChild(labels);
++
++      const target = document.getElementById('candidate');
++      target.innerHTML = '';
++      target.appendChild(svg);
++    }
++
++    async function loadSpec() {
++      try {
++        const response = await fetch(specUrl);
++        if (!response.ok) throw new Error(`Unable to load ${specUrl}`);
++        return await response.json();
++      } catch (error) {
++        const fallback = JSON.parse(document.getElementById('fallback-spec').textContent);
++        fallback.panels = [];
++        throw new Error(`Spec load failed and fallback is metadata only: ${error.message}`);
++      }
++    }
++
++    document.getElementById('qaToggle').addEventListener('change', (event) => {
++      document.getElementById('qaReference').classList.toggle('is-visible', event.target.checked);
++    });
++
++    loadSpec().then(render).catch((error) => {
++      document.getElementById('candidate').textContent = error.message;
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json b/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..74c7d41b4ee2ca66964b1877d7caad403a4a3e66
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json
+@@ -0,0 +1,297 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-08-neuropixels-central-heatmap-D",
++  "source": {
++    "path": "../../../assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "dimensions": {
++      "width": 440,
++      "height": 198
++    },
++    "notes": "Single cropped panel D. Chart geometry and series were visually estimated from the raster; generated marks are editable SVG paths and shapes."
++  },
++  "canvas": {
++    "width": 440,
++    "height": 198,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 14,
++    "color": "#111111",
++    "fontCandidates": ["Arial", "Helvetica", "Liberation Sans", "Nimbus Sans"],
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "First-pass visual match to compact sans-serif figure typography; no font-calibration harness was run."
++    }
++  },
++  "coordinateSystems": [
++    {
++      "id": "panel-d.xy",
++      "type": "cartesian",
++      "xDomain": [0, 220],
++      "yDomain": [0, 1],
++      "dataBbox": {
++        "x": 99,
++        "y": 24,
++        "width": 260,
++        "height": 155
++      }
++    }
++  ],
++  "panels": [
++    {
++      "id": "panel-d",
++      "label": {
++        "id": "panel-d-label",
++        "text": "D",
++        "x": 42,
++        "y": 8,
++        "fontSize": 20,
++        "fontWeight": 700,
++        "textAnchor": "middle",
++        "dominantBaseline": "alphabetic"
++      },
++      "title": {
++        "id": "panel-d-title",
++        "text": "Decoding position",
++        "x": 70,
++        "y": 10,
++        "fontSize": 16,
++        "fontWeight": 700,
++        "textAnchor": "start",
++        "dominantBaseline": "alphabetic",
++        "sourceBox": {
++          "x": 70,
++          "y": 0,
++          "width": 136,
++          "height": 16
++        }
++      },
++      "bbox": {
++        "x": 0,
++        "y": 0,
++        "width": 440,
++        "height": 198
++      },
++      "plot": {
++        "id": "panel-d-plot",
++        "usesTransform": "panel-d.xy",
++        "dataBbox": {
++          "x": 99,
++          "y": 24,
++          "width": 260,
++          "height": 155
++        },
++        "axes": {
++          "xAxis": {
++            "id": "panel-d-x-axis",
++            "line": {
++              "x1": 99,
++              "y1": 179,
++              "x2": 359,
++              "y2": 179
++            },
++            "tickLength": 7,
++            "stroke": "#1a1a1a",
++            "strokeWidth": 1.2
++          },
++          "yAxis": {
++            "id": "panel-d-y-axis",
++            "line": {
++              "x1": 99,
++              "y1": 24,
++              "x2": 99,
++              "y2": 179
++            },
++            "tickLength": 7,
++            "stroke": "#1a1a1a",
++            "strokeWidth": 1.2
++          }
++        },
++        "x": {
++          "scale": "linear",
++          "domain": [0, 220],
++          "ticks": [
++            {"value": 0, "label": "0"},
++            {"value": 50, "label": "50"},
++            {"value": 100, "label": "100"},
++            {"value": 150, "label": "150"},
++            {"value": 200, "label": "200"}
++          ]
++        },
++        "y": {
++          "scale": "linear",
++          "domain": [0, 1],
++          "ticks": [
++            {"value": 0, "label": "0.0"},
++            {"value": 0.2, "label": "0.2"},
++            {"value": 0.4, "label": "0.4"},
++            {"value": 0.6, "label": "0.6"},
++            {"value": 0.8, "label": "0.8"},
++            {"value": 1.0, "label": "1.0"}
++          ],
++          "label": {
++            "id": "panel-d-y-label",
++            "text": "Decoding accuracy",
++            "x": 55,
++            "y": 101,
++            "rotation": -90,
++            "fontSize": 15,
++            "textAnchor": "middle"
++          }
++        }
++      },
++      "marks": [
++        {
++          "id": "panel-d-context-bands",
++          "type": "rectBandGroup",
++          "usesTransform": "panel-d.xy",
++          "axis": "x",
++          "bands": [
++            {"x0": 28, "x1": 48},
++            {"x0": 78, "x1": 104},
++            {"x0": 130, "x1": 153},
++            {"x0": 168, "x1": 191},
++            {"x0": 207, "x1": 219}
++          ],
++          "y0": 0,
++          "y1": 1,
++          "fill": "#eeeeee",
++          "opacity": 0.72
++        },
++        {
++          "id": "observed-uncertainty",
++          "type": "uncertaintyBand",
++          "series": "observed",
++          "usesTransform": "panel-d.xy",
++          "fill": "#66bdb8",
++          "opacity": 0.42,
++          "lowerOffset": 0.065,
++          "upperOffset": 0.075
++        },
++        {
++          "id": "observed-line",
++          "type": "lineSeries",
++          "usesTransform": "panel-d.xy",
++          "series": "observed",
++          "stroke": "#0e6f71",
++          "strokeWidth": 2,
++          "fill": "none",
++          "points": [
++            [0, 0.38], [5, 0.36], [10, 0.42], [15, 0.39], [20, 0.48], [25, 0.62],
++            [30, 0.68], [35, 0.64], [40, 0.66], [45, 0.63], [50, 0.65], [55, 0.71],
++            [60, 0.64], [65, 0.59], [70, 0.55], [75, 0.51], [80, 0.48], [85, 0.43],
++            [90, 0.38], [95, 0.45], [100, 0.57], [105, 0.64], [110, 0.63],
++            [115, 0.66], [120, 0.65], [125, 0.66], [130, 0.69], [135, 0.71],
++            [140, 0.72], [145, 0.76], [150, 0.66], [155, 0.60], [160, 0.63],
++            [165, 0.54], [170, 0.62], [175, 0.66], [180, 0.69], [185, 0.67],
++            [190, 0.71], [195, 0.72], [200, 0.75], [205, 0.77], [210, 0.80],
++            [215, 0.78], [220, 0.84]
++          ]
++        },
++        {
++          "id": "chance-line",
++          "type": "lineSeries",
++          "usesTransform": "panel-d.xy",
++          "series": "chance",
++          "stroke": "#7a7a7a",
++          "strokeWidth": 2,
++          "dashArray": "5 4",
++          "fill": "none",
++          "points": [
++            [0, 0.21], [10, 0.20], [20, 0.205], [30, 0.198], [40, 0.203],
++            [50, 0.198], [60, 0.205], [70, 0.201], [80, 0.207], [90, 0.205],
++            [100, 0.204], [110, 0.206], [120, 0.202], [130, 0.208], [140, 0.20],
++            [150, 0.207], [160, 0.202], [170, 0.209], [180, 0.205], [190, 0.207],
++            [200, 0.211], [210, 0.208], [220, 0.214]
++          ]
++        }
++      ],
++      "annotations": [
++        {
++          "id": "observed-label",
++          "type": "text",
++          "text": "Observed",
++          "x": 365,
++          "y": 52,
++          "fontSize": 14,
++          "fill": "#0e6f71",
++          "textAnchor": "start"
++        },
++        {
++          "id": "chance-label",
++          "type": "text",
++          "text": "Chance",
++          "x": 367,
++          "y": 144,
++          "fontSize": 14,
++          "fill": "#666666",
++          "textAnchor": "start"
++        },
++        {
++          "id": "chance-sublabel",
++          "type": "text",
++          "text": "(5 cm bins)",
++          "x": 367,
++          "y": 164,
++          "fontSize": 14,
++          "fill": "#666666",
++          "textAnchor": "start"
++        }
++      ],
++      "provenance": [
++        {
++          "object": "observed-line",
++          "confidence": "medium",
++          "note": "Series shape is hand-traced from the raster at approximate 5 cm steps; local jaggedness is stylized but editable."
++        },
++        {
++          "object": "observed-uncertainty",
++          "confidence": "medium-low",
++          "note": "Band follows the observed curve using uniform offsets; source band width varies slightly."
++        },
++        {
++          "object": "context-bands",
++          "confidence": "medium",
++          "note": "Vertical shaded regions were approximated from visible light gray spans."
++        }
++      ]
++    }
++  ],
++  "rendering": {
++    "renderer": "svg-dom",
++    "layerOrder": ["background", "context-bands", "uncertainty", "axes", "series", "labels"],
++    "styleTokens": {
++      "axis": "#1a1a1a",
++      "observed": "#0e6f71",
++      "observedBand": "#66bdb8",
++      "chance": "#7a7a7a",
++      "contextBand": "#eeeeee"
++    }
++  },
++  "validation": {
++    "expected": {
++      "panels": 1,
++      "xTicks": 5,
++      "yTicks": 6,
++      "lineSeries": 2,
++      "uncertaintyBands": 1,
++      "contextBands": 5
++    },
++    "constraints": [
++      "Generated candidate must not render the source raster as a visual layer.",
++      "QA reference image, if shown, must be labeled reference-only and outside the generated SVG candidate.",
++      "Observed line and observed uncertainty band share the panel-d.xy coordinate transform.",
++      "Tick marks and tick labels are rendered as separate editable SVG elements with axis/value metadata."
++    ]
++  },
++  "confidence": [
++    {
++      "scope": "overall",
++      "level": "medium",
++      "note": "First-pass reconstruction prioritizes editable chart grammar and approximate visual similarity over exact digitization."
++    }
++  ]
++}
+
+codex
+The two files are written. I’m validating the JSON and scanning the HTML/JSON for prohibited source-raster reuse patterns now, especially `drawImage`, CSS backgrounds, and any source path outside the labeled QA image/source metadata.
+exec
+/bin/zsh -lc "rg -n \"drawImage|background(-image)?\\s*:|url\\(|reference-08-neuropixels-central-heatmap-D-reference\\.png|<img|source raster\" outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json:5:    "path": "../../../assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png",
+outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json:284:      "Generated candidate must not render the source raster as a visual layer.",
+outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html:22:      background: var(--page-bg);
+outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html:56:      background: var(--panel-bg);
+outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html:88:      background: #ffffff;
+outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html:116:        <strong>QA reference only: source raster is not used in the generated candidate</strong>
+outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html:117:        <img alt="Reference raster for QA only" src="../../../assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png">
+outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html:127:      "path": "../../../assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png",
+
+exec
+/bin/zsh -lc 'python3 -m json.tool outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json >/tmp/reference-08-D-json-valid.txt && cat /tmp/reference-08-D-json-valid.txt' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+{
+    "schema": "scientific_figure_reconstruction.v1",
+    "id": "reference-08-neuropixels-central-heatmap-D",
+    "source": {
+        "path": "../../../assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png",
+        "usage": "QA-only; not used by generated candidate.",
+        "dimensions": {
+            "width": 440,
+            "height": 198
+        },
+        "notes": "Single cropped panel D. Chart geometry and series were visually estimated from the raster; generated marks are editable SVG paths and shapes."
+    },
+    "canvas": {
+        "width": 440,
+        "height": 198,
+        "background": "#ffffff"
+    },
+    "typography": {
+        "fontFamily": "Arial, Helvetica, sans-serif",
+        "defaultSize": 14,
+        "color": "#111111",
+        "fontCandidates": [
+            "Arial",
+            "Helvetica",
+            "Liberation Sans",
+            "Nimbus Sans"
+        ],
+        "calibration": {
+            "letterSpacing": 0,
+            "lineHeight": 1.08,
+            "notes": "First-pass visual match to compact sans-serif figure typography; no font-calibration harness was run."
+        }
+    },
+    "coordinateSystems": [
+        {
+            "id": "panel-d.xy",
+            "type": "cartesian",
+            "xDomain": [
+                0,
+                220
+            ],
+            "yDomain": [
+                0,
+                1
+            ],
+            "dataBbox": {
+                "x": 99,
+                "y": 24,
+                "width": 260,
+                "height": 155
+            }
+        }
+    ],
+    "panels": [
+        {
+            "id": "panel-d",
+            "label": {
+                "id": "panel-d-label",
+                "text": "D",
+                "x": 42,
+                "y": 8,
+                "fontSize": 20,
+                "fontWeight": 700,
+                "textAnchor": "middle",
+                "dominantBaseline": "alphabetic"
+            },
+            "title": {
+                "id": "panel-d-title",
+                "text": "Decoding position",
+                "x": 70,
+                "y": 10,
+                "fontSize": 16,
+                "fontWeight": 700,
+                "textAnchor": "start",
+                "dominantBaseline": "alphabetic",
+                "sourceBox": {
+                    "x": 70,
+                    "y": 0,
+                    "width": 136,
+                    "height": 16
+                }
+            },
+            "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 440,
+                "height": 198
+            },
+            "plot": {
+                "id": "panel-d-plot",
+                "usesTransform": "panel-d.xy",
+                "dataBbox": {
+                    "x": 99,
+                    "y": 24,
+                    "width": 260,
+                    "height": 155
+                },
+                "axes": {
+                    "xAxis": {
+                        "id": "panel-d-x-axis",
+                        "line": {
+                            "x1": 99,
+                            "y1": 179,
+                            "x2": 359,
+                            "y2": 179
+                        },
+                        "tickLength": 7,
+                        "stroke": "#1a1a1a",
+                        "strokeWidth": 1.2
+                    },
+                    "yAxis": {
+                        "id": "panel-d-y-axis",
+                        "line": {
+                            "x1": 99,
+                            "y1": 24,
+                            "x2": 99,
+                            "y2": 179
+                        },
+                        "tickLength": 7,
+                        "stroke": "#1a1a1a",
+                        "strokeWidth": 1.2
+                    }
+                },
+                "x": {
+                    "scale": "linear",
+                    "domain": [
+                        0,
+                        220
+                    ],
+                    "ticks": [
+                        {
+                            "value": 0,
+                            "label": "0"
+                        },
+                        {
+                            "value": 50,
+                            "label": "50"
+                        },
+                        {
+                            "value": 100,
+                            "label": "100"
+                        },
+                        {
+                            "value": 150,
+                            "label": "150"
+                        },
+                        {
+                            "value": 200,
+                            "label": "200"
+                        }
+                    ]
+                },
+                "y": {
+                    "scale": "linear",
+                    "domain": [
+                        0,
+                        1
+                    ],
+                    "ticks": [
+                        {
+                            "value": 0,
+                            "label": "0.0"
+                        },
+                        {
+                            "value": 0.2,
+                            "label": "0.2"
+                        },
+                        {
+                            "value": 0.4,
+                            "label": "0.4"
+                        },
+                        {
+                            "value": 0.6,
+                            "label": "0.6"
+                        },
+                        {
+                            "value": 0.8,
+                            "label": "0.8"
+                        },
+                        {
+                            "value": 1.0,
+                            "label": "1.0"
+                        }
+                    ],
+                    "label": {
+                        "id": "panel-d-y-label",
+                        "text": "Decoding accuracy",
+                        "x": 55,
+                        "y": 101,
+                        "rotation": -90,
+                        "fontSize": 15,
+                        "textAnchor": "middle"
+                    }
+                }
+            },
+            "marks": [
+                {
+                    "id": "panel-d-context-bands",
+                    "type": "rectBandGroup",
+                    "usesTransform": "panel-d.xy",
+                    "axis": "x",
+                    "bands": [
+                        {
+                            "x0": 28,
+                            "x1": 48
+                        },
+                        {
+                            "x0": 78,
+                            "x1": 104
+                        },
+                        {
+                            "x0": 130,
+                            "x1": 153
+                        },
+                        {
+                            "x0": 168,
+                            "x1": 191
+                        },
+                        {
+                            "x0": 207,
+                            "x1": 219
+                        }
+                    ],
+                    "y0": 0,
+                    "y1": 1,
+                    "fill": "#eeeeee",
+                    "opacity": 0.72
+                },
+                {
+                    "id": "observed-uncertainty",
+                    "type": "uncertaintyBand",
+                    "series": "observed",
+                    "usesTransform": "panel-d.xy",
+                    "fill": "#66bdb8",
+                    "opacity": 0.42,
+                    "lowerOffset": 0.065,
+                    "upperOffset": 0.075
+                },
+                {
+                    "id": "observed-line",
+                    "type": "lineSeries",
+                    "usesTransform": "panel-d.xy",
+                    "series": "observed",
+                    "stroke": "#0e6f71",
+                    "strokeWidth": 2,
+                    "fill": "none",
+                    "points": [
+                        [
+                            0,
+                            0.38
+                        ],
+                        [
+                            5,
+                            0.36
+                        ],
+                        [
+                            10,
+                            0.42
+                        ],
+                        [
+                            15,
+                            0.39
+                        ],
+                        [
+                            20,
+                            0.48
+                        ],
+                        [
+                            25,
+                            0.62
+                        ],
+                        [
+                            30,
+                            0.68
+                        ],
+                        [
+                            35,
+                            0.64
+                        ],
+                        [
+                            40,
+                            0.66
+                        ],
+                        [
+                            45,
+                            0.63
+                        ],
+                        [
+                            50,
+                            0.65
+                        ],
+                        [
+                            55,
+                            0.71
+                        ],
+                        [
+                            60,
+                            0.64
+                        ],
+                        [
+                            65,
+                            0.59
+                        ],
+                        [
+                            70,
+                            0.55
+                        ],
+                        [
+                            75,
+                            0.51
+                        ],
+                        [
+                            80,
+                            0.48
+                        ],
+                        [
+                            85,
+                            0.43
+                        ],
+                        [
+                            90,
+                            0.38
+                        ],
+                        [
+                            95,
+                            0.45
+                        ],
+                        [
+                            100,
+                            0.57
+                        ],
+                        [
+                            105,
+                            0.64
+                        ],
+                        [
+                            110,
+                            0.63
+                        ],
+                        [
+                            115,
+                            0.66
+                        ],
+                        [
+                            120,
+                            0.65
+                        ],
+                        [
+                            125,
+                            0.66
+                        ],
+                        [
+                            130,
+                            0.69
+                        ],
+                        [
+                            135,
+                            0.71
+                        ],
+                        [
+                            140,
+                            0.72
+                        ],
+                        [
+                            145,
+                            0.76
+                        ],
+                        [
+                            150,
+                            0.66
+                        ],
+                        [
+                            155,
+                            0.6
+                        ],
+                        [
+                            160,
+                            0.63
+                        ],
+                        [
+                            165,
+                            0.54
+                        ],
+                        [
+                            170,
+                            0.62
+                        ],
+                        [
+                            175,
+                            0.66
+                        ],
+                        [
+                            180,
+                            0.69
+                        ],
+                        [
+                            185,
+                            0.67
+                        ],
+                        [
+                            190,
+                            0.71
+                        ],
+                        [
+                            195,
+                            0.72
+                        ],
+                        [
+                            200,
+                            0.75
+                        ],
+                        [
+                            205,
+                            0.77
+                        ],
+                        [
+                            210,
+                            0.8
+                        ],
+                        [
+                            215,
+                            0.78
+                        ],
+                        [
+                            220,
+                            0.84
+                        ]
+                    ]
+                },
+                {
+                    "id": "chance-line",
+                    "type": "lineSeries",
+                    "usesTransform": "panel-d.xy",
+                    "series": "chance",
+                    "stroke": "#7a7a7a",
+                    "strokeWidth": 2,
+                    "dashArray": "5 4",
+                    "fill": "none",
+                    "points": [
+                        [
+                            0,
+                            0.21
+                        ],
+                        [
+                            10,
+                            0.2
+                        ],
+                        [
+                            20,
+                            0.205
+                        ],
+                        [
+                            30,
+                            0.198
+                        ],
+                        [
+                            40,
+                            0.203
+                        ],
+                        [
+                            50,
+                            0.198
+                        ],
+                        [
+                            60,
+                            0.205
+                        ],
+                        [
+                            70,
+                            0.201
+                        ],
+                        [
+                            80,
+                            0.207
+                        ],
+                        [
+                            90,
+                            0.205
+                        ],
+                        [
+                            100,
+                            0.204
+                        ],
+                        [
+                            110,
+                            0.206
+                        ],
+                        [
+                            120,
+                            0.202
+                        ],
+                        [
+                            130,
+                            0.208
+                        ],
+                        [
+                            140,
+                            0.2
+                        ],
+                        [
+                            150,
+                            0.207
+                        ],
+                        [
+                            160,
+                            0.202
+                        ],
+                        [
+                            170,
+                            0.209
+                        ],
+                        [
+                            180,
+                            0.205
+                        ],
+                        [
+                            190,
+                            0.207
+                        ],
+                        [
+                            200,
+                            0.211
+                        ],
+                        [
+                            210,
+                            0.208
+                        ],
+                        [
+                            220,
+                            0.214
+                        ]
+                    ]
+                }
+            ],
+            "annotations": [
+                {
+                    "id": "observed-label",
+                    "type": "text",
+                    "text": "Observed",
+                    "x": 365,
+                    "y": 52,
+                    "fontSize": 14,
+                    "fill": "#0e6f71",
+                    "textAnchor": "start"
+                },
+                {
+                    "id": "chance-label",
+                    "type": "text",
+                    "text": "Chance",
+                    "x": 367,
+                    "y": 144,
+                    "fontSize": 14,
+                    "fill": "#666666",
+                    "textAnchor": "start"
+                },
+                {
+                    "id": "chance-sublabel",
+                    "type": "text",
+                    "text": "(5 cm bins)",
+                    "x": 367,
+                    "y": 164,
+                    "fontSize": 14,
+                    "fill": "#666666",
+                    "textAnchor": "start"
+                }
+            ],
+            "provenance": [
+                {
+                    "object": "observed-line",
+                    "confidence": "medium",
+                    "note": "Series shape is hand-traced from the raster at approximate 5 cm steps; local jaggedness is stylized but editable."
+                },
+                {
+                    "object": "observed-uncertainty",
+                    "confidence": "medium-low",
+                    "note": "Band follows the observed curve using uniform offsets; source band width varies slightly."
+                },
+                {
+                    "object": "context-bands",
+                    "confidence": "medium",
+                    "note": "Vertical shaded regions were approximated from visible light gray spans."
+                }
+            ]
+        }
+    ],
+    "rendering": {
+        "renderer": "svg-dom",
+        "layerOrder": [
+            "background",
+            "context-bands",
+            "uncertainty",
+            "axes",
+            "series",
+            "labels"
+        ],
+        "styleTokens": {
+            "axis": "#1a1a1a",
+            "observed": "#0e6f71",
+            "observedBand": "#66bdb8",
+            "chance": "#7a7a7a",
+            "contextBand": "#eeeeee"
+        }
+    },
+    "validation": {
+        "expected": {
+            "panels": 1,
+            "xTicks": 5,
+            "yTicks": 6,
+            "lineSeries": 2,
+            "uncertaintyBands": 1,
+            "contextBands": 5
+        },
+        "constraints": [
+            "Generated candidate must not render the source raster as a visual layer.",
+            "QA reference image, if shown, must be labeled reference-only and outside the generated SVG candidate.",
+            "Observed line and observed uncertainty band share the panel-d.xy coordinate transform.",
+            "Tick marks and tick labels are rendered as separate editable SVG elements with axis/value metadata."
+        ]
+    },
+    "confidence": [
+        {
+            "scope": "overall",
+            "level": "medium",
+            "note": "First-pass reconstruction prioritizes editable chart grammar and approximate visual similarity over exact digitization."
+        }
+    ]
+}
+
+exec
+/bin/zsh -lc 'git status --short outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+?? outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html
+?? outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json
+
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html b/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..3983452c5dcaeccc92a9201e06116a6710e15afc
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html
+@@ -0,0 +1,356 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-08-neuropixels-central-heatmap-D reconstruction</title>
++  <style>
++    :root {
++      color-scheme: light;
++      --page-bg: #f5f5f5;
++      --ink: #111111;
++      --muted: #666666;
++      --panel-bg: #ffffff;
++      --rule: #d9d9d9;
++    }
++    * {
++      box-sizing: border-box;
++    }
++    body {
++      margin: 0;
++      min-height: 100vh;
++      background: var(--page-bg);
++      color: var(--ink);
++      font-family: Arial, Helvetica, sans-serif;
++      padding: 16px;
++    }
++    .wrap {
++      display: grid;
++      gap: 12px;
++      align-items: start;
++      width: max-content;
++      max-width: 100%;
++    }
++    .toolbar {
++      display: flex;
++      align-items: center;
++      gap: 10px;
++      font-size: 13px;
++      color: var(--muted);
++    }
++    .toolbar label {
++      display: inline-flex;
++      align-items: center;
++      gap: 6px;
++      user-select: none;
++    }
++    .stage {
++      display: grid;
++      grid-template-columns: auto;
++      gap: 12px;
++    }
++    .candidate,
++    .qa-reference {
++      width: 440px;
++      max-width: 100%;
++      background: var(--panel-bg);
++    }
++    .candidate {
++      box-shadow: 0 0 0 1px var(--rule);
++    }
++    .qa-reference {
++      display: none;
++      padding: 8px;
++      border: 1px solid var(--rule);
++    }
++    .qa-reference.is-visible {
++      display: block;
++    }
++    .qa-reference strong {
++      display: block;
++      margin: 0 0 6px;
++      font-size: 12px;
++      color: var(--muted);
++      font-weight: 700;
++    }
++    .qa-reference img {
++      display: block;
++      width: 440px;
++      height: 198px;
++      max-width: 100%;
++      object-fit: contain;
++    }
++    svg {
++      display: block;
++      width: 440px;
++      height: 198px;
++      max-width: 100%;
++      background: #ffffff;
++      overflow: visible;
++    }
++    .axis-line,
++    .tick-mark {
++      stroke: #1a1a1a;
++      stroke-linecap: square;
++      shape-rendering: crispEdges;
++    }
++    .tick-label,
++    .axis-label,
++    .panel-title,
++    .panel-label,
++    .annotation-text {
++      font-family: Arial, Helvetica, sans-serif;
++      letter-spacing: 0;
++    }
++  </style>
++</head>
++<body>
++  <main class="wrap">
++    <div class="toolbar">
++      <label><input id="qaToggle" type="checkbox"> Show QA reference</label>
++      <span>Generated SVG candidate is rendered from semantic JSON.</span>
++    </div>
++    <section class="stage" aria-label="Figure reconstruction">
++      <div id="candidate" class="candidate" aria-label="Generated reconstruction"></div>
++      <aside id="qaReference" class="qa-reference" aria-label="QA reference only">
++        <strong>QA reference only: source raster is not used in the generated candidate</strong>
++        <img alt="Reference raster for QA only" src="../../../assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png">
++      </aside>
++    </section>
++  </main>
++
++  <script type="application/json" id="fallback-spec">
++  {
++    "schema": "scientific_figure_reconstruction.v1",
++    "id": "reference-08-neuropixels-central-heatmap-D",
++    "source": {
++      "path": "../../../assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png",
++      "usage": "QA-only; not used by generated candidate."
++    }
++  }
++  </script>
++  <script>
++    const specUrl = './reference-08-neuropixels-central-heatmap-D.json';
++    const ns = 'http://www.w3.org/2000/svg';
++
++    function el(name, attrs = {}, children = []) {
++      const node = document.createElementNS(ns, name);
++      Object.entries(attrs).forEach(([key, value]) => {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      });
++      children.forEach((child) => node.appendChild(child));
++      return node;
++    }
++
++    function textEl(attrs, text) {
++      const node = el('text', attrs);
++      node.textContent = text;
++      return node;
++    }
++
++    function linePath(points, xScale, yScale) {
++      return points.map((point, index) => {
++        const cmd = index === 0 ? 'M' : 'L';
++        return `${cmd}${xScale(point[0]).toFixed(2)},${yScale(point[1]).toFixed(2)}`;
++      }).join(' ');
++    }
++
++    function bandPath(points, lowerOffset, upperOffset, xScale, yScale) {
++      const upper = points.map((point) => [point[0], Math.min(1, point[1] + upperOffset)]);
++      const lower = points.slice().reverse().map((point) => [point[0], Math.max(0, point[1] - lowerOffset)]);
++      const joined = upper.concat(lower);
++      return joined.map((point, index) => {
++        const cmd = index === 0 ? 'M' : 'L';
++        return `${cmd}${xScale(point[0]).toFixed(2)},${yScale(point[1]).toFixed(2)}`;
++      }).join(' ') + ' Z';
++    }
++
++    function render(spec) {
++      const panel = spec.panels[0];
++      const plot = panel.plot;
++      const bbox = plot.dataBbox;
++      const xDomain = plot.x.domain;
++      const yDomain = plot.y.domain;
++      const xScale = (value) => bbox.x + ((value - xDomain[0]) / (xDomain[1] - xDomain[0])) * bbox.width;
++      const yScale = (value) => bbox.y + bbox.height - ((value - yDomain[0]) / (yDomain[1] - yDomain[0])) * bbox.height;
++
++      const svg = el('svg', {
++        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
++        role: 'img',
++        'aria-labelledby': 'svg-title svg-desc',
++        'data-figure-id': spec.id
++      });
++      svg.appendChild(textEl({id: 'svg-title'}, 'Decoding position reconstruction'));
++      svg.appendChild(textEl({id: 'svg-desc'}, 'Editable reconstruction of line chart panel D'));
++      svg.appendChild(el('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
++
++      const context = el('g', {'data-layer': 'context-bands'});
++      const bandGroup = panel.marks.find((mark) => mark.id === 'panel-d-context-bands');
++      bandGroup.bands.forEach((band, index) => {
++        context.appendChild(el('rect', {
++          id: `${bandGroup.id}-${index}`,
++          'data-mark-type': 'rectBand',
++          'data-axis': 'x',
++          x: xScale(band.x0).toFixed(2),
++          y: yScale(bandGroup.y1).toFixed(2),
++          width: (xScale(band.x1) - xScale(band.x0)).toFixed(2),
++          height: (yScale(bandGroup.y0) - yScale(bandGroup.y1)).toFixed(2),
++          fill: bandGroup.fill,
++          opacity: bandGroup.opacity
++        }));
++      });
++      svg.appendChild(context);
++
++      const axes = el('g', {'data-layer': 'axes'});
++      axes.appendChild(el('line', {...plot.axes.xAxis.line, id: plot.axes.xAxis.id, class: 'axis-line', stroke: plot.axes.xAxis.stroke, 'stroke-width': plot.axes.xAxis.strokeWidth}));
++      axes.appendChild(el('line', {...plot.axes.yAxis.line, id: plot.axes.yAxis.id, class: 'axis-line', stroke: plot.axes.yAxis.stroke, 'stroke-width': plot.axes.yAxis.strokeWidth}));
++      plot.x.ticks.forEach((tick) => {
++        const x = xScale(tick.value);
++        axes.appendChild(el('line', {
++          class: 'tick-mark',
++          'data-axis': 'x',
++          'data-value': tick.value,
++          x1: x.toFixed(2),
++          y1: plot.axes.xAxis.line.y1,
++          x2: x.toFixed(2),
++          y2: plot.axes.xAxis.line.y1 + plot.axes.xAxis.tickLength,
++          stroke: plot.axes.xAxis.stroke,
++          'stroke-width': plot.axes.xAxis.strokeWidth
++        }));
++        axes.appendChild(textEl({
++          class: 'tick-label',
++          'data-axis': 'x',
++          'data-value': tick.value,
++          x: x.toFixed(2),
++          y: 197,
++          'font-size': 14,
++          fill: '#111111',
++          'text-anchor': 'middle'
++        }, tick.label));
++      });
++      plot.y.ticks.forEach((tick) => {
++        const y = yScale(tick.value);
++        axes.appendChild(el('line', {
++          class: 'tick-mark',
++          'data-axis': 'y',
++          'data-value': tick.value,
++          x1: plot.axes.yAxis.line.x1,
++          y1: y.toFixed(2),
++          x2: plot.axes.yAxis.line.x1 - plot.axes.yAxis.tickLength,
++          y2: y.toFixed(2),
++          stroke: plot.axes.yAxis.stroke,
++          'stroke-width': plot.axes.yAxis.strokeWidth
++        }));
++        axes.appendChild(textEl({
++          class: 'tick-label',
++          'data-axis': 'y',
++          'data-value': tick.value,
++          x: 89,
++          y: (y + 5).toFixed(2),
++          'font-size': 14,
++          fill: '#111111',
++          'text-anchor': 'end'
++        }, tick.label));
++      });
++      axes.appendChild(textEl({
++        id: plot.y.label.id,
++        class: 'axis-label',
++        x: plot.y.label.x,
++        y: plot.y.label.y,
++        transform: `rotate(${plot.y.label.rotation} ${plot.y.label.x} ${plot.y.label.y})`,
++        'font-size': plot.y.label.fontSize,
++        fill: '#111111',
++        'text-anchor': plot.y.label.textAnchor
++      }, plot.y.label.text));
++      svg.appendChild(axes);
++
++      const seriesLayer = el('g', {'data-layer': 'series'});
++      const observed = panel.marks.find((mark) => mark.id === 'observed-line');
++      const uncertainty = panel.marks.find((mark) => mark.id === 'observed-uncertainty');
++      seriesLayer.appendChild(el('path', {
++        id: uncertainty.id,
++        'data-mark-type': uncertainty.type,
++        'data-series': uncertainty.series,
++        d: bandPath(observed.points, uncertainty.lowerOffset, uncertainty.upperOffset, xScale, yScale),
++        fill: uncertainty.fill,
++        opacity: uncertainty.opacity,
++        stroke: 'none'
++      }));
++      [observed, panel.marks.find((mark) => mark.id === 'chance-line')].forEach((mark) => {
++        seriesLayer.appendChild(el('path', {
++          id: mark.id,
++          'data-mark-type': mark.type,
++          'data-series': mark.series,
++          d: linePath(mark.points, xScale, yScale),
++          fill: mark.fill,
++          stroke: mark.stroke,
++          'stroke-width': mark.strokeWidth,
++          'stroke-dasharray': mark.dashArray || null,
++          'stroke-linejoin': 'round',
++          'stroke-linecap': 'round'
++        }));
++      });
++      svg.appendChild(seriesLayer);
++
++      const labels = el('g', {'data-layer': 'labels'});
++      labels.appendChild(textEl({
++        id: panel.label.id,
++        class: 'panel-label',
++        x: panel.label.x,
++        y: panel.label.y,
++        'font-size': panel.label.fontSize,
++        'font-weight': panel.label.fontWeight,
++        fill: '#000000',
++        'text-anchor': panel.label.textAnchor
++      }, panel.label.text));
++      labels.appendChild(textEl({
++        id: panel.title.id,
++        class: 'panel-title',
++        x: panel.title.x,
++        y: panel.title.y,
++        'font-size': panel.title.fontSize,
++        'font-weight': panel.title.fontWeight,
++        fill: '#111111',
++        'text-anchor': panel.title.textAnchor
++      }, panel.title.text));
++      panel.annotations.forEach((annotation) => {
++        labels.appendChild(textEl({
++          id: annotation.id,
++          class: 'annotation-text',
++          'data-annotation-type': annotation.type,
++          x: annotation.x,
++          y: annotation.y,
++          'font-size': annotation.fontSize,
++          fill: annotation.fill,
++          'text-anchor': annotation.textAnchor
++        }, annotation.text));
++      });
++      svg.appendChild(labels);
++
++      const target = document.getElementById('candidate');
++      target.innerHTML = '';
++      target.appendChild(svg);
++    }
++
++    async function loadSpec() {
++      try {
++        const response = await fetch(specUrl);
++        if (!response.ok) throw new Error(`Unable to load ${specUrl}`);
++        return await response.json();
++      } catch (error) {
++        const fallback = JSON.parse(document.getElementById('fallback-spec').textContent);
++        fallback.panels = [];
++        throw new Error(`Spec load failed and fallback is metadata only: ${error.message}`);
++      }
++    }
++
++    document.getElementById('qaToggle').addEventListener('change', (event) => {
++      document.getElementById('qaReference').classList.toggle('is-visible', event.target.checked);
++    });
++
++    loadSpec().then(render).catch((error) => {
++      document.getElementById('candidate').textContent = error.message;
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json b/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..74c7d41b4ee2ca66964b1877d7caad403a4a3e66
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json
+@@ -0,0 +1,297 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-08-neuropixels-central-heatmap-D",
++  "source": {
++    "path": "../../../assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "dimensions": {
++      "width": 440,
++      "height": 198
++    },
++    "notes": "Single cropped panel D. Chart geometry and series were visually estimated from the raster; generated marks are editable SVG paths and shapes."
++  },
++  "canvas": {
++    "width": 440,
++    "height": 198,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 14,
++    "color": "#111111",
++    "fontCandidates": ["Arial", "Helvetica", "Liberation Sans", "Nimbus Sans"],
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "First-pass visual match to compact sans-serif figure typography; no font-calibration harness was run."
++    }
++  },
++  "coordinateSystems": [
++    {
++      "id": "panel-d.xy",
++      "type": "cartesian",
++      "xDomain": [0, 220],
++      "yDomain": [0, 1],
++      "dataBbox": {
++        "x": 99,
++        "y": 24,
++        "width": 260,
++        "height": 155
++      }
++    }
++  ],
++  "panels": [
++    {
++      "id": "panel-d",
++      "label": {
++        "id": "panel-d-label",
++        "text": "D",
++        "x": 42,
++        "y": 8,
++        "fontSize": 20,
++        "fontWeight": 700,
++        "textAnchor": "middle",
++        "dominantBaseline": "alphabetic"
++      },
++      "title": {
++        "id": "panel-d-title",
++        "text": "Decoding position",
++        "x": 70,
++        "y": 10,
++        "fontSize": 16,
++        "fontWeight": 700,
++        "textAnchor": "start",
++        "dominantBaseline": "alphabetic",
++        "sourceBox": {
++          "x": 70,
++          "y": 0,
++          "width": 136,
++          "height": 16
++        }
++      },
++      "bbox": {
++        "x": 0,
++        "y": 0,
++        "width": 440,
++        "height": 198
++      },
++      "plot": {
++        "id": "panel-d-plot",
++        "usesTransform": "panel-d.xy",
++        "dataBbox": {
++          "x": 99,
++          "y": 24,
++          "width": 260,
++          "height": 155
++        },
++        "axes": {
++          "xAxis": {
++            "id": "panel-d-x-axis",
++            "line": {
++              "x1": 99,
++              "y1": 179,
++              "x2": 359,
++              "y2": 179
++            },
++            "tickLength": 7,
++            "stroke": "#1a1a1a",
++            "strokeWidth": 1.2
++          },
++          "yAxis": {
++            "id": "panel-d-y-axis",
++            "line": {
++              "x1": 99,
++              "y1": 24,
++              "x2": 99,
++              "y2": 179
++            },
++            "tickLength": 7,
++            "stroke": "#1a1a1a",
++            "strokeWidth": 1.2
++          }
++        },
++        "x": {
++          "scale": "linear",
++          "domain": [0, 220],
++          "ticks": [
++            {"value": 0, "label": "0"},
++            {"value": 50, "label": "50"},
++            {"value": 100, "label": "100"},
++            {"value": 150, "label": "150"},
++            {"value": 200, "label": "200"}
++          ]
++        },
++        "y": {
++          "scale": "linear",
++          "domain": [0, 1],
++          "ticks": [
++            {"value": 0, "label": "0.0"},
++            {"value": 0.2, "label": "0.2"},
++            {"value": 0.4, "label": "0.4"},
++            {"value": 0.6, "label": "0.6"},
++            {"value": 0.8, "label": "0.8"},
++            {"value": 1.0, "label": "1.0"}
++          ],
++          "label": {
++            "id": "panel-d-y-label",
++            "text": "Decoding accuracy",
++            "x": 55,
++            "y": 101,
++            "rotation": -90,
++            "fontSize": 15,
++            "textAnchor": "middle"
++          }
++        }
++      },
++      "marks": [
++        {
++          "id": "panel-d-context-bands",
++          "type": "rectBandGroup",
++          "usesTransform": "panel-d.xy",
++          "axis": "x",
++          "bands": [
++            {"x0": 28, "x1": 48},
++            {"x0": 78, "x1": 104},
++            {"x0": 130, "x1": 153},
++            {"x0": 168, "x1": 191},
++            {"x0": 207, "x1": 219}
++          ],
++          "y0": 0,
++          "y1": 1,
++          "fill": "#eeeeee",
++          "opacity": 0.72
++        },
++        {
++          "id": "observed-uncertainty",
++          "type": "uncertaintyBand",
++          "series": "observed",
++          "usesTransform": "panel-d.xy",
++          "fill": "#66bdb8",
++          "opacity": 0.42,
++          "lowerOffset": 0.065,
++          "upperOffset": 0.075
++        },
++        {
++          "id": "observed-line",
++          "type": "lineSeries",
++          "usesTransform": "panel-d.xy",
++          "series": "observed",
++          "stroke": "#0e6f71",
++          "strokeWidth": 2,
++          "fill": "none",
++          "points": [
++            [0, 0.38], [5, 0.36], [10, 0.42], [15, 0.39], [20, 0.48], [25, 0.62],
++            [30, 0.68], [35, 0.64], [40, 0.66], [45, 0.63], [50, 0.65], [55, 0.71],
++            [60, 0.64], [65, 0.59], [70, 0.55], [75, 0.51], [80, 0.48], [85, 0.43],
++            [90, 0.38], [95, 0.45], [100, 0.57], [105, 0.64], [110, 0.63],
++            [115, 0.66], [120, 0.65], [125, 0.66], [130, 0.69], [135, 0.71],
++            [140, 0.72], [145, 0.76], [150, 0.66], [155, 0.60], [160, 0.63],
++            [165, 0.54], [170, 0.62], [175, 0.66], [180, 0.69], [185, 0.67],
++            [190, 0.71], [195, 0.72], [200, 0.75], [205, 0.77], [210, 0.80],
++            [215, 0.78], [220, 0.84]
++          ]
++        },
++        {
++          "id": "chance-line",
++          "type": "lineSeries",
++          "usesTransform": "panel-d.xy",
++          "series": "chance",
++          "stroke": "#7a7a7a",
++          "strokeWidth": 2,
++          "dashArray": "5 4",
++          "fill": "none",
++          "points": [
++            [0, 0.21], [10, 0.20], [20, 0.205], [30, 0.198], [40, 0.203],
++            [50, 0.198], [60, 0.205], [70, 0.201], [80, 0.207], [90, 0.205],
++            [100, 0.204], [110, 0.206], [120, 0.202], [130, 0.208], [140, 0.20],
++            [150, 0.207], [160, 0.202], [170, 0.209], [180, 0.205], [190, 0.207],
++            [200, 0.211], [210, 0.208], [220, 0.214]
++          ]
++        }
++      ],
++      "annotations": [
++        {
++          "id": "observed-label",
++          "type": "text",
++          "text": "Observed",
++          "x": 365,
++          "y": 52,
++          "fontSize": 14,
++          "fill": "#0e6f71",
++          "textAnchor": "start"
++        },
++        {
++          "id": "chance-label",
++          "type": "text",
++          "text": "Chance",
++          "x": 367,
++          "y": 144,
++          "fontSize": 14,
++          "fill": "#666666",
++          "textAnchor": "start"
++        },
++        {
++          "id": "chance-sublabel",
++          "type": "text",
++          "text": "(5 cm bins)",
++          "x": 367,
++          "y": 164,
++          "fontSize": 14,
++          "fill": "#666666",
++          "textAnchor": "start"
++        }
++      ],
++      "provenance": [
++        {
++          "object": "observed-line",
++          "confidence": "medium",
++          "note": "Series shape is hand-traced from the raster at approximate 5 cm steps; local jaggedness is stylized but editable."
++        },
++        {
++          "object": "observed-uncertainty",
++          "confidence": "medium-low",
++          "note": "Band follows the observed curve using uniform offsets; source band width varies slightly."
++        },
++        {
++          "object": "context-bands",
++          "confidence": "medium",
++          "note": "Vertical shaded regions were approximated from visible light gray spans."
++        }
++      ]
++    }
++  ],
++  "rendering": {
++    "renderer": "svg-dom",
++    "layerOrder": ["background", "context-bands", "uncertainty", "axes", "series", "labels"],
++    "styleTokens": {
++      "axis": "#1a1a1a",
++      "observed": "#0e6f71",
++      "observedBand": "#66bdb8",
++      "chance": "#7a7a7a",
++      "contextBand": "#eeeeee"
++    }
++  },
++  "validation": {
++    "expected": {
++      "panels": 1,
++      "xTicks": 5,
++      "yTicks": 6,
++      "lineSeries": 2,
++      "uncertaintyBands": 1,
++      "contextBands": 5
++    },
++    "constraints": [
++      "Generated candidate must not render the source raster as a visual layer.",
++      "QA reference image, if shown, must be labeled reference-only and outside the generated SVG candidate.",
++      "Observed line and observed uncertainty band share the panel-d.xy coordinate transform.",
++      "Tick marks and tick labels are rendered as separate editable SVG elements with axis/value metadata."
++    ]
++  },
++  "confidence": [
++    {
++      "scope": "overall",
++      "level": "medium",
++      "note": "First-pass reconstruction prioritizes editable chart grammar and approximate visual similarity over exact digitization."
++    }
++  ]
++}
+
+codex
+Validation passed, and the source path appears only in JSON source metadata, the fallback metadata, and the labeled QA `<img>`. The CSS matches are plain colors, not source-backed backgrounds; there are no `drawImage` or `url(...)` matches.
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html b/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..3983452c5dcaeccc92a9201e06116a6710e15afc
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html
+@@ -0,0 +1,356 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-08-neuropixels-central-heatmap-D reconstruction</title>
++  <style>
++    :root {
++      color-scheme: light;
++      --page-bg: #f5f5f5;
++      --ink: #111111;
++      --muted: #666666;
++      --panel-bg: #ffffff;
++      --rule: #d9d9d9;
++    }
++    * {
++      box-sizing: border-box;
++    }
++    body {
++      margin: 0;
++      min-height: 100vh;
++      background: var(--page-bg);
++      color: var(--ink);
++      font-family: Arial, Helvetica, sans-serif;
++      padding: 16px;
++    }
++    .wrap {
++      display: grid;
++      gap: 12px;
++      align-items: start;
++      width: max-content;
++      max-width: 100%;
++    }
++    .toolbar {
++      display: flex;
++      align-items: center;
++      gap: 10px;
++      font-size: 13px;
++      color: var(--muted);
++    }
++    .toolbar label {
++      display: inline-flex;
++      align-items: center;
++      gap: 6px;
++      user-select: none;
++    }
++    .stage {
++      display: grid;
++      grid-template-columns: auto;
++      gap: 12px;
++    }
++    .candidate,
++    .qa-reference {
++      width: 440px;
++      max-width: 100%;
++      background: var(--panel-bg);
++    }
++    .candidate {
++      box-shadow: 0 0 0 1px var(--rule);
++    }
++    .qa-reference {
++      display: none;
++      padding: 8px;
++      border: 1px solid var(--rule);
++    }
++    .qa-reference.is-visible {
++      display: block;
++    }
++    .qa-reference strong {
++      display: block;
++      margin: 0 0 6px;
++      font-size: 12px;
++      color: var(--muted);
++      font-weight: 700;
++    }
++    .qa-reference img {
++      display: block;
++      width: 440px;
++      height: 198px;
++      max-width: 100%;
++      object-fit: contain;
++    }
++    svg {
++      display: block;
++      width: 440px;
++      height: 198px;
++      max-width: 100%;
++      background: #ffffff;
++      overflow: visible;
++    }
++    .axis-line,
++    .tick-mark {
++      stroke: #1a1a1a;
++      stroke-linecap: square;
++      shape-rendering: crispEdges;
++    }
++    .tick-label,
++    .axis-label,
++    .panel-title,
++    .panel-label,
++    .annotation-text {
++      font-family: Arial, Helvetica, sans-serif;
++      letter-spacing: 0;
++    }
++  </style>
++</head>
++<body>
++  <main class="wrap">
++    <div class="toolbar">
++      <label><input id="qaToggle" type="checkbox"> Show QA reference</label>
++      <span>Generated SVG candidate is rendered from semantic JSON.</span>
++    </div>
++    <section class="stage" aria-label="Figure reconstruction">
++      <div id="candidate" class="candidate" aria-label="Generated reconstruction"></div>
++      <aside id="qaReference" class="qa-reference" aria-label="QA reference only">
++        <strong>QA reference only: source raster is not used in the generated candidate</strong>
++        <img alt="Reference raster for QA only" src="../../../assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png">
++      </aside>
++    </section>
++  </main>
++
++  <script type="application/json" id="fallback-spec">
++  {
++    "schema": "scientific_figure_reconstruction.v1",
++    "id": "reference-08-neuropixels-central-heatmap-D",
++    "source": {
++      "path": "../../../assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png",
++      "usage": "QA-only; not used by generated candidate."
++    }
++  }
++  </script>
++  <script>
++    const specUrl = './reference-08-neuropixels-central-heatmap-D.json';
++    const ns = 'http://www.w3.org/2000/svg';
++
++    function el(name, attrs = {}, children = []) {
++      const node = document.createElementNS(ns, name);
++      Object.entries(attrs).forEach(([key, value]) => {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      });
++      children.forEach((child) => node.appendChild(child));
++      return node;
++    }
++
++    function textEl(attrs, text) {
++      const node = el('text', attrs);
++      node.textContent = text;
++      return node;
++    }
++
++    function linePath(points, xScale, yScale) {
++      return points.map((point, index) => {
++        const cmd = index === 0 ? 'M' : 'L';
++        return `${cmd}${xScale(point[0]).toFixed(2)},${yScale(point[1]).toFixed(2)}`;
++      }).join(' ');
++    }
++
++    function bandPath(points, lowerOffset, upperOffset, xScale, yScale) {
++      const upper = points.map((point) => [point[0], Math.min(1, point[1] + upperOffset)]);
++      const lower = points.slice().reverse().map((point) => [point[0], Math.max(0, point[1] - lowerOffset)]);
++      const joined = upper.concat(lower);
++      return joined.map((point, index) => {
++        const cmd = index === 0 ? 'M' : 'L';
++        return `${cmd}${xScale(point[0]).toFixed(2)},${yScale(point[1]).toFixed(2)}`;
++      }).join(' ') + ' Z';
++    }
++
++    function render(spec) {
++      const panel = spec.panels[0];
++      const plot = panel.plot;
++      const bbox = plot.dataBbox;
++      const xDomain = plot.x.domain;
++      const yDomain = plot.y.domain;
++      const xScale = (value) => bbox.x + ((value - xDomain[0]) / (xDomain[1] - xDomain[0])) * bbox.width;
++      const yScale = (value) => bbox.y + bbox.height - ((value - yDomain[0]) / (yDomain[1] - yDomain[0])) * bbox.height;
++
++      const svg = el('svg', {
++        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
++        role: 'img',
++        'aria-labelledby': 'svg-title svg-desc',
++        'data-figure-id': spec.id
++      });
++      svg.appendChild(textEl({id: 'svg-title'}, 'Decoding position reconstruction'));
++      svg.appendChild(textEl({id: 'svg-desc'}, 'Editable reconstruction of line chart panel D'));
++      svg.appendChild(el('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
++
++      const context = el('g', {'data-layer': 'context-bands'});
++      const bandGroup = panel.marks.find((mark) => mark.id === 'panel-d-context-bands');
++      bandGroup.bands.forEach((band, index) => {
++        context.appendChild(el('rect', {
++          id: `${bandGroup.id}-${index}`,
++          'data-mark-type': 'rectBand',
++          'data-axis': 'x',
++          x: xScale(band.x0).toFixed(2),
++          y: yScale(bandGroup.y1).toFixed(2),
++          width: (xScale(band.x1) - xScale(band.x0)).toFixed(2),
++          height: (yScale(bandGroup.y0) - yScale(bandGroup.y1)).toFixed(2),
++          fill: bandGroup.fill,
++          opacity: bandGroup.opacity
++        }));
++      });
++      svg.appendChild(context);
++
++      const axes = el('g', {'data-layer': 'axes'});
++      axes.appendChild(el('line', {...plot.axes.xAxis.line, id: plot.axes.xAxis.id, class: 'axis-line', stroke: plot.axes.xAxis.stroke, 'stroke-width': plot.axes.xAxis.strokeWidth}));
++      axes.appendChild(el('line', {...plot.axes.yAxis.line, id: plot.axes.yAxis.id, class: 'axis-line', stroke: plot.axes.yAxis.stroke, 'stroke-width': plot.axes.yAxis.strokeWidth}));
++      plot.x.ticks.forEach((tick) => {
++        const x = xScale(tick.value);
++        axes.appendChild(el('line', {
++          class: 'tick-mark',
++          'data-axis': 'x',
++          'data-value': tick.value,
++          x1: x.toFixed(2),
++          y1: plot.axes.xAxis.line.y1,
++          x2: x.toFixed(2),
++          y2: plot.axes.xAxis.line.y1 + plot.axes.xAxis.tickLength,
++          stroke: plot.axes.xAxis.stroke,
++          'stroke-width': plot.axes.xAxis.strokeWidth
++        }));
++        axes.appendChild(textEl({
++          class: 'tick-label',
++          'data-axis': 'x',
++          'data-value': tick.value,
++          x: x.toFixed(2),
++          y: 197,
++          'font-size': 14,
++          fill: '#111111',
++          'text-anchor': 'middle'
++        }, tick.label));
++      });
++      plot.y.ticks.forEach((tick) => {
++        const y = yScale(tick.value);
++        axes.appendChild(el('line', {
++          class: 'tick-mark',
++          'data-axis': 'y',
++          'data-value': tick.value,
++          x1: plot.axes.yAxis.line.x1,
++          y1: y.toFixed(2),
++          x2: plot.axes.yAxis.line.x1 - plot.axes.yAxis.tickLength,
++          y2: y.toFixed(2),
++          stroke: plot.axes.yAxis.stroke,
++          'stroke-width': plot.axes.yAxis.strokeWidth
++        }));
++        axes.appendChild(textEl({
++          class: 'tick-label',
++          'data-axis': 'y',
++          'data-value': tick.value,
++          x: 89,
++          y: (y + 5).toFixed(2),
++          'font-size': 14,
++          fill: '#111111',
++          'text-anchor': 'end'
++        }, tick.label));
++      });
++      axes.appendChild(textEl({
++        id: plot.y.label.id,
++        class: 'axis-label',
++        x: plot.y.label.x,
++        y: plot.y.label.y,
++        transform: `rotate(${plot.y.label.rotation} ${plot.y.label.x} ${plot.y.label.y})`,
++        'font-size': plot.y.label.fontSize,
++        fill: '#111111',
++        'text-anchor': plot.y.label.textAnchor
++      }, plot.y.label.text));
++      svg.appendChild(axes);
++
++      const seriesLayer = el('g', {'data-layer': 'series'});
++      const observed = panel.marks.find((mark) => mark.id === 'observed-line');
++      const uncertainty = panel.marks.find((mark) => mark.id === 'observed-uncertainty');
++      seriesLayer.appendChild(el('path', {
++        id: uncertainty.id,
++        'data-mark-type': uncertainty.type,
++        'data-series': uncertainty.series,
++        d: bandPath(observed.points, uncertainty.lowerOffset, uncertainty.upperOffset, xScale, yScale),
++        fill: uncertainty.fill,
++        opacity: uncertainty.opacity,
++        stroke: 'none'
++      }));
++      [observed, panel.marks.find((mark) => mark.id === 'chance-line')].forEach((mark) => {
++        seriesLayer.appendChild(el('path', {
++          id: mark.id,
++          'data-mark-type': mark.type,
++          'data-series': mark.series,
++          d: linePath(mark.points, xScale, yScale),
++          fill: mark.fill,
++          stroke: mark.stroke,
++          'stroke-width': mark.strokeWidth,
++          'stroke-dasharray': mark.dashArray || null,
++          'stroke-linejoin': 'round',
++          'stroke-linecap': 'round'
++        }));
++      });
++      svg.appendChild(seriesLayer);
++
++      const labels = el('g', {'data-layer': 'labels'});
++      labels.appendChild(textEl({
++        id: panel.label.id,
++        class: 'panel-label',
++        x: panel.label.x,
++        y: panel.label.y,
++        'font-size': panel.label.fontSize,
++        'font-weight': panel.label.fontWeight,
++        fill: '#000000',
++        'text-anchor': panel.label.textAnchor
++      }, panel.label.text));
++      labels.appendChild(textEl({
++        id: panel.title.id,
++        class: 'panel-title',
++        x: panel.title.x,
++        y: panel.title.y,
++        'font-size': panel.title.fontSize,
++        'font-weight': panel.title.fontWeight,
++        fill: '#111111',
++        'text-anchor': panel.title.textAnchor
++      }, panel.title.text));
++      panel.annotations.forEach((annotation) => {
++        labels.appendChild(textEl({
++          id: annotation.id,
++          class: 'annotation-text',
++          'data-annotation-type': annotation.type,
++          x: annotation.x,
++          y: annotation.y,
++          'font-size': annotation.fontSize,
++          fill: annotation.fill,
++          'text-anchor': annotation.textAnchor
++        }, annotation.text));
++      });
++      svg.appendChild(labels);
++
++      const target = document.getElementById('candidate');
++      target.innerHTML = '';
++      target.appendChild(svg);
++    }
++
++    async function loadSpec() {
++      try {
++        const response = await fetch(specUrl);
++        if (!response.ok) throw new Error(`Unable to load ${specUrl}`);
++        return await response.json();
++      } catch (error) {
++        const fallback = JSON.parse(document.getElementById('fallback-spec').textContent);
++        fallback.panels = [];
++        throw new Error(`Spec load failed and fallback is metadata only: ${error.message}`);
++      }
++    }
++
++    document.getElementById('qaToggle').addEventListener('change', (event) => {
++      document.getElementById('qaReference').classList.toggle('is-visible', event.target.checked);
++    });
++
++    loadSpec().then(render).catch((error) => {
++      document.getElementById('candidate').textContent = error.message;
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json b/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..74c7d41b4ee2ca66964b1877d7caad403a4a3e66
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json
+@@ -0,0 +1,297 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-08-neuropixels-central-heatmap-D",
++  "source": {
++    "path": "../../../assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "dimensions": {
++      "width": 440,
++      "height": 198
++    },
++    "notes": "Single cropped panel D. Chart geometry and series were visually estimated from the raster; generated marks are editable SVG paths and shapes."
++  },
++  "canvas": {
++    "width": 440,
++    "height": 198,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 14,
++    "color": "#111111",
++    "fontCandidates": ["Arial", "Helvetica", "Liberation Sans", "Nimbus Sans"],
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "First-pass visual match to compact sans-serif figure typography; no font-calibration harness was run."
++    }
++  },
++  "coordinateSystems": [
++    {
++      "id": "panel-d.xy",
++      "type": "cartesian",
++      "xDomain": [0, 220],
++      "yDomain": [0, 1],
++      "dataBbox": {
++        "x": 99,
++        "y": 24,
++        "width": 260,
++        "height": 155
++      }
++    }
++  ],
++  "panels": [
++    {
++      "id": "panel-d",
++      "label": {
++        "id": "panel-d-label",
++        "text": "D",
++        "x": 42,
++        "y": 8,
++        "fontSize": 20,
++        "fontWeight": 700,
++        "textAnchor": "middle",
++        "dominantBaseline": "alphabetic"
++      },
++      "title": {
++        "id": "panel-d-title",
++        "text": "Decoding position",
++        "x": 70,
++        "y": 10,
++        "fontSize": 16,
++        "fontWeight": 700,
++        "textAnchor": "start",
++        "dominantBaseline": "alphabetic",
++        "sourceBox": {
++          "x": 70,
++          "y": 0,
++          "width": 136,
++          "height": 16
++        }
++      },
++      "bbox": {
++        "x": 0,
++        "y": 0,
++        "width": 440,
++        "height": 198
++      },
++      "plot": {
++        "id": "panel-d-plot",
++        "usesTransform": "panel-d.xy",
++        "dataBbox": {
++          "x": 99,
++          "y": 24,
++          "width": 260,
++          "height": 155
++        },
++        "axes": {
++          "xAxis": {
++            "id": "panel-d-x-axis",
++            "line": {
++              "x1": 99,
++              "y1": 179,
++              "x2": 359,
++              "y2": 179
++            },
++            "tickLength": 7,
++            "stroke": "#1a1a1a",
++            "strokeWidth": 1.2
++          },
++          "yAxis": {
++            "id": "panel-d-y-axis",
++            "line": {
++              "x1": 99,
++              "y1": 24,
++              "x2": 99,
++              "y2": 179
++            },
++            "tickLength": 7,
++            "stroke": "#1a1a1a",
++            "strokeWidth": 1.2
++          }
++        },
++        "x": {
++          "scale": "linear",
++          "domain": [0, 220],
++          "ticks": [
++            {"value": 0, "label": "0"},
++            {"value": 50, "label": "50"},
++            {"value": 100, "label": "100"},
++            {"value": 150, "label": "150"},
++            {"value": 200, "label": "200"}
++          ]
++        },
++        "y": {
++          "scale": "linear",
++          "domain": [0, 1],
++          "ticks": [
++            {"value": 0, "label": "0.0"},
++            {"value": 0.2, "label": "0.2"},
++            {"value": 0.4, "label": "0.4"},
++            {"value": 0.6, "label": "0.6"},
++            {"value": 0.8, "label": "0.8"},
++            {"value": 1.0, "label": "1.0"}
++          ],
++          "label": {
++            "id": "panel-d-y-label",
++            "text": "Decoding accuracy",
++            "x": 55,
++            "y": 101,
++            "rotation": -90,
++            "fontSize": 15,
++            "textAnchor": "middle"
++          }
++        }
++      },
++      "marks": [
++        {
++          "id": "panel-d-context-bands",
++          "type": "rectBandGroup",
++          "usesTransform": "panel-d.xy",
++          "axis": "x",
++          "bands": [
++            {"x0": 28, "x1": 48},
++            {"x0": 78, "x1": 104},
++            {"x0": 130, "x1": 153},
++            {"x0": 168, "x1": 191},
++            {"x0": 207, "x1": 219}
++          ],
++          "y0": 0,
++          "y1": 1,
++          "fill": "#eeeeee",
++          "opacity": 0.72
++        },
++        {
++          "id": "observed-uncertainty",
++          "type": "uncertaintyBand",
++          "series": "observed",
++          "usesTransform": "panel-d.xy",
++          "fill": "#66bdb8",
++          "opacity": 0.42,
++          "lowerOffset": 0.065,
++          "upperOffset": 0.075
++        },
++        {
++          "id": "observed-line",
++          "type": "lineSeries",
++          "usesTransform": "panel-d.xy",
++          "series": "observed",
++          "stroke": "#0e6f71",
++          "strokeWidth": 2,
++          "fill": "none",
++          "points": [
++            [0, 0.38], [5, 0.36], [10, 0.42], [15, 0.39], [20, 0.48], [25, 0.62],
++            [30, 0.68], [35, 0.64], [40, 0.66], [45, 0.63], [50, 0.65], [55, 0.71],
++            [60, 0.64], [65, 0.59], [70, 0.55], [75, 0.51], [80, 0.48], [85, 0.43],
++            [90, 0.38], [95, 0.45], [100, 0.57], [105, 0.64], [110, 0.63],
++            [115, 0.66], [120, 0.65], [125, 0.66], [130, 0.69], [135, 0.71],
++            [140, 0.72], [145, 0.76], [150, 0.66], [155, 0.60], [160, 0.63],
++            [165, 0.54], [170, 0.62], [175, 0.66], [180, 0.69], [185, 0.67],
++            [190, 0.71], [195, 0.72], [200, 0.75], [205, 0.77], [210, 0.80],
++            [215, 0.78], [220, 0.84]
++          ]
++        },
++        {
++          "id": "chance-line",
++          "type": "lineSeries",
++          "usesTransform": "panel-d.xy",
++          "series": "chance",
++          "stroke": "#7a7a7a",
++          "strokeWidth": 2,
++          "dashArray": "5 4",
++          "fill": "none",
++          "points": [
++            [0, 0.21], [10, 0.20], [20, 0.205], [30, 0.198], [40, 0.203],
++            [50, 0.198], [60, 0.205], [70, 0.201], [80, 0.207], [90, 0.205],
++            [100, 0.204], [110, 0.206], [120, 0.202], [130, 0.208], [140, 0.20],
++            [150, 0.207], [160, 0.202], [170, 0.209], [180, 0.205], [190, 0.207],
++            [200, 0.211], [210, 0.208], [220, 0.214]
++          ]
++        }
++      ],
++      "annotations": [
++        {
++          "id": "observed-label",
++          "type": "text",
++          "text": "Observed",
++          "x": 365,
++          "y": 52,
++          "fontSize": 14,
++          "fill": "#0e6f71",
++          "textAnchor": "start"
++        },
++        {
++          "id": "chance-label",
++          "type": "text",
++          "text": "Chance",
++          "x": 367,
++          "y": 144,
++          "fontSize": 14,
++          "fill": "#666666",
++          "textAnchor": "start"
++        },
++        {
++          "id": "chance-sublabel",
++          "type": "text",
++          "text": "(5 cm bins)",
++          "x": 367,
++          "y": 164,
++          "fontSize": 14,
++          "fill": "#666666",
++          "textAnchor": "start"
++        }
++      ],
++      "provenance": [
++        {
++          "object": "observed-line",
++          "confidence": "medium",
++          "note": "Series shape is hand-traced from the raster at approximate 5 cm steps; local jaggedness is stylized but editable."
++        },
++        {
++          "object": "observed-uncertainty",
++          "confidence": "medium-low",
++          "note": "Band follows the observed curve using uniform offsets; source band width varies slightly."
++        },
++        {
++          "object": "context-bands",
++          "confidence": "medium",
++          "note": "Vertical shaded regions were approximated from visible light gray spans."
++        }
++      ]
++    }
++  ],
++  "rendering": {
++    "renderer": "svg-dom",
++    "layerOrder": ["background", "context-bands", "uncertainty", "axes", "series", "labels"],
++    "styleTokens": {
++      "axis": "#1a1a1a",
++      "observed": "#0e6f71",
++      "observedBand": "#66bdb8",
++      "chance": "#7a7a7a",
++      "contextBand": "#eeeeee"
++    }
++  },
++  "validation": {
++    "expected": {
++      "panels": 1,
++      "xTicks": 5,
++      "yTicks": 6,
++      "lineSeries": 2,
++      "uncertaintyBands": 1,
++      "contextBands": 5
++    },
++    "constraints": [
++      "Generated candidate must not render the source raster as a visual layer.",
++      "QA reference image, if shown, must be labeled reference-only and outside the generated SVG candidate.",
++      "Observed line and observed uncertainty band share the panel-d.xy coordinate transform.",
++      "Tick marks and tick labels are rendered as separate editable SVG elements with axis/value metadata."
++    ]
++  },
++  "confidence": [
++    {
++      "scope": "overall",
++      "level": "medium",
++      "note": "First-pass reconstruction prioritizes editable chart grammar and approximate visual similarity over exact digitization."
++    }
++  ]
++}
+
+codex
+The sandbox rejected starting a local HTTP server with a permission error on port binding. I’ll still run a structural count check from the JSON itself; the HTML is written to fetch the adjacent JSON when served from any local/static server, with the QA reference separate.
+exec
+/bin/zsh -lc "node - <<'NODE'
+const fs = require('fs');
+const spec = JSON.parse(fs.readFileSync('outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json','utf8'));
+const p = spec.panels[0];
+const counts = {
+  panels: spec.panels.length,
+  xTicks: p.plot.x.ticks.length,
+  yTicks: p.plot.y.ticks.length,
+  lineSeries: p.marks.filter(m => m.type === 'lineSeries').length,
+  uncertaintyBands: p.marks.filter(m => m.type === 'uncertaintyBand').length,
+  contextBands: p.marks.find(m => m.id === 'panel-d-context-bands').bands.length
+};
+console.log(JSON.stringify(counts, null, 2));
+NODE" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+{
+  "panels": 1,
+  "xTicks": 5,
+  "yTicks": 6,
+  "lineSeries": 2,
+  "uncertaintyBands": 1,
+  "contextBands": 5
+}
+
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html b/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..3983452c5dcaeccc92a9201e06116a6710e15afc
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html
+@@ -0,0 +1,356 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-08-neuropixels-central-heatmap-D reconstruction</title>
++  <style>
++    :root {
++      color-scheme: light;
++      --page-bg: #f5f5f5;
++      --ink: #111111;
++      --muted: #666666;
++      --panel-bg: #ffffff;
++      --rule: #d9d9d9;
++    }
++    * {
++      box-sizing: border-box;
++    }
++    body {
++      margin: 0;
++      min-height: 100vh;
++      background: var(--page-bg);
++      color: var(--ink);
++      font-family: Arial, Helvetica, sans-serif;
++      padding: 16px;
++    }
++    .wrap {
++      display: grid;
++      gap: 12px;
++      align-items: start;
++      width: max-content;
++      max-width: 100%;
++    }
++    .toolbar {
++      display: flex;
++      align-items: center;
++      gap: 10px;
++      font-size: 13px;
++      color: var(--muted);
++    }
++    .toolbar label {
++      display: inline-flex;
++      align-items: center;
++      gap: 6px;
++      user-select: none;
++    }
++    .stage {
++      display: grid;
++      grid-template-columns: auto;
++      gap: 12px;
++    }
++    .candidate,
++    .qa-reference {
++      width: 440px;
++      max-width: 100%;
++      background: var(--panel-bg);
++    }
++    .candidate {
++      box-shadow: 0 0 0 1px var(--rule);
++    }
++    .qa-reference {
++      display: none;
++      padding: 8px;
++      border: 1px solid var(--rule);
++    }
++    .qa-reference.is-visible {
++      display: block;
++    }
++    .qa-reference strong {
++      display: block;
++      margin: 0 0 6px;
++      font-size: 12px;
++      color: var(--muted);
++      font-weight: 700;
++    }
++    .qa-reference img {
++      display: block;
++      width: 440px;
++      height: 198px;
++      max-width: 100%;
++      object-fit: contain;
++    }
++    svg {
++      display: block;
++      width: 440px;
++      height: 198px;
++      max-width: 100%;
++      background: #ffffff;
++      overflow: visible;
++    }
++    .axis-line,
++    .tick-mark {
++      stroke: #1a1a1a;
++      stroke-linecap: square;
++      shape-rendering: crispEdges;
++    }
++    .tick-label,
++    .axis-label,
++    .panel-title,
++    .panel-label,
++    .annotation-text {
++      font-family: Arial, Helvetica, sans-serif;
++      letter-spacing: 0;
++    }
++  </style>
++</head>
++<body>
++  <main class="wrap">
++    <div class="toolbar">
++      <label><input id="qaToggle" type="checkbox"> Show QA reference</label>
++      <span>Generated SVG candidate is rendered from semantic JSON.</span>
++    </div>
++    <section class="stage" aria-label="Figure reconstruction">
++      <div id="candidate" class="candidate" aria-label="Generated reconstruction"></div>
++      <aside id="qaReference" class="qa-reference" aria-label="QA reference only">
++        <strong>QA reference only: source raster is not used in the generated candidate</strong>
++        <img alt="Reference raster for QA only" src="../../../assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png">
++      </aside>
++    </section>
++  </main>
++
++  <script type="application/json" id="fallback-spec">
++  {
++    "schema": "scientific_figure_reconstruction.v1",
++    "id": "reference-08-neuropixels-central-heatmap-D",
++    "source": {
++      "path": "../../../assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png",
++      "usage": "QA-only; not used by generated candidate."
++    }
++  }
++  </script>
++  <script>
++    const specUrl = './reference-08-neuropixels-central-heatmap-D.json';
++    const ns = 'http://www.w3.org/2000/svg';
++
++    function el(name, attrs = {}, children = []) {
++      const node = document.createElementNS(ns, name);
++      Object.entries(attrs).forEach(([key, value]) => {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      });
++      children.forEach((child) => node.appendChild(child));
++      return node;
++    }
++
++    function textEl(attrs, text) {
++      const node = el('text', attrs);
++      node.textContent = text;
++      return node;
++    }
++
++    function linePath(points, xScale, yScale) {
++      return points.map((point, index) => {
++        const cmd = index === 0 ? 'M' : 'L';
++        return `${cmd}${xScale(point[0]).toFixed(2)},${yScale(point[1]).toFixed(2)}`;
++      }).join(' ');
++    }
++
++    function bandPath(points, lowerOffset, upperOffset, xScale, yScale) {
++      const upper = points.map((point) => [point[0], Math.min(1, point[1] + upperOffset)]);
++      const lower = points.slice().reverse().map((point) => [point[0], Math.max(0, point[1] - lowerOffset)]);
++      const joined = upper.concat(lower);
++      return joined.map((point, index) => {
++        const cmd = index === 0 ? 'M' : 'L';
++        return `${cmd}${xScale(point[0]).toFixed(2)},${yScale(point[1]).toFixed(2)}`;
++      }).join(' ') + ' Z';
++    }
++
++    function render(spec) {
++      const panel = spec.panels[0];
++      const plot = panel.plot;
++      const bbox = plot.dataBbox;
++      const xDomain = plot.x.domain;
++      const yDomain = plot.y.domain;
++      const xScale = (value) => bbox.x + ((value - xDomain[0]) / (xDomain[1] - xDomain[0])) * bbox.width;
++      const yScale = (value) => bbox.y + bbox.height - ((value - yDomain[0]) / (yDomain[1] - yDomain[0])) * bbox.height;
++
++      const svg = el('svg', {
++        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
++        role: 'img',
++        'aria-labelledby': 'svg-title svg-desc',
++        'data-figure-id': spec.id
++      });
++      svg.appendChild(textEl({id: 'svg-title'}, 'Decoding position reconstruction'));
++      svg.appendChild(textEl({id: 'svg-desc'}, 'Editable reconstruction of line chart panel D'));
++      svg.appendChild(el('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
++
++      const context = el('g', {'data-layer': 'context-bands'});
++      const bandGroup = panel.marks.find((mark) => mark.id === 'panel-d-context-bands');
++      bandGroup.bands.forEach((band, index) => {
++        context.appendChild(el('rect', {
++          id: `${bandGroup.id}-${index}`,
++          'data-mark-type': 'rectBand',
++          'data-axis': 'x',
++          x: xScale(band.x0).toFixed(2),
++          y: yScale(bandGroup.y1).toFixed(2),
++          width: (xScale(band.x1) - xScale(band.x0)).toFixed(2),
++          height: (yScale(bandGroup.y0) - yScale(bandGroup.y1)).toFixed(2),
++          fill: bandGroup.fill,
++          opacity: bandGroup.opacity
++        }));
++      });
++      svg.appendChild(context);
++
++      const axes = el('g', {'data-layer': 'axes'});
++      axes.appendChild(el('line', {...plot.axes.xAxis.line, id: plot.axes.xAxis.id, class: 'axis-line', stroke: plot.axes.xAxis.stroke, 'stroke-width': plot.axes.xAxis.strokeWidth}));
++      axes.appendChild(el('line', {...plot.axes.yAxis.line, id: plot.axes.yAxis.id, class: 'axis-line', stroke: plot.axes.yAxis.stroke, 'stroke-width': plot.axes.yAxis.strokeWidth}));
++      plot.x.ticks.forEach((tick) => {
++        const x = xScale(tick.value);
++        axes.appendChild(el('line', {
++          class: 'tick-mark',
++          'data-axis': 'x',
++          'data-value': tick.value,
++          x1: x.toFixed(2),
++          y1: plot.axes.xAxis.line.y1,
++          x2: x.toFixed(2),
++          y2: plot.axes.xAxis.line.y1 + plot.axes.xAxis.tickLength,
++          stroke: plot.axes.xAxis.stroke,
++          'stroke-width': plot.axes.xAxis.strokeWidth
++        }));
++        axes.appendChild(textEl({
++          class: 'tick-label',
++          'data-axis': 'x',
++          'data-value': tick.value,
++          x: x.toFixed(2),
++          y: 197,
++          'font-size': 14,
++          fill: '#111111',
++          'text-anchor': 'middle'
++        }, tick.label));
++      });
++      plot.y.ticks.forEach((tick) => {
++        const y = yScale(tick.value);
++        axes.appendChild(el('line', {
++          class: 'tick-mark',
++          'data-axis': 'y',
++          'data-value': tick.value,
++          x1: plot.axes.yAxis.line.x1,
++          y1: y.toFixed(2),
++          x2: plot.axes.yAxis.line.x1 - plot.axes.yAxis.tickLength,
++          y2: y.toFixed(2),
++          stroke: plot.axes.yAxis.stroke,
++          'stroke-width': plot.axes.yAxis.strokeWidth
++        }));
++        axes.appendChild(textEl({
++          class: 'tick-label',
++          'data-axis': 'y',
++          'data-value': tick.value,
++          x: 89,
++          y: (y + 5).toFixed(2),
++          'font-size': 14,
++          fill: '#111111',
++          'text-anchor': 'end'
++        }, tick.label));
++      });
++      axes.appendChild(textEl({
++        id: plot.y.label.id,
++        class: 'axis-label',
++        x: plot.y.label.x,
++        y: plot.y.label.y,
++        transform: `rotate(${plot.y.label.rotation} ${plot.y.label.x} ${plot.y.label.y})`,
++        'font-size': plot.y.label.fontSize,
++        fill: '#111111',
++        'text-anchor': plot.y.label.textAnchor
++      }, plot.y.label.text));
++      svg.appendChild(axes);
++
++      const seriesLayer = el('g', {'data-layer': 'series'});
++      const observed = panel.marks.find((mark) => mark.id === 'observed-line');
++      const uncertainty = panel.marks.find((mark) => mark.id === 'observed-uncertainty');
++      seriesLayer.appendChild(el('path', {
++        id: uncertainty.id,
++        'data-mark-type': uncertainty.type,
++        'data-series': uncertainty.series,
++        d: bandPath(observed.points, uncertainty.lowerOffset, uncertainty.upperOffset, xScale, yScale),
++        fill: uncertainty.fill,
++        opacity: uncertainty.opacity,
++        stroke: 'none'
++      }));
++      [observed, panel.marks.find((mark) => mark.id === 'chance-line')].forEach((mark) => {
++        seriesLayer.appendChild(el('path', {
++          id: mark.id,
++          'data-mark-type': mark.type,
++          'data-series': mark.series,
++          d: linePath(mark.points, xScale, yScale),
++          fill: mark.fill,
++          stroke: mark.stroke,
++          'stroke-width': mark.strokeWidth,
++          'stroke-dasharray': mark.dashArray || null,
++          'stroke-linejoin': 'round',
++          'stroke-linecap': 'round'
++        }));
++      });
++      svg.appendChild(seriesLayer);
++
++      const labels = el('g', {'data-layer': 'labels'});
++      labels.appendChild(textEl({
++        id: panel.label.id,
++        class: 'panel-label',
++        x: panel.label.x,
++        y: panel.label.y,
++        'font-size': panel.label.fontSize,
++        'font-weight': panel.label.fontWeight,
++        fill: '#000000',
++        'text-anchor': panel.label.textAnchor
++      }, panel.label.text));
++      labels.appendChild(textEl({
++        id: panel.title.id,
++        class: 'panel-title',
++        x: panel.title.x,
++        y: panel.title.y,
++        'font-size': panel.title.fontSize,
++        'font-weight': panel.title.fontWeight,
++        fill: '#111111',
++        'text-anchor': panel.title.textAnchor
++      }, panel.title.text));
++      panel.annotations.forEach((annotation) => {
++        labels.appendChild(textEl({
++          id: annotation.id,
++          class: 'annotation-text',
++          'data-annotation-type': annotation.type,
++          x: annotation.x,
++          y: annotation.y,
++          'font-size': annotation.fontSize,
++          fill: annotation.fill,
++          'text-anchor': annotation.textAnchor
++        }, annotation.text));
++      });
++      svg.appendChild(labels);
++
++      const target = document.getElementById('candidate');
++      target.innerHTML = '';
++      target.appendChild(svg);
++    }
++
++    async function loadSpec() {
++      try {
++        const response = await fetch(specUrl);
++        if (!response.ok) throw new Error(`Unable to load ${specUrl}`);
++        return await response.json();
++      } catch (error) {
++        const fallback = JSON.parse(document.getElementById('fallback-spec').textContent);
++        fallback.panels = [];
++        throw new Error(`Spec load failed and fallback is metadata only: ${error.message}`);
++      }
++    }
++
++    document.getElementById('qaToggle').addEventListener('change', (event) => {
++      document.getElementById('qaReference').classList.toggle('is-visible', event.target.checked);
++    });
++
++    loadSpec().then(render).catch((error) => {
++      document.getElementById('candidate').textContent = error.message;
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json b/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..74c7d41b4ee2ca66964b1877d7caad403a4a3e66
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json
+@@ -0,0 +1,297 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-08-neuropixels-central-heatmap-D",
++  "source": {
++    "path": "../../../assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "dimensions": {
++      "width": 440,
++      "height": 198
++    },
++    "notes": "Single cropped panel D. Chart geometry and series were visually estimated from the raster; generated marks are editable SVG paths and shapes."
++  },
++  "canvas": {
++    "width": 440,
++    "height": 198,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 14,
++    "color": "#111111",
++    "fontCandidates": ["Arial", "Helvetica", "Liberation Sans", "Nimbus Sans"],
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "First-pass visual match to compact sans-serif figure typography; no font-calibration harness was run."
++    }
++  },
++  "coordinateSystems": [
++    {
++      "id": "panel-d.xy",
++      "type": "cartesian",
++      "xDomain": [0, 220],
++      "yDomain": [0, 1],
++      "dataBbox": {
++        "x": 99,
++        "y": 24,
++        "width": 260,
++        "height": 155
++      }
++    }
++  ],
++  "panels": [
++    {
++      "id": "panel-d",
++      "label": {
++        "id": "panel-d-label",
++        "text": "D",
++        "x": 42,
++        "y": 8,
++        "fontSize": 20,
++        "fontWeight": 700,
++        "textAnchor": "middle",
++        "dominantBaseline": "alphabetic"
++      },
++      "title": {
++        "id": "panel-d-title",
++        "text": "Decoding position",
++        "x": 70,
++        "y": 10,
++        "fontSize": 16,
++        "fontWeight": 700,
++        "textAnchor": "start",
++        "dominantBaseline": "alphabetic",
++        "sourceBox": {
++          "x": 70,
++          "y": 0,
++          "width": 136,
++          "height": 16
++        }
++      },
++      "bbox": {
++        "x": 0,
++        "y": 0,
++        "width": 440,
++        "height": 198
++      },
++      "plot": {
++        "id": "panel-d-plot",
++        "usesTransform": "panel-d.xy",
++        "dataBbox": {
++          "x": 99,
++          "y": 24,
++          "width": 260,
++          "height": 155
++        },
++        "axes": {
++          "xAxis": {
++            "id": "panel-d-x-axis",
++            "line": {
++              "x1": 99,
++              "y1": 179,
++              "x2": 359,
++              "y2": 179
++            },
++            "tickLength": 7,
++            "stroke": "#1a1a1a",
++            "strokeWidth": 1.2
++          },
++          "yAxis": {
++            "id": "panel-d-y-axis",
++            "line": {
++              "x1": 99,
++              "y1": 24,
++              "x2": 99,
++              "y2": 179
++            },
++            "tickLength": 7,
++            "stroke": "#1a1a1a",
++            "strokeWidth": 1.2
++          }
++        },
++        "x": {
++          "scale": "linear",
++          "domain": [0, 220],
++          "ticks": [
++            {"value": 0, "label": "0"},
++            {"value": 50, "label": "50"},
++            {"value": 100, "label": "100"},
++            {"value": 150, "label": "150"},
++            {"value": 200, "label": "200"}
++          ]
++        },
++        "y": {
++          "scale": "linear",
++          "domain": [0, 1],
++          "ticks": [
++            {"value": 0, "label": "0.0"},
++            {"value": 0.2, "label": "0.2"},
++            {"value": 0.4, "label": "0.4"},
++            {"value": 0.6, "label": "0.6"},
++            {"value": 0.8, "label": "0.8"},
++            {"value": 1.0, "label": "1.0"}
++          ],
++          "label": {
++            "id": "panel-d-y-label",
++            "text": "Decoding accuracy",
++            "x": 55,
++            "y": 101,
++            "rotation": -90,
++            "fontSize": 15,
++            "textAnchor": "middle"
++          }
++        }
++      },
++      "marks": [
++        {
++          "id": "panel-d-context-bands",
++          "type": "rectBandGroup",
++          "usesTransform": "panel-d.xy",
++          "axis": "x",
++          "bands": [
++            {"x0": 28, "x1": 48},
++            {"x0": 78, "x1": 104},
++            {"x0": 130, "x1": 153},
++            {"x0": 168, "x1": 191},
++            {"x0": 207, "x1": 219}
++          ],
++          "y0": 0,
++          "y1": 1,
++          "fill": "#eeeeee",
++          "opacity": 0.72
++        },
++        {
++          "id": "observed-uncertainty",
++          "type": "uncertaintyBand",
++          "series": "observed",
++          "usesTransform": "panel-d.xy",
++          "fill": "#66bdb8",
++          "opacity": 0.42,
++          "lowerOffset": 0.065,
++          "upperOffset": 0.075
++        },
++        {
++          "id": "observed-line",
++          "type": "lineSeries",
++          "usesTransform": "panel-d.xy",
++          "series": "observed",
++          "stroke": "#0e6f71",
++          "strokeWidth": 2,
++          "fill": "none",
++          "points": [
++            [0, 0.38], [5, 0.36], [10, 0.42], [15, 0.39], [20, 0.48], [25, 0.62],
++            [30, 0.68], [35, 0.64], [40, 0.66], [45, 0.63], [50, 0.65], [55, 0.71],
++            [60, 0.64], [65, 0.59], [70, 0.55], [75, 0.51], [80, 0.48], [85, 0.43],
++            [90, 0.38], [95, 0.45], [100, 0.57], [105, 0.64], [110, 0.63],
++            [115, 0.66], [120, 0.65], [125, 0.66], [130, 0.69], [135, 0.71],
++            [140, 0.72], [145, 0.76], [150, 0.66], [155, 0.60], [160, 0.63],
++            [165, 0.54], [170, 0.62], [175, 0.66], [180, 0.69], [185, 0.67],
++            [190, 0.71], [195, 0.72], [200, 0.75], [205, 0.77], [210, 0.80],
++            [215, 0.78], [220, 0.84]
++          ]
++        },
++        {
++          "id": "chance-line",
++          "type": "lineSeries",
++          "usesTransform": "panel-d.xy",
++          "series": "chance",
++          "stroke": "#7a7a7a",
++          "strokeWidth": 2,
++          "dashArray": "5 4",
++          "fill": "none",
++          "points": [
++            [0, 0.21], [10, 0.20], [20, 0.205], [30, 0.198], [40, 0.203],
++            [50, 0.198], [60, 0.205], [70, 0.201], [80, 0.207], [90, 0.205],
++            [100, 0.204], [110, 0.206], [120, 0.202], [130, 0.208], [140, 0.20],
++            [150, 0.207], [160, 0.202], [170, 0.209], [180, 0.205], [190, 0.207],
++            [200, 0.211], [210, 0.208], [220, 0.214]
++          ]
++        }
++      ],
++      "annotations": [
++        {
++          "id": "observed-label",
++          "type": "text",
++          "text": "Observed",
++          "x": 365,
++          "y": 52,
++          "fontSize": 14,
++          "fill": "#0e6f71",
++          "textAnchor": "start"
++        },
++        {
++          "id": "chance-label",
++          "type": "text",
++          "text": "Chance",
++          "x": 367,
++          "y": 144,
++          "fontSize": 14,
++          "fill": "#666666",
++          "textAnchor": "start"
++        },
++        {
++          "id": "chance-sublabel",
++          "type": "text",
++          "text": "(5 cm bins)",
++          "x": 367,
++          "y": 164,
++          "fontSize": 14,
++          "fill": "#666666",
++          "textAnchor": "start"
++        }
++      ],
++      "provenance": [
++        {
++          "object": "observed-line",
++          "confidence": "medium",
++          "note": "Series shape is hand-traced from the raster at approximate 5 cm steps; local jaggedness is stylized but editable."
++        },
++        {
++          "object": "observed-uncertainty",
++          "confidence": "medium-low",
++          "note": "Band follows the observed curve using uniform offsets; source band width varies slightly."
++        },
++        {
++          "object": "context-bands",
++          "confidence": "medium",
++          "note": "Vertical shaded regions were approximated from visible light gray spans."
++        }
++      ]
++    }
++  ],
++  "rendering": {
++    "renderer": "svg-dom",
++    "layerOrder": ["background", "context-bands", "uncertainty", "axes", "series", "labels"],
++    "styleTokens": {
++      "axis": "#1a1a1a",
++      "observed": "#0e6f71",
++      "observedBand": "#66bdb8",
++      "chance": "#7a7a7a",
++      "contextBand": "#eeeeee"
++    }
++  },
++  "validation": {
++    "expected": {
++      "panels": 1,
++      "xTicks": 5,
++      "yTicks": 6,
++      "lineSeries": 2,
++      "uncertaintyBands": 1,
++      "contextBands": 5
++    },
++    "constraints": [
++      "Generated candidate must not render the source raster as a visual layer.",
++      "QA reference image, if shown, must be labeled reference-only and outside the generated SVG candidate.",
++      "Observed line and observed uncertainty band share the panel-d.xy coordinate transform.",
++      "Tick marks and tick labels are rendered as separate editable SVG elements with axis/value metadata."
++    ]
++  },
++  "confidence": [
++    {
++      "scope": "overall",
++      "level": "medium",
++      "note": "First-pass reconstruction prioritizes editable chart grammar and approximate visual similarity over exact digitization."
++    }
++  ]
++}
+
+codex
+Created the first-pass make-figure reconstruction:
+
+- [JSON spec](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json)
+- [HTML renderer](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html)
+
+Verification completed:
+- JSON validity: passed with `python3 -m json.tool`
+- Semantic counts: `1` panel, `5` x ticks, `6` y ticks, `2` line series, `1` uncertainty band, `5` context bands
+- Source reuse scan: no `drawImage`, no `url(...)`, no source-backed CSS background. The source PNG appears only in source metadata and the clearly labeled QA reference `<img>`.
+
+I attempted to start a local static server for visual inspection, but the sandbox rejected port binding with `PermissionError: [Errno 1] Operation not permitted`.
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html b/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..3983452c5dcaeccc92a9201e06116a6710e15afc
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html
+@@ -0,0 +1,356 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-08-neuropixels-central-heatmap-D reconstruction</title>
++  <style>
++    :root {
++      color-scheme: light;
++      --page-bg: #f5f5f5;
++      --ink: #111111;
++      --muted: #666666;
++      --panel-bg: #ffffff;
++      --rule: #d9d9d9;
++    }
++    * {
++      box-sizing: border-box;
++    }
++    body {
++      margin: 0;
++      min-height: 100vh;
++      background: var(--page-bg);
++      color: var(--ink);
++      font-family: Arial, Helvetica, sans-serif;
++      padding: 16px;
++    }
++    .wrap {
++      display: grid;
++      gap: 12px;
++      align-items: start;
++      width: max-content;
++      max-width: 100%;
++    }
++    .toolbar {
++      display: flex;
++      align-items: center;
++      gap: 10px;
++      font-size: 13px;
++      color: var(--muted);
++    }
++    .toolbar label {
++      display: inline-flex;
++      align-items: center;
++      gap: 6px;
++      user-select: none;
++    }
++    .stage {
++      display: grid;
++      grid-template-columns: auto;
++      gap: 12px;
++    }
++    .candidate,
++    .qa-reference {
++      width: 440px;
++      max-width: 100%;
++      background: var(--panel-bg);
++    }
++    .candidate {
++      box-shadow: 0 0 0 1px var(--rule);
++    }
++    .qa-reference {
++      display: none;
++      padding: 8px;
++      border: 1px solid var(--rule);
++    }
++    .qa-reference.is-visible {
++      display: block;
++    }
++    .qa-reference strong {
++      display: block;
++      margin: 0 0 6px;
++      font-size: 12px;
++      color: var(--muted);
++      font-weight: 700;
++    }
++    .qa-reference img {
++      display: block;
++      width: 440px;
++      height: 198px;
++      max-width: 100%;
++      object-fit: contain;
++    }
++    svg {
++      display: block;
++      width: 440px;
++      height: 198px;
++      max-width: 100%;
++      background: #ffffff;
++      overflow: visible;
++    }
++    .axis-line,
++    .tick-mark {
++      stroke: #1a1a1a;
++      stroke-linecap: square;
++      shape-rendering: crispEdges;
++    }
++    .tick-label,
++    .axis-label,
++    .panel-title,
++    .panel-label,
++    .annotation-text {
++      font-family: Arial, Helvetica, sans-serif;
++      letter-spacing: 0;
++    }
++  </style>
++</head>
++<body>
++  <main class="wrap">
++    <div class="toolbar">
++      <label><input id="qaToggle" type="checkbox"> Show QA reference</label>
++      <span>Generated SVG candidate is rendered from semantic JSON.</span>
++    </div>
++    <section class="stage" aria-label="Figure reconstruction">
++      <div id="candidate" class="candidate" aria-label="Generated reconstruction"></div>
++      <aside id="qaReference" class="qa-reference" aria-label="QA reference only">
++        <strong>QA reference only: source raster is not used in the generated candidate</strong>
++        <img alt="Reference raster for QA only" src="../../../assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png">
++      </aside>
++    </section>
++  </main>
++
++  <script type="application/json" id="fallback-spec">
++  {
++    "schema": "scientific_figure_reconstruction.v1",
++    "id": "reference-08-neuropixels-central-heatmap-D",
++    "source": {
++      "path": "../../../assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png",
++      "usage": "QA-only; not used by generated candidate."
++    }
++  }
++  </script>
++  <script>
++    const specUrl = './reference-08-neuropixels-central-heatmap-D.json';
++    const ns = 'http://www.w3.org/2000/svg';
++
++    function el(name, attrs = {}, children = []) {
++      const node = document.createElementNS(ns, name);
++      Object.entries(attrs).forEach(([key, value]) => {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      });
++      children.forEach((child) => node.appendChild(child));
++      return node;
++    }
++
++    function textEl(attrs, text) {
++      const node = el('text', attrs);
++      node.textContent = text;
++      return node;
++    }
++
++    function linePath(points, xScale, yScale) {
++      return points.map((point, index) => {
++        const cmd = index === 0 ? 'M' : 'L';
++        return `${cmd}${xScale(point[0]).toFixed(2)},${yScale(point[1]).toFixed(2)}`;
++      }).join(' ');
++    }
++
++    function bandPath(points, lowerOffset, upperOffset, xScale, yScale) {
++      const upper = points.map((point) => [point[0], Math.min(1, point[1] + upperOffset)]);
++      const lower = points.slice().reverse().map((point) => [point[0], Math.max(0, point[1] - lowerOffset)]);
++      const joined = upper.concat(lower);
++      return joined.map((point, index) => {
++        const cmd = index === 0 ? 'M' : 'L';
++        return `${cmd}${xScale(point[0]).toFixed(2)},${yScale(point[1]).toFixed(2)}`;
++      }).join(' ') + ' Z';
++    }
++
++    function render(spec) {
++      const panel = spec.panels[0];
++      const plot = panel.plot;
++      const bbox = plot.dataBbox;
++      const xDomain = plot.x.domain;
++      const yDomain = plot.y.domain;
++      const xScale = (value) => bbox.x + ((value - xDomain[0]) / (xDomain[1] - xDomain[0])) * bbox.width;
++      const yScale = (value) => bbox.y + bbox.height - ((value - yDomain[0]) / (yDomain[1] - yDomain[0])) * bbox.height;
++
++      const svg = el('svg', {
++        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
++        role: 'img',
++        'aria-labelledby': 'svg-title svg-desc',
++        'data-figure-id': spec.id
++      });
++      svg.appendChild(textEl({id: 'svg-title'}, 'Decoding position reconstruction'));
++      svg.appendChild(textEl({id: 'svg-desc'}, 'Editable reconstruction of line chart panel D'));
++      svg.appendChild(el('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
++
++      const context = el('g', {'data-layer': 'context-bands'});
++      const bandGroup = panel.marks.find((mark) => mark.id === 'panel-d-context-bands');
++      bandGroup.bands.forEach((band, index) => {
++        context.appendChild(el('rect', {
++          id: `${bandGroup.id}-${index}`,
++          'data-mark-type': 'rectBand',
++          'data-axis': 'x',
++          x: xScale(band.x0).toFixed(2),
++          y: yScale(bandGroup.y1).toFixed(2),
++          width: (xScale(band.x1) - xScale(band.x0)).toFixed(2),
++          height: (yScale(bandGroup.y0) - yScale(bandGroup.y1)).toFixed(2),
++          fill: bandGroup.fill,
++          opacity: bandGroup.opacity
++        }));
++      });
++      svg.appendChild(context);
++
++      const axes = el('g', {'data-layer': 'axes'});
++      axes.appendChild(el('line', {...plot.axes.xAxis.line, id: plot.axes.xAxis.id, class: 'axis-line', stroke: plot.axes.xAxis.stroke, 'stroke-width': plot.axes.xAxis.strokeWidth}));
++      axes.appendChild(el('line', {...plot.axes.yAxis.line, id: plot.axes.yAxis.id, class: 'axis-line', stroke: plot.axes.yAxis.stroke, 'stroke-width': plot.axes.yAxis.strokeWidth}));
++      plot.x.ticks.forEach((tick) => {
++        const x = xScale(tick.value);
++        axes.appendChild(el('line', {
++          class: 'tick-mark',
++          'data-axis': 'x',
++          'data-value': tick.value,
++          x1: x.toFixed(2),
++          y1: plot.axes.xAxis.line.y1,
++          x2: x.toFixed(2),
++          y2: plot.axes.xAxis.line.y1 + plot.axes.xAxis.tickLength,
++          stroke: plot.axes.xAxis.stroke,
++          'stroke-width': plot.axes.xAxis.strokeWidth
++        }));
++        axes.appendChild(textEl({
++          class: 'tick-label',
++          'data-axis': 'x',
++          'data-value': tick.value,
++          x: x.toFixed(2),
++          y: 197,
++          'font-size': 14,
++          fill: '#111111',
++          'text-anchor': 'middle'
++        }, tick.label));
++      });
++      plot.y.ticks.forEach((tick) => {
++        const y = yScale(tick.value);
++        axes.appendChild(el('line', {
++          class: 'tick-mark',
++          'data-axis': 'y',
++          'data-value': tick.value,
++          x1: plot.axes.yAxis.line.x1,
++          y1: y.toFixed(2),
++          x2: plot.axes.yAxis.line.x1 - plot.axes.yAxis.tickLength,
++          y2: y.toFixed(2),
++          stroke: plot.axes.yAxis.stroke,
++          'stroke-width': plot.axes.yAxis.strokeWidth
++        }));
++        axes.appendChild(textEl({
++          class: 'tick-label',
++          'data-axis': 'y',
++          'data-value': tick.value,
++          x: 89,
++          y: (y + 5).toFixed(2),
++          'font-size': 14,
++          fill: '#111111',
++          'text-anchor': 'end'
++        }, tick.label));
++      });
++      axes.appendChild(textEl({
++        id: plot.y.label.id,
++        class: 'axis-label',
++        x: plot.y.label.x,
++        y: plot.y.label.y,
++        transform: `rotate(${plot.y.label.rotation} ${plot.y.label.x} ${plot.y.label.y})`,
++        'font-size': plot.y.label.fontSize,
++        fill: '#111111',
++        'text-anchor': plot.y.label.textAnchor
++      }, plot.y.label.text));
++      svg.appendChild(axes);
++
++      const seriesLayer = el('g', {'data-layer': 'series'});
++      const observed = panel.marks.find((mark) => mark.id === 'observed-line');
++      const uncertainty = panel.marks.find((mark) => mark.id === 'observed-uncertainty');
++      seriesLayer.appendChild(el('path', {
++        id: uncertainty.id,
++        'data-mark-type': uncertainty.type,
++        'data-series': uncertainty.series,
++        d: bandPath(observed.points, uncertainty.lowerOffset, uncertainty.upperOffset, xScale, yScale),
++        fill: uncertainty.fill,
++        opacity: uncertainty.opacity,
++        stroke: 'none'
++      }));
++      [observed, panel.marks.find((mark) => mark.id === 'chance-line')].forEach((mark) => {
++        seriesLayer.appendChild(el('path', {
++          id: mark.id,
++          'data-mark-type': mark.type,
++          'data-series': mark.series,
++          d: linePath(mark.points, xScale, yScale),
++          fill: mark.fill,
++          stroke: mark.stroke,
++          'stroke-width': mark.strokeWidth,
++          'stroke-dasharray': mark.dashArray || null,
++          'stroke-linejoin': 'round',
++          'stroke-linecap': 'round'
++        }));
++      });
++      svg.appendChild(seriesLayer);
++
++      const labels = el('g', {'data-layer': 'labels'});
++      labels.appendChild(textEl({
++        id: panel.label.id,
++        class: 'panel-label',
++        x: panel.label.x,
++        y: panel.label.y,
++        'font-size': panel.label.fontSize,
++        'font-weight': panel.label.fontWeight,
++        fill: '#000000',
++        'text-anchor': panel.label.textAnchor
++      }, panel.label.text));
++      labels.appendChild(textEl({
++        id: panel.title.id,
++        class: 'panel-title',
++        x: panel.title.x,
++        y: panel.title.y,
++        'font-size': panel.title.fontSize,
++        'font-weight': panel.title.fontWeight,
++        fill: '#111111',
++        'text-anchor': panel.title.textAnchor
++      }, panel.title.text));
++      panel.annotations.forEach((annotation) => {
++        labels.appendChild(textEl({
++          id: annotation.id,
++          class: 'annotation-text',
++          'data-annotation-type': annotation.type,
++          x: annotation.x,
++          y: annotation.y,
++          'font-size': annotation.fontSize,
++          fill: annotation.fill,
++          'text-anchor': annotation.textAnchor
++        }, annotation.text));
++      });
++      svg.appendChild(labels);
++
++      const target = document.getElementById('candidate');
++      target.innerHTML = '';
++      target.appendChild(svg);
++    }
++
++    async function loadSpec() {
++      try {
++        const response = await fetch(specUrl);
++        if (!response.ok) throw new Error(`Unable to load ${specUrl}`);
++        return await response.json();
++      } catch (error) {
++        const fallback = JSON.parse(document.getElementById('fallback-spec').textContent);
++        fallback.panels = [];
++        throw new Error(`Spec load failed and fallback is metadata only: ${error.message}`);
++      }
++    }
++
++    document.getElementById('qaToggle').addEventListener('change', (event) => {
++      document.getElementById('qaReference').classList.toggle('is-visible', event.target.checked);
++    });
++
++    loadSpec().then(render).catch((error) => {
++      document.getElementById('candidate').textContent = error.message;
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json b/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..74c7d41b4ee2ca66964b1877d7caad403a4a3e66
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json
+@@ -0,0 +1,297 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-08-neuropixels-central-heatmap-D",
++  "source": {
++    "path": "../../../assets/reference/reference-08-neuropixels-central-heatmap-D-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "dimensions": {
++      "width": 440,
++      "height": 198
++    },
++    "notes": "Single cropped panel D. Chart geometry and series were visually estimated from the raster; generated marks are editable SVG paths and shapes."
++  },
++  "canvas": {
++    "width": 440,
++    "height": 198,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 14,
++    "color": "#111111",
++    "fontCandidates": ["Arial", "Helvetica", "Liberation Sans", "Nimbus Sans"],
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "First-pass visual match to compact sans-serif figure typography; no font-calibration harness was run."
++    }
++  },
++  "coordinateSystems": [
++    {
++      "id": "panel-d.xy",
++      "type": "cartesian",
++      "xDomain": [0, 220],
++      "yDomain": [0, 1],
++      "dataBbox": {
++        "x": 99,
++        "y": 24,
++        "width": 260,
++        "height": 155
++      }
++    }
++  ],
++  "panels": [
++    {
++      "id": "panel-d",
++      "label": {
++        "id": "panel-d-label",
++        "text": "D",
++        "x": 42,
++        "y": 8,
++        "fontSize": 20,
++        "fontWeight": 700,
++        "textAnchor": "middle",
++        "dominantBaseline": "alphabetic"
++      },
++      "title": {
++        "id": "panel-d-title",
++        "text": "Decoding position",
++        "x": 70,
++        "y": 10,
++        "fontSize": 16,
++        "fontWeight": 700,
++        "textAnchor": "start",
++        "dominantBaseline": "alphabetic",
++        "sourceBox": {
++          "x": 70,
++          "y": 0,
++          "width": 136,
++          "height": 16
++        }
++      },
++      "bbox": {
++        "x": 0,
++        "y": 0,
++        "width": 440,
++        "height": 198
++      },
++      "plot": {
++        "id": "panel-d-plot",
++        "usesTransform": "panel-d.xy",
++        "dataBbox": {
++          "x": 99,
++          "y": 24,
++          "width": 260,
++          "height": 155
++        },
++        "axes": {
++          "xAxis": {
++            "id": "panel-d-x-axis",
++            "line": {
++              "x1": 99,
++              "y1": 179,
++              "x2": 359,
++              "y2": 179
++            },
++            "tickLength": 7,
++            "stroke": "#1a1a1a",
++            "strokeWidth": 1.2
++          },
++          "yAxis": {
++            "id": "panel-d-y-axis",
++            "line": {
++              "x1": 99,
++              "y1": 24,
++              "x2": 99,
++              "y2": 179
++            },
++            "tickLength": 7,
++            "stroke": "#1a1a1a",
++            "strokeWidth": 1.2
++          }
++        },
++        "x": {
++          "scale": "linear",
++          "domain": [0, 220],
++          "ticks": [
++            {"value": 0, "label": "0"},
++            {"value": 50, "label": "50"},
++            {"value": 100, "label": "100"},
++            {"value": 150, "label": "150"},
++            {"value": 200, "label": "200"}
++          ]
++        },
++        "y": {
++          "scale": "linear",
++          "domain": [0, 1],
++          "ticks": [
++            {"value": 0, "label": "0.0"},
++            {"value": 0.2, "label": "0.2"},
++            {"value": 0.4, "label": "0.4"},
++            {"value": 0.6, "label": "0.6"},
++            {"value": 0.8, "label": "0.8"},
++            {"value": 1.0, "label": "1.0"}
++          ],
++          "label": {
++            "id": "panel-d-y-label",
++            "text": "Decoding accuracy",
++            "x": 55,
++            "y": 101,
++            "rotation": -90,
++            "fontSize": 15,
++            "textAnchor": "middle"
++          }
++        }
++      },
++      "marks": [
++        {
++          "id": "panel-d-context-bands",
++          "type": "rectBandGroup",
++          "usesTransform": "panel-d.xy",
++          "axis": "x",
++          "bands": [
++            {"x0": 28, "x1": 48},
++            {"x0": 78, "x1": 104},
++            {"x0": 130, "x1": 153},
++            {"x0": 168, "x1": 191},
++            {"x0": 207, "x1": 219}
++          ],
++          "y0": 0,
++          "y1": 1,
++          "fill": "#eeeeee",
++          "opacity": 0.72
++        },
++        {
++          "id": "observed-uncertainty",
++          "type": "uncertaintyBand",
++          "series": "observed",
++          "usesTransform": "panel-d.xy",
++          "fill": "#66bdb8",
++          "opacity": 0.42,
++          "lowerOffset": 0.065,
++          "upperOffset": 0.075
++        },
++        {
++          "id": "observed-line",
++          "type": "lineSeries",
++          "usesTransform": "panel-d.xy",
++          "series": "observed",
++          "stroke": "#0e6f71",
++          "strokeWidth": 2,
++          "fill": "none",
++          "points": [
++            [0, 0.38], [5, 0.36], [10, 0.42], [15, 0.39], [20, 0.48], [25, 0.62],
++            [30, 0.68], [35, 0.64], [40, 0.66], [45, 0.63], [50, 0.65], [55, 0.71],
++            [60, 0.64], [65, 0.59], [70, 0.55], [75, 0.51], [80, 0.48], [85, 0.43],
++            [90, 0.38], [95, 0.45], [100, 0.57], [105, 0.64], [110, 0.63],
++            [115, 0.66], [120, 0.65], [125, 0.66], [130, 0.69], [135, 0.71],
++            [140, 0.72], [145, 0.76], [150, 0.66], [155, 0.60], [160, 0.63],
++            [165, 0.54], [170, 0.62], [175, 0.66], [180, 0.69], [185, 0.67],
++            [190, 0.71], [195, 0.72], [200, 0.75], [205, 0.77], [210, 0.80],
++            [215, 0.78], [220, 0.84]
++          ]
++        },
++        {
++          "id": "chance-line",
++          "type": "lineSeries",
++          "usesTransform": "panel-d.xy",
++          "series": "chance",
++          "stroke": "#7a7a7a",
++          "strokeWidth": 2,
++          "dashArray": "5 4",
++          "fill": "none",
++          "points": [
++            [0, 0.21], [10, 0.20], [20, 0.205], [30, 0.198], [40, 0.203],
++            [50, 0.198], [60, 0.205], [70, 0.201], [80, 0.207], [90, 0.205],
++            [100, 0.204], [110, 0.206], [120, 0.202], [130, 0.208], [140, 0.20],
++            [150, 0.207], [160, 0.202], [170, 0.209], [180, 0.205], [190, 0.207],
++            [200, 0.211], [210, 0.208], [220, 0.214]
++          ]
++        }
++      ],
++      "annotations": [
++        {
++          "id": "observed-label",
++          "type": "text",
++          "text": "Observed",
++          "x": 365,
++          "y": 52,
++          "fontSize": 14,
++          "fill": "#0e6f71",
++          "textAnchor": "start"
++        },
++        {
++          "id": "chance-label",
++          "type": "text",
++          "text": "Chance",
++          "x": 367,
++          "y": 144,
++          "fontSize": 14,
++          "fill": "#666666",
++          "textAnchor": "start"
++        },
++        {
++          "id": "chance-sublabel",
++          "type": "text",
++          "text": "(5 cm bins)",
++          "x": 367,
++          "y": 164,
++          "fontSize": 14,
++          "fill": "#666666",
++          "textAnchor": "start"
++        }
++      ],
++      "provenance": [
++        {
++          "object": "observed-line",
++          "confidence": "medium",
++          "note": "Series shape is hand-traced from the raster at approximate 5 cm steps; local jaggedness is stylized but editable."
++        },
++        {
++          "object": "observed-uncertainty",
++          "confidence": "medium-low",
++          "note": "Band follows the observed curve using uniform offsets; source band width varies slightly."
++        },
++        {
++          "object": "context-bands",
++          "confidence": "medium",
++          "note": "Vertical shaded regions were approximated from visible light gray spans."
++        }
++      ]
++    }
++  ],
++  "rendering": {
++    "renderer": "svg-dom",
++    "layerOrder": ["background", "context-bands", "uncertainty", "axes", "series", "labels"],
++    "styleTokens": {
++      "axis": "#1a1a1a",
++      "observed": "#0e6f71",
++      "observedBand": "#66bdb8",
++      "chance": "#7a7a7a",
++      "contextBand": "#eeeeee"
++    }
++  },
++  "validation": {
++    "expected": {
++      "panels": 1,
++      "xTicks": 5,
++      "yTicks": 6,
++      "lineSeries": 2,
++      "uncertaintyBands": 1,
++      "contextBands": 5
++    },
++    "constraints": [
++      "Generated candidate must not render the source raster as a visual layer.",
++      "QA reference image, if shown, must be labeled reference-only and outside the generated SVG candidate.",
++      "Observed line and observed uncertainty band share the panel-d.xy coordinate transform.",
++      "Tick marks and tick labels are rendered as separate editable SVG elements with axis/value metadata."
++    ]
++  },
++  "confidence": [
++    {
++      "scope": "overall",
++      "level": "medium",
++      "note": "First-pass reconstruction prioritizes editable chart grammar and approximate visual similarity over exact digitization."
++    }
++  ]
++}
+
+tokens used
+27,435
+Created the first-pass make-figure reconstruction:
+
+- [JSON spec](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.json)
+- [HTML renderer](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch/reference-08-neuropixels-central-heatmap-D.html)
+
+Verification completed:
+- JSON validity: passed with `python3 -m json.tool`
+- Semantic counts: `1` panel, `5` x ticks, `6` y ticks, `2` line series, `1` uncertainty band, `5` context bands
+- Source reuse scan: no `drawImage`, no `url(...)`, no source-backed CSS background. The source PNG appears only in source metadata and the clearly labeled QA reference `<img>`.
+
+I attempted to start a local static server for visual inspection, but the sandbox rejected port binding with `PermissionError: [Errno 1] Operation not permitted`.

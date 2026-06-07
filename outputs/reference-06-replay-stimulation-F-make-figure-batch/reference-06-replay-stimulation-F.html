@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-06-replay-stimulation-F reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cccccc;
+    }
+    h1 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .note {
+      margin-top: 3px;
+      color: #555555;
+      font-size: 12px;
+    }
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #999999;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+    main {
+      min-height: calc(100vh - 50px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .frame {
+      position: relative;
+      background: #ffffff;
+      overflow: hidden;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.10);
+    }
+    .surface, .reference, svg {
+      position: absolute;
+      inset: 0;
+    }
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background-color: #ffffff;
+    }
+    .show-reference .surface {
+      display: none;
+    }
+    .show-reference .reference {
+      display: block;
+    }
+    text {
+      dominant-baseline: alphabetic;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Forest plot reconstruction</h1>
+      <div class="note">Generated candidate is JSON-rendered SVG. Source image is QA/reference-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA reference source image">
+    </div>
+  </main>
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function svgNode(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      Object.entries(attrs).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      });
+      return node;
+    }
+
+    function xScale(spec, value) {
+      const cs = spec.coordinateSystems.find(item => item.id === 'panel-f.effect.x');
+      const t = (value - cs.domain[0]) / (cs.domain[1] - cs.domain[0]);
+      return cs.range[0] + t * (cs.range[1] - cs.range[0]);
+    }
+
+    function rowY(session) {
+      return 81 + (session - 1) * (249 / 14);
+    }
+
+    function addText(svg, typography, item, className) {
+      const text = svgNode('text', {
+        id: item.id,
+        class: className,
+        x: item.x,
+        y: item.y,
+        fill: item.fill || typography.color,
+        'font-family': item.fontFamily || typography.fontFamily,
+        'font-size': item.fontSize || typography.defaultSize,
+        'font-weight': item.fontWeight || 400,
+        'text-anchor': item.anchor || 'start',
+        transform: item.rotation ? `rotate(${item.rotation} ${item.x} ${item.y})` : null
+      });
+      String(item.text || '').split('\n').forEach((line, index) => {
+        const tspan = svgNode('tspan', {
+          x: item.x,
+          dy: index === 0 ? 0 : `${item.lineHeight || 1.08}em`
+        });
+        tspan.textContent = line;
+        text.appendChild(tspan);
+      });
+      svg.appendChild(text);
+    }
+
+    function addLine(svg, attrs) {
+      svg.appendChild(svgNode('line', attrs));
+    }
+
+    function render(spec) {
+      const frame = document.getElementById('frame');
+      const surface = document.getElementById('surface');
+      const reference = document.getElementById('reference');
+      const panel = spec.panels[0];
+      const typography = spec.typography;
+      const styles = spec.styleTokens;
+
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      reference.src = spec.source.path;
+
+      const svg = svgNode('svg', {
+        width: spec.canvas.width,
+        height: spec.canvas.height,
+        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
+        role: 'img',
+        'aria-label': panel.title.text
+      });
+      svg.appendChild(svgNode('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
+      surface.innerHTML = '';
+      surface.appendChild(svg);
+
+      addText(svg, typography, panel.label, 'panel-label');
+      addText(svg, typography, panel.title, 'panel-title');
+      panel.layout.leftTable.headers.forEach(header => addText(svg, typography, header, 'table-header'));
+
+      const plot = panel.layout.plot;
+      addLine(svg, {
+        id: 'zero-guide',
+        x1: plot.zeroGuide.x,
+        y1: plot.zeroGuide.y1,
+        x2: plot.zeroGuide.x,
+        y2: plot.zeroGuide.y2,
+        stroke: styles.guide,
+        'stroke-width': 1,
+        'stroke-dasharray': plot.zeroGuide.strokeDasharray
+      });
+      addLine(svg, {
+        id: 'separator-rule',
+        x1: plot.separator.x1,
+        y1: plot.separator.y1,
+        x2: plot.separator.x2,
+        y2: plot.separator.y2,
+        stroke: styles.rule,
+        'stroke-width': 1,
+        'stroke-dasharray': plot.separator.strokeDasharray
+      });
+
+      panel.data.sessions.forEach(row => {
+        const y = rowY(row.session);
+        addText(svg, typography, {id: `session-${row.session}-label`, text: row.session, x: panel.layout.leftTable.sessionX, y: y + 4, fontSize: 15, anchor: 'middle'}, 'session-label');
+        addText(svg, typography, {id: `session-${row.session}-events`, text: row.events, x: panel.layout.leftTable.countsX, y: y + 4, fontSize: 14, anchor: 'middle'}, 'event-count');
+
+        const x1 = xScale(spec, row.ciLow);
+        const x2 = xScale(spec, row.ciHigh);
+        const xc = xScale(spec, row.effect);
+        addLine(svg, {id: `ci-${row.session}`, x1, y1: y, x2, y2: y, stroke: '#222222', 'stroke-width': 0.9});
+        addLine(svg, {x1, y1: y - 3, x2: x1, y2: y + 3, stroke: '#222222', 'stroke-width': 0.9});
+        addLine(svg, {x1: x2, y1: y - 3, x2, y2: y + 3, stroke: '#222222', 'stroke-width': 0.9});
+        svg.appendChild(svgNode('circle', {
+          id: `point-${row.session}`,
+          cx: xc,
+          cy: y,
+          r: 3.3,
+          fill: styles.pointFill,
+          stroke: styles.pointStroke,
+          'stroke-width': 0.8
+        }));
+      });
+
+      const axis = plot.bottomAxis;
+      addLine(svg, {id: 'x-axis', x1: axis.x1, y1: axis.y1, x2: axis.x2, y2: axis.y2, stroke: styles.axis, 'stroke-width': 1.1});
+      plot.x.ticks.forEach(tick => {
+        const x = xScale(spec, tick.value);
+        addLine(svg, {id: `x-tick-${tick.label}`, x1: x, y1: axis.y1, x2: x, y2: axis.y1 + axis.tickLength, stroke: styles.axis, 'stroke-width': 1});
+        addText(svg, typography, {id: `x-tick-label-${tick.label}`, text: tick.label, x, y: axis.y1 + 23, fontSize: 17, anchor: 'middle'}, 'x-tick-label');
+      });
+      addText(svg, typography, plot.x.label, 'axis-label');
+
+      const summary = panel.data.summary;
+      addText(svg, typography, panel.annotations[0], 'summary-label');
+      const y = panel.marks.find(mark => mark.id === 'summary-diamond').centerY;
+      const xLow = xScale(spec, summary.ciLow);
+      const xMid = xScale(spec, summary.effect);
+      const xHigh = xScale(spec, summary.ciHigh);
+      const h = panel.marks.find(mark => mark.id === 'summary-diamond').height / 2;
+      svg.appendChild(svgNode('polygon', {
+        id: 'summary-diamond',
+        points: `${xLow},${y} ${xMid},${y - h} ${xHigh},${y} ${xMid},${y + h}`,
+        fill: styles.summaryFill
+      }));
+      addText(svg, typography, panel.annotations[1], 'summary-ci-text');
+    }
+
+    async function loadSpec() {
+      const response = await fetch('reference-06-replay-stimulation-F.json');
+      return response.json();
+    }
+
+    loadSpec().then(render);
+
+    const frame = document.getElementById('frame');
+    const generatedButton = document.getElementById('generatedButton');
+    const referenceButton = document.getElementById('referenceButton');
+    generatedButton.addEventListener('click', () => {
+      frame.classList.remove('show-reference');
+      generatedButton.classList.add('active');
+      referenceButton.classList.remove('active');
+    });
+    referenceButton.addEventListener('click', () => {
+      frame.classList.add('show-reference');
+      referenceButton.classList.add('active');
+      generatedButton.classList.remove('active');
+    });
+  </script>
+</body>
+</html>

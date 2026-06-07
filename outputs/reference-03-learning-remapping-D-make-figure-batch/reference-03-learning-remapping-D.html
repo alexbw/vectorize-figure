@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-03-learning-remapping-D reconstruction</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      background: #eeeeee;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cccccc;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.2;
+    }
+
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #999999;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .toggle button {
+      border: 0;
+      padding: 6px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+
+    main {
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .surface,
+    .reference-wrap {
+      position: absolute;
+      inset: 0;
+    }
+
+    .reference-wrap {
+      display: none;
+      background: #ffffff;
+    }
+
+    .reference-wrap img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .reference-label {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      padding: 3px 6px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid #777777;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .show-reference .surface {
+      display: none;
+    }
+
+    .show-reference .reference-wrap {
+      display: block;
+    }
+
+    svg {
+      position: absolute;
+      inset: 0;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="doc-title">reference-03-learning-remapping-D</h1>
+      <div class="note">Generated candidate is rendered from editable JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generated-button" class="active" type="button">Generated</button>
+      <button id="reference-button" type="button">QA reference</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <div class="reference-wrap">
+        <img id="reference-image" alt="QA reference source image">
+        <div class="reference-label">QA reference only</div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function svgEl(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function scale(domain, range, value) {
+      return range[0] + ((value - domain[0]) / (domain[1] - domain[0])) * (range[1] - range[0]);
+    }
+
+    function formatPoints(points) {
+      return points.map(point => `${point[0].toFixed(2)},${point[1].toFixed(2)}`).join(' ');
+    }
+
+    function addText(parent, spec) {
+      const text = svgEl('text', {
+        id: spec.id,
+        x: spec.x,
+        y: spec.y,
+        fill: spec.fill || '#111111',
+        'font-size': spec.fontSize,
+        'font-weight': spec.fontWeight || 400,
+        'text-anchor': spec.anchor || 'start',
+        'dominant-baseline': spec.baseline || 'alphabetic'
+      });
+      if (spec.rotation) text.setAttribute('transform', `rotate(${spec.rotation} ${spec.x} ${spec.y})`);
+      if (spec.secondaryText) {
+        const first = svgEl('tspan', {x: spec.x, dy: -7});
+        first.textContent = spec.text;
+        const second = svgEl('tspan', {x: spec.x, dy: 20, 'font-style': 'italic'});
+        second.textContent = spec.secondaryText;
+        text.append(first, second);
+      } else {
+        text.textContent = spec.text;
+      }
+      parent.appendChild(text);
+      return text;
+    }
+
+    function render(spec) {
+      document.getElementById('doc-title').textContent = spec.id;
+      const frame = document.getElementById('frame');
+      const surface = document.getElementById('surface');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      surface.replaceChildren();
+      document.getElementById('reference-image').src = spec.source.path;
+
+      const svg = svgEl('svg', {
+        id: `${spec.id}-svg`,
+        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
+        width: spec.canvas.width,
+        height: spec.canvas.height,
+        role: 'img',
+        'aria-label': spec.id
+      });
+      svg.style.fontFamily = spec.typography.fontFamily;
+      svg.appendChild(svgEl('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
+
+      const panel = spec.panels[0];
+      const plot = panel.plot;
+      const box = plot.dataBbox;
+      const xScale = value => scale(plot.x.domain, [box.x, box.x + box.width], value);
+      const yScale = value => scale(plot.y.domain, [box.y + box.height, box.y], value);
+      const series = panel.data.series;
+
+      const axesGroup = svgEl('g', {'data-layer': 'axes'});
+      axesGroup.appendChild(svgEl('line', {...plot.axes.xAxis.line, stroke: plot.axes.xAxis.stroke, 'stroke-width': plot.axes.xAxis.strokeWidth}));
+      axesGroup.appendChild(svgEl('line', {...plot.axes.yAxis.line, stroke: plot.axes.yAxis.stroke, 'stroke-width': plot.axes.yAxis.strokeWidth}));
+
+      plot.x.ticks.forEach(tick => {
+        const x = xScale(tick.value);
+        axesGroup.appendChild(svgEl('line', {x1: x, y1: plot.axes.xAxis.line.y1, x2: x, y2: plot.axes.xAxis.line.y1 + plot.axes.xAxis.tickLength, stroke: plot.axes.xAxis.stroke, 'stroke-width': 1}));
+        addText(axesGroup, {text: tick.label, x, y: 367, fontSize: 16, fill: '#111111', anchor: 'middle'});
+      });
+
+      plot.y.ticks.forEach(tick => {
+        const y = yScale(tick.value);
+        axesGroup.appendChild(svgEl('line', {x1: plot.axes.yAxis.line.x1 - plot.axes.yAxis.tickLength, y1: y, x2: plot.axes.yAxis.line.x1, y2: y, stroke: plot.axes.yAxis.stroke, 'stroke-width': 1}));
+        addText(axesGroup, {text: tick.label, x: 66, y: y + 5, fontSize: 16, fill: '#111111', anchor: 'end'});
+      });
+
+      addText(axesGroup, plot.x.label);
+      addText(axesGroup, plot.y.label);
+      svg.appendChild(axesGroup);
+
+      const values = series.map(point => [xScale(point.day), yScale(point.correlation)]);
+      const upper = series.map(point => [xScale(point.day), yScale(point.correlation + point.sem)]);
+      const lower = series.slice().reverse().map(point => [xScale(point.day), yScale(point.correlation - point.sem)]);
+
+      const marksGroup = svgEl('g', {'data-layer': 'marks'});
+      marksGroup.appendChild(svgEl('polygon', {
+        id: 'stability-band',
+        points: formatPoints([...upper, ...lower]),
+        fill: '#8d5fb1',
+        opacity: 0.16
+      }));
+      marksGroup.appendChild(svgEl('polyline', {
+        id: 'stability-line',
+        points: formatPoints(values),
+        fill: 'none',
+        stroke: '#4b0f82',
+        'stroke-width': 2,
+        'stroke-linejoin': 'round',
+        'stroke-linecap': 'round'
+      }));
+
+      series.forEach(point => {
+        const x = xScale(point.day);
+        const y = yScale(point.correlation);
+        const yTop = yScale(point.correlation + point.sem);
+        const yBottom = yScale(point.correlation - point.sem);
+        marksGroup.appendChild(svgEl('line', {x1: x, y1: yTop, x2: x, y2: yBottom, stroke: '#4b0f82', 'stroke-width': 1.4}));
+        marksGroup.appendChild(svgEl('line', {x1: x - 2.5, y1: yTop, x2: x + 2.5, y2: yTop, stroke: '#4b0f82', 'stroke-width': 1.2}));
+        marksGroup.appendChild(svgEl('line', {x1: x - 2.5, y1: yBottom, x2: x + 2.5, y2: yBottom, stroke: '#4b0f82', 'stroke-width': 1.2}));
+        marksGroup.appendChild(svgEl('circle', {cx: x, cy: y, r: 4, fill: '#4b0f82', stroke: '#4b0f82', 'stroke-width': 1, 'data-day': point.day}));
+      });
+      svg.appendChild(marksGroup);
+
+      const textGroup = svgEl('g', {'data-layer': 'annotations'});
+      addText(textGroup, panel.label);
+      addText(textGroup, panel.title);
+      series.forEach(point => {
+        addText(textGroup, {text: point.label, x: xScale(point.day), y: yScale(point.correlation) - 26, fontSize: 14, fill: '#111111', anchor: 'middle'});
+        addText(textGroup, {text: point.n, x: xScale(point.day), y: 327, fontSize: 13, fill: '#111111', anchor: 'middle'});
+      });
+      svg.appendChild(textGroup);
+      surface.appendChild(svg);
+    }
+
+    async function loadSpec() {
+      const response = await fetch('reference-03-learning-remapping-D.json');
+      if (!response.ok) throw new Error(`Could not load JSON spec: ${response.status}`);
+      return response.json();
+    }
+
+    function setMode(mode) {
+      const frame = document.getElementById('frame');
+      const generated = document.getElementById('generated-button');
+      const reference = document.getElementById('reference-button');
+      const showReference = mode === 'reference';
+      frame.classList.toggle('show-reference', showReference);
+      generated.classList.toggle('active', !showReference);
+      reference.classList.toggle('active', showReference);
+    }
+
+    document.getElementById('generated-button').addEventListener('click', () => setMode('generated'));
+    document.getElementById('reference-button').addEventListener('click', () => setMode('reference'));
+
+    loadSpec().then(render).catch(error => {
+      document.getElementById('surface').textContent = error.message;
+      console.error(error);
+    });
+  </script>
+</body>
+</html>

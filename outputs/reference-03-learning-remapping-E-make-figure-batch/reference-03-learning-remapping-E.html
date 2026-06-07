@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-03-learning-remapping-E reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cccccc;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #999999;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .toggle button {
+      border: 0;
+      padding: 5px 9px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .surface,
+    .reference-wrap {
+      position: absolute;
+      inset: 0;
+    }
+
+    .reference-wrap {
+      display: none;
+      background: #ffffff;
+    }
+
+    .reference-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .reference-label {
+      position: absolute;
+      left: 8px;
+      bottom: 8px;
+      padding: 3px 6px;
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid #999999;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .show-reference .surface {
+      display: none;
+    }
+
+    .show-reference .reference-wrap {
+      display: block;
+    }
+
+    svg {
+      position: absolute;
+      inset: 0;
+      overflow: visible;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-03-learning-remapping-E</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA/reference only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">QA Reference</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <div id="referenceWrap" class="reference-wrap">
+        <img id="reference" alt="QA reference source image">
+        <div class="reference-label">QA reference only: source raster</div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function $(id) {
+      return document.getElementById(id);
+    }
+
+    function make(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function scale(domain, range, value) {
+      return range[0] + ((value - domain[0]) / (domain[1] - domain[0])) * (range[1] - range[0]);
+    }
+
+    function textNode(text, attrs = {}) {
+      const node = make('text', attrs);
+      node.textContent = text;
+      return node;
+    }
+
+    function render(spec) {
+      document.title = `${spec.id} reconstruction`;
+      $('title').textContent = spec.id;
+      const frame = $('frame');
+      const surface = $('surface');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      surface.replaceChildren();
+
+      const reference = $('reference');
+      reference.src = spec.source.path;
+
+      const svg = make('svg', {
+        width: spec.canvas.width,
+        height: spec.canvas.height,
+        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
+        role: 'img',
+        'aria-label': `${spec.id} generated reconstruction`
+      });
+      svg.style.background = spec.canvas.background || '#ffffff';
+      surface.appendChild(svg);
+
+      for (const panel of spec.panels) renderPanel(svg, spec, panel);
+    }
+
+    function renderPanel(svg, spec, panel) {
+      const g = make('g', {'data-panel-id': panel.id});
+      svg.appendChild(g);
+
+      const fontFamily = spec.typography.fontFamily;
+      appendText(g, panel.label, fontFamily);
+      appendText(g, panel.title, fontFamily);
+
+      const plot = panel.plot;
+      const box = plot.bbox;
+      const xScale = value => scale(plot.x.domain, [box.x, box.x + box.width], value);
+      const xAxisScale = value => scale(plot.x.axisDomain || plot.x.domain, [box.x, box.x + box.width], value);
+      const yScale = value => scale(plot.y.domain, [box.y + box.height, box.y], value);
+      const axis = plot.axisStyle;
+
+      for (const mark of panel.marks) {
+        if (mark.type === 'referenceLine' && mark.orientation === 'horizontal') {
+          g.appendChild(make('line', {
+            x1: box.x,
+            y1: yScale(mark.value),
+            x2: box.x + box.width,
+            y2: yScale(mark.value),
+            stroke: mark.stroke,
+            'stroke-width': mark.strokeWidth,
+            'stroke-dasharray': mark.dasharray,
+            'data-mark-id': mark.id
+          }));
+        }
+      }
+
+      renderAxes(g, plot, xScale, xAxisScale, yScale, axis, fontFamily);
+      renderDataMarks(g, panel, plot, xScale, yScale);
+
+      for (const annotation of panel.annotations || []) {
+        if (annotation.type === 'textBlock') appendTextBlock(g, annotation, fontFamily);
+      }
+    }
+
+    function renderAxes(g, plot, xScale, xAxisScale, yScale, axis, fontFamily) {
+      const box = plot.bbox;
+      const axisColor = axis.stroke || '#555555';
+      const axisWidth = axis.strokeWidth || 1;
+      const tickLength = axis.tickLength || 6;
+
+      g.appendChild(make('line', {
+        x1: box.x,
+        y1: box.y,
+        x2: box.x,
+        y2: box.y + box.height,
+        stroke: axisColor,
+        'stroke-width': axisWidth,
+        'data-axis-id': plot.y.id
+      }));
+      g.appendChild(make('line', {
+        x1: box.x,
+        y1: box.y + box.height,
+        x2: box.x + box.width,
+        y2: box.y + box.height,
+        stroke: axisColor,
+        'stroke-width': axisWidth,
+        'data-axis-id': plot.x.id
+      }));
+
+      for (const tick of plot.y.ticks) {
+        const y = yScale(tick.value);
+        g.appendChild(make('line', {
+          x1: box.x - tickLength,
+          y1: y,
+          x2: box.x,
+          y2: y,
+          stroke: axisColor,
+          'stroke-width': axisWidth,
+          'data-axis': 'y',
+          'data-value': tick.value
+        }));
+        g.appendChild(textNode(tick.label, {
+          x: box.x - 16,
+          y: y + 5,
+          'font-family': fontFamily,
+          'font-size': 14,
+          fill: '#111111',
+          'text-anchor': 'end',
+          'data-axis': 'y',
+          'data-value': tick.value
+        }));
+      }
+
+      for (const tick of plot.x.ticks) {
+        const x = tick.value > 8.5 ? xAxisScale(8.5) + 16 : xAxisScale(tick.value);
+        if (!tick.labelOnly) {
+          g.appendChild(make('line', {
+            x1: x,
+            y1: box.y + box.height,
+            x2: x,
+            y2: box.y + box.height + tickLength,
+            stroke: axisColor,
+            'stroke-width': axisWidth,
+            'data-axis': 'x',
+            'data-value': tick.value
+          }));
+        }
+        g.appendChild(textNode(tick.label, {
+          x,
+          y: box.y + box.height + 27,
+          'font-family': fontFamily,
+          'font-size': 14,
+          fill: '#111111',
+          'text-anchor': 'middle',
+          'data-axis': 'x',
+          'data-value': tick.value
+        }));
+      }
+
+      appendText(g, plot.x.label, fontFamily);
+      appendText(g, plot.y.label, fontFamily);
+    }
+
+    function renderDataMarks(g, panel, plot, xScale, yScale) {
+      const dataById = new Map((panel.data.series || []).map(series => [series.id, series]));
+      for (const mark of panel.marks) {
+        if (mark.type !== 'pointWithErrorBars') continue;
+        const series = dataById.get(mark.series);
+        if (!series) continue;
+
+        for (const point of series.points) {
+          const x = xScale(point[mark.xField]);
+          const y = yScale(point[mark.yField]);
+          const yLow = yScale(point[mark.lowField]);
+          const yHigh = yScale(point[mark.highField]);
+          const cap = mark.capWidth || 4;
+          const group = make('g', {
+            'data-mark-id': mark.id,
+            'data-series-id': series.id,
+            'data-animal': point.animal
+          });
+          group.appendChild(make('line', {
+            x1: x,
+            y1: yHigh,
+            x2: x,
+            y2: yLow,
+            stroke: mark.stroke,
+            'stroke-width': mark.strokeWidth
+          }));
+          group.appendChild(make('line', {
+            x1: x - cap / 2,
+            y1: yHigh,
+            x2: x + cap / 2,
+            y2: yHigh,
+            stroke: mark.stroke,
+            'stroke-width': mark.strokeWidth
+          }));
+          group.appendChild(make('line', {
+            x1: x - cap / 2,
+            y1: yLow,
+            x2: x + cap / 2,
+            y2: yLow,
+            stroke: mark.stroke,
+            'stroke-width': mark.strokeWidth
+          }));
+          group.appendChild(make('circle', {
+            cx: x,
+            cy: y,
+            r: mark.radius,
+            fill: mark.fill,
+            stroke: mark.stroke,
+            'stroke-width': 0.4
+          }));
+          g.appendChild(group);
+        }
+      }
+    }
+
+    function appendText(parent, item, fontFamily) {
+      if (!item) return;
+      const attrs = {
+        x: item.x,
+        y: item.y,
+        'font-family': fontFamily,
+        'font-size': item.fontSize,
+        'font-weight': item.fontWeight || 400,
+        fill: item.fill || '#111111',
+        'text-anchor': item.anchor || 'start',
+        'dominant-baseline': item.dominantBaseline || 'auto',
+        'data-text-id': item.id
+      };
+      if (item.rotation) attrs.transform = `rotate(${item.rotation} ${item.x} ${item.y})`;
+      parent.appendChild(textNode(item.text, attrs));
+    }
+
+    function appendTextBlock(parent, item, fontFamily) {
+      const text = make('text', {
+        x: item.x,
+        y: item.y,
+        'font-family': fontFamily,
+        'font-size': item.fontSize,
+        'font-weight': item.fontWeight || 400,
+        fill: item.fill || '#111111',
+        'text-anchor': item.anchor || 'start',
+        'data-annotation-id': item.id
+      });
+      item.lines.forEach((line, index) => {
+        const tspan = make('tspan', {
+          x: item.x,
+          dy: index === 0 ? 0 : item.lineHeight || item.fontSize * 1.25
+        });
+        tspan.textContent = line;
+        text.appendChild(tspan);
+      });
+      parent.appendChild(text);
+    }
+
+    async function loadSpec() {
+      const response = await fetch('reference-03-learning-remapping-E.json', {cache: 'no-store'});
+      if (!response.ok) throw new Error(`Could not load JSON spec: ${response.status}`);
+      return response.json();
+    }
+
+    function setMode(mode) {
+      const frame = $('frame');
+      const generatedButton = $('generatedButton');
+      const referenceButton = $('referenceButton');
+      const reference = mode === 'reference';
+      frame.classList.toggle('show-reference', reference);
+      generatedButton.classList.toggle('active', !reference);
+      referenceButton.classList.toggle('active', reference);
+    }
+
+    $('generatedButton').addEventListener('click', () => setMode('generated'));
+    $('referenceButton').addEventListener('click', () => setMode('reference'));
+
+    loadSpec().then(render).catch(error => {
+      $('surface').textContent = error.message;
+      console.error(error);
+    });
+  </script>
+</body>
+</html>

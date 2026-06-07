@@ -1,0 +1,223 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-01-place-code-opto-C-text-qa",
+  "source": {
+    "path": "/assets/reference/reference-01-place-code-opto-C-reference.png",
+    "usage": "QA-only; sourceBox values are representative measured text boxes for QA."
+  },
+  "canvas": {
+    "width": 560,
+    "height": 512,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Helvetica, Arial, sans-serif",
+    "defaultSize": 13,
+    "color": "#111111",
+    "fontImports": [
+      "https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&family=Roboto:wght@400;700&family=Source+Sans+3:wght@400;700&display=swap"
+    ],
+    "fontCandidates": [
+      "Arial",
+      "Helvetica",
+      "Arimo",
+      "Roboto",
+      "Source Sans 3",
+      "Times New Roman",
+      "Courier New"
+    ]
+  },
+  "panels": [
+    {
+      "id": "panel-c-text",
+      "label": {
+        "id": "panel-label",
+        "text": "C",
+        "x": 0,
+        "y": 32,
+        "fontFamily": "Helvetica, Helvetica, Arial, sans-serif",
+        "fontSize": 23.84,
+        "fontWeight": 600,
+        "overlayX": 0,
+        "overlayY": 33.75,
+        "targetWidth": 16.01,
+        "fit": "scaleX",
+        "sourceBox": {
+          "x": 0,
+          "y": 15,
+          "width": 16,
+          "height": 20
+        },
+        "lineHeight": 1,
+        "minScale": 0.93,
+        "maxScale": 0.93,
+        "calibrationScore": 0.31321
+      },
+      "title": {
+        "id": "panel-title",
+        "text": "Event-aligned responses to light onset",
+        "x": 34,
+        "y": 34,
+        "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+        "fontSize": 19.78,
+        "fontWeight": 600,
+        "overlayX": 32.25,
+        "overlayY": 35,
+        "targetWidth": 284.91,
+        "fit": "scaleX",
+        "fitTolerancePx": 0.5,
+        "sourceBox": {
+          "x": 34,
+          "y": 20,
+          "width": 283,
+          "height": 19
+        },
+        "lineHeight": 1,
+        "minScale": 0.955,
+        "maxScale": 0.955,
+        "calibrationScore": 0.31527
+      },
+      "marks": [
+        {
+          "id": "event-label",
+          "type": "text",
+          "text": "532 nm light ON",
+          "x": 251,
+          "y": 62,
+          "fontFamily": "Arial, Helvetica, Arial, sans-serif",
+          "fontSize": 15.68,
+          "anchor": "middle",
+          "fill": "#009da3",
+          "overlayX": 263.25,
+          "overlayY": 62,
+          "targetWidth": 105.37,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "sourceBox": {
+            "x": 211,
+            "y": 50,
+            "width": 103,
+            "height": 23
+          },
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "minScale": 0.93,
+          "maxScale": 0.93,
+          "calibrationScore": 0.30187
+        },
+        {
+          "id": "raster-x-label",
+          "type": "text",
+          "text": "Time from light onset (s)",
+          "x": 288,
+          "y": 301,
+          "fontFamily": "Helvetica Neue, Helvetica, Arial, sans-serif",
+          "fontSize": 13.6,
+          "anchor": "middle",
+          "overlayX": 290.75,
+          "overlayY": 299.75,
+          "targetWidth": 151.18,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "sourceBox": {
+            "x": 211,
+            "y": 289,
+            "width": 156,
+            "height": 16
+          },
+          "fontWeight": 500,
+          "lineHeight": 1,
+          "minScale": 1,
+          "maxScale": 1,
+          "calibrationScore": 0.67441
+        },
+        {
+          "id": "control-label",
+          "type": "text",
+          "text": "Control\n(no light)",
+          "x": 44,
+          "y": 92,
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 15.76,
+          "anchor": "middle",
+          "lineHeight": 1.1,
+          "overlayX": 43.25,
+          "overlayY": 92.75,
+          "targetWidth": 52.79,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "sourceBox": {
+            "x": 20,
+            "y": 80,
+            "width": 50,
+            "height": 28
+          },
+          "fontWeight": 300,
+          "minScale": 1.05,
+          "maxScale": 1.05,
+          "calibrationScore": 0.3582
+        },
+        {
+          "id": "opto-label",
+          "type": "text",
+          "text": "Optogenetic\ninhibition\n(ArchT)",
+          "x": 44,
+          "y": 195,
+          "fontFamily": "Helvetica Neue, Helvetica, Arial, sans-serif",
+          "fontSize": 14.24,
+          "anchor": "middle",
+          "lineHeight": 1.1,
+          "fill": "#009da3",
+          "overlayX": 44,
+          "overlayY": 194.25,
+          "targetWidth": 74.67,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "sourceBox": {
+            "x": 5,
+            "y": 181,
+            "width": 78,
+            "height": 50
+          },
+          "fontWeight": 400,
+          "minScale": 0.95,
+          "maxScale": 0.95,
+          "calibrationScore": 0.4685
+        },
+        {
+          "id": "line-x-label",
+          "type": "text",
+          "text": "Time from light onset (s)",
+          "x": 291,
+          "y": 482,
+          "fontFamily": "Helvetica Neue, Helvetica, Arial, sans-serif",
+          "fontSize": 14.71,
+          "anchor": "middle",
+          "overlayX": 291.75,
+          "overlayY": 494,
+          "targetWidth": 155.34,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "sourceBox": {
+            "x": 214,
+            "y": 481,
+            "width": 154,
+            "height": 18
+          },
+          "fontWeight": 500,
+          "lineHeight": 1,
+          "minScale": 0.95,
+          "maxScale": 0.95,
+          "calibrationScore": 0.38895
+        }
+      ]
+    }
+  ],
+  "confidence": [
+    {
+      "target": "sourceBox",
+      "confidence": "medium",
+      "note": "Representative text boxes are sufficient to exercise renderer QA and candidate scoring; not a final source annotation pass."
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-03-learning-remapping-B",
+  "source": {
+    "path": "../../assets/reference/reference-03-learning-remapping-B-reference.png",
+    "usage": "QA/reference only; not used by generated candidate.",
+    "nativeSize": {"width": 386, "height": 526},
+    "notes": "Single panel B showing a 7 by 7 day-by-day Pearson correlation heatmap with diagonal dashes, categorical day axes, and a purple sequential colorbar."
+  },
+  "canvas": {"width": 386, "height": 526, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Roboto", "Noto Sans"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "First-pass manual calibration to compact journal sans-serif text; no font scoring harness used."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "day-category-x",
+      "type": "categorical",
+      "domain": [1, 2, 3, 4, 5, 6, 7],
+      "range": [40, 323]
+    },
+    {
+      "id": "day-category-y",
+      "type": "categorical",
+      "domain": [1, 2, 3, 4, 5, 6, 7],
+      "range": [86, 420],
+      "orientation": "top-to-bottom"
+    },
+    {
+      "id": "pearson-r-purple",
+      "type": "colorScale",
+      "domain": [0, 1],
+      "colors": ["#ffffff", "#d8c4e9", "#6f1a9a", "#2f005b"],
+      "interpolation": "linear-rgb"
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-b",
+      "bbox": {"x": 0, "y": 0, "width": 386, "height": 526},
+      "label": {"id": "panel-label", "text": "B", "x": 7, "y": 30, "fontSize": 20, "fontWeight": 700},
+      "title": {
+        "id": "panel-title",
+        "text": "Remapping similarity (day-by-day)",
+        "x": 34,
+        "y": 30,
+        "fontSize": 16,
+        "fontWeight": 700,
+        "sourceBox": {"x": 34, "y": 15, "width": 262, "height": 18}
+      },
+      "plot": {
+        "id": "similarity-matrix",
+        "type": "heatmap",
+        "dataBbox": {"x": 40, "y": 86, "width": 283, "height": 334},
+        "cellWidth": 40.428571,
+        "cellHeight": 47.714286,
+        "x": {
+          "uses": "day-category-x",
+          "ticks": [
+            {"value": 1, "label": "1"}, {"value": 2, "label": "2"}, {"value": 3, "label": "3"},
+            {"value": 4, "label": "4"}, {"value": 5, "label": "5"}, {"value": 6, "label": "6"},
+            {"value": 7, "label": "7"}
+          ],
+          "label": {"id": "x-axis-label", "text": "Day", "x": 181.5, "y": 466, "fontSize": 16, "anchor": "middle"}
+        },
+        "y": {
+          "uses": "day-category-y",
+          "ticks": [
+            {"value": 1, "label": "1"}, {"value": 2, "label": "2"}, {"value": 3, "label": "3"},
+            {"value": 4, "label": "4"}, {"value": 5, "label": "5"}, {"value": 6, "label": "6"},
+            {"value": 7, "label": "7"}
+          ],
+          "label": {"id": "y-axis-label", "text": "Day", "x": 9, "y": 253, "fontSize": 16, "rotation": -90, "anchor": "middle"}
+        },
+        "axes": {
+          "box": {"stroke": "#4d4d4d", "strokeWidth": 1},
+          "grid": {"stroke": "#c7c7c7", "strokeWidth": 0.7}
+        },
+        "colorScale": "pearson-r-purple",
+        "matrix": [
+          [null, 0.62, 0.48, 0.33, 0.25, 0.22, 0.18],
+          [0.62, null, 0.66, 0.45, 0.33, 0.26, 0.21],
+          [0.48, 0.66, null, 0.63, 0.46, 0.33, 0.24],
+          [0.33, 0.45, 0.63, null, 0.61, 0.44, 0.32],
+          [0.25, 0.33, 0.46, 0.61, null, 0.61, 0.46],
+          [0.22, 0.26, 0.33, 0.44, 0.61, null, 0.63],
+          [0.18, 0.21, 0.24, 0.32, 0.46, 0.63, null]
+        ],
+        "cellText": {"fontSize": 12, "fill": "#111111", "anchor": "middle"},
+        "missingValue": {"label": "-", "fontSize": 18, "fill": "#111111"}
+      },
+      "legends": [
+        {
+          "id": "similarity-colorbar",
+          "type": "colorbar",
+          "scale": "pearson-r-purple",
+          "bbox": {"x": 342, "y": 279, "width": 14, "height": 135},
+          "title": {"text": "Similarity\n(Pearson r)", "x": 337, "y": 235, "fontSize": 12, "anchor": "start"},
+          "ticks": [
+            {"value": 0, "label": "0"},
+            {"value": 0.5, "label": "0.5"},
+            {"value": 1, "label": "1.0"}
+          ],
+          "tickLength": 5
+        }
+      ],
+      "provenance": [
+        {"target": "plot.dataBbox", "confidence": "medium", "note": "Matrix bounds estimated from visible box edges in the raster."},
+        {"target": "matrix", "confidence": "high", "note": "Numeric values transcribed from visible cell labels."},
+        {"target": "colors", "confidence": "medium", "note": "Sequential purple scale approximated from source colorbar and cell fills."}
+      ]
+    }
+  ],
+  "validation": {
+    "expected": {
+      "matrixRows": 7,
+      "matrixColumns": 7,
+      "numericCells": 42,
+      "missingCells": 7,
+      "xTicks": 7,
+      "yTicks": 7,
+      "colorbarTicks": 3
+    },
+    "constraints": [
+      "Generated heatmap cells derive from matrix values and named color scale.",
+      "Axis tick labels are generated from categorical day tick objects.",
+      "The source raster is available only in a labeled QA/reference pane."
+    ]
+  },
+  "confidence": [
+    {"target": "overall", "confidence": "medium", "note": "First-pass reconstruction for visual inspection; spacing and typography may need fine adjustment after browser overlay QA."}
+  ]
+}

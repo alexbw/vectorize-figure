@@ -1,0 +1,2496 @@
+Reading additional input from stdin...
+OpenAI Codex v0.137.0
+--------
+workdir: /Users/alex/Code/scientific-figure-reconstruction
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: low
+reasoning summaries: none
+session id: 019e9e84-4d57-70b1-8450-c448830adf27
+--------
+user
+$make-figure assets/reference/reference-08-neuropixels-central-heatmap-B-reference.png. Generate an independent first-pass reconstruction for visual inspection. Write outputs only to outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.json and outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.html. Use the make-figure skill contract and the repository command/skill code: generated visual layers must not reuse the source raster; the source may appear only as a clearly labeled QA/reference view. Keep the JSON semantic and editable. Verify JSON validity and search the output for accidental drawImage/background source reuse. Do not modify existing output directories, docs, skills, plugins, source assets, or unrelated files.
+codex
+I’m using the `make-figure` skill and will keep the edits confined to the two requested output files. I’ll inspect the raster dimensions and repo patterns first, then generate semantic JSON plus an HTML renderer that draws the raster plot procedurally.
+exec
+/bin/zsh -lc "sed -n '1,220p' skills/make-figure/references/semantic-figure-ir.md" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+# Semantic Figure IR
+
+Use this document with `reconstruction-contract.md`. The reconstruction output
+is a semantic figure intermediate representation, not a collection of detected
+bounding boxes.
+
+## Core Model
+
+A scientific figure reconstruction is a typed scene graph:
+
+```text
+source evidence
+  -> semantic figure objects
+  -> named coordinate systems and transforms
+  -> derived layout objects
+  -> renderable marks and text
+  -> validation constraints
+```
+
+Bounding boxes, OCR text, detected line segments, and color samples are source
+evidence. They help infer the graph, but they are not the graph itself.
+
+## Common Object Fields
+
+Any semantic object may use these fields:
+
+```json
+{
+  "id": "panel-a-x-tick-0",
+  "type": "axisTick",
+  "parent": "panel-a-x-axis",
+  "children": ["panel-a-x-tick-0-mark", "panel-a-x-tick-0-label"],
+  "usesTransform": "panel-a.xy",
+  "anchorTo": "panel-a-x-axis",
+  "derivesFrom": "panel-a.x.ticks[0]",
+  "sourceEvidence": ["bbox-17", "line-04"],
+  "provenance": {"confidence": "medium", "note": "Tick position measured from source."}
+}
+```
+
+Prefer stable ids and explicit relationships over free-floating pixel objects.
+When an object needs source-calibrated coordinates, keep those coordinates on
+the semantic object as measured anchors instead of detaching the rendered mark
+or text.
+
+## Top-Level IR Concepts
+
+- `sourceEvidence`: source bboxes, OCR snippets, measured line segments, color
+  samples, and notes. These are evidence records, not render instructions.
+- `coordinateSystems`: named transforms such as Cartesian data scales,
+  categorical scales, event anchors, color scales, image/matrix ranges, and
+  projected 3D scenes.
+- `layoutObjects`: axes, tick-label bands, legends, colorbars, tables, insets,
+  panel titles, scale bars, and other objects that reserve space or anchor text.
+- `data`: exact data, approximate data, or generation recipes.
+- `marks`: visual encodings derived from data or layout objects.
+- `annotations`: labels, arrows, brackets, callouts, and event labels anchored
+  to data points, marks, or layout objects.
+- `constraints`: relationship and layout invariants that must survive rendering.
+- `rendering`: renderer hints, layer order, and style tokens.
+- `validation`: renderer- or harness-readable checks and expected counts.
+- `provenance`: object-level confidence and unresolved inferences.
+
+Panel-specific schemas may organize these concepts differently, but they should
+preserve the same relationships.
+
+## Required Relationship Invariants
+
+Renderers and validation scripts should enforce these when the source shows the
+corresponding objects:
+
+- Labeled ticks render one tick mark and one tick label with matching
+  `axis`/`value` metadata.
+- Axis titles anchor to an axis, tick-label band, or measured source anchor;
+  they are not independent guessed text.
+- Event-aligned ticks, event lines, brackets, and annotations share a named
+  event anchor or explicit measured visual anchor.
+- Grid lines belong to named grid planes and families; grid lines must not be
+  confused with solid box edges.
+- Legends reference real series, marker classes, or mark groups.
+- Colorbars reference a color scale and own their ticks and title.
+- Table cell text, row rules, separators, and highlights remain separate
+  objects when their visual styles differ.
+- Annotations anchor to data coordinates, generated marks, or layout objects
+  unless they are explicitly page-positioned.
+- Generated visuals never reuse the source raster as a generated layer.
+
+## Relationship Inventory Step
+
+Before writing the final JSON for a nontrivial panel, produce a short inventory:
+
+- plot type and renderer strategy
+- coordinate systems and named anchors
+- layout objects and their children
+- data-driven marks and their series/group ownership
+- annotations and what each one anchors to
+- source-calibrated overrides and why the transform alone is insufficient
+- validation constraints that should be checked in the rendered DOM
+
+Do this before visual tuning. If a generated object looks wrong, first ask which
+relationship or transform is missing before changing pixels.
+
+
+exec
+/bin/zsh -lc "sed -n '1,220p' skills/make-figure/references/reconstruction-contract.md" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+# Reconstruction Contract
+
+Use this contract when converting a raster scientific figure into configurable HTML and JSON.
+
+Read `semantic-figure-ir.md` alongside this contract. The JSON may be
+panel-specific, but it must preserve semantic relationships between data,
+transforms, layout objects, marks, labels, and validation constraints.
+
+## JSON Shape
+
+Minimum top-level fields:
+
+```json
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "figure-id",
+  "source": {
+    "path": "./source.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "What was inferred visually."
+  },
+  "canvas": {
+    "width": 800,
+    "height": 600,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [
+      "https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&display=swap"
+    ],
+    "fontFaces": [
+      {"family": "FigureSans", "weight": 400, "src": "./fonts/FigureSans-Regular.woff2"},
+      {"family": "FigureSans", "weight": 700, "src": "./fonts/FigureSans-Bold.woff2"}
+    ],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Source Sans 3", "Roboto", "Noto Sans"],
+    "calibration": {
+      "fontStretch": "normal",
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Use measured source text boxes to tune font family, stretch, size, and line height."
+    }
+  },
+  "panels": [],
+  "confidence": []
+}
+```
+
+`fontImports` is for lightweight browser-based experimentation with external
+CSS font providers such as Google Fonts. `fontFaces` is for reproducible local
+or adjacent font files when a typeface has been selected. Do not introduce a
+build system only to test fonts; use browser-native font loading and SVG text
+measurement first.
+
+## Panel Shape
+
+Represent each subpanel explicitly. For a single cropped panel, use one item in `panels`.
+
+```json
+{
+  "id": "panel-a",
+  "label": {"text": "A", "x": 16, "y": 20, "fontSize": 24, "fontWeight": 700},
+  "title": {"text": "Panel title", "x": 56, "y": 24, "fontSize": 16, "fontWeight": 700},
+  "bbox": {"x": 0, "y": 0, "width": 400, "height": 300},
+  "plot": {
+    "dataBbox": {"x": 64, "y": 48, "width": 300, "height": 210},
+    "axes": {
+      "xAxis": {"id": "panel-a-x-axis", "line": {"x1": 64, "y1": 258, "x2": 364, "y2": 258}, "tickLength": 6},
+      "yAxis": {"id": "panel-a-y-axis", "line": {"x1": 64, "y1": 48, "x2": 64, "y2": 258}, "tickLength": 6}
+    },
+    "x": {
+      "scale": "linear",
+      "domain": [0, 10],
+      "ticks": [{"value": 0, "label": "0"}, {"value": 5, "label": "5"}, {"value": 10, "label": "10"}],
+      "label": {"text": "Time (s)"}
+    },
+    "y": {
+      "scale": "linear",
+      "domain": [0, 1],
+      "ticks": [{"value": 0, "label": "0"}, {"value": 0.5, "label": "0.5"}, {"value": 1, "label": "1"}],
+      "label": {"text": "Response"}
+    }
+  },
+  "marks": [],
+  "annotations": [],
+  "provenance": []
+}
+```
+
+## Mark Types
+
+Use semantic mark objects. Add fields as needed, but keep the meaning explicit.
+
+- `lineSeries`: data points plus stroke, width, optional uncertainty band.
+- `scatter`: points, marker shape, size, fill, stroke, opacity.
+- `bar`: categorical or numeric bars with baseline, fill, stroke.
+- `heatmap`: matrix, color scale, bounds, interpolation flag.
+- `raster`: event times by row or a generation recipe with seed and density.
+- `violin`: category, outline path or generated KDE recipe, median/quantile marks.
+- `path`: editable SVG path data for contours, arrows, outlines, or schematic curves.
+- `rect`, `circle`, `ellipse`, `text`, `bracket`, `arrow`: annotations and schematics.
+- `imageRecipe`: generated texture or synthetic field; never point this at the source raster.
+
+## Coordinate Systems
+
+Define named transforms before rendering marks:
+
+- `plot.dataBbox` maps data to pixels.
+- For charts where the visual data rectangle is offset from axes, split
+  `dataBbox` from `axisBbox` or explicit axis anchors such as `yAxisX` and
+  `xAxisY`. Do not force source axis offsets into the data transform.
+- `x.domain` and `y.domain` map quantitative axes.
+- `categories` map categorical positions.
+- `eventAnchor` maps event-aligned plots.
+- `colorScale.domain` maps heatmaps and colorbars.
+
+Avoid mixing hard-coded pixel marks with data-space marks unless the mark is truly an annotation. Ticks, event lines, and data marks should share the same transform.
+
+### 3D Scientific Plots
+
+Recognize 3D plots from visual cues such as three nonparallel labeled axes,
+isometric or perspective box frames, oblique grid planes, tick labels attached
+to multiple axis directions, and data paths or markers that overlap within a
+projected volume. Do not require the user to identify a panel as 3D.
+
+For static publication-style 3D plots made of axes, grid lines, trajectories,
+markers, and labels, prefer semantic 3D data rendered into SVG through an
+explicit projection function. Reserve WebGL or Three.js for genuinely complex
+surfaces, dense point clouds, lighting, meshes, or interactive rotation.
+
+Represent 3D scenes with explicit camera or projection metadata:
+
+```json
+{
+  "scene": {
+    "projection": {
+      "type": "orthographicBasis",
+      "corner": {"x": 58, "y": 327},
+      "domainCorner": {"pc1": -2, "pc2": -2, "pc3": -2},
+      "basis": {
+        "pc1": {"x": 258, "y": 30},
+        "pc2": {"x": 145, "y": 90},
+        "pc3": {"x": 0, "y": -184}
+      }
+    },
+    "domains": {"pc1": [-2, 2], "pc2": [-2, 2], "pc3": [-2, 2]},
+    "trajectories": [{"points": [[-1.5, -1.6, -0.3], [0.7, -1.1, 1.8]]}]
+  }
+}
+```
+
+`fontImports` is for lightweight browser-based experimentation with external
+CSS font providers such as Google Fonts. `fontFaces` is for reproducible local
+or adjacent font files when a typeface has been selected. Do not introduce a
+build system only to test fonts; use browser-native font loading and SVG text
+measurement first.
+
+Axes, grid planes, trajectories, markers, and annotations must use the same
+3D-to-2D projection. Depth-sort generated marks when overlap matters: back grid
+and box edges first, faint trial clouds, mean trajectories, timepoint markers,
+then text labels. Labels should anchor to projected 3D points or axis objects
+and then participate in the normal text-collision pass.
+
+When using source-calibrated projected grid segments, avoid segments that
+duplicate solid box edges or accidentally close into polygons. Grid lines should
+read as independent faint plane guides unless the source explicitly shows a
+closed projected face.
+
+Prefer named 3D grid planes over a flat list of projected line segments. For
+example, encode separate `floor`, `backWall`, and `sideWall` grid groups so each
+axis pair has its own Cartesian grid. Inventory the source grid before tuning:
+for every plane, count visible interior guides separately from boundary-aligned
+guides that are merged with or hidden under box edges. Encode grid lines as
+per-family values, such as independent `pc1`, `pc2`, and `pc3` guide families,
+instead of one shared plane-level value list. Each family should state whether
+domain-boundary values are included, and generated SVG lines should expose
+stable plane/family attributes so count validation can catch drift. A 3D
+state-space panel with PC1, PC2, and PC3 axes should not collapse into one wall
+plus a triangular base.
+
+If the source uses faint face shading, encode plane fills separately from grid
+lines and generate the fill polygon from the same 3D projection. Do not bake the
+shading into arbitrary background shapes. Tick labels in 3D plots are layout
+text: allow source-calibrated text positions or offsets from projected ticks so
+labels do not collide with each other, axis titles, or spines.
+
+3D tick labels should be placed by semantic layout rules, not by one-shot
+coordinates alone. Treat axis spines and tick marks as protected geometry with
+padded hit zones. Treat faint grid lines and trajectory clouds as non-protected
+unless the source clearly reserves label space around them. Tick labels may use
+source-calibrated initial positions, but renderers should measure the final text
+box and apply a constrained outward nudge if it intersects protected axis
+geometry:
+
+```json
+{
+  "axis": {
+    "id": "pc1",
+    "tickLabelPlacement": {
+      "avoid": ["axis-spine"],
+      "minGap": 5,
+      "nudge": {"x": 8, "y": 7},
+      "maxSteps": 6
+    }
+  }
+}
+```
+
+3D axes with visible tick labels should also render visible tick marks unless
+the source suppresses them. Store tick geometry as a projected tick anchor, a
+short `markVector`, and a label offset or outward normal. The label should be
+placed from the tick mark first; collision correction is a secondary adjustment,
+not the primary placement mechanism.
+
+When a source-fitted frame or projection still does not reproduce the source's
+tick text positions, keep the numeric tick `value` semantic but add separate
+source-calibrated `markAnchor` and/or `labelAnchor` fields. Do not force tick
+labels through one shared offset vector if the source clearly uses
+
+exec
+/bin/zsh -lc 'file assets/reference/reference-08-neuropixels-central-heatmap-B-reference.png && identify -verbose assets/reference/reference-08-neuropixels-central-heatmap-B-reference.png | head -80' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+assets/reference/reference-08-neuropixels-central-heatmap-B-reference.png: PNG image data, 391 x 268, 8-bit/color RGB, non-interlaced
+Image:
+  Filename: assets/reference/reference-08-neuropixels-central-heatmap-B-reference.png
+  Permissions: rw-r--r--
+  Format: PNG (Portable Network Graphics)
+  Mime type: image/png
+  Class: DirectClass
+  Geometry: 391x268+0+0
+  Units: Undefined
+  Colorspace: sRGB
+  Type: TrueColor
+  Endianness: Undefined
+  Depth: 8-bit
+  Channels: 3.0
+  Channel depth:
+    Red: 8-bit
+    Green: 8-bit
+    Blue: 8-bit
+  Channel statistics:
+    Pixels: 104788
+    Red:
+      min: 0  (0)
+      max: 255 (1)
+      mean: 235.861 (0.924946)
+      median: 253 (0.992157)
+      standard deviation: 48.9235 (0.191857)
+      kurtosis: 9.96352
+      skewness: -3.2491
+      entropy: 0.526172
+    Green:
+      min: 0  (0)
+      max: 255 (1)
+      mean: 235.828 (0.924814)
+      median: 253 (0.992157)
+      standard deviation: 48.9858 (0.192101)
+      kurtosis: 9.94285
+      skewness: -3.24774
+      entropy: 0.527097
+    Blue:
+      min: 0  (0)
+      max: 255 (1)
+      mean: 235.923 (0.925188)
+      median: 253 (0.992157)
+      standard deviation: 48.7156 (0.191042)
+      kurtosis: 10.028
+      skewness: -3.2567
+      entropy: 0.525849
+  Image statistics:
+    Overall:
+      min: 0  (0)
+      max: 255 (1)
+      mean: 235.871 (0.924982)
+      median: 253 (0.992157)
+      standard deviation: 48.875 (0.191667)
+      kurtosis: 9.97813
+      skewness: -3.25118
+      entropy: 0.526373
+  Rendering intent: Perceptual
+  Gamma: 0.454545
+  Chromaticity:
+    red primary: (0.64,0.33,0.03)
+    green primary: (0.3,0.6,0.1)
+    blue primary: (0.15,0.06,0.79)
+    white point: (0.3127,0.329,0.3583)
+  Matte color: grey74
+  Background color: white
+  Border color: srgb(223,223,223)
+  Transparent color: black
+  Interlace: None
+  Intensity: Undefined
+  Compose: Over
+  Page geometry: 391x268+0+0
+  Dispose: Undefined
+  Iterations: 0
+  Compression: Zip
+  Orientation: Undefined
+  Properties:
+    date:create: 2026-06-04T09:38:12+00:00
+    date:modify: 2026-06-04T09:38:12+00:00
+    date:timestamp: 2026-06-06T19:59:00+00:00
+    png:IHDR.bit-depth-orig: 8
+
+exec
+/bin/zsh -lc 'ls outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch 2>/dev/null || true' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+codex
+The source is a 391 x 268 PNG. The visible plot is a single raster panel: page/panel label and title at top, a 100-140 s x-axis, neuron index y-axis, and dense synthetic spike ticks/dots concentrated in bands around roughly 103, 114, 129, and 138 s.
+codex
+I’m going to write a first-pass semantic spec with seeded generation recipes instead of extracted pixel data. The HTML will render canvas spike marks from that spec and SVG/DOM axes/text, with no source image drawn into the candidate.
+exec
+/bin/zsh -lc 'mkdir -p outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+apply patch
+patch: completed
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.html
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.json
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.html b/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..59ca1379e661b6e870fb8dabbc5ece9a741ee46d
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.html
+@@ -0,0 +1,292 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-08-neuropixels-central-heatmap-B reconstruction</title>
++  <style>
++    :root {
++      color-scheme: light;
++      --ink: #111111;
++      --paper: #ffffff;
++      --chrome: #d8d8d8;
++    }
++    html,
++    body {
++      margin: 0;
++      min-height: 100%;
++      background: #f3f3f3;
++      font-family: Arial, Helvetica, sans-serif;
++      color: var(--ink);
++    }
++    .page {
++      padding: 18px;
++    }
++    .figure-wrap {
++      display: inline-block;
++      border: 1px solid var(--chrome);
++      background: var(--paper);
++    }
++    .stage {
++      position: relative;
++      width: 391px;
++      height: 268px;
++      background: var(--paper);
++      overflow: hidden;
++    }
++    .stage canvas,
++    .stage svg {
++      position: absolute;
++      inset: 0;
++      width: 391px;
++      height: 268px;
++    }
++    .stage canvas {
++      z-index: 1;
++    }
++    .stage svg {
++      z-index: 2;
++      pointer-events: none;
++    }
++    .caption {
++      margin-top: 8px;
++      font-size: 12px;
++      color: #444444;
++    }
++  </style>
++</head>
++<body>
++  <main class="page">
++    <section class="figure-wrap" aria-label="Generated reconstruction">
++      <div id="stage" class="stage"></div>
++    </section>
++    <div class="caption">Generated reconstruction only. Source raster is not used as a visual layer.</div>
++  </main>
++
++  <script>
++    const fallbackSpec = null;
++    const specUrl = 'reference-08-neuropixels-central-heatmap-B.json';
++
++    function mulberry32(seed) {
++      let t = seed >>> 0;
++      return function rand() {
++        t += 0x6D2B79F5;
++        let r = Math.imul(t ^ (t >>> 15), 1 | t);
++        r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
++        return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
++      };
++    }
++
++    function gaussian(rand) {
++      const u = Math.max(rand(), 1e-9);
++      const v = Math.max(rand(), 1e-9);
++      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
++    }
++
++    function mapX(plot, value) {
++      const box = plot.dataBbox;
++      const [d0, d1] = plot.x.domain;
++      return box.x + ((value - d0) / (d1 - d0)) * box.width;
++    }
++
++    function mapY(plot, value) {
++      const box = plot.dataBbox;
++      const [d0, d1] = plot.y.domain;
++      return box.y + ((value - d0) / (d1 - d0)) * box.height;
++    }
++
++    function inDropout(recipe, t, rand) {
++      for (const window of recipe.dropoutWindows || []) {
++        if (t >= window.timeRange[0] && t <= window.timeRange[1]) {
++          return rand() > window.keepProbability;
++        }
++      }
++      return false;
++    }
++
++    function drawRaster(canvas, panel) {
++      const ctx = canvas.getContext('2d');
++      const plot = panel.plot;
++      const mark = panel.marks.find((item) => item.type === 'raster');
++      const recipe = mark.generationRecipe;
++      const rand = mulberry32(recipe.seed);
++      const style = mark.style;
++
++      ctx.clearRect(0, 0, canvas.width, canvas.height);
++      ctx.fillStyle = style.fill;
++      ctx.globalAlpha = style.alpha;
++
++      const emit = (t, row, w = style.width, h = style.height) => {
++        if (t < plot.x.domain[0] || t > plot.x.domain[1] || row < plot.y.domain[0] || row > plot.y.domain[1]) return;
++        if (inDropout(recipe, t, rand)) return;
++        const x = Math.round(mapX(plot, t));
++        const y = Math.round(mapY(plot, row));
++        ctx.fillRect(x, y, w, h);
++      };
++
++      const bg = recipe.backgroundEvents;
++      for (let i = 0; i < bg.count; i += 1) {
++        const t = bg.timeRange[0] + rand() * (bg.timeRange[1] - bg.timeRange[0]);
++        const row = bg.rowRange[0] + rand() * (bg.rowRange[1] - bg.rowRange[0]);
++        emit(t, row);
++      }
++
++      for (const band of recipe.bands) {
++        for (let i = 0; i < band.count; i += 1) {
++          const t = band.center + gaussian(rand) * band.sigma;
++          const row = band.rowRange[0] + rand() * (band.rowRange[1] - band.rowRange[0]) + gaussian(rand) * band.rowJitter;
++          emit(t, row);
++        }
++      }
++
++      for (const rowBand of recipe.horizontalRowBands) {
++        for (let i = 0; i < rowBand.count; i += 1) {
++          const t = rowBand.timeRange[0] + rand() * (rowBand.timeRange[1] - rowBand.timeRange[0]);
++          const row = rowBand.centerRow + (rand() - 0.5) * rowBand.heightRows;
++          emit(t, row, 1, 1);
++        }
++      }
++
++      ctx.globalAlpha = 1;
++    }
++
++    function svgEl(tag, attrs = {}) {
++      const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
++      for (const [key, value] of Object.entries(attrs)) {
++        node.setAttribute(key, String(value));
++      }
++      return node;
++    }
++
++    function addText(svg, textSpec, className) {
++      const text = svgEl('text', {
++        id: textSpec.id,
++        x: textSpec.x,
++        y: textSpec.y,
++        'font-size': textSpec.fontSize,
++        'font-family': 'Arial, Helvetica, sans-serif',
++        'font-weight': textSpec.fontWeight || 400,
++        fill: '#111111',
++        'text-anchor': textSpec.textAnchor || 'start',
++        class: className
++      });
++      if (textSpec.rotation) {
++        text.setAttribute('transform', `rotate(${textSpec.rotation} ${textSpec.x} ${textSpec.y})`);
++        text.setAttribute('dominant-baseline', 'middle');
++      }
++      text.textContent = textSpec.text;
++      svg.appendChild(text);
++    }
++
++    function drawAxes(svg, panel, spec) {
++      const plot = panel.plot;
++      const tokens = spec.rendering.styleTokens;
++      const axisStyle = {
++        stroke: tokens.axisStroke,
++        'stroke-width': tokens.axisStrokeWidth,
++        'shape-rendering': 'crispEdges'
++      };
++
++      svg.appendChild(svgEl('line', {...axisStyle, id: plot.axes.xAxis.id, ...plot.axes.xAxis.line}));
++      svg.appendChild(svgEl('line', {...axisStyle, id: plot.axes.yAxis.id, ...plot.axes.yAxis.line}));
++
++      for (const tick of plot.x.ticks) {
++        const x = mapX(plot, tick.value);
++        const y = plot.axes.xAxis.line.y1;
++        svg.appendChild(svgEl('line', {
++          ...axisStyle,
++          x1: x,
++          y1: y,
++          x2: x,
++          y2: y + plot.axes.xAxis.tickLength,
++          'data-axis': 'x',
++          'data-value': tick.value
++        }));
++        const label = svgEl('text', {
++          x,
++          y: y + 24,
++          'font-size': tokens.tickFontSize,
++          'font-family': 'Arial, Helvetica, sans-serif',
++          fill: tokens.tickLabelColor,
++          'text-anchor': 'middle',
++          'data-axis': 'x',
++          'data-value': tick.value
++        });
++        label.textContent = tick.label;
++        svg.appendChild(label);
++      }
++
++      for (const tick of plot.y.ticks) {
++        const x = plot.axes.yAxis.line.x1;
++        const y = mapY(plot, tick.value);
++        svg.appendChild(svgEl('line', {
++          ...axisStyle,
++          x1: x - plot.axes.yAxis.tickLength,
++          y1: y,
++          x2: x,
++          y2: y,
++          'data-axis': 'y',
++          'data-value': tick.value
++        }));
++        const label = svgEl('text', {
++          x: x - 11,
++          y: y + 5,
++          'font-size': tokens.tickFontSize,
++          'font-family': 'Arial, Helvetica, sans-serif',
++          fill: tokens.tickLabelColor,
++          'text-anchor': 'end',
++          'data-axis': 'y',
++          'data-value': tick.value
++        });
++        label.textContent = tick.label;
++        svg.appendChild(label);
++      }
++
++      addText(svg, plot.x.label, 'axis-label');
++      addText(svg, plot.y.label, 'axis-label');
++    }
++
++    function render(spec) {
++      const panel = spec.panels[0];
++      const stage = document.getElementById('stage');
++      stage.style.width = `${spec.canvas.width}px`;
++      stage.style.height = `${spec.canvas.height}px`;
++      stage.innerHTML = '';
++
++      const canvas = document.createElement('canvas');
++      canvas.width = spec.canvas.width;
++      canvas.height = spec.canvas.height;
++      canvas.setAttribute('data-layer', 'generated-raster-marks');
++      stage.appendChild(canvas);
++      drawRaster(canvas, panel);
++
++      const svg = svgEl('svg', {
++        width: spec.canvas.width,
++        height: spec.canvas.height,
++        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
++        role: 'img',
++        'aria-label': 'Generated spike raster reconstruction'
++      });
++      svg.appendChild(svgEl('rect', {
++        x: 0,
++        y: 0,
++        width: spec.canvas.width,
++        height: spec.canvas.height,
++        fill: spec.canvas.background
++      }));
++      drawAxes(svg, panel, spec);
++      addText(svg, panel.label, 'panel-label');
++      addText(svg, panel.title, 'panel-title');
++      for (const annotation of panel.annotations) addText(svg, annotation, 'annotation');
++      stage.appendChild(svg);
++    }
++
++    fetch(specUrl)
++      .then((response) => response.ok ? response.json() : fallbackSpec)
++      .then((spec) => render(spec))
++      .catch((error) => {
++        document.body.insertAdjacentHTML('beforeend', `<pre>${error.message}</pre>`);
++      });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.json b/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..c20e1c2a747d82f686fa260a9ea9020052dc47d9
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.json
+@@ -0,0 +1,210 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-08-neuropixels-central-heatmap-B",
++  "source": {
++    "path": "../../../assets/reference/reference-08-neuropixels-central-heatmap-B-reference.png",
++    "usage": "QA/reference only; not used by generated candidate layers.",
++    "nativeWidth": 391,
++    "nativeHeight": 268,
++    "notes": "Single cropped Neuropixels spike raster panel. Source inspected visually; generated marks are procedural and editable rather than copied pixels."
++  },
++  "canvas": {
++    "width": 391,
++    "height": 268,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 16,
++    "color": "#111111",
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "First-pass visual match to compact rasterized sans-serif text; no automated font calibration was run."
++    }
++  },
++  "coordinateSystems": [
++    {
++      "id": "panel-b.data",
++      "type": "cartesian2d",
++      "x": {"domain": [100, 140], "range": [49, 377]},
++      "y": {"domain": [1, 200], "range": [33, 195], "direction": "down"}
++    }
++  ],
++  "panels": [
++    {
++      "id": "panel-b",
++      "bbox": {"x": 0, "y": 0, "width": 391, "height": 268},
++      "label": {
++        "id": "panel-b-label",
++        "text": "B",
++        "x": -5,
++        "y": 17,
++        "fontSize": 20,
++        "fontWeight": 700,
++        "textAnchor": "end",
++        "sourceBox": {"x": -10, "y": 0, "width": 16, "height": 20},
++        "fit": "source crop cuts off left side of panel label"
++      },
++      "title": {
++        "id": "panel-b-title",
++        "text": "Spike raster (example neurons)",
++        "x": 21,
++        "y": 17,
++        "fontSize": 16,
++        "fontWeight": 700,
++        "targetWidth": 258,
++        "sourceBox": {"x": 21, "y": 1, "width": 258, "height": 20}
++      },
++      "plot": {
++        "id": "panel-b-plot",
++        "dataBbox": {"x": 49, "y": 33, "width": 328, "height": 162},
++        "axes": {
++          "xAxis": {
++            "id": "panel-b-x-axis",
++            "line": {"x1": 49, "y1": 195, "x2": 377, "y2": 195},
++            "tickLength": 4
++          },
++          "yAxis": {
++            "id": "panel-b-y-axis",
++            "line": {"x1": 49, "y1": 33, "x2": 49, "y2": 195},
++            "tickLength": 4
++          }
++        },
++        "x": {
++          "scale": "linear",
++          "domain": [100, 140],
++          "ticks": [
++            {"value": 100, "label": "100"},
++            {"value": 110, "label": "110"},
++            {"value": 120, "label": "120"},
++            {"value": 130, "label": "130"},
++            {"value": 140, "label": "140"}
++          ],
++          "label": {
++            "id": "panel-b-x-label",
++            "text": "Time (s)",
++            "x": 213,
++            "y": 240,
++            "fontSize": 16,
++            "textAnchor": "middle",
++            "anchorTo": "panel-b-x-axis"
++          }
++        },
++        "y": {
++          "scale": "linear",
++          "domain": [1, 200],
++          "ticks": [
++            {"value": 1, "label": "1"},
++            {"value": 50, "label": "50"},
++            {"value": 100, "label": "100"},
++            {"value": 150, "label": "150"},
++            {"value": 200, "label": "200"}
++          ],
++          "label": {
++            "id": "panel-b-y-label",
++            "text": "Neuron #",
++            "x": 6,
++            "y": 114,
++            "fontSize": 16,
++            "rotation": -90,
++            "textAnchor": "middle",
++            "anchorTo": "panel-b-y-axis"
++          }
++        }
++      },
++      "marks": [
++        {
++          "id": "spike-raster-events",
++          "type": "raster",
++          "usesTransform": "panel-b.data",
++          "renderer": "canvas",
++          "style": {"fill": "#111111", "alpha": 0.82, "width": 1, "height": 1},
++          "generationRecipe": {
++            "seed": 3808,
++            "rowDomain": [1, 200],
++            "backgroundEvents": {"count": 620, "timeRange": [100, 140], "rowRange": [1, 200]},
++            "bands": [
++              {"id": "early-cluster", "center": 103.0, "sigma": 1.35, "count": 410, "rowRange": [1, 165], "rowJitter": 0.45},
++              {"id": "central-dense", "center": 114.1, "sigma": 1.18, "count": 720, "rowRange": [1, 200], "rowJitter": 0.45},
++              {"id": "late-mid", "center": 128.7, "sigma": 1.50, "count": 330, "rowRange": [5, 165], "rowJitter": 0.45},
++              {"id": "right-cluster", "center": 138.3, "sigma": 0.95, "count": 280, "rowRange": [1, 160], "rowJitter": 0.45}
++            ],
++            "horizontalRowBands": [
++              {"centerRow": 33, "heightRows": 3, "count": 70, "timeRange": [100, 116]},
++              {"centerRow": 76, "heightRows": 4, "count": 92, "timeRange": [101, 116]},
++              {"centerRow": 116, "heightRows": 4, "count": 80, "timeRange": [100, 134]},
++              {"centerRow": 155, "heightRows": 5, "count": 98, "timeRange": [100, 140]}
++            ],
++            "dropoutWindows": [
++              {"timeRange": [119.5, 125.2], "keepProbability": 0.28},
++              {"timeRange": [131.8, 136.0], "keepProbability": 0.55}
++            ]
++          }
++        }
++      ],
++      "annotations": [
++        {
++          "id": "bottom-left-modality-label",
++          "type": "text",
++          "text": "Neuropixels",
++          "x": 5,
++          "y": 264,
++          "fontSize": 14,
++          "fontWeight": 400,
++          "textAnchor": "start",
++          "sourceBox": {"x": 5, "y": 252, "width": 77, "height": 16}
++        },
++        {
++          "id": "bottom-roman-ii",
++          "type": "text",
++          "text": "II",
++          "x": 311,
++          "y": 267,
++          "fontSize": 14,
++          "fontWeight": 700,
++          "textAnchor": "middle",
++          "sourceBox": {"x": 306, "y": 256, "width": 11, "height": 13}
++        }
++      ],
++      "provenance": [
++        {
++          "object": "panel-b-plot",
++          "confidence": "medium",
++          "note": "Plot bounds and tick anchors estimated from visible axis spines and labels."
++        },
++        {
++          "object": "spike-raster-events",
++          "confidence": "medium-low",
++          "note": "Event distribution is a seeded synthetic recipe matching visual density and clustered timing, not recovered original spike times."
++        }
++      ]
++    }
++  ],
++  "rendering": {
++    "strategy": "hybrid",
++    "layers": [
++      {"id": "background", "renderer": "svg"},
++      {"id": "raster-marks", "renderer": "canvas"},
++      {"id": "axes-and-text", "renderer": "svg"}
++    ],
++    "styleTokens": {
++      "axisStroke": "#111111",
++      "axisStrokeWidth": 1,
++      "tickFontSize": 16,
++      "tickLabelColor": "#111111"
++    }
++  },
++  "validation": {
++    "expectedNativeSize": [391, 268],
++    "checks": [
++      "Generated candidate does not render source raster as a layer.",
++      "Axis ticks are linked to x/y domains and share panel-b.data transform.",
++      "Raster points are generated from an editable seed and density recipe."
++    ]
++  },
++  "confidence": [
++    {"field": "typography", "level": "medium", "note": "Arial/Helvetica approximates source text but exact paper font is unknown."},
++    {"field": "raster-data", "level": "low", "note": "Only visual distribution is reconstructed; original spike event table is unavailable."}
++  ]
++}
+
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.html b/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..59ca1379e661b6e870fb8dabbc5ece9a741ee46d
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.html
+@@ -0,0 +1,292 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-08-neuropixels-central-heatmap-B reconstruction</title>
++  <style>
++    :root {
++      color-scheme: light;
++      --ink: #111111;
++      --paper: #ffffff;
++      --chrome: #d8d8d8;
++    }
++    html,
++    body {
++      margin: 0;
++      min-height: 100%;
++      background: #f3f3f3;
++      font-family: Arial, Helvetica, sans-serif;
++      color: var(--ink);
++    }
++    .page {
++      padding: 18px;
++    }
++    .figure-wrap {
++      display: inline-block;
++      border: 1px solid var(--chrome);
++      background: var(--paper);
++    }
++    .stage {
++      position: relative;
++      width: 391px;
++      height: 268px;
++      background: var(--paper);
++      overflow: hidden;
++    }
++    .stage canvas,
++    .stage svg {
++      position: absolute;
++      inset: 0;
++      width: 391px;
++      height: 268px;
++    }
++    .stage canvas {
++      z-index: 1;
++    }
++    .stage svg {
++      z-index: 2;
++      pointer-events: none;
++    }
++    .caption {
++      margin-top: 8px;
++      font-size: 12px;
++      color: #444444;
++    }
++  </style>
++</head>
++<body>
++  <main class="page">
++    <section class="figure-wrap" aria-label="Generated reconstruction">
++      <div id="stage" class="stage"></div>
++    </section>
++    <div class="caption">Generated reconstruction only. Source raster is not used as a visual layer.</div>
++  </main>
++
++  <script>
++    const fallbackSpec = null;
++    const specUrl = 'reference-08-neuropixels-central-heatmap-B.json';
++
++    function mulberry32(seed) {
++      let t = seed >>> 0;
++      return function rand() {
++        t += 0x6D2B79F5;
++        let r = Math.imul(t ^ (t >>> 15), 1 | t);
++        r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
++        return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
++      };
++    }
++
++    function gaussian(rand) {
++      const u = Math.max(rand(), 1e-9);
++      const v = Math.max(rand(), 1e-9);
++      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
++    }
++
++    function mapX(plot, value) {
++      const box = plot.dataBbox;
++      const [d0, d1] = plot.x.domain;
++      return box.x + ((value - d0) / (d1 - d0)) * box.width;
++    }
++
++    function mapY(plot, value) {
++      const box = plot.dataBbox;
++      const [d0, d1] = plot.y.domain;
++      return box.y + ((value - d0) / (d1 - d0)) * box.height;
++    }
++
++    function inDropout(recipe, t, rand) {
++      for (const window of recipe.dropoutWindows || []) {
++        if (t >= window.timeRange[0] && t <= window.timeRange[1]) {
++          return rand() > window.keepProbability;
++        }
++      }
++      return false;
++    }
++
++    function drawRaster(canvas, panel) {
++      const ctx = canvas.getContext('2d');
++      const plot = panel.plot;
++      const mark = panel.marks.find((item) => item.type === 'raster');
++      const recipe = mark.generationRecipe;
++      const rand = mulberry32(recipe.seed);
++      const style = mark.style;
++
++      ctx.clearRect(0, 0, canvas.width, canvas.height);
++      ctx.fillStyle = style.fill;
++      ctx.globalAlpha = style.alpha;
++
++      const emit = (t, row, w = style.width, h = style.height) => {
++        if (t < plot.x.domain[0] || t > plot.x.domain[1] || row < plot.y.domain[0] || row > plot.y.domain[1]) return;
++        if (inDropout(recipe, t, rand)) return;
++        const x = Math.round(mapX(plot, t));
++        const y = Math.round(mapY(plot, row));
++        ctx.fillRect(x, y, w, h);
++      };
++
++      const bg = recipe.backgroundEvents;
++      for (let i = 0; i < bg.count; i += 1) {
++        const t = bg.timeRange[0] + rand() * (bg.timeRange[1] - bg.timeRange[0]);
++        const row = bg.rowRange[0] + rand() * (bg.rowRange[1] - bg.rowRange[0]);
++        emit(t, row);
++      }
++
++      for (const band of recipe.bands) {
++        for (let i = 0; i < band.count; i += 1) {
++          const t = band.center + gaussian(rand) * band.sigma;
++          const row = band.rowRange[0] + rand() * (band.rowRange[1] - band.rowRange[0]) + gaussian(rand) * band.rowJitter;
++          emit(t, row);
++        }
++      }
++
++      for (const rowBand of recipe.horizontalRowBands) {
++        for (let i = 0; i < rowBand.count; i += 1) {
++          const t = rowBand.timeRange[0] + rand() * (rowBand.timeRange[1] - rowBand.timeRange[0]);
++          const row = rowBand.centerRow + (rand() - 0.5) * rowBand.heightRows;
++          emit(t, row, 1, 1);
++        }
++      }
++
++      ctx.globalAlpha = 1;
++    }
++
++    function svgEl(tag, attrs = {}) {
++      const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
++      for (const [key, value] of Object.entries(attrs)) {
++        node.setAttribute(key, String(value));
++      }
++      return node;
++    }
++
++    function addText(svg, textSpec, className) {
++      const text = svgEl('text', {
++        id: textSpec.id,
++        x: textSpec.x,
++        y: textSpec.y,
++        'font-size': textSpec.fontSize,
++        'font-family': 'Arial, Helvetica, sans-serif',
++        'font-weight': textSpec.fontWeight || 400,
++        fill: '#111111',
++        'text-anchor': textSpec.textAnchor || 'start',
++        class: className
++      });
++      if (textSpec.rotation) {
++        text.setAttribute('transform', `rotate(${textSpec.rotation} ${textSpec.x} ${textSpec.y})`);
++        text.setAttribute('dominant-baseline', 'middle');
++      }
++      text.textContent = textSpec.text;
++      svg.appendChild(text);
++    }
++
++    function drawAxes(svg, panel, spec) {
++      const plot = panel.plot;
++      const tokens = spec.rendering.styleTokens;
++      const axisStyle = {
++        stroke: tokens.axisStroke,
++        'stroke-width': tokens.axisStrokeWidth,
++        'shape-rendering': 'crispEdges'
++      };
++
++      svg.appendChild(svgEl('line', {...axisStyle, id: plot.axes.xAxis.id, ...plot.axes.xAxis.line}));
++      svg.appendChild(svgEl('line', {...axisStyle, id: plot.axes.yAxis.id, ...plot.axes.yAxis.line}));
++
++      for (const tick of plot.x.ticks) {
++        const x = mapX(plot, tick.value);
++        const y = plot.axes.xAxis.line.y1;
++        svg.appendChild(svgEl('line', {
++          ...axisStyle,
++          x1: x,
++          y1: y,
++          x2: x,
++          y2: y + plot.axes.xAxis.tickLength,
++          'data-axis': 'x',
++          'data-value': tick.value
++        }));
++        const label = svgEl('text', {
++          x,
++          y: y + 24,
++          'font-size': tokens.tickFontSize,
++          'font-family': 'Arial, Helvetica, sans-serif',
++          fill: tokens.tickLabelColor,
++          'text-anchor': 'middle',
++          'data-axis': 'x',
++          'data-value': tick.value
++        });
++        label.textContent = tick.label;
++        svg.appendChild(label);
++      }
++
++      for (const tick of plot.y.ticks) {
++        const x = plot.axes.yAxis.line.x1;
++        const y = mapY(plot, tick.value);
++        svg.appendChild(svgEl('line', {
++          ...axisStyle,
++          x1: x - plot.axes.yAxis.tickLength,
++          y1: y,
++          x2: x,
++          y2: y,
++          'data-axis': 'y',
++          'data-value': tick.value
++        }));
++        const label = svgEl('text', {
++          x: x - 11,
++          y: y + 5,
++          'font-size': tokens.tickFontSize,
++          'font-family': 'Arial, Helvetica, sans-serif',
++          fill: tokens.tickLabelColor,
++          'text-anchor': 'end',
++          'data-axis': 'y',
++          'data-value': tick.value
++        });
++        label.textContent = tick.label;
++        svg.appendChild(label);
++      }
++
++      addText(svg, plot.x.label, 'axis-label');
++      addText(svg, plot.y.label, 'axis-label');
++    }
++
++    function render(spec) {
++      const panel = spec.panels[0];
++      const stage = document.getElementById('stage');
++      stage.style.width = `${spec.canvas.width}px`;
++      stage.style.height = `${spec.canvas.height}px`;
++      stage.innerHTML = '';
++
++      const canvas = document.createElement('canvas');
++      canvas.width = spec.canvas.width;
++      canvas.height = spec.canvas.height;
++      canvas.setAttribute('data-layer', 'generated-raster-marks');
++      stage.appendChild(canvas);
++      drawRaster(canvas, panel);
++
++      const svg = svgEl('svg', {
++        width: spec.canvas.width,
++        height: spec.canvas.height,
++        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
++        role: 'img',
++        'aria-label': 'Generated spike raster reconstruction'
++      });
++      svg.appendChild(svgEl('rect', {
++        x: 0,
++        y: 0,
++        width: spec.canvas.width,
++        height: spec.canvas.height,
++        fill: spec.canvas.background
++      }));
++      drawAxes(svg, panel, spec);
++      addText(svg, panel.label, 'panel-label');
++      addText(svg, panel.title, 'panel-title');
++      for (const annotation of panel.annotations) addText(svg, annotation, 'annotation');
++      stage.appendChild(svg);
++    }
++
++    fetch(specUrl)
++      .then((response) => response.ok ? response.json() : fallbackSpec)
++      .then((spec) => render(spec))
++      .catch((error) => {
++        document.body.insertAdjacentHTML('beforeend', `<pre>${error.message}</pre>`);
++      });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.json b/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..c20e1c2a747d82f686fa260a9ea9020052dc47d9
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.json
+@@ -0,0 +1,210 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-08-neuropixels-central-heatmap-B",
++  "source": {
++    "path": "../../../assets/reference/reference-08-neuropixels-central-heatmap-B-reference.png",
++    "usage": "QA/reference only; not used by generated candidate layers.",
++    "nativeWidth": 391,
++    "nativeHeight": 268,
++    "notes": "Single cropped Neuropixels spike raster panel. Source inspected visually; generated marks are procedural and editable rather than copied pixels."
++  },
++  "canvas": {
++    "width": 391,
++    "height": 268,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 16,
++    "color": "#111111",
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "First-pass visual match to compact rasterized sans-serif text; no automated font calibration was run."
++    }
++  },
++  "coordinateSystems": [
++    {
++      "id": "panel-b.data",
++      "type": "cartesian2d",
++      "x": {"domain": [100, 140], "range": [49, 377]},
++      "y": {"domain": [1, 200], "range": [33, 195], "direction": "down"}
++    }
++  ],
++  "panels": [
++    {
++      "id": "panel-b",
++      "bbox": {"x": 0, "y": 0, "width": 391, "height": 268},
++      "label": {
++        "id": "panel-b-label",
++        "text": "B",
++        "x": -5,
++        "y": 17,
++        "fontSize": 20,
++        "fontWeight": 700,
++        "textAnchor": "end",
++        "sourceBox": {"x": -10, "y": 0, "width": 16, "height": 20},
++        "fit": "source crop cuts off left side of panel label"
++      },
++      "title": {
++        "id": "panel-b-title",
++        "text": "Spike raster (example neurons)",
++        "x": 21,
++        "y": 17,
++        "fontSize": 16,
++        "fontWeight": 700,
++        "targetWidth": 258,
++        "sourceBox": {"x": 21, "y": 1, "width": 258, "height": 20}
++      },
++      "plot": {
++        "id": "panel-b-plot",
++        "dataBbox": {"x": 49, "y": 33, "width": 328, "height": 162},
++        "axes": {
++          "xAxis": {
++            "id": "panel-b-x-axis",
++            "line": {"x1": 49, "y1": 195, "x2": 377, "y2": 195},
++            "tickLength": 4
++          },
++          "yAxis": {
++            "id": "panel-b-y-axis",
++            "line": {"x1": 49, "y1": 33, "x2": 49, "y2": 195},
++            "tickLength": 4
++          }
++        },
++        "x": {
++          "scale": "linear",
++          "domain": [100, 140],
++          "ticks": [
++            {"value": 100, "label": "100"},
++            {"value": 110, "label": "110"},
++            {"value": 120, "label": "120"},
++            {"value": 130, "label": "130"},
++            {"value": 140, "label": "140"}
++          ],
++          "label": {
++            "id": "panel-b-x-label",
++            "text": "Time (s)",
++            "x": 213,
++            "y": 240,
++            "fontSize": 16,
++            "textAnchor": "middle",
++            "anchorTo": "panel-b-x-axis"
++          }
++        },
++        "y": {
++          "scale": "linear",
++          "domain": [1, 200],
++          "ticks": [
++            {"value": 1, "label": "1"},
++            {"value": 50, "label": "50"},
++            {"value": 100, "label": "100"},
++            {"value": 150, "label": "150"},
++            {"value": 200, "label": "200"}
++          ],
++          "label": {
++            "id": "panel-b-y-label",
++            "text": "Neuron #",
++            "x": 6,
++            "y": 114,
++            "fontSize": 16,
++            "rotation": -90,
++            "textAnchor": "middle",
++            "anchorTo": "panel-b-y-axis"
++          }
++        }
++      },
++      "marks": [
++        {
++          "id": "spike-raster-events",
++          "type": "raster",
++          "usesTransform": "panel-b.data",
++          "renderer": "canvas",
++          "style": {"fill": "#111111", "alpha": 0.82, "width": 1, "height": 1},
++          "generationRecipe": {
++            "seed": 3808,
++            "rowDomain": [1, 200],
++            "backgroundEvents": {"count": 620, "timeRange": [100, 140], "rowRange": [1, 200]},
++            "bands": [
++              {"id": "early-cluster", "center": 103.0, "sigma": 1.35, "count": 410, "rowRange": [1, 165], "rowJitter": 0.45},
++              {"id": "central-dense", "center": 114.1, "sigma": 1.18, "count": 720, "rowRange": [1, 200], "rowJitter": 0.45},
++              {"id": "late-mid", "center": 128.7, "sigma": 1.50, "count": 330, "rowRange": [5, 165], "rowJitter": 0.45},
++              {"id": "right-cluster", "center": 138.3, "sigma": 0.95, "count": 280, "rowRange": [1, 160], "rowJitter": 0.45}
++            ],
++            "horizontalRowBands": [
++              {"centerRow": 33, "heightRows": 3, "count": 70, "timeRange": [100, 116]},
++              {"centerRow": 76, "heightRows": 4, "count": 92, "timeRange": [101, 116]},
++              {"centerRow": 116, "heightRows": 4, "count": 80, "timeRange": [100, 134]},
++              {"centerRow": 155, "heightRows": 5, "count": 98, "timeRange": [100, 140]}
++            ],
++            "dropoutWindows": [
++              {"timeRange": [119.5, 125.2], "keepProbability": 0.28},
++              {"timeRange": [131.8, 136.0], "keepProbability": 0.55}
++            ]
++          }
++        }
++      ],
++      "annotations": [
++        {
++          "id": "bottom-left-modality-label",
++          "type": "text",
++          "text": "Neuropixels",
++          "x": 5,
++          "y": 264,
++          "fontSize": 14,
++          "fontWeight": 400,
++          "textAnchor": "start",
++          "sourceBox": {"x": 5, "y": 252, "width": 77, "height": 16}
++        },
++        {
++          "id": "bottom-roman-ii",
++          "type": "text",
++          "text": "II",
++          "x": 311,
++          "y": 267,
++          "fontSize": 14,
++          "fontWeight": 700,
++          "textAnchor": "middle",
++          "sourceBox": {"x": 306, "y": 256, "width": 11, "height": 13}
++        }
++      ],
++      "provenance": [
++        {
++          "object": "panel-b-plot",
++          "confidence": "medium",
++          "note": "Plot bounds and tick anchors estimated from visible axis spines and labels."
++        },
++        {
++          "object": "spike-raster-events",
++          "confidence": "medium-low",
++          "note": "Event distribution is a seeded synthetic recipe matching visual density and clustered timing, not recovered original spike times."
++        }
++      ]
++    }
++  ],
++  "rendering": {
++    "strategy": "hybrid",
++    "layers": [
++      {"id": "background", "renderer": "svg"},
++      {"id": "raster-marks", "renderer": "canvas"},
++      {"id": "axes-and-text", "renderer": "svg"}
++    ],
++    "styleTokens": {
++      "axisStroke": "#111111",
++      "axisStrokeWidth": 1,
++      "tickFontSize": 16,
++      "tickLabelColor": "#111111"
++    }
++  },
++  "validation": {
++    "expectedNativeSize": [391, 268],
++    "checks": [
++      "Generated candidate does not render source raster as a layer.",
++      "Axis ticks are linked to x/y domains and share panel-b.data transform.",
++      "Raster points are generated from an editable seed and density recipe."
++    ]
++  },
++  "confidence": [
++    {"field": "typography", "level": "medium", "note": "Arial/Helvetica approximates source text but exact paper font is unknown."},
++    {"field": "raster-data", "level": "low", "note": "Only visual distribution is reconstructed; original spike event table is unavailable."}
++  ]
++}
+
+codex
+I noticed one renderer issue before verification: the SVG background rectangle would sit above the canvas layer and hide the generated spikes. I’m removing that so the SVG remains a transparent structural layer over the raster marks.
+apply patch
+patch: completed
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.html
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.html b/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..a4a66e3c548655f287848c55c6ddd139036e9647
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.html
+@@ -0,0 +1,285 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-08-neuropixels-central-heatmap-B reconstruction</title>
++  <style>
++    :root {
++      color-scheme: light;
++      --ink: #111111;
++      --paper: #ffffff;
++      --chrome: #d8d8d8;
++    }
++    html,
++    body {
++      margin: 0;
++      min-height: 100%;
++      background: #f3f3f3;
++      font-family: Arial, Helvetica, sans-serif;
++      color: var(--ink);
++    }
++    .page {
++      padding: 18px;
++    }
++    .figure-wrap {
++      display: inline-block;
++      border: 1px solid var(--chrome);
++      background: var(--paper);
++    }
++    .stage {
++      position: relative;
++      width: 391px;
++      height: 268px;
++      background: var(--paper);
++      overflow: hidden;
++    }
++    .stage canvas,
++    .stage svg {
++      position: absolute;
++      inset: 0;
++      width: 391px;
++      height: 268px;
++    }
++    .stage canvas {
++      z-index: 1;
++    }
++    .stage svg {
++      z-index: 2;
++      pointer-events: none;
++    }
++    .caption {
++      margin-top: 8px;
++      font-size: 12px;
++      color: #444444;
++    }
++  </style>
++</head>
++<body>
++  <main class="page">
++    <section class="figure-wrap" aria-label="Generated reconstruction">
++      <div id="stage" class="stage"></div>
++    </section>
++    <div class="caption">Generated reconstruction only. Source raster is not used as a visual layer.</div>
++  </main>
++
++  <script>
++    const fallbackSpec = null;
++    const specUrl = 'reference-08-neuropixels-central-heatmap-B.json';
++
++    function mulberry32(seed) {
++      let t = seed >>> 0;
++      return function rand() {
++        t += 0x6D2B79F5;
++        let r = Math.imul(t ^ (t >>> 15), 1 | t);
++        r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
++        return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
++      };
++    }
++
++    function gaussian(rand) {
++      const u = Math.max(rand(), 1e-9);
++      const v = Math.max(rand(), 1e-9);
++      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
++    }
++
++    function mapX(plot, value) {
++      const box = plot.dataBbox;
++      const [d0, d1] = plot.x.domain;
++      return box.x + ((value - d0) / (d1 - d0)) * box.width;
++    }
++
++    function mapY(plot, value) {
++      const box = plot.dataBbox;
++      const [d0, d1] = plot.y.domain;
++      return box.y + ((value - d0) / (d1 - d0)) * box.height;
++    }
++
++    function inDropout(recipe, t, rand) {
++      for (const window of recipe.dropoutWindows || []) {
++        if (t >= window.timeRange[0] && t <= window.timeRange[1]) {
++          return rand() > window.keepProbability;
++        }
++      }
++      return false;
++    }
++
++    function drawRaster(canvas, panel) {
++      const ctx = canvas.getContext('2d');
++      const plot = panel.plot;
++      const mark = panel.marks.find((item) => item.type === 'raster');
++      const recipe = mark.generationRecipe;
++      const rand = mulberry32(recipe.seed);
++      const style = mark.style;
++
++      ctx.clearRect(0, 0, canvas.width, canvas.height);
++      ctx.fillStyle = style.fill;
++      ctx.globalAlpha = style.alpha;
++
++      const emit = (t, row, w = style.width, h = style.height) => {
++        if (t < plot.x.domain[0] || t > plot.x.domain[1] || row < plot.y.domain[0] || row > plot.y.domain[1]) return;
++        if (inDropout(recipe, t, rand)) return;
++        const x = Math.round(mapX(plot, t));
++        const y = Math.round(mapY(plot, row));
++        ctx.fillRect(x, y, w, h);
++      };
++
++      const bg = recipe.backgroundEvents;
++      for (let i = 0; i < bg.count; i += 1) {
++        const t = bg.timeRange[0] + rand() * (bg.timeRange[1] - bg.timeRange[0]);
++        const row = bg.rowRange[0] + rand() * (bg.rowRange[1] - bg.rowRange[0]);
++        emit(t, row);
++      }
++
++      for (const band of recipe.bands) {
++        for (let i = 0; i < band.count; i += 1) {
++          const t = band.center + gaussian(rand) * band.sigma;
++          const row = band.rowRange[0] + rand() * (band.rowRange[1] - band.rowRange[0]) + gaussian(rand) * band.rowJitter;
++          emit(t, row);
++        }
++      }
++
++      for (const rowBand of recipe.horizontalRowBands) {
++        for (let i = 0; i < rowBand.count; i += 1) {
++          const t = rowBand.timeRange[0] + rand() * (rowBand.timeRange[1] - rowBand.timeRange[0]);
++          const row = rowBand.centerRow + (rand() - 0.5) * rowBand.heightRows;
++          emit(t, row, 1, 1);
++        }
++      }
++
++      ctx.globalAlpha = 1;
++    }
++
++    function svgEl(tag, attrs = {}) {
++      const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
++      for (const [key, value] of Object.entries(attrs)) {
++        node.setAttribute(key, String(value));
++      }
++      return node;
++    }
++
++    function addText(svg, textSpec, className) {
++      const text = svgEl('text', {
++        id: textSpec.id,
++        x: textSpec.x,
++        y: textSpec.y,
++        'font-size': textSpec.fontSize,
++        'font-family': 'Arial, Helvetica, sans-serif',
++        'font-weight': textSpec.fontWeight || 400,
++        fill: '#111111',
++        'text-anchor': textSpec.textAnchor || 'start',
++        class: className
++      });
++      if (textSpec.rotation) {
++        text.setAttribute('transform', `rotate(${textSpec.rotation} ${textSpec.x} ${textSpec.y})`);
++        text.setAttribute('dominant-baseline', 'middle');
++      }
++      text.textContent = textSpec.text;
++      svg.appendChild(text);
++    }
++
++    function drawAxes(svg, panel, spec) {
++      const plot = panel.plot;
++      const tokens = spec.rendering.styleTokens;
++      const axisStyle = {
++        stroke: tokens.axisStroke,
++        'stroke-width': tokens.axisStrokeWidth,
++        'shape-rendering': 'crispEdges'
++      };
++
++      svg.appendChild(svgEl('line', {...axisStyle, id: plot.axes.xAxis.id, ...plot.axes.xAxis.line}));
++      svg.appendChild(svgEl('line', {...axisStyle, id: plot.axes.yAxis.id, ...plot.axes.yAxis.line}));
++
++      for (const tick of plot.x.ticks) {
++        const x = mapX(plot, tick.value);
++        const y = plot.axes.xAxis.line.y1;
++        svg.appendChild(svgEl('line', {
++          ...axisStyle,
++          x1: x,
++          y1: y,
++          x2: x,
++          y2: y + plot.axes.xAxis.tickLength,
++          'data-axis': 'x',
++          'data-value': tick.value
++        }));
++        const label = svgEl('text', {
++          x,
++          y: y + 24,
++          'font-size': tokens.tickFontSize,
++          'font-family': 'Arial, Helvetica, sans-serif',
++          fill: tokens.tickLabelColor,
++          'text-anchor': 'middle',
++          'data-axis': 'x',
++          'data-value': tick.value
++        });
++        label.textContent = tick.label;
++        svg.appendChild(label);
++      }
++
++      for (const tick of plot.y.ticks) {
++        const x = plot.axes.yAxis.line.x1;
++        const y = mapY(plot, tick.value);
++        svg.appendChild(svgEl('line', {
++          ...axisStyle,
++          x1: x - plot.axes.yAxis.tickLength,
++          y1: y,
++          x2: x,
++          y2: y,
++          'data-axis': 'y',
++          'data-value': tick.value
++        }));
++        const label = svgEl('text', {
++          x: x - 11,
++          y: y + 5,
++          'font-size': tokens.tickFontSize,
++          'font-family': 'Arial, Helvetica, sans-serif',
++          fill: tokens.tickLabelColor,
++          'text-anchor': 'end',
++          'data-axis': 'y',
++          'data-value': tick.value
++        });
++        label.textContent = tick.label;
++        svg.appendChild(label);
++      }
++
++      addText(svg, plot.x.label, 'axis-label');
++      addText(svg, plot.y.label, 'axis-label');
++    }
++
++    function render(spec) {
++      const panel = spec.panels[0];
++      const stage = document.getElementById('stage');
++      stage.style.width = `${spec.canvas.width}px`;
++      stage.style.height = `${spec.canvas.height}px`;
++      stage.innerHTML = '';
++
++      const canvas = document.createElement('canvas');
++      canvas.width = spec.canvas.width;
++      canvas.height = spec.canvas.height;
++      canvas.setAttribute('data-layer', 'generated-raster-marks');
++      stage.appendChild(canvas);
++      drawRaster(canvas, panel);
++
++      const svg = svgEl('svg', {
++        width: spec.canvas.width,
++        height: spec.canvas.height,
++        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
++        role: 'img',
++        'aria-label': 'Generated spike raster reconstruction'
++      });
++      drawAxes(svg, panel, spec);
++      addText(svg, panel.label, 'panel-label');
++      addText(svg, panel.title, 'panel-title');
++      for (const annotation of panel.annotations) addText(svg, annotation, 'annotation');
++      stage.appendChild(svg);
++    }
++
++    fetch(specUrl)
++      .then((response) => response.ok ? response.json() : fallbackSpec)
++      .then((spec) => render(spec))
++      .catch((error) => {
++        document.body.insertAdjacentHTML('beforeend', `<pre>${error.message}</pre>`);
++      });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.json b/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..c20e1c2a747d82f686fa260a9ea9020052dc47d9
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.json
+@@ -0,0 +1,210 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-08-neuropixels-central-heatmap-B",
++  "source": {
++    "path": "../../../assets/reference/reference-08-neuropixels-central-heatmap-B-reference.png",
++    "usage": "QA/reference only; not used by generated candidate layers.",
++    "nativeWidth": 391,
++    "nativeHeight": 268,
++    "notes": "Single cropped Neuropixels spike raster panel. Source inspected visually; generated marks are procedural and editable rather than copied pixels."
++  },
++  "canvas": {
++    "width": 391,
++    "height": 268,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 16,
++    "color": "#111111",
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "First-pass visual match to compact rasterized sans-serif text; no automated font calibration was run."
++    }
++  },
++  "coordinateSystems": [
++    {
++      "id": "panel-b.data",
++      "type": "cartesian2d",
++      "x": {"domain": [100, 140], "range": [49, 377]},
++      "y": {"domain": [1, 200], "range": [33, 195], "direction": "down"}
++    }
++  ],
++  "panels": [
++    {
++      "id": "panel-b",
++      "bbox": {"x": 0, "y": 0, "width": 391, "height": 268},
++      "label": {
++        "id": "panel-b-label",
++        "text": "B",
++        "x": -5,
++        "y": 17,
++        "fontSize": 20,
++        "fontWeight": 700,
++        "textAnchor": "end",
++        "sourceBox": {"x": -10, "y": 0, "width": 16, "height": 20},
++        "fit": "source crop cuts off left side of panel label"
++      },
++      "title": {
++        "id": "panel-b-title",
++        "text": "Spike raster (example neurons)",
++        "x": 21,
++        "y": 17,
++        "fontSize": 16,
++        "fontWeight": 700,
++        "targetWidth": 258,
++        "sourceBox": {"x": 21, "y": 1, "width": 258, "height": 20}
++      },
++      "plot": {
++        "id": "panel-b-plot",
++        "dataBbox": {"x": 49, "y": 33, "width": 328, "height": 162},
++        "axes": {
++          "xAxis": {
++            "id": "panel-b-x-axis",
++            "line": {"x1": 49, "y1": 195, "x2": 377, "y2": 195},
++            "tickLength": 4
++          },
++          "yAxis": {
++            "id": "panel-b-y-axis",
++            "line": {"x1": 49, "y1": 33, "x2": 49, "y2": 195},
++            "tickLength": 4
++          }
++        },
++        "x": {
++          "scale": "linear",
++          "domain": [100, 140],
++          "ticks": [
++            {"value": 100, "label": "100"},
++            {"value": 110, "label": "110"},
++            {"value": 120, "label": "120"},
++            {"value": 130, "label": "130"},
++            {"value": 140, "label": "140"}
++          ],
++          "label": {
++            "id": "panel-b-x-label",
++            "text": "Time (s)",
++            "x": 213,
++            "y": 240,
++            "fontSize": 16,
++            "textAnchor": "middle",
++            "anchorTo": "panel-b-x-axis"
++          }
++        },
++        "y": {
++          "scale": "linear",
++          "domain": [1, 200],
++          "ticks": [
++            {"value": 1, "label": "1"},
++            {"value": 50, "label": "50"},
++            {"value": 100, "label": "100"},
++            {"value": 150, "label": "150"},
++            {"value": 200, "label": "200"}
++          ],
++          "label": {
++            "id": "panel-b-y-label",
++            "text": "Neuron #",
++            "x": 6,
++            "y": 114,
++            "fontSize": 16,
++            "rotation": -90,
++            "textAnchor": "middle",
++            "anchorTo": "panel-b-y-axis"
++          }
++        }
++      },
++      "marks": [
++        {
++          "id": "spike-raster-events",
++          "type": "raster",
++          "usesTransform": "panel-b.data",
++          "renderer": "canvas",
++          "style": {"fill": "#111111", "alpha": 0.82, "width": 1, "height": 1},
++          "generationRecipe": {
++            "seed": 3808,
++            "rowDomain": [1, 200],
++            "backgroundEvents": {"count": 620, "timeRange": [100, 140], "rowRange": [1, 200]},
++            "bands": [
++              {"id": "early-cluster", "center": 103.0, "sigma": 1.35, "count": 410, "rowRange": [1, 165], "rowJitter": 0.45},
++              {"id": "central-dense", "center": 114.1, "sigma": 1.18, "count": 720, "rowRange": [1, 200], "rowJitter": 0.45},
++              {"id": "late-mid", "center": 128.7, "sigma": 1.50, "count": 330, "rowRange": [5, 165], "rowJitter": 0.45},
++              {"id": "right-cluster", "center": 138.3, "sigma": 0.95, "count": 280, "rowRange": [1, 160], "rowJitter": 0.45}
++            ],
++            "horizontalRowBands": [
++              {"centerRow": 33, "heightRows": 3, "count": 70, "timeRange": [100, 116]},
++              {"centerRow": 76, "heightRows": 4, "count": 92, "timeRange": [101, 116]},
++              {"centerRow": 116, "heightRows": 4, "count": 80, "timeRange": [100, 134]},
++              {"centerRow": 155, "heightRows": 5, "count": 98, "timeRange": [100, 140]}
++            ],
++            "dropoutWindows": [
++              {"timeRange": [119.5, 125.2], "keepProbability": 0.28},
++              {"timeRange": [131.8, 136.0], "keepProbability": 0.55}
++            ]
++          }
++        }
++      ],
++      "annotations": [
++        {
++          "id": "bottom-left-modality-label",
++          "type": "text",
++          "text": "Neuropixels",
++          "x": 5,
++          "y": 264,
++          "fontSize": 14,
++          "fontWeight": 400,
++          "textAnchor": "start",
++          "sourceBox": {"x": 5, "y": 252, "width": 77, "height": 16}
++        },
++        {
++          "id": "bottom-roman-ii",
++          "type": "text",
++          "text": "II",
++          "x": 311,
++          "y": 267,
++          "fontSize": 14,
++          "fontWeight": 700,
++          "textAnchor": "middle",
++          "sourceBox": {"x": 306, "y": 256, "width": 11, "height": 13}
++        }
++      ],
++      "provenance": [
++        {
++          "object": "panel-b-plot",
++          "confidence": "medium",
++          "note": "Plot bounds and tick anchors estimated from visible axis spines and labels."
++        },
++        {
++          "object": "spike-raster-events",
++          "confidence": "medium-low",
++          "note": "Event distribution is a seeded synthetic recipe matching visual density and clustered timing, not recovered original spike times."
++        }
++      ]
++    }
++  ],
++  "rendering": {
++    "strategy": "hybrid",
++    "layers": [
++      {"id": "background", "renderer": "svg"},
++      {"id": "raster-marks", "renderer": "canvas"},
++      {"id": "axes-and-text", "renderer": "svg"}
++    ],
++    "styleTokens": {
++      "axisStroke": "#111111",
++      "axisStrokeWidth": 1,
++      "tickFontSize": 16,
++      "tickLabelColor": "#111111"
++    }
++  },
++  "validation": {
++    "expectedNativeSize": [391, 268],
++    "checks": [
++      "Generated candidate does not render source raster as a layer.",
++      "Axis ticks are linked to x/y domains and share panel-b.data transform.",
++      "Raster points are generated from an editable seed and density recipe."
++    ]
++  },
++  "confidence": [
++    {"field": "typography", "level": "medium", "note": "Arial/Helvetica approximates source text but exact paper font is unknown."},
++    {"field": "raster-data", "level": "low", "note": "Only visual distribution is reconstructed; original spike event table is unavailable."}
++  ]
++}
+
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.html b/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..a4a66e3c548655f287848c55c6ddd139036e9647
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.html
+@@ -0,0 +1,285 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-08-neuropixels-central-heatmap-B reconstruction</title>
++  <style>
++    :root {
++      color-scheme: light;
++      --ink: #111111;
++      --paper: #ffffff;
++      --chrome: #d8d8d8;
++    }
++    html,
++    body {
++      margin: 0;
++      min-height: 100%;
++      background: #f3f3f3;
++      font-family: Arial, Helvetica, sans-serif;
++      color: var(--ink);
++    }
++    .page {
++      padding: 18px;
++    }
++    .figure-wrap {
++      display: inline-block;
++      border: 1px solid var(--chrome);
++      background: var(--paper);
++    }
++    .stage {
++      position: relative;
++      width: 391px;
++      height: 268px;
++      background: var(--paper);
++      overflow: hidden;
++    }
++    .stage canvas,
++    .stage svg {
++      position: absolute;
++      inset: 0;
++      width: 391px;
++      height: 268px;
++    }
++    .stage canvas {
++      z-index: 1;
++    }
++    .stage svg {
++      z-index: 2;
++      pointer-events: none;
++    }
++    .caption {
++      margin-top: 8px;
++      font-size: 12px;
++      color: #444444;
++    }
++  </style>
++</head>
++<body>
++  <main class="page">
++    <section class="figure-wrap" aria-label="Generated reconstruction">
++      <div id="stage" class="stage"></div>
++    </section>
++    <div class="caption">Generated reconstruction only. Source raster is not used as a visual layer.</div>
++  </main>
++
++  <script>
++    const fallbackSpec = null;
++    const specUrl = 'reference-08-neuropixels-central-heatmap-B.json';
++
++    function mulberry32(seed) {
++      let t = seed >>> 0;
++      return function rand() {
++        t += 0x6D2B79F5;
++        let r = Math.imul(t ^ (t >>> 15), 1 | t);
++        r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
++        return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
++      };
++    }
++
++    function gaussian(rand) {
++      const u = Math.max(rand(), 1e-9);
++      const v = Math.max(rand(), 1e-9);
++      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
++    }
++
++    function mapX(plot, value) {
++      const box = plot.dataBbox;
++      const [d0, d1] = plot.x.domain;
++      return box.x + ((value - d0) / (d1 - d0)) * box.width;
++    }
++
++    function mapY(plot, value) {
++      const box = plot.dataBbox;
++      const [d0, d1] = plot.y.domain;
++      return box.y + ((value - d0) / (d1 - d0)) * box.height;
++    }
++
++    function inDropout(recipe, t, rand) {
++      for (const window of recipe.dropoutWindows || []) {
++        if (t >= window.timeRange[0] && t <= window.timeRange[1]) {
++          return rand() > window.keepProbability;
++        }
++      }
++      return false;
++    }
++
++    function drawRaster(canvas, panel) {
++      const ctx = canvas.getContext('2d');
++      const plot = panel.plot;
++      const mark = panel.marks.find((item) => item.type === 'raster');
++      const recipe = mark.generationRecipe;
++      const rand = mulberry32(recipe.seed);
++      const style = mark.style;
++
++      ctx.clearRect(0, 0, canvas.width, canvas.height);
++      ctx.fillStyle = style.fill;
++      ctx.globalAlpha = style.alpha;
++
++      const emit = (t, row, w = style.width, h = style.height) => {
++        if (t < plot.x.domain[0] || t > plot.x.domain[1] || row < plot.y.domain[0] || row > plot.y.domain[1]) return;
++        if (inDropout(recipe, t, rand)) return;
++        const x = Math.round(mapX(plot, t));
++        const y = Math.round(mapY(plot, row));
++        ctx.fillRect(x, y, w, h);
++      };
++
++      const bg = recipe.backgroundEvents;
++      for (let i = 0; i < bg.count; i += 1) {
++        const t = bg.timeRange[0] + rand() * (bg.timeRange[1] - bg.timeRange[0]);
++        const row = bg.rowRange[0] + rand() * (bg.rowRange[1] - bg.rowRange[0]);
++        emit(t, row);
++      }
++
++      for (const band of recipe.bands) {
++        for (let i = 0; i < band.count; i += 1) {
++          const t = band.center + gaussian(rand) * band.sigma;
++          const row = band.rowRange[0] + rand() * (band.rowRange[1] - band.rowRange[0]) + gaussian(rand) * band.rowJitter;
++          emit(t, row);
++        }
++      }
++
++      for (const rowBand of recipe.horizontalRowBands) {
++        for (let i = 0; i < rowBand.count; i += 1) {
++          const t = rowBand.timeRange[0] + rand() * (rowBand.timeRange[1] - rowBand.timeRange[0]);
++          const row = rowBand.centerRow + (rand() - 0.5) * rowBand.heightRows;
++          emit(t, row, 1, 1);
++        }
++      }
++
++      ctx.globalAlpha = 1;
++    }
++
++    function svgEl(tag, attrs = {}) {
++      const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
++      for (const [key, value] of Object.entries(attrs)) {
++        node.setAttribute(key, String(value));
++      }
++      return node;
++    }
++
++    function addText(svg, textSpec, className) {
++      const text = svgEl('text', {
++        id: textSpec.id,
++        x: textSpec.x,
++        y: textSpec.y,
++        'font-size': textSpec.fontSize,
++        'font-family': 'Arial, Helvetica, sans-serif',
++        'font-weight': textSpec.fontWeight || 400,
++        fill: '#111111',
++        'text-anchor': textSpec.textAnchor || 'start',
++        class: className
++      });
++      if (textSpec.rotation) {
++        text.setAttribute('transform', `rotate(${textSpec.rotation} ${textSpec.x} ${textSpec.y})`);
++        text.setAttribute('dominant-baseline', 'middle');
++      }
++      text.textContent = textSpec.text;
++      svg.appendChild(text);
++    }
++
++    function drawAxes(svg, panel, spec) {
++      const plot = panel.plot;
++      const tokens = spec.rendering.styleTokens;
++      const axisStyle = {
++        stroke: tokens.axisStroke,
++        'stroke-width': tokens.axisStrokeWidth,
++        'shape-rendering': 'crispEdges'
++      };
++
++      svg.appendChild(svgEl('line', {...axisStyle, id: plot.axes.xAxis.id, ...plot.axes.xAxis.line}));
++      svg.appendChild(svgEl('line', {...axisStyle, id: plot.axes.yAxis.id, ...plot.axes.yAxis.line}));
++
++      for (const tick of plot.x.ticks) {
++        const x = mapX(plot, tick.value);
++        const y = plot.axes.xAxis.line.y1;
++        svg.appendChild(svgEl('line', {
++          ...axisStyle,
++          x1: x,
++          y1: y,
++          x2: x,
++          y2: y + plot.axes.xAxis.tickLength,
++          'data-axis': 'x',
++          'data-value': tick.value
++        }));
++        const label = svgEl('text', {
++          x,
++          y: y + 24,
++          'font-size': tokens.tickFontSize,
++          'font-family': 'Arial, Helvetica, sans-serif',
++          fill: tokens.tickLabelColor,
++          'text-anchor': 'middle',
++          'data-axis': 'x',
++          'data-value': tick.value
++        });
++        label.textContent = tick.label;
++        svg.appendChild(label);
++      }
++
++      for (const tick of plot.y.ticks) {
++        const x = plot.axes.yAxis.line.x1;
++        const y = mapY(plot, tick.value);
++        svg.appendChild(svgEl('line', {
++          ...axisStyle,
++          x1: x - plot.axes.yAxis.tickLength,
++          y1: y,
++          x2: x,
++          y2: y,
++          'data-axis': 'y',
++          'data-value': tick.value
++        }));
++        const label = svgEl('text', {
++          x: x - 11,
++          y: y + 5,
++          'font-size': tokens.tickFontSize,
++          'font-family': 'Arial, Helvetica, sans-serif',
++          fill: tokens.tickLabelColor,
++          'text-anchor': 'end',
++          'data-axis': 'y',
++          'data-value': tick.value
++        });
++        label.textContent = tick.label;
++        svg.appendChild(label);
++      }
++
++      addText(svg, plot.x.label, 'axis-label');
++      addText(svg, plot.y.label, 'axis-label');
++    }
++
++    function render(spec) {
++      const panel = spec.panels[0];
++      const stage = document.getElementById('stage');
++      stage.style.width = `${spec.canvas.width}px`;
++      stage.style.height = `${spec.canvas.height}px`;
++      stage.innerHTML = '';
++
++      const canvas = document.createElement('canvas');
++      canvas.width = spec.canvas.width;
++      canvas.height = spec.canvas.height;
++      canvas.setAttribute('data-layer', 'generated-raster-marks');
++      stage.appendChild(canvas);
++      drawRaster(canvas, panel);
++
++      const svg = svgEl('svg', {
++        width: spec.canvas.width,
++        height: spec.canvas.height,
++        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
++        role: 'img',
++        'aria-label': 'Generated spike raster reconstruction'
++      });
++      drawAxes(svg, panel, spec);
++      addText(svg, panel.label, 'panel-label');
++      addText(svg, panel.title, 'panel-title');
++      for (const annotation of panel.annotations) addText(svg, annotation, 'annotation');
++      stage.appendChild(svg);
++    }
++
++    fetch(specUrl)
++      .then((response) => response.ok ? response.json() : fallbackSpec)
++      .then((spec) => render(spec))
++      .catch((error) => {
++        document.body.insertAdjacentHTML('beforeend', `<pre>${error.message}</pre>`);
++      });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.json b/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..c20e1c2a747d82f686fa260a9ea9020052dc47d9
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch/reference-08-neuropixels-central-heatmap-B.json
+@@ -0,0 +1,210 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-08-neuropixels-central-heatmap-B",
++  "source": {
++    "path": "../../../assets/reference/reference-08-neuropixels-central-heatmap-B-reference.png",
++    "usage": "QA/reference only; not used by generated candidate layers.",
++    "nativeWidth": 391,
++    "nativeHeight": 268,
++    "notes": "Single cropped Neuropixels spike raster panel. Source inspected visually; generated marks are procedural and editable rather than copied pixels."
++  },
++  "canvas": {
++    "width": 391,
++    "height": 268,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 16,
++    "color": "#111111",
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "First-pass visual match to compact rasterized sans-serif text; no automated font calibration was run."
++    }
++  },
++  "coordinateSystems": [
++    {
++      "id": "panel-b.data",
++      "type": "cartesian2d",
++      "x": {"domain": [100, 140], "range": [49, 377]},
++      "y": {"domain": [1, 200], "range": [33, 195], "direction": "down"}
++    }
++  ],
++  "panels": [
++    {
++      "id": "panel-b",
++      "bbox": {"x": 0, "y": 0, "width": 391, "height": 268},
++      "label": {
++        "id": "panel-b-label",
++        "text": "B",
++        "x": -5,
++        "y": 17,
++        "fontSize": 20,
++        "fontWeight": 700,
++        "textAnchor": "end",
++        "sourceBox": {"x": -10, "y": 0, "width": 16, "height": 20},
++        "fit": "source crop cuts off left side of panel label"
++      },
++      "title": {
++        "id": "panel-b-title",
++        "text": "Spike raster (example neurons)",
++        "x": 21,
++        "y": 17,
++        "fontSize": 16,
++        "fontWeight": 700,
++        "targetWidth": 258,
++        "sourceBox": {"x": 21, "y": 1, "width": 258, "height": 20}
++      },
++      "plot": {
++        "id": "panel-b-plot",
++        "dataBbox": {"x": 49, "y": 33, "width": 328, "height": 162},
++        "axes": {
++          "xAxis": {
++            "id": "panel-b-x-axis",
++            "line": {"x1": 49, "y1": 195, "x2": 377, "y2": 195},
++            "tickLength": 4
++          },
++          "yAxis": {
++            "id": "panel-b-y-axis",
++            "line": {"x1": 49, "y1": 33, "x2": 49, "y2": 195},
++            "tickLength": 4
++          }
++        },
++        "x": {
++          "scale": "linear",
++          "domain": [100, 140],
++          "ticks": [
++            {"value": 100, "label": "100"},
++            {"value": 110, "label": "110"},
++            {"value": 120, "label": "120"},
++            {"value": 130, "label": "130"},
++            {"value": 140, "label": "140"}
++          ],
++          "label": {
++            "id": "panel-b-x-label",
++            "text": "Time (s)",
++            "x": 213,
++            "y": 240,
++            "fontSize": 16,
++            "textAnchor": "middle",
++            "anchorTo": "panel-b-x-axis"
++          }
++        },
++        "y": {
++          "scale": "linear",
++          "domain": [1, 200],
++          "ticks": [
++            {"value": 1, "label": "1"},
++            {"value": 50, "label": "50"},
++            {"value": 100, "label": "100"},
++            {"value": 150, "label": "150"},
++            {"value": 200, "label": "200"}
++          ],
++          "label": {
++            "id": "panel-b-y-label",
++            "text": "Neuron #",
++            "x": 6,
++            "y": 114,
++            "fontSize": 16,
++            "rotation": -90,
++            "textAnchor": "middle",
++            "anchorTo": "panel-b-y-axis"
++          }
++        }
++      },
++      "marks": [
++        {
++          "id": "spike-raster-events",
++          "type": "raster",
++          "usesTransform": "panel-b.data",
++          "renderer": "canvas",
++          "style": {"fill": "#111111", "alpha": 0.82, "width": 1, "height": 1},
++          "generationRecipe": {
++            "seed": 3808,
++            "rowDomain": [1, 200],
++            "backgroundEvents": {"count": 620, "timeRange": [100, 140], "rowRange": [1, 200]},
++            "bands": [
++              {"id": "early-cluster", "center": 103.0, "sigma": 1.35, "count": 410, "rowRange": [1, 165], "rowJitter": 0.45},
++              {"id": "central-dense", "center": 114.1, "sigma": 1.18, "count": 720, "rowRange": [1, 200], "rowJitter": 0.45},
++              {"id": "late-mid", "center": 128.7, "sigma": 1.50, "count": 330, "rowRange": [5, 165], "rowJitter": 0.45},
++              {"id": "right-cluster", "center": 138.3, "sigma": 0.95, "count": 280, "rowRange": [1, 160], "rowJitter": 0.45}
++            ],
++            "horizontalRowBands": [
++              {"centerRow": 33, "heightRows": 3, "count": 70, "timeRange": [100, 116]},
++              {"centerRow": 76, "heightRows": 4, "count": 92, "timeRange": [101, 116]},
++              {"centerRow": 116, "heightRows": 4, "count": 80, "timeRange": [100, 134]},
++              {"centerRow": 155, "heightRows": 5, "count": 98, "timeRange": [100, 140]}
++            ],
++            "dropoutWindows": [
++              {"timeRange": [119.5, 125.2], "keepProbability": 0.28},
++              {"timeRange": [131.8, 136.0], "keepProbability": 0.55}
++            ]
++          }
++        }
++      ],
++      "annotations": [
++        {
++          "id": "bottom-left-modality-label",
++          "type": "text",
++          "text": "Neuropixels",
++          "x": 5,
++          "y": 264,
++          "fontSize": 14,
++          "fontWeight": 400,
++          "textAnchor": "start",
++          "sourceBox": {"x": 5, "y": 252, "width": 77, "height": 16}
++        },
++        {
++          "id": "bottom-roman-ii",
++          "type": "text",
++          "text": "II",
++          "x": 311,
++          "y": 267,
++          "fontSize": 14,
++          "fontWeight": 700,
++          "textAnchor": "middle",
++          "sourceBox": {"x": 306, "y": 256, "width": 11, "height": 13}
++        }
++      ],
++      "provenance": [
++        {
++          "object": "panel-b-plot",
++          "confidence": "medium",
++          "note": "Plot bounds and tick anchors estimated from visible axis spines and labels."
++        },
++        {
++          "object": "spike-raster-events",
++          "confidence": "medium-low",
++          "note": "Event distribution is a seeded synthetic recipe matching visual density and clustered timing, not recovered original spike times."
++        }
++      ]
++    }
++  ],
++  "rendering": {
++    "strategy": "hybrid",
++    "layers": [
++      {"id": "background", "renderer": "svg"},
++      {"id": "raster-marks", "renderer": "canvas"},
++      {"id": "axes-and-text", "renderer": "svg"}
++    ],
++    "styleTokens": {
++      "axisStroke": "#111111",
++      "axisStrokeWidth": 1,
++      "tickFontSize": 16,
++      "tickLabelColor": "#111111"
++    }
++  },
++  "validation": {
++    "expectedNativeSize": [391, 268],
++    "checks": [
++      "Generated candidate does not render source raster as a layer.",
++      "Axis ticks are linked to x/y domains and share panel-b.data transform.",
++      "Raster points are generated from an editable seed and density recipe."
++    ]
++  },
++  "confidence": [
++    {"field": "typography", "level": "medium", "note": "Arial/Helvetica approximates source text but exact paper font is unknown."},
++    {"field": "raster-data", "level": "low", "note": "Only visual distribution is reconstructed; original spike event table is unavailable."}
++  ]
++}
+

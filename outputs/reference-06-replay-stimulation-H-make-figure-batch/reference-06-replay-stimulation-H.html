@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-06-replay-stimulation-H reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 12px;
+      background: #ffffff;
+      border-bottom: 1px solid #cccccc;
+    }
+    h1 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .note {
+      margin-top: 2px;
+      font-size: 11px;
+      color: #555555;
+    }
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #999999;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    button {
+      border: 0;
+      padding: 5px 9px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+    main {
+      min-height: calc(100vh - 46px);
+      display: grid;
+      place-items: center;
+      padding: 14px;
+      box-sizing: border-box;
+    }
+    .frame {
+      position: relative;
+      background: #ffffff;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.12);
+      overflow: hidden;
+    }
+    svg, .reference {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .reference {
+      display: none;
+      object-fit: contain;
+      background-color: #ffffff;
+    }
+    .show-reference svg {
+      display: none;
+    }
+    .show-reference .reference {
+      display: block;
+    }
+    text {
+      dominant-baseline: alphabetic;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>reference-06-replay-stimulation-H</h1>
+      <div class="note">Generated SVG from semantic JSON. Reference image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">QA reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <svg id="figure" role="img" aria-label="Generated reconstruction"></svg>
+      <img id="reference" class="reference" alt="QA-only source reference">
+    </div>
+  </main>
+
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const SPEC_URL = 'reference-06-replay-stimulation-H.json';
+
+    function el(tag, attrs = {}, text) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      if (text !== undefined) node.textContent = text;
+      return node;
+    }
+
+    function textNode(parent, attrs, value) {
+      parent.appendChild(el('text', attrs, value));
+    }
+
+    function render(spec) {
+      const panel = spec.panels[0];
+      const coord = panel.coordinateSystems[0];
+      const plot = coord.plotBbox;
+      const seriesById = new Map(panel.data.series.map(series => [series.id, series]));
+      const categoryById = new Map(coord.y.categories.map(category => [category.id, category]));
+      const svg = document.getElementById('figure');
+      const frame = document.getElementById('frame');
+      const reference = document.getElementById('reference');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      svg.setAttribute('viewBox', `0 0 ${spec.canvas.width} ${spec.canvas.height}`);
+      svg.setAttribute('width', spec.canvas.width);
+      svg.setAttribute('height', spec.canvas.height);
+      reference.src = spec.source.path;
+
+      const xForValue = value => plot.x + (value - coord.x.domain[0]) / (coord.x.domain[1] - coord.x.domain[0]) * plot.width;
+      const yForCategory = id => categoryById.get(id).y;
+
+      svg.replaceChildren();
+      svg.appendChild(el('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
+
+      textNode(svg, {
+        x: panel.label.x,
+        y: panel.label.y + panel.label.fontSize - 1,
+        'font-size': panel.label.fontSize,
+        'font-weight': panel.label.fontWeight,
+        'font-family': spec.typography.fontFamily,
+        'data-object-id': panel.label.id
+      }, panel.label.text);
+      textNode(svg, {
+        x: panel.title.x,
+        y: panel.title.y + panel.title.fontSize - 2,
+        'font-size': panel.title.fontSize,
+        'font-weight': panel.title.fontWeight,
+        'font-family': spec.typography.fontFamily,
+        'data-object-id': panel.title.id
+      }, panel.title.text);
+
+      for (const layout of panel.layoutObjects) {
+        if (layout.type === 'axis') {
+          svg.appendChild(el('line', {
+            x1: layout.line.x1, y1: layout.line.y1, x2: layout.line.x2, y2: layout.line.y2,
+            stroke: layout.stroke, 'stroke-width': layout.strokeWidth, 'data-object-id': layout.id
+          }));
+        }
+        if (layout.type === 'referenceLine') {
+          const x = xForValue(layout.value);
+          svg.appendChild(el('line', {
+            x1: x, x2: x, y1: layout.y1, y2: layout.y2,
+            stroke: layout.stroke, 'stroke-width': layout.strokeWidth, 'stroke-dasharray': layout.dasharray,
+            opacity: layout.opacity, 'data-object-id': layout.id, 'data-axis': layout.axis, 'data-value': layout.value
+          }));
+        }
+        if (layout.type === 'ruleWithLabel') {
+          svg.appendChild(el('line', {
+            x1: layout.x1, y1: layout.y, x2: layout.x2, y2: layout.y,
+            stroke: layout.stroke, 'stroke-width': layout.strokeWidth, 'data-object-id': layout.id
+          }));
+          textNode(svg, {
+            x: layout.label.x, y: layout.label.y,
+            'font-size': layout.label.fontSize,
+            'font-weight': layout.label.fontWeight,
+            'text-anchor': layout.label.anchor,
+            'font-family': spec.typography.fontFamily,
+            'data-object-id': `${layout.id}-label`
+          }, layout.label.text);
+        }
+      }
+
+      const xAxis = panel.layoutObjects.find(object => object.id === 'x-axis');
+      for (const tick of coord.x.ticks) {
+        const x = xForValue(tick.value);
+        svg.appendChild(el('line', {
+          x1: x, x2: x, y1: xAxis.line.y1, y2: xAxis.line.y1 + xAxis.tickLength,
+          stroke: '#111111', 'stroke-width': 1.1, 'data-axis': 'x', 'data-value': tick.value
+        }));
+        textNode(svg, {
+          x, y: xAxis.line.y1 + 23,
+          'font-size': 16,
+          'text-anchor': 'middle',
+          'font-family': spec.typography.fontFamily,
+          'data-axis': 'x',
+          'data-value': tick.value
+        }, tick.label);
+      }
+
+      const categoryLabelAnnotation = panel.annotations.find(annotation => annotation.id === 'y-category-labels');
+      for (const category of coord.y.categories) {
+        const lines = category.labelLines;
+        const firstY = category.y - (lines.length - 1) * categoryLabelAnnotation.lineHeight / 2 + 6;
+        for (let i = 0; i < lines.length; i += 1) {
+          textNode(svg, {
+            x: categoryLabelAnnotation.x,
+            y: firstY + i * categoryLabelAnnotation.lineHeight,
+            'font-size': categoryLabelAnnotation.fontSize,
+            'text-anchor': categoryLabelAnnotation.anchor,
+            'font-family': spec.typography.fontFamily,
+            'data-category': category.id
+          }, lines[i]);
+        }
+      }
+
+      const intervalsLayer = el('g', {'data-layer': 'interval-marks'});
+      svg.appendChild(intervalsLayer);
+      for (const mark of panel.marks.filter(item => item.type === 'horizontalIntervals')) {
+        const series = seriesById.get(mark.series);
+        for (const point of series.points) {
+          const y = yForCategory(point.category) + mark.offsetY;
+          const x0 = xForValue(point.ci[0]);
+          const x1 = xForValue(point.ci[1]);
+          const cx = xForValue(point.estimate);
+          const halfCap = mark.capHeight / 2;
+          intervalsLayer.appendChild(el('line', {
+            x1: x0, x2: x1, y1: y, y2: y,
+            stroke: series.color, 'stroke-width': mark.strokeWidth,
+            'data-mark-id': mark.id, 'data-series': series.id, 'data-category': point.category
+          }));
+          intervalsLayer.appendChild(el('line', {x1: x0, x2: x0, y1: y - halfCap, y2: y + halfCap, stroke: series.color, 'stroke-width': mark.strokeWidth, 'data-series': series.id}));
+          intervalsLayer.appendChild(el('line', {x1: x1, x2: x1, y1: y - halfCap, y2: y + halfCap, stroke: series.color, 'stroke-width': mark.strokeWidth, 'data-series': series.id}));
+          intervalsLayer.appendChild(el('rect', {
+            x: cx - series.markerSize / 2, y: y - series.markerSize / 2,
+            width: series.markerSize, height: series.markerSize,
+            fill: series.color, stroke: 'none',
+            'data-series': series.id, 'data-category': point.category, 'data-estimate': point.estimate
+          }));
+        }
+      }
+
+      const xLabel = coord.x.label;
+      textNode(svg, {
+        x: xLabel.x, y: xLabel.y,
+        'font-size': xLabel.fontSize,
+        'font-weight': xLabel.fontWeight,
+        'text-anchor': xLabel.anchor,
+        'font-family': spec.typography.fontFamily,
+        'data-object-id': xLabel.id
+      }, xLabel.text);
+
+      const legend = panel.annotations.find(annotation => annotation.type === 'legend');
+      legend.items.forEach((item, index) => {
+        const series = seriesById.get(item.series);
+        const y = legend.y + index * legend.itemGap;
+        svg.appendChild(el('rect', {
+          x: legend.x, y: y - legend.markerSize + 2,
+          width: legend.markerSize, height: legend.markerSize,
+          fill: series.color, 'data-legend-series': series.id
+        }));
+        textNode(svg, {
+          x: legend.x + 26, y: y,
+          'font-size': legend.fontSize,
+          'font-family': spec.typography.fontFamily,
+          'data-legend-series': series.id
+        }, item.label);
+      });
+    }
+
+    async function loadSpec() {
+      const response = await fetch(SPEC_URL);
+      if (!response.ok) throw new Error(`Unable to load ${SPEC_URL}`);
+      return response.json();
+    }
+
+    function setMode(mode) {
+      const frame = document.getElementById('frame');
+      const generatedButton = document.getElementById('generatedButton');
+      const referenceButton = document.getElementById('referenceButton');
+      const showReference = mode === 'reference';
+      frame.classList.toggle('show-reference', showReference);
+      generatedButton.classList.toggle('active', !showReference);
+      referenceButton.classList.toggle('active', showReference);
+    }
+
+    document.getElementById('generatedButton').addEventListener('click', () => setMode('generated'));
+    document.getElementById('referenceButton').addEventListener('click', () => setMode('reference'));
+
+    loadSpec().then(render).catch(error => {
+      console.error(error);
+      document.querySelector('.note').textContent = error.message;
+    });
+  </script>
+</body>
+</html>

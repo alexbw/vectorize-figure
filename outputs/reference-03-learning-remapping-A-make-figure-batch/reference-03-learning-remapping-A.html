@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-03-learning-remapping-A reconstruction</title>
+  <style>
+    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #cfcfcf; }
+    h1 { margin: 0; font-size: 16px; font-weight: 700; }
+    .note { margin-top: 3px; font-size: 12px; color: #555555; }
+    .toggle { display: inline-flex; border: 1px solid #999999; border-radius: 4px; overflow: hidden; }
+    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
+    .toggle button.active { background: #111111; color: #ffffff; }
+    main { min-height: calc(100vh - 48px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
+    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
+    .surface, .reference { position: absolute; inset: 0; }
+    .reference { display: none; width: 100%; height: 100%; object-fit: contain; background: #ffffff; }
+    .show-reference .surface { display: none; }
+    .show-reference .reference { display: block; }
+    svg, canvas { position: absolute; inset: 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-03-learning-remapping-A</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA reference source image">
+    </div>
+  </main>
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const $ = id => document.getElementById(id);
+
+    function make(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function rng(seed) {
+      return function random() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+    function scale(domain, range, value) { return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]); }
+
+    function hexToRgb(hex) {
+      const n = parseInt(hex.slice(1), 16);
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    }
+
+    function colorAt(scaleSpec, value) {
+      const stops = scaleSpec.stops;
+      if (value <= stops[0].value) return hexToRgb(stops[0].color);
+      for (let i = 0; i < stops.length - 1; i++) {
+        const a = stops[i], b = stops[i + 1];
+        if (value <= b.value) {
+          const t = (value - a.value) / (b.value - a.value);
+          const ca = hexToRgb(a.color), cb = hexToRgb(b.color);
+          return [Math.round(lerp(ca[0], cb[0], t)), Math.round(lerp(ca[1], cb[1], t)), Math.round(lerp(ca[2], cb[2], t))];
+        }
+      }
+      return hexToRgb(stops[stops.length - 1].color);
+    }
+
+    function drawHeatmap(ctx, hm, colorScale) {
+      const box = hm.bbox;
+      const rows = 312, cols = 100;
+      const rand = rng(hm.seed);
+      const rowGain = Array.from({length: rows}, (_, r) => 0.72 + 0.42 * rand() + 0.12 * Math.sin(r * 0.17 + rand() * 2));
+      const dropout = Array.from({length: rows}, () => rand() < 0.17 ? 0.38 + 0.38 * rand() : 1);
+      for (let r = 0; r < rows; r++) {
+        const yNorm = r / (rows - 1);
+        const ridgeCenter = hm.ridge.start + (hm.ridge.end - hm.ridge.start) * yNorm + hm.ridge.curve * Math.sin((yNorm - 0.12) * Math.PI);
+        for (let c = 0; c < cols; c++) {
+          const xNorm = c / (cols - 1);
+          let v = -0.7 + 0.42 * rand() + 0.13 * Math.sin(c * 0.4 + r * 0.08);
+          const d = (c - ridgeCenter) / hm.ridge.width;
+          v += hm.ridge.brightness * Math.exp(-0.5 * d * d) * rowGain[r] * dropout[r];
+          for (const secondary of hm.secondaryRidges) {
+            const sd = (c - (ridgeCenter + secondary.offset + 5 * Math.sin(r * 0.045))) / (hm.ridge.width * 1.35);
+            v += hm.ridge.brightness * secondary.strength * Math.exp(-0.5 * sd * sd) * (0.55 + 0.7 * rand());
+          }
+          if (rand() < 0.045) v += 1.1 + rand() * 1.2;
+          if (rand() < 0.035) v -= 0.8;
+          const [rr, gg, bb] = colorAt(colorScale, clamp(v, -1, 3));
+          ctx.fillStyle = `rgb(${rr}, ${gg}, ${bb})`;
+          ctx.fillRect(
+            box.x + c * box.width / cols,
+            box.y + r * box.height / rows,
+            Math.ceil(box.width / cols) + 0.2,
+            Math.ceil(box.height / rows) + 0.2
+          );
+        }
+      }
+      ctx.imageSmoothingEnabled = false;
+    }
+
+    function addText(svg, item, extra = {}) {
+      const text = make('text', {
+        x: item.x, y: item.y,
+        'font-size': item.fontSize || extra.fontSize || 14,
+        'font-weight': item.fontWeight || extra.fontWeight || 400,
+        'font-family': extra.fontFamily,
+        fill: item.fill || '#111111',
+        'text-anchor': item.anchor || extra.anchor || 'start',
+        'dominant-baseline': item.baseline || extra.baseline || 'alphabetic',
+        transform: item.rotation ? `rotate(${item.rotation} ${item.x} ${item.y})` : null,
+        'data-id': item.id || null,
+        'data-role': item.role || null,
+        'data-axis': item.axis || null,
+        'data-value': item.value ?? null,
+        'data-label-offset-x': item.labelOffsetX ?? null,
+        'data-protected-text': item.role === 'tick-label' ? 'true' : null
+      });
+      text.textContent = item.text;
+      svg.appendChild(text);
+      return text;
+    }
+
+    function render(spec) {
+      $('title').textContent = spec.id;
+      const frame = $('frame');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      const surface = $('surface');
+      surface.innerHTML = '';
+      const canvas = document.createElement('canvas');
+      canvas.width = spec.canvas.width;
+      canvas.height = spec.canvas.height;
+      const svg = make('svg', {width: spec.canvas.width, height: spec.canvas.height, viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, role: 'img'});
+      surface.append(canvas, svg);
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = spec.canvas.background;
+      ctx.fillRect(0, 0, spec.canvas.width, spec.canvas.height);
+      const panel = spec.panels[0];
+      const group = panel.plotGroup;
+      const colorScale = spec.colorScales.find(s => s.id === 'df-f-zscore');
+
+      for (const hm of group.heatmaps) drawHeatmap(ctx, hm, colorScale);
+
+      const fontFamily = spec.typography.fontFamily;
+      addText(svg, panel.label, {fontFamily});
+      addText(svg, panel.title, {fontFamily});
+
+      for (const hm of group.heatmaps) {
+        addText(svg, {text: hm.title, x: hm.bbox.x + hm.bbox.width / 2, y: 65, fontSize: 14, anchor: 'middle'}, {fontFamily});
+        const axisY = hm.bbox.y + hm.bbox.height + 1;
+        svg.appendChild(make('line', {x1: hm.bbox.x, y1: axisY, x2: hm.bbox.x + hm.bbox.width, y2: axisY, stroke: '#111111', 'stroke-width': 1}));
+        for (const tick of group.xAxis.ticks) {
+          const x = scale(group.xAxis.domain, [hm.bbox.x, hm.bbox.x + hm.bbox.width], tick.value);
+          svg.appendChild(make('line', {
+            x1: x,
+            y1: axisY,
+            x2: x,
+            y2: axisY + 5,
+            stroke: '#111111',
+            'stroke-width': 1,
+            'data-role': 'axis-tick-mark',
+            'data-axis': hm.id,
+            'data-value': tick.value,
+            'data-source-x': x,
+            'data-source-y': axisY
+          }));
+          const edgeAnchor = tick.value === group.xAxis.domain[0] ? 'start' : (tick.value === group.xAxis.domain[1] ? 'end' : 'middle');
+          addText(svg, {
+            text: tick.label,
+            x,
+            y: axisY + 20,
+            fontSize: group.xAxis.tickFontSize || 12,
+            anchor: edgeAnchor,
+            id: `${hm.id}-x-tick-${tick.value}`,
+            role: 'tick-label',
+            axis: hm.id,
+            value: tick.value,
+            labelOffsetX: 0
+          }, {fontFamily});
+        }
+      }
+      addText(svg, group.xAxis.label, {fontFamily, anchor: 'middle'});
+
+      const y = group.sharedY;
+      addText(svg, y.axisLabel, {fontFamily, anchor: 'middle'});
+      const arrow = y.axisAnnotation;
+      svg.appendChild(make('line', {x1: arrow.x, y1: arrow.y1, x2: arrow.x, y2: arrow.y2, stroke: '#111111', 'stroke-width': 1.2}));
+      svg.appendChild(make('path', {d: `M ${arrow.x} ${arrow.y1} l ${-arrow.headSize / 2} ${arrow.headSize} h ${arrow.headSize} Z`, fill: '#111111'}));
+      svg.appendChild(make('path', {d: `M ${arrow.x} ${arrow.y2} l ${-arrow.headSize / 2} ${-arrow.headSize} h ${arrow.headSize} Z`, fill: '#111111'}));
+      for (const label of arrow.labels) addText(svg, {text: label.text, x: label.x, y: label.y, anchor: label.anchor, fontSize: 14}, {fontFamily});
+
+      const legend = panel.legend;
+      for (const titleLine of legend.title) addText(svg, titleLine, {fontFamily});
+      const defs = make('defs');
+      const gradient = make('linearGradient', {id: 'df-f-zscore-gradient', x1: '0%', y1: '100%', x2: '0%', y2: '0%'});
+      const domain = colorScale.domain;
+      for (const stop of colorScale.stops) {
+        const offset = (stop.value - domain[0]) / (domain[1] - domain[0]) * 100;
+        gradient.appendChild(make('stop', {offset: `${offset}%`, 'stop-color': stop.color}));
+      }
+      defs.appendChild(gradient);
+      svg.appendChild(defs);
+      svg.appendChild(make('rect', {x: legend.bbox.x, y: legend.bbox.y, width: legend.bbox.width, height: legend.bbox.height, fill: 'url(#df-f-zscore-gradient)', stroke: '#777777', 'stroke-width': 0.4}));
+      for (const tick of legend.ticks) {
+        const ty = scale(domain, [legend.bbox.y + legend.bbox.height, legend.bbox.y], tick.value);
+        svg.appendChild(make('line', {x1: legend.bbox.x + legend.bbox.width, y1: ty, x2: legend.bbox.x + legend.bbox.width + 5, y2: ty, stroke: '#111111', 'stroke-width': 1}));
+        addText(svg, {text: tick.label, x: legend.bbox.x + legend.bbox.width + 10, y: ty + 4, fontSize: 13}, {fontFamily});
+      }
+
+      $('reference').src = spec.source.path;
+    }
+
+    async function loadSpec() {
+      const response = await fetch('reference-03-learning-remapping-A.json');
+      return response.json();
+    }
+
+    $('generatedButton').addEventListener('click', () => {
+      $('frame').classList.remove('show-reference');
+      $('generatedButton').classList.add('active');
+      $('referenceButton').classList.remove('active');
+    });
+    $('referenceButton').addEventListener('click', () => {
+      $('frame').classList.add('show-reference');
+      $('referenceButton').classList.add('active');
+      $('generatedButton').classList.remove('active');
+    });
+
+    loadSpec().then(render).catch(error => {
+      document.body.insertAdjacentHTML('beforeend', `<pre>${String(error)}</pre>`);
+    });
+  </script>
+</body>
+</html>

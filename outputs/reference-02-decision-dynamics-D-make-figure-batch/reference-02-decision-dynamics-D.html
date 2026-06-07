@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-02-decision-dynamics-D reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #aaaaaa;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+    .surface,
+    .reference {
+      position: absolute;
+      inset: 0;
+    }
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+    }
+    .show-reference .surface {
+      display: none;
+    }
+    .show-reference .reference {
+      display: block;
+    }
+    svg {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-02-decision-dynamics-D</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA reference source image">
+    </div>
+  </main>
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const SPEC_URL = 'reference-02-decision-dynamics-D.json';
+
+    function $(id) {
+      return document.getElementById(id);
+    }
+
+    function make(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function scale(domain, range, value) {
+      return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+    }
+
+    function scales(plot) {
+      const box = plot.dataBbox;
+      return {
+        x: value => scale(plot.x.domain, [box.x, box.x + box.width], value),
+        y: value => scale(plot.y.domain, [box.y + box.height, box.y], value)
+      };
+    }
+
+    function logistic(x, params) {
+      return params.lower + (params.upper - params.lower) / (1 + Math.exp(-params.slope * (x - params.midpoint)));
+    }
+
+    function textNode(item, defaults = {}) {
+      const node = make('text', {
+        id: item.id,
+        x: item.x,
+        y: item.y,
+        'font-size': item.fontSize || defaults.fontSize || 14,
+        'font-weight': item.fontWeight || defaults.fontWeight || 400,
+        'font-style': item.fontStyle || defaults.fontStyle,
+        'text-anchor': item.anchor || defaults.anchor || 'start',
+        fill: item.fill || defaults.fill || '#111111',
+        transform: item.rotation ? `rotate(${item.rotation} ${item.x} ${item.y})` : null
+      });
+      node.textContent = item.text;
+      return node;
+    }
+
+    function renderAxes(svg, panel, sx) {
+      const plot = panel.plot;
+      const axisGroup = make('g', {'data-layer': 'axes', 'stroke-linecap': 'square'});
+      const xAxis = plot.axes.xAxis.line;
+      const yAxis = plot.axes.yAxis.line;
+      axisGroup.appendChild(make('line', {id: plot.axes.xAxis.id, x1: xAxis.x1, y1: xAxis.y1, x2: xAxis.x2, y2: xAxis.y2, stroke: '#111111', 'stroke-width': 2}));
+      axisGroup.appendChild(make('line', {id: plot.axes.yAxis.id, x1: yAxis.x1, y1: yAxis.y1, x2: yAxis.x2, y2: yAxis.y2, stroke: '#111111', 'stroke-width': 2}));
+
+      plot.x.ticks.forEach((tick, index) => {
+        const x = sx.x(tick.value);
+        axisGroup.appendChild(make('line', {'data-axis': 'x', 'data-value': tick.value, x1: x, y1: xAxis.y1, x2: x, y2: xAxis.y1 + plot.axes.xAxis.tickLength, stroke: '#111111', 'stroke-width': 1}));
+        const label = textNode({id: `x-tick-${index}`, text: tick.label, x, y: xAxis.y1 + 25, fontSize: 16, anchor: 'middle'});
+        label.setAttribute('data-axis', 'x');
+        label.setAttribute('data-value', tick.value);
+        axisGroup.appendChild(label);
+      });
+
+      plot.y.ticks.forEach((tick, index) => {
+        const y = sx.y(tick.value);
+        axisGroup.appendChild(make('line', {'data-axis': 'y', 'data-value': tick.value, x1: yAxis.x1 - plot.axes.yAxis.tickLength, y1: y, x2: yAxis.x1, y2: y, stroke: '#111111', 'stroke-width': 1}));
+        const label = textNode({id: `y-tick-${index}`, text: tick.label, x: yAxis.x1 - 13, y: y + 5, fontSize: 16, anchor: 'end'});
+        label.setAttribute('data-axis', 'y');
+        label.setAttribute('data-value', tick.value);
+        axisGroup.appendChild(label);
+      });
+
+      axisGroup.appendChild(textNode(plot.x.label));
+      axisGroup.appendChild(textNode(plot.y.label));
+      svg.appendChild(axisGroup);
+    }
+
+    function renderMarks(svg, panel, sx) {
+      const group = make('g', {'data-layer': 'marks'});
+      panel.marks.forEach(mark => {
+        if (mark.type === 'referenceLine' && mark.orientation === 'horizontal') {
+          const y = sx.y(mark.value);
+          group.appendChild(make('line', {id: mark.id, x1: panel.plot.dataBbox.x, y1: y, x2: panel.plot.dataBbox.x + panel.plot.dataBbox.width, y2: y, stroke: mark.stroke, 'stroke-width': mark.strokeWidth, 'stroke-dasharray': mark.dasharray}));
+        }
+        if (mark.type === 'referenceLine' && mark.orientation === 'vertical') {
+          const x = sx.x(mark.value);
+          group.appendChild(make('line', {id: mark.id, x1: x, y1: sx.y(mark.fromY), x2: x, y2: sx.y(mark.toY), stroke: mark.stroke, 'stroke-width': mark.strokeWidth, 'stroke-dasharray': mark.dasharray}));
+        }
+        if (mark.type === 'lineSeries' && mark.dataRef === 'fitCurve') {
+          const recipe = panel.data.fitCurve;
+          const [min, max] = recipe.sampleDomain;
+          const pts = [];
+          for (let i = 0; i < recipe.sampleCount; i += 1) {
+            const x = min + (max - min) * i / (recipe.sampleCount - 1);
+            pts.push([sx.x(x), sx.y(logistic(x, recipe.parameters))]);
+          }
+          const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p[0].toFixed(2)} ${p[1].toFixed(2)}`).join(' ');
+          group.appendChild(make('path', {id: mark.id, d, fill: 'none', stroke: mark.stroke, 'stroke-width': mark.strokeWidth}));
+        }
+        if (mark.type === 'scatterWithErrorBars') {
+          const pts = panel.data[mark.dataRef];
+          pts.forEach((pt, index) => {
+            const x = sx.x(pt.x);
+            const y = sx.y(pt.y);
+            const yLow = sx.y(pt.y - pt.yError);
+            const yHigh = sx.y(pt.y + pt.yError);
+            group.appendChild(make('line', {id: `${mark.id}-error-${index}`, 'data-point-index': index, x1: x, y1: yLow, x2: x, y2: yHigh, stroke: mark.errorBar.stroke, 'stroke-width': mark.errorBar.strokeWidth}));
+            group.appendChild(make('line', {x1: x - mark.errorBar.capWidth / 2, y1: yLow, x2: x + mark.errorBar.capWidth / 2, y2: yLow, stroke: mark.errorBar.stroke, 'stroke-width': mark.errorBar.strokeWidth}));
+            group.appendChild(make('line', {x1: x - mark.errorBar.capWidth / 2, y1: yHigh, x2: x + mark.errorBar.capWidth / 2, y2: yHigh, stroke: mark.errorBar.stroke, 'stroke-width': mark.errorBar.strokeWidth}));
+            group.appendChild(make('circle', {id: `${mark.id}-point-${index}`, 'data-x': pt.x, 'data-y': pt.y, cx: x, cy: y, r: mark.marker.radius, fill: mark.marker.fill, stroke: mark.marker.stroke, 'stroke-width': mark.marker.strokeWidth}));
+          });
+        }
+      });
+      svg.appendChild(group);
+    }
+
+    function render(spec) {
+      $('title').textContent = spec.id;
+      const frame = $('frame');
+      const surface = $('surface');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      surface.innerHTML = '';
+      const reference = $('reference');
+      reference.src = spec.source.path;
+      reference.dataset.usage = spec.source.usage;
+
+      const svg = make('svg', {width: spec.canvas.width, height: spec.canvas.height, viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, role: 'img', 'aria-label': `${spec.id} generated reconstruction`});
+      svg.style.background = spec.canvas.background;
+      svg.style.fontFamily = spec.typography.fontFamily;
+      svg.style.color = spec.typography.color;
+      surface.appendChild(svg);
+
+      spec.panels.forEach(panel => {
+        const panelGroup = make('g', {id: panel.id, 'data-panel': panel.id});
+        svg.appendChild(panelGroup);
+        panelGroup.appendChild(textNode(panel.label));
+        panelGroup.appendChild(textNode(panel.title));
+        const sx = scales(panel.plot);
+        renderMarks(panelGroup, panel, sx);
+        renderAxes(panelGroup, panel, sx);
+        const annotations = make('g', {'data-layer': 'annotations'});
+        panel.annotations.forEach(annotation => annotations.appendChild(textNode(annotation)));
+        panelGroup.appendChild(annotations);
+      });
+    }
+
+    async function loadSpec() {
+      const response = await fetch(SPEC_URL);
+      if (!response.ok) throw new Error(`Unable to load ${SPEC_URL}`);
+      return response.json();
+    }
+
+    $('generatedButton').addEventListener('click', () => {
+      $('frame').classList.remove('show-reference');
+      $('generatedButton').classList.add('active');
+      $('referenceButton').classList.remove('active');
+    });
+    $('referenceButton').addEventListener('click', () => {
+      $('frame').classList.add('show-reference');
+      $('referenceButton').classList.add('active');
+      $('generatedButton').classList.remove('active');
+    });
+
+    loadSpec().then(render).catch(error => {
+      console.error(error);
+      $('surface').textContent = error.message;
+    });
+  </script>
+</body>
+</html>

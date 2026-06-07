@@ -1,4 +1,4 @@
-# Scientific Figure Reconstruction Skill
+# Vectorize Figure Skill
 
 Working goal: turn raster scientific figure subpanels into editable, data-driven HTML reconstructions that are close enough visually to the source PNG while preserving software-editable structure.
 
@@ -181,6 +181,26 @@ Support at minimum:
 - tick labels with anchor and offset rules
 
 Visually grouped text may need separate semantic objects when alignment differs. For example, a condition label and its sample-size label should be separate if they center independently.
+
+### Typography Calibration
+
+When text is a visible part of the mismatch, run an explicit text-matching pass
+instead of tuning a global font by eye. Use source text boxes for representative
+labels, render candidate fonts in the browser, score the generated text mask
+against the source crop, and then visually inspect a results-only overlay where
+the original raster text and the attempted text are drawn on top of each other.
+
+The current lightweight harness lives in `scripts/font-calibration/`. It uses
+browser-native font loading and headless Chrome, so it does not require a local
+font-management build pipeline. Use common scientific-paper sans candidates
+first: Arial/Helvetica fallbacks, Arimo, Helvetica Neue, Source Sans 3, Roboto,
+and Noto-like alternatives. Store the chosen fields locally on text objects:
+`fontFamily`, `fontSize`, `fontWeight`, `lineHeight`, `targetWidth`, `fit`,
+`sourceBox`, and calibration score/provenance.
+
+The success criterion is improvement, not identity. A future integration test
+should assert that calibrated representative labels beat their baseline score
+and should save an overlay artifact for human inspection.
 
 ### Uncertainty And Error Bands
 

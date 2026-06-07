@@ -1,0 +1,689 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-06-replay-stimulation-C",
+  "source": {
+    "path": "../../assets/reference/reference-06-replay-stimulation-C-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "First-pass reconstruction from visual inspection of a 380 x 500 px cropped paper panel."
+  },
+  "canvas": {
+    "width": 380,
+    "height": 500,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": [
+      "Arial Narrow",
+      "Helvetica Neue Condensed",
+      "Arial",
+      "Helvetica"
+    ],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "Condensed sans-serif approximates the source panel title and tick labels; no raster text is reused."
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-c",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 380,
+        "height": 500
+      },
+      "label": {
+        "id": "panel-label",
+        "text": "C",
+        "x": 16,
+        "y": 26,
+        "fontSize": 22,
+        "fontWeight": 700,
+        "sourceBox": {
+          "x": 16,
+          "y": 8,
+          "width": 15,
+          "height": 26
+        },
+        "fit": "visual"
+      },
+      "title": {
+        "id": "panel-title",
+        "text": "Bayesian posterior over position",
+        "x": 42,
+        "y": 26,
+        "fontSize": 18,
+        "fontWeight": 700,
+        "sourceBox": {
+          "x": 42,
+          "y": 9,
+          "width": 252,
+          "height": 24
+        },
+        "fit": "visual"
+      },
+      "layoutObjects": [
+        {
+          "id": "shared-x-axis",
+          "type": "axis",
+          "orientation": "bottom",
+          "parentPlot": "stim",
+          "children": [
+            "shared-x-ticks",
+            "shared-x-label"
+          ],
+          "anchorTo": "stim.plotBox"
+        },
+        {
+          "id": "pre-y-axis",
+          "type": "axis",
+          "orientation": "left",
+          "parentPlot": "pre"
+        },
+        {
+          "id": "stim-y-axis",
+          "type": "axis",
+          "orientation": "left",
+          "parentPlot": "stim"
+        }
+      ],
+      "coordinateSystems": [
+        {
+          "id": "pre.xy",
+          "type": "cartesian2d",
+          "xDomain": [
+            0,
+            210
+          ],
+          "yDomain": [
+            0,
+            0.1
+          ],
+          "plotBox": {
+            "x": 114,
+            "y": 107,
+            "width": 253,
+            "height": 124
+          }
+        },
+        {
+          "id": "stim.xy",
+          "type": "cartesian2d",
+          "xDomain": [
+            0,
+            210
+          ],
+          "yDomain": [
+            0,
+            0.1
+          ],
+          "plotBox": {
+            "x": 114,
+            "y": 279,
+            "width": 253,
+            "height": 124
+          }
+        }
+      ],
+      "plots": [
+        {
+          "id": "pre",
+          "title": "Pre-stim example replay",
+          "label": {
+            "text": "Pre-stim\n(example\nreplay)",
+            "x": 16,
+            "y": 153,
+            "fontSize": 14,
+            "fontWeight": 400,
+            "lineHeight": 1.15,
+            "fill": "#006b6b",
+            "anchor": "start"
+          },
+          "plotBox": {
+            "x": 114,
+            "y": 107,
+            "width": 253,
+            "height": 124
+          },
+          "x": {
+            "domain": [
+              0,
+              210
+            ],
+            "ticks": [],
+            "axisLine": false
+          },
+          "y": {
+            "domain": [
+              0,
+              0.1
+            ],
+            "ticks": [
+              {
+                "value": 0,
+                "label": "0"
+              },
+              {
+                "value": 0.05,
+                "label": "0.05"
+              },
+              {
+                "value": 0.1,
+                "label": "0.10"
+              }
+            ],
+            "label": {
+              "text": "Posterior p(position)",
+              "x": -4,
+              "y": 250,
+              "rotation": -90,
+              "fontSize": 16
+            }
+          }
+        },
+        {
+          "id": "stim",
+          "title": "Stim example replay",
+          "label": {
+            "text": "Stim\n(example\nreplay)",
+            "x": 28,
+            "y": 321,
+            "fontSize": 14,
+            "fontWeight": 400,
+            "lineHeight": 1.15,
+            "fill": "#ff5a00",
+            "anchor": "start"
+          },
+          "plotBox": {
+            "x": 114,
+            "y": 279,
+            "width": 253,
+            "height": 124
+          },
+          "x": {
+            "domain": [
+              0,
+              210
+            ],
+            "ticks": [
+              {
+                "value": 0,
+                "label": "0"
+              },
+              {
+                "value": 100,
+                "label": "100"
+              },
+              {
+                "value": 200,
+                "label": "200"
+              }
+            ],
+            "label": {
+              "text": "Position (cm)",
+              "x": 240,
+              "y": 466,
+              "fontSize": 18,
+              "anchor": "middle"
+            }
+          },
+          "y": {
+            "domain": [
+              0,
+              0.1
+            ],
+            "ticks": [
+              {
+                "value": 0,
+                "label": "0"
+              },
+              {
+                "value": 0.05,
+                "label": "0.05"
+              },
+              {
+                "value": 0.1,
+                "label": "0.10"
+              }
+            ]
+          }
+        }
+      ],
+      "marks": [
+        {
+          "id": "pre-posterior",
+          "type": "lineSeries",
+          "usesTransform": "pre.xy",
+          "stroke": "#006b6b",
+          "strokeWidth": 1.6,
+          "fill": "none",
+          "points": [
+            [
+              0,
+              0.001
+            ],
+            [
+              8,
+              0.002
+            ],
+            [
+              15,
+              0.004
+            ],
+            [
+              22,
+              0.003
+            ],
+            [
+              30,
+              0.006
+            ],
+            [
+              38,
+              0.008
+            ],
+            [
+              46,
+              0.012
+            ],
+            [
+              54,
+              0.02
+            ],
+            [
+              60,
+              0.028
+            ],
+            [
+              65,
+              0.037
+            ],
+            [
+              70,
+              0.042
+            ],
+            [
+              74,
+              0.089
+            ],
+            [
+              78,
+              0.067
+            ],
+            [
+              82,
+              0.027
+            ],
+            [
+              88,
+              0.014
+            ],
+            [
+              96,
+              0.011
+            ],
+            [
+              106,
+              0.008
+            ],
+            [
+              116,
+              0.011
+            ],
+            [
+              123,
+              0.018
+            ],
+            [
+              130,
+              0.071
+            ],
+            [
+              134,
+              0.058
+            ],
+            [
+              139,
+              0.019
+            ],
+            [
+              146,
+              0.011
+            ],
+            [
+              153,
+              0.009
+            ],
+            [
+              160,
+              0.026
+            ],
+            [
+              164,
+              0.031
+            ],
+            [
+              170,
+              0.01
+            ],
+            [
+              180,
+              0.006
+            ],
+            [
+              190,
+              0.008
+            ],
+            [
+              197,
+              0.076
+            ],
+            [
+              202,
+              0.043
+            ],
+            [
+              207,
+              0.023
+            ],
+            [
+              210,
+              0.018
+            ]
+          ],
+          "provenance": {
+            "confidence": "medium",
+            "note": "Approximate curve anchors traced visually from the raster."
+          },
+          "fillUnder": "#006b6b",
+          "fillOpacity": 0.16
+        },
+        {
+          "id": "stim-posterior",
+          "type": "lineSeries",
+          "usesTransform": "stim.xy",
+          "stroke": "#ff5a00",
+          "strokeWidth": 1.6,
+          "fill": "none",
+          "points": [
+            [
+              0,
+              0.001
+            ],
+            [
+              8,
+              0.003
+            ],
+            [
+              16,
+              0.002
+            ],
+            [
+              25,
+              0.006
+            ],
+            [
+              34,
+              0.004
+            ],
+            [
+              43,
+              0.008
+            ],
+            [
+              50,
+              0.06
+            ],
+            [
+              55,
+              0.092
+            ],
+            [
+              60,
+              0.055
+            ],
+            [
+              68,
+              0.03
+            ],
+            [
+              75,
+              0.041
+            ],
+            [
+              82,
+              0.024
+            ],
+            [
+              91,
+              0.01
+            ],
+            [
+              100,
+              0.012
+            ],
+            [
+              110,
+              0.035
+            ],
+            [
+              118,
+              0.03
+            ],
+            [
+              124,
+              0.081
+            ],
+            [
+              130,
+              0.076
+            ],
+            [
+              136,
+              0.044
+            ],
+            [
+              144,
+              0.018
+            ],
+            [
+              154,
+              0.01
+            ],
+            [
+              166,
+              0.02
+            ],
+            [
+              174,
+              0.055
+            ],
+            [
+              181,
+              0.048
+            ],
+            [
+              189,
+              0.028
+            ],
+            [
+              197,
+              0.036
+            ],
+            [
+              204,
+              0.015
+            ],
+            [
+              210,
+              0.01
+            ]
+          ],
+          "provenance": {
+            "confidence": "medium",
+            "note": "Approximate curve anchors traced visually from the raster."
+          },
+          "fillUnder": "#ff5a00",
+          "fillOpacity": 0.16
+        },
+        {
+          "id": "pre-raster",
+          "type": "rasterTicks",
+          "usesTransform": "pre.xy",
+          "y": 238,
+          "height": 4,
+          "stroke": "#006b6b",
+          "strokeWidth": 1,
+          "values": [
+            6,
+            10,
+            13,
+            24,
+            26,
+            40,
+            46,
+            54,
+            58,
+            61,
+            66,
+            69,
+            72,
+            76,
+            80,
+            84,
+            88,
+            92,
+            98,
+            103,
+            116,
+            120,
+            123,
+            126,
+            130,
+            135,
+            139,
+            146,
+            155,
+            160,
+            166,
+            171,
+            176,
+            181,
+            185,
+            188,
+            191,
+            194,
+            197,
+            200,
+            204,
+            209
+          ]
+        },
+        {
+          "id": "stim-raster",
+          "type": "rasterTicks",
+          "usesTransform": "stim.xy",
+          "y": 411,
+          "height": 5,
+          "stroke": "#ff5a00",
+          "strokeWidth": 1,
+          "values": [
+            3,
+            8,
+            14,
+            20,
+            27,
+            35,
+            41,
+            48,
+            52,
+            56,
+            60,
+            63,
+            66,
+            69,
+            72,
+            75,
+            79,
+            83,
+            90,
+            101,
+            109,
+            113,
+            119,
+            124,
+            129,
+            136,
+            144,
+            151,
+            160,
+            168,
+            174,
+            182,
+            190,
+            198,
+            205
+          ]
+        }
+      ],
+      "annotations": [],
+      "provenance": [
+        {
+          "target": "panel-c",
+          "confidence": "medium",
+          "note": "Chart geometry and text placement are visually estimated; curves are editable approximations rather than extracted measurements."
+        }
+      ]
+    }
+  ],
+  "rendering": {
+    "renderer": "hybrid-svg-dom",
+    "layers": [
+      "background",
+      "text",
+      "axes",
+      "data",
+      "rasters"
+    ],
+    "styleTokens": {
+      "axisStroke": "#111111",
+      "axisWidth": 1,
+      "tickLength": 5,
+      "tickFontSize": 14
+    }
+  },
+  "validation": {
+    "expectedCanvas": {
+      "width": 380,
+      "height": 500
+    },
+    "expectedMarks": {
+      "lineSeries": 2,
+      "rasterTicks": 2
+    },
+    "generatedRasterReuse": "none; source path is QA-reference metadata only"
+  },
+  "confidence": [
+    {
+      "target": "typography",
+      "confidence": "medium",
+      "note": "Approximate condensed sans-serif match."
+    },
+    {
+      "target": "line-data",
+      "confidence": "medium",
+      "note": "Posterior traces are first-pass visual approximations."
+    },
+    {
+      "target": "raster-events",
+      "confidence": "low",
+      "note": "Event tick locations preserve density and clusters but are not exact detections."
+    }
+  ]
+}

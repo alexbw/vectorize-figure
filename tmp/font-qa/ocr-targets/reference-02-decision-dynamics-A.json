@@ -1,0 +1,252 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-02-decision-dynamics-A-ocr-text-targets",
+  "source": {
+    "path": "/assets/reference/reference-02-decision-dynamics-A-reference.png",
+    "usage": "QA-only OCR text target extraction for typography calibration."
+  },
+  "canvas": {
+    "width": 430,
+    "height": 514,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Helvetica, Arial, sans-serif",
+    "defaultSize": 13,
+    "color": "#111111"
+  },
+  "panels": [
+    {
+      "id": "ocr-text-targets",
+      "marks": [
+        {
+          "id": "ocr-01",
+          "type": "text",
+          "text": "A Trial timeline",
+          "x": 73,
+          "y": 41,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 27.900000000000002,
+          "fontWeight": 700,
+          "anchor": "middle",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 12,
+            "y": 10,
+            "width": 122,
+            "height": 31
+          },
+          "targetWidth": 122,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 95.9
+        },
+        {
+          "id": "ocr-02",
+          "type": "text",
+          "text": "Fixate Stimulus Delay Go Outcome",
+          "x": 34,
+          "y": 101,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 27.900000000000002,
+          "fontWeight": 700,
+          "anchor": "start",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 34,
+            "y": 70,
+            "width": 368,
+            "height": 31
+          },
+          "targetWidth": 368,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 76.1
+        },
+        {
+          "id": "ocr-03",
+          "type": "text",
+          "text": "500ms 500 ms",
+          "x": 31,
+          "y": 113,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 10.8,
+          "fontWeight": 400,
+          "anchor": "start",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 31,
+            "y": 101,
+            "width": 366,
+            "height": 12
+          },
+          "targetWidth": 366,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 58.4
+        },
+        {
+          "id": "ocr-04",
+          "type": "text",
+          "text": "H H",
+          "x": 331,
+          "y": 243,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 9,
+          "fontWeight": 400,
+          "anchor": "middle",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 265,
+            "y": 233,
+            "width": 132,
+            "height": 10
+          },
+          "targetWidth": 132,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 44.7
+        },
+        {
+          "id": "ocr-05",
+          "type": "text",
+          "text": "Time from stimulus onset (ms)",
+          "x": 120,
+          "y": 300,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 14.4,
+          "fontWeight": 400,
+          "anchor": "start",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 120,
+            "y": 284,
+            "width": 185,
+            "height": 16
+          },
+          "targetWidth": 185,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 96.5
+        },
+        {
+          "id": "ocr-06",
+          "type": "text",
+          "text": "Baseline Stim Delay Response Outcome",
+          "x": 35,
+          "y": 338,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 13.5,
+          "fontWeight": 400,
+          "anchor": "start",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 35,
+            "y": 323,
+            "width": 362,
+            "height": 15
+          },
+          "targetWidth": 362,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 67.2
+        },
+        {
+          "id": "ocr-07",
+          "type": "text",
+          "text": "Cognitive Evidence Decision Feedback",
+          "x": 16,
+          "y": 383,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 28,
+          "fontWeight": 400,
+          "anchor": "start",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 16,
+            "y": 351,
+            "width": 385,
+            "height": 32
+          },
+          "targetWidth": 385,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 63.9
+        },
+        {
+          "id": "ocr-08",
+          "type": "text",
+          "text": "process encoding accumulation",
+          "x": 13,
+          "y": 397,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 23.400000000000002,
+          "fontWeight": 400,
+          "anchor": "start",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 13,
+            "y": 371,
+            "width": 234,
+            "height": 26
+          },
+          "targetWidth": 234,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 86.7
+        },
+        {
+          "id": "ocr-09",
+          "type": "text",
+          "text": "Saccade Reward",
+          "x": 341,
+          "y": 424,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 9.9,
+          "fontWeight": 400,
+          "anchor": "middle",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 286,
+            "y": 413,
+            "width": 110,
+            "height": 11
+          },
+          "targetWidth": 110,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 71.9
+        },
+        {
+          "id": "ocr-10",
+          "type": "text",
+          "text": "Example Hold",
+          "x": 15,
+          "y": 444,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 28,
+          "fontWeight": 400,
+          "anchor": "start",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 15,
+            "y": 412,
+            "width": 210,
+            "height": 32
+          },
+          "targetWidth": 210,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 56.9
+        }
+      ]
+    }
+  ],
+  "confidence": [
+    {
+      "target": "ocr-text-targets",
+      "confidence": "medium",
+      "note": "Generated from Tesseract line OCR; noisy lines should be ignored in visual QA."
+    }
+  ]
+}

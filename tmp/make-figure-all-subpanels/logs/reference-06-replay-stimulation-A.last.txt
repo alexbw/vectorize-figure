@@ -1,0 +1,10 @@
+Done. Wrote only:
+
+- [reference-06-replay-stimulation-A.json](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-06-replay-stimulation-A-make-figure-batch/reference-06-replay-stimulation-A.json)
+- [reference-06-replay-stimulation-A.html](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-06-replay-stimulation-A-make-figure-batch/reference-06-replay-stimulation-A.html)
+
+Verification:
+- JSON parses successfully.
+- `drawImage(` search found no matches.
+- Source-as-background searches found no matches.
+- The only source raster usage is the QA/reference image path and the clearly labeled reference `<img>` toggle.

@@ -1,0 +1,2365 @@
+Reading additional input from stdin...
+OpenAI Codex v0.137.0
+--------
+workdir: /Users/alex/Code/scientific-figure-reconstruction
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: low
+reasoning summaries: none
+session id: 019e9e70-d3f5-7aa1-a1c6-949eb0774ebf
+--------
+user
+$make-figure assets/reference/reference-04-motor-manifold-F-reference.png. Generate an independent first-pass reconstruction for visual inspection. Write outputs only to outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json and outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html. Use the make-figure skill contract and the repository command/skill code: generated visual layers must not reuse the source raster; the source may appear only as a clearly labeled QA/reference view. Keep the JSON semantic and editable. Verify JSON validity and search the output for accidental drawImage/background source reuse. Do not modify existing output directories, docs, skills, plugins, source assets, or unrelated files.
+codex
+I’m using the `make-figure` skill and will keep the output scoped to the two requested files. I’ll inspect the existing repo patterns and source image dimensions first, then create the semantic JSON and standalone HTML renderer.
+exec
+/bin/zsh -lc "pwd && rg --files | sed -n '1,120p'" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+/Users/alex/Code/scientific-figure-reconstruction
+outputs/reference-02-decision-dynamics-A-make-figure-batch/reference-02-decision-dynamics-A.html
+outputs/reference-02-decision-dynamics-A-make-figure-batch/reference-02-decision-dynamics-A.json
+outputs/reference-01-place-code-opto-B-make-figure-batch/reference-01-place-code-opto-B.json
+outputs/reference-01-place-code-opto-B-make-figure-batch/reference-01-place-code-opto-B.html
+outputs/reference-02-decision-dynamics-A-make-figure/reference-02-decision-dynamics-A.html
+outputs/reference-02-decision-dynamics-A-make-figure/reference-02-decision-dynamics-A.json
+outputs/reference-02-decision-dynamics-D-make-figure-batch/reference-02-decision-dynamics-D.json
+outputs/reference-02-decision-dynamics-D-make-figure-batch/reference-02-decision-dynamics-D.html
+outputs/reference-01-place-code-opto-D-make-figure-test/reference-01-place-code-opto-D.json
+outputs/reference-01-place-code-opto-D-make-figure-test/reference-01-place-code-opto-D.html
+outputs/reference-01-place-code-opto-C-make-figure-batch/reference-01-place-code-opto-C.json
+outputs/reference-01-place-code-opto-C-make-figure-batch/reference-01-place-code-opto-C.html
+outputs/reference-02-decision-dynamics-E-make-figure-batch/reference-02-decision-dynamics-E.json
+outputs/reference-02-decision-dynamics-E-make-figure-batch/reference-02-decision-dynamics-E.html
+outputs/reference-01-place-code-opto-F-make-figure-batch/reference-01-place-code-opto-F.html
+outputs/reference-01-place-code-opto-F-make-figure-batch/reference-01-place-code-opto-F.json
+outputs/reference-02-decision-dynamics-C-make-figure-batch/reference-02-decision-dynamics-C.json
+outputs/reference-02-decision-dynamics-C-make-figure-batch/reference-02-decision-dynamics-C.html
+outputs/reference-01-place-code-opto-F-make-figure/reference-01-place-code-opto-F.html
+outputs/reference-01-place-code-opto-F-make-figure/reference-01-place-code-opto-F.json
+outputs/reference-02-decision-dynamics-F-make-figure-batch/reference-02-decision-dynamics-F.html
+outputs/reference-02-decision-dynamics-F-make-figure-batch/reference-02-decision-dynamics-F.json
+outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.json
+outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.html
+outputs/reference-05-grid-remapping-D-make-figure-test/reference-05-grid-remapping-D.json
+outputs/reference-05-grid-remapping-D-make-figure-test/reference-05-grid-remapping-D.html
+outputs/reference-02-decision-dynamics-B-make-figure-batch/reference-02-decision-dynamics-B.json
+outputs/reference-02-decision-dynamics-B-make-figure-batch/reference-02-decision-dynamics-B.html
+outputs/_regression-baselines/reference-01-place-code-opto-A.png
+outputs/_regression-baselines/reference-01-place-code-opto-C.png
+outputs/_regression-baselines/reference-01-place-code-opto-B.png
+outputs/_regression-baselines/reference-01-place-code-opto-F.png
+outputs/_regression-baselines/reference-02-decision-dynamics-A.png
+outputs/_regression-baselines/reference-02-decision-dynamics-B.png
+outputs/reference-01-place-code-opto-A-make-figure-batch/reference-01-place-code-opto-A.html
+outputs/reference-01-place-code-opto-A-make-figure-batch/reference-01-place-code-opto-A.json
+outputs/reference-02-decision-dynamics-B-make-figure/reference-02-decision-dynamics-B.json
+outputs/reference-02-decision-dynamics-B-make-figure/reference-02-decision-dynamics-B-current.png
+outputs/reference-02-decision-dynamics-B-make-figure/reference-02-decision-dynamics-B.html
+outputs/reference-01-place-code-opto-C-make-figure/reference-01-place-code-opto-C.json
+outputs/reference-01-place-code-opto-C-make-figure/reference-01-place-code-opto-C.html
+outputs/reference-02-decision-dynamics-G-make-figure-batch/reference-02-decision-dynamics-G.html
+outputs/reference-02-decision-dynamics-G-make-figure-batch/reference-02-decision-dynamics-G.json
+outputs/reference-01-place-code-opto-D-make-figure-batch/reference-01-place-code-opto-D.json
+outputs/reference-01-place-code-opto-D-make-figure-batch/reference-01-place-code-opto-D.html
+outputs/reference-05-grid-remapping-C-make-figure-test/reference-05-grid-remapping-C.json
+outputs/reference-05-grid-remapping-C-make-figure-test/reference-05-grid-remapping-C.html
+outputs/reference-03-learning-remapping-D-make-figure-batch/reference-03-learning-remapping-D.html
+outputs/reference-03-learning-remapping-D-make-figure-batch/reference-03-learning-remapping-D.json
+outputs/reference-04-motor-manifold-A-make-figure-batch/reference-04-motor-manifold-A.json
+outputs/reference-04-motor-manifold-A-make-figure-batch/reference-04-motor-manifold-A.html
+outputs/reference-03-learning-remapping-A-make-figure-batch/reference-03-learning-remapping-A.json
+outputs/reference-03-learning-remapping-A-make-figure-batch/reference-03-learning-remapping-A.html
+outputs/reference-03-learning-remapping-E-make-figure-batch/reference-03-learning-remapping-E.html
+outputs/reference-03-learning-remapping-E-make-figure-batch/reference-03-learning-remapping-E.json
+outputs/reference-01-place-code-opto-A-make-figure/reference-01-place-code-opto-A.html
+outputs/reference-01-place-code-opto-A-make-figure/reference-01-place-code-opto-A.json
+outputs/reference-01-place-code-opto-B-make-figure/reference-01-place-code-opto-B.json
+outputs/reference-01-place-code-opto-B-make-figure/reference-01-place-code-opto-B.html
+outputs/reference-03-learning-remapping-F-make-figure-batch/reference-03-learning-remapping-F.json
+outputs/reference-03-learning-remapping-F-make-figure-batch/reference-03-learning-remapping-F.html
+outputs/reference-03-learning-remapping-C-make-figure-batch/reference-03-learning-remapping-C.html
+outputs/reference-03-learning-remapping-C-make-figure-batch/reference-03-learning-remapping-C.json
+outputs/reference-03-learning-remapping-G-make-figure-batch/reference-03-learning-remapping-G.json
+outputs/reference-03-learning-remapping-G-make-figure-batch/reference-03-learning-remapping-G.html
+outputs/reference-04-motor-manifold-B-make-figure-batch/reference-04-motor-manifold-B.html
+outputs/reference-04-motor-manifold-B-make-figure-batch/reference-04-motor-manifold-B.json
+outputs/reference-02-decision-dynamics-H-make-figure-batch/reference-02-decision-dynamics-H.json
+outputs/reference-02-decision-dynamics-H-make-figure-batch/reference-02-decision-dynamics-H.html
+outputs/reference-03-learning-remapping-B-make-figure-batch/reference-03-learning-remapping-B.html
+outputs/reference-03-learning-remapping-B-make-figure-batch/reference-03-learning-remapping-B.json
+tmp/make-figure-batch/reference-05-grid-remapping-C.stdout.log
+tmp/make-figure-batch/reference-05-grid-remapping-D.last.txt
+tmp/make-figure-batch/reference-05-grid-remapping-D.stdout.log
+tmp/make-figure-batch/reference-01-place-code-opto-E.stdout.log
+tmp/font-qa/evidence.html
+commands/make-figure.md
+docs/text-positioning-mismatch-plan.md
+docs/session-handoff-2026-06-06.md
+docs/figure-reconstruction-skill.md
+tmp/font-qa/scale-fit.json
+tmp/font-qa/build-ocr-targets.mjs
+tmp/font-qa/reference-01-place-code-opto-C-calibration-report.json
+tmp/font-qa/textlength-fit.json
+tmp/font-qa/mismatch-report/annotated-mismatch-contact.png
+tmp/font-qa/mismatch-report/annotated-C-overlay.png
+tmp/font-qa/mismatch-report/annotated-F-overlay.png
+tmp/font-qa/mismatch-report/annotated-decision-B-overlay.png
+tmp/font-qa/mismatch-report/annotated-A-overlay.png
+tmp/font-qa/mismatch-report/annotated-B-overlay.png
+tmp/font-qa/mismatch-report/annotated-decision-A-overlay.png
+tmp/font-qa/final-panels.html
+tmp/font-qa/promoted-reference-01-place-code-opto-C-calibration-report.json
+examples/no-image-1c/reference-01-place-code-opto-C.json
+examples/no-image-1c/index.html
+tmp/font-qa/final-screenshots/reference-01-place-code-opto-A.png
+tmp/font-qa/final-screenshots/reference-01-place-code-opto-C.png
+tmp/font-qa/final-screenshots/reference-01-place-code-opto-B.png
+tmp/font-qa/final-screenshots/reference-01-place-code-opto-F.png
+tmp/font-qa/final-screenshots/reference-02-decision-dynamics-A.png
+tmp/font-qa/final-screenshots/reference-02-decision-dynamics-B.png
+tmp/font-qa/reference-01-place-code-opto-A-alltext-calibration-report.json
+tmp/font-qa/reference-01-place-code-opto-C-alltext-calibrated.json
+tmp/font-qa/reference-01-place-code-opto-C-text.json
+tmp/font-qa/results-only.html
+tmp/font-qa/reference-01-place-code-opto-C-calibrated.json
+tmp/font-qa/reference-01-place-code-opto-C-alltext.json
+tmp/font-qa/reference-01-place-code-opto-B-alltext.json
+tmp/font-qa/reference-01-place-code-opto-A-alltext-calibrated.json
+tmp/font-qa/run-evidence.mjs
+tmp/font-qa/calibrate.html
+tmp/font-qa/actual-panel-viewer.html
+tmp/font-qa/reference-01-place-code-opto-A-alltext.json
+tmp/font-qa/reference-01-place-code-opto-F-alltext.json
+tmp/font-qa/run-calibration.mjs
+tmp/font-qa/reference-01-place-code-opto-B-alltext-calibrated.json
+tmp/font-qa/reference-01-place-code-opto-C-alltext-calibration-report.json
+tmp/font-qa/reference-01-place-code-opto-F-alltext-calibration-report.json
+tmp/font-qa/zoomout-results.html
+tmp/font-qa/reference-01-place-code-opto-F-alltext-calibrated.json
+
+exec
+/bin/zsh -lc "sed -n '1,220p' skills/make-figure/references/semantic-figure-ir.md && sed -n '1,220p' skills/make-figure/references/reconstruction-contract.md" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+# Semantic Figure IR
+
+Use this document with `reconstruction-contract.md`. The reconstruction output
+is a semantic figure intermediate representation, not a collection of detected
+bounding boxes.
+
+## Core Model
+
+A scientific figure reconstruction is a typed scene graph:
+
+```text
+source evidence
+  -> semantic figure objects
+  -> named coordinate systems and transforms
+  -> derived layout objects
+  -> renderable marks and text
+  -> validation constraints
+```
+
+Bounding boxes, OCR text, detected line segments, and color samples are source
+evidence. They help infer the graph, but they are not the graph itself.
+
+## Common Object Fields
+
+Any semantic object may use these fields:
+
+```json
+{
+  "id": "panel-a-x-tick-0",
+  "type": "axisTick",
+  "parent": "panel-a-x-axis",
+  "children": ["panel-a-x-tick-0-mark", "panel-a-x-tick-0-label"],
+  "usesTransform": "panel-a.xy",
+  "anchorTo": "panel-a-x-axis",
+  "derivesFrom": "panel-a.x.ticks[0]",
+  "sourceEvidence": ["bbox-17", "line-04"],
+  "provenance": {"confidence": "medium", "note": "Tick position measured from source."}
+}
+```
+
+Prefer stable ids and explicit relationships over free-floating pixel objects.
+When an object needs source-calibrated coordinates, keep those coordinates on
+the semantic object as measured anchors instead of detaching the rendered mark
+or text.
+
+## Top-Level IR Concepts
+
+- `sourceEvidence`: source bboxes, OCR snippets, measured line segments, color
+  samples, and notes. These are evidence records, not render instructions.
+- `coordinateSystems`: named transforms such as Cartesian data scales,
+  categorical scales, event anchors, color scales, image/matrix ranges, and
+  projected 3D scenes.
+- `layoutObjects`: axes, tick-label bands, legends, colorbars, tables, insets,
+  panel titles, scale bars, and other objects that reserve space or anchor text.
+- `data`: exact data, approximate data, or generation recipes.
+- `marks`: visual encodings derived from data or layout objects.
+- `annotations`: labels, arrows, brackets, callouts, and event labels anchored
+  to data points, marks, or layout objects.
+- `constraints`: relationship and layout invariants that must survive rendering.
+- `rendering`: renderer hints, layer order, and style tokens.
+- `validation`: renderer- or harness-readable checks and expected counts.
+- `provenance`: object-level confidence and unresolved inferences.
+
+Panel-specific schemas may organize these concepts differently, but they should
+preserve the same relationships.
+
+## Required Relationship Invariants
+
+Renderers and validation scripts should enforce these when the source shows the
+corresponding objects:
+
+- Labeled ticks render one tick mark and one tick label with matching
+  `axis`/`value` metadata.
+- Axis titles anchor to an axis, tick-label band, or measured source anchor;
+  they are not independent guessed text.
+- Event-aligned ticks, event lines, brackets, and annotations share a named
+  event anchor or explicit measured visual anchor.
+- Grid lines belong to named grid planes and families; grid lines must not be
+  confused with solid box edges.
+- Legends reference real series, marker classes, or mark groups.
+- Colorbars reference a color scale and own their ticks and title.
+- Table cell text, row rules, separators, and highlights remain separate
+  objects when their visual styles differ.
+- Annotations anchor to data coordinates, generated marks, or layout objects
+  unless they are explicitly page-positioned.
+- Generated visuals never reuse the source raster as a generated layer.
+
+## Relationship Inventory Step
+
+Before writing the final JSON for a nontrivial panel, produce a short inventory:
+
+- plot type and renderer strategy
+- coordinate systems and named anchors
+- layout objects and their children
+- data-driven marks and their series/group ownership
+- annotations and what each one anchors to
+- source-calibrated overrides and why the transform alone is insufficient
+- validation constraints that should be checked in the rendered DOM
+
+Do this before visual tuning. If a generated object looks wrong, first ask which
+relationship or transform is missing before changing pixels.
+
+# Reconstruction Contract
+
+Use this contract when converting a raster scientific figure into configurable HTML and JSON.
+
+Read `semantic-figure-ir.md` alongside this contract. The JSON may be
+panel-specific, but it must preserve semantic relationships between data,
+transforms, layout objects, marks, labels, and validation constraints.
+
+## JSON Shape
+
+Minimum top-level fields:
+
+```json
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "figure-id",
+  "source": {
+    "path": "./source.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "What was inferred visually."
+  },
+  "canvas": {
+    "width": 800,
+    "height": 600,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [
+      "https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&display=swap"
+    ],
+    "fontFaces": [
+      {"family": "FigureSans", "weight": 400, "src": "./fonts/FigureSans-Regular.woff2"},
+      {"family": "FigureSans", "weight": 700, "src": "./fonts/FigureSans-Bold.woff2"}
+    ],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Source Sans 3", "Roboto", "Noto Sans"],
+    "calibration": {
+      "fontStretch": "normal",
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Use measured source text boxes to tune font family, stretch, size, and line height."
+    }
+  },
+  "panels": [],
+  "confidence": []
+}
+```
+
+`fontImports` is for lightweight browser-based experimentation with external
+CSS font providers such as Google Fonts. `fontFaces` is for reproducible local
+or adjacent font files when a typeface has been selected. Do not introduce a
+build system only to test fonts; use browser-native font loading and SVG text
+measurement first.
+
+## Panel Shape
+
+Represent each subpanel explicitly. For a single cropped panel, use one item in `panels`.
+
+```json
+{
+  "id": "panel-a",
+  "label": {"text": "A", "x": 16, "y": 20, "fontSize": 24, "fontWeight": 700},
+  "title": {"text": "Panel title", "x": 56, "y": 24, "fontSize": 16, "fontWeight": 700},
+  "bbox": {"x": 0, "y": 0, "width": 400, "height": 300},
+  "plot": {
+    "dataBbox": {"x": 64, "y": 48, "width": 300, "height": 210},
+    "axes": {
+      "xAxis": {"id": "panel-a-x-axis", "line": {"x1": 64, "y1": 258, "x2": 364, "y2": 258}, "tickLength": 6},
+      "yAxis": {"id": "panel-a-y-axis", "line": {"x1": 64, "y1": 48, "x2": 64, "y2": 258}, "tickLength": 6}
+    },
+    "x": {
+      "scale": "linear",
+      "domain": [0, 10],
+      "ticks": [{"value": 0, "label": "0"}, {"value": 5, "label": "5"}, {"value": 10, "label": "10"}],
+      "label": {"text": "Time (s)"}
+    },
+    "y": {
+      "scale": "linear",
+      "domain": [0, 1],
+      "ticks": [{"value": 0, "label": "0"}, {"value": 0.5, "label": "0.5"}, {"value": 1, "label": "1"}],
+      "label": {"text": "Response"}
+    }
+  },
+  "marks": [],
+  "annotations": [],
+  "provenance": []
+}
+```
+
+## Mark Types
+
+Use semantic mark objects. Add fields as needed, but keep the meaning explicit.
+
+- `lineSeries`: data points plus stroke, width, optional uncertainty band.
+- `scatter`: points, marker shape, size, fill, stroke, opacity.
+- `bar`: categorical or numeric bars with baseline, fill, stroke.
+- `heatmap`: matrix, color scale, bounds, interpolation flag.
+- `raster`: event times by row or a generation recipe with seed and density.
+- `violin`: category, outline path or generated KDE recipe, median/quantile marks.
+- `path`: editable SVG path data for contours, arrows, outlines, or schematic curves.
+- `rect`, `circle`, `ellipse`, `text`, `bracket`, `arrow`: annotations and schematics.
+- `imageRecipe`: generated texture or synthetic field; never point this at the source raster.
+
+## Coordinate Systems
+
+Define named transforms before rendering marks:
+
+- `plot.dataBbox` maps data to pixels.
+- For charts where the visual data rectangle is offset from axes, split
+  `dataBbox` from `axisBbox` or explicit axis anchors such as `yAxisX` and
+  `xAxisY`. Do not force source axis offsets into the data transform.
+- `x.domain` and `y.domain` map quantitative axes.
+- `categories` map categorical positions.
+- `eventAnchor` maps event-aligned plots.
+- `colorScale.domain` maps heatmaps and colorbars.
+
+Avoid mixing hard-coded pixel marks with data-space marks unless the mark is truly an annotation. Ticks, event lines, and data marks should share the same transform.
+
+### 3D Scientific Plots
+
+Recognize 3D plots from visual cues such as three nonparallel labeled axes,
+isometric or perspective box frames, oblique grid planes, tick labels attached
+to multiple axis directions, and data paths or markers that overlap within a
+projected volume. Do not require the user to identify a panel as 3D.
+
+For static publication-style 3D plots made of axes, grid lines, trajectories,
+markers, and labels, prefer semantic 3D data rendered into SVG through an
+explicit projection function. Reserve WebGL or Three.js for genuinely complex
+surfaces, dense point clouds, lighting, meshes, or interactive rotation.
+
+Represent 3D scenes with explicit camera or projection metadata:
+
+```json
+{
+  "scene": {
+    "projection": {
+      "type": "orthographicBasis",
+      "corner": {"x": 58, "y": 327},
+      "domainCorner": {"pc1": -2, "pc2": -2, "pc3": -2},
+      "basis": {
+        "pc1": {"x": 258, "y": 30},
+        "pc2": {"x": 145, "y": 90},
+        "pc3": {"x": 0, "y": -184}
+      }
+    },
+    "domains": {"pc1": [-2, 2], "pc2": [-2, 2], "pc3": [-2, 2]},
+    "trajectories": [{"points": [[-1.5, -1.6, -0.3], [0.7, -1.1, 1.8]]}]
+  }
+}
+```
+
+`fontImports` is for lightweight browser-based experimentation with external
+CSS font providers such as Google Fonts. `fontFaces` is for reproducible local
+or adjacent font files when a typeface has been selected. Do not introduce a
+build system only to test fonts; use browser-native font loading and SVG text
+measurement first.
+
+Axes, grid planes, trajectories, markers, and annotations must use the same
+3D-to-2D projection. Depth-sort generated marks when overlap matters: back grid
+and box edges first, faint trial clouds, mean trajectories, timepoint markers,
+then text labels. Labels should anchor to projected 3D points or axis objects
+and then participate in the normal text-collision pass.
+
+When using source-calibrated projected grid segments, avoid segments that
+duplicate solid box edges or accidentally close into polygons. Grid lines should
+read as independent faint plane guides unless the source explicitly shows a
+closed projected face.
+
+Prefer named 3D grid planes over a flat list of projected line segments. For
+example, encode separate `floor`, `backWall`, and `sideWall` grid groups so each
+axis pair has its own Cartesian grid. Inventory the source grid before tuning:
+for every plane, count visible interior guides separately from boundary-aligned
+guides that are merged with or hidden under box edges. Encode grid lines as
+per-family values, such as independent `pc1`, `pc2`, and `pc3` guide families,
+instead of one shared plane-level value list. Each family should state whether
+domain-boundary values are included, and generated SVG lines should expose
+stable plane/family attributes so count validation can catch drift. A 3D
+state-space panel with PC1, PC2, and PC3 axes should not collapse into one wall
+plus a triangular base.
+
+If the source uses faint face shading, encode plane fills separately from grid
+lines and generate the fill polygon from the same 3D projection. Do not bake the
+shading into arbitrary background shapes. Tick labels in 3D plots are layout
+text: allow source-calibrated text positions or offsets from projected ticks so
+labels do not collide with each other, axis titles, or spines.
+
+3D tick labels should be placed by semantic layout rules, not by one-shot
+coordinates alone. Treat axis spines and tick marks as protected geometry with
+padded hit zones. Treat faint grid lines and trajectory clouds as non-protected
+unless the source clearly reserves label space around them. Tick labels may use
+source-calibrated initial positions, but renderers should measure the final text
+box and apply a constrained outward nudge if it intersects protected axis
+geometry:
+
+```json
+{
+  "axis": {
+    "id": "pc1",
+    "tickLabelPlacement": {
+      "avoid": ["axis-spine"],
+      "minGap": 5,
+      "nudge": {"x": 8, "y": 7},
+      "maxSteps": 6
+    }
+  }
+}
+```
+
+3D axes with visible tick labels should also render visible tick marks unless
+the source suppresses them. Store tick geometry as a projected tick anchor, a
+short `markVector`, and a label offset or outward normal. The label should be
+placed from the tick mark first; collision correction is a secondary adjustment,
+not the primary placement mechanism.
+
+When a source-fitted frame or projection still does not reproduce the source's
+tick text positions, keep the numeric tick `value` semantic but add separate
+source-calibrated `markAnchor` and/or `labelAnchor` fields. Do not force tick
+labels through one shared offset vector if the source clearly uses
+
+exec
+/bin/zsh -lc 'file assets/reference/reference-04-motor-manifold-F-reference.png && sips -g pixelWidth -g pixelHeight assets/reference/reference-04-motor-manifold-F-reference.png' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+assets/reference/reference-04-motor-manifold-F-reference.png: PNG image data, 745 x 296, 8-bit/color RGB, non-interlaced
+/Users/alex/Code/scientific-figure-reconstruction/assets/reference/reference-04-motor-manifold-F-reference.png
+  pixelWidth: 745
+  pixelHeight: 296
+
+codex
+The source crop is 745 by 296 px. It’s a single figure panel with five generated confusion-matrix heatmaps, shared direction axes, a probability colorbar, left legend remnants, and a QA/reference source path that must stay separate from the candidate render.
+exec
+/bin/zsh -lc "sed -n '1,180p' outputs/reference-04-motor-manifold-B-make-figure-batch/reference-04-motor-manifold-B.json" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-04-motor-manifold-B",
+  "source": {
+    "path": "../../assets/reference/reference-04-motor-manifold-B-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "First-pass reconstruction inferred visually from the raster crop. Generated marks are SVG paths, axes, labels, and markers."
+  },
+  "canvas": {
+    "width": 471,
+    "height": 365,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Liberation Sans", "Roboto Condensed"],
+    "calibration": {
+      "fontStretch": "condensed",
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "Approximate sans-serif typography; source appears compact and bold in title text."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "shared-pc1-pc3",
+      "type": "cartesian2d",
+      "x": {"label": "PC 1", "domain": [-6, 6]},
+      "y": {"label": "PC 3", "domain": [-4, 4]},
+      "notes": "Each small multiple uses the same data domains but independent plot boxes."
+    }
+  ],
+  "layoutObjects": [
+    {"id": "figure-label", "type": "panelLabel", "text": "B", "anchor": {"x": 3, "y": 22}},
+    {"id": "figure-title", "type": "title", "text": "Condition-aligned trajectories (mean +/- SEM)", "anchor": {"x": 28, "y": 22}},
+    {"id": "axis-key", "type": "orientationKey", "anchor": {"x": 399, "y": 316}, "labels": [{"axis": "pc3", "text": "PC 3"}, {"axis": "pc1", "text": "PC 1"}]}
+  ],
+  "panels": [
+    {"id": "condition-000", "conditionDegrees": 0, "title": {"text": "0°"}, "plot": {"bbox": {"x": 47, "y": 68, "width": 79, "height": 99}}, "seriesColor": "#e53935", "bandColor": "#f6a5a0", "trajectory": [[-5.4, -2.25], [-4.2, -1.65], [-3.3, -0.70], [-2.1, 0.10], [-0.6, 1.00], [0.3, 2.90], [1.7, 3.15], [3.0, 2.05], [4.5, 0.25]], "bandRadius": 0.75, "startPoint": [-5.55, -2.45], "endPoint": [4.58, 0.05]},
+    {"id": "condition-045", "conditionDegrees": 45, "title": {"text": "45°"}, "plot": {"bbox": {"x": 141, "y": 68, "width": 80, "height": 99}}, "seriesColor": "#ff7f32", "bandColor": "#ffc29c", "trajectory": [[-5.4, -2.45], [-4.3, -1.45], [-3.0, -0.95], [-1.6, -0.10], [-0.2, 1.05], [1.5, 3.05], [3.0, 3.25], [4.1, 2.25], [4.9, 0.05]], "bandRadius": 0.78, "startPoint": [-5.6, -2.55], "endPoint": [4.92, -0.05]},
+    {"id": "condition-090", "conditionDegrees": 90, "title": {"text": "90°"}, "plot": {"bbox": {"x": 239, "y": 68, "width": 80, "height": 99}}, "seriesColor": "#ffb81c", "bandColor": "#ffe38f", "trajectory": [[-5.5, -2.45], [-4.3, -1.55], [-2.6, -1.10], [-0.8, -0.85], [0.4, -0.35], [1.3, 2.70], [2.8, 3.45], [4.0, 3.10], [5.3, 1.10]], "bandRadius": 0.82, "startPoint": [-5.65, -2.55], "endPoint": [5.35, 1.02]},
+    {"id": "condition-135", "conditionDegrees": 135, "title": {"text": "135°"}, "plot": {"bbox": {"x": 333, "y": 68, "width": 79, "height": 99}}, "seriesColor": "#66b84f", "bandColor": "#b8e7aa", "trajectory": [[-5.5, -2.45], [-4.1, -1.50], [-2.5, -0.85], [-1.3, 0.15], [0.1, 0.90], [1.8, 2.55], [3.0, 3.15], [4.3, 1.90], [5.0, -0.55]], "bandRadius": 0.80, "startPoint": [-5.6, -2.55], "endPoint": [5.05, -0.62]},
+    {"id": "condition-180", "conditionDegrees": 180, "title": {"text": "180°"}, "plot": {"bbox": {"x": 47, "y": 202, "width": 79, "height": 99}}, "seriesColor": "#37c7c4", "bandColor": "#a5ecea", "trajectory": [[-5.4, -2.65], [-4.3, -1.75], [-3.0, -0.70], [-1.8, 0.20], [-0.1, 1.10], [1.7, 1.65], [3.2, 1.25], [4.6, -0.40]], "bandRadius": 0.72, "startPoint": [-5.55, -2.70], "endPoint": [4.65, -0.48]},
+    {"id": "condition-225", "conditionDegrees": 225, "title": {"text": "225°"}, "plot": {"bbox": {"x": 141, "y": 202, "width": 80, "height": 99}}, "seriesColor": "#35a6e8", "bandColor": "#a9daf6", "trajectory": [[-5.4, -2.55], [-4.0, -1.55], [-2.3, -0.40], [-0.8, 0.85], [1.0, 1.55], [2.6, 1.35], [3.7, 0.35], [5.0, -0.85]], "bandRadius": 0.78, "startPoint": [-5.55, -2.65], "endPoint": [5.02, -0.93]},
+    {"id": "condition-270", "conditionDegrees": 270, "title": {"text": "270°"}, "plot": {"bbox": {"x": 239, "y": 202, "width": 80, "height": 99}}, "seriesColor": "#4f69f0", "bandColor": "#b9c5ff", "trajectory": [[-5.5, -2.55], [-4.4, -1.75], [-3.0, -0.55], [-1.2, 0.85], [0.5, 1.55], [2.3, 1.65], [3.8, 1.05], [5.0, -0.25]], "bandRadius": 0.76, "startPoint": [-5.6, -2.65], "endPoint": [5.08, -0.32]},
+    {"id": "condition-315", "conditionDegrees": 315, "title": {"text": "315°"}, "plot": {"bbox": {"x": 333, "y": 202, "width": 79, "height": 99}}, "seriesColor": "#a45ad7", "bandColor": "#d8afea", "trajectory": [[-5.5, -2.45], [-4.1, -1.50], [-2.5, -0.25], [-1.0, 1.00], [0.8, 1.95], [2.2, 2.10], [3.6, 1.10], [5.0, -0.35]], "bandRadius": 0.76, "startPoint": [-5.6, -2.55], "endPoint": [5.05, -0.42]}
+  ],
+  "rendering": {
+    "renderer": "svg",
+    "layers": ["axes", "uncertaintyBands", "meanTrajectories", "markers", "labels", "orientationKey"],
+    "styles": {
+      "axisStroke": "#5d5d5d",
+      "axisStrokeWidth": 1.25,
+      "tickStrokeWidth": 1,
+      "meanStrokeWidth": 2.1,
+      "bandOpacity": 0.56,
+      "startFill": "#7a7a7a",
+      "markerStroke": "#111111"
+    }
+  },
+  "annotations": [
+    {"id": "shared-y-label", "type": "axisTitle", "text": "PC 3 (9%)", "anchor": {"x": 8, "y": 176}, "rotation": -90},
+    {"id": "shared-x-label", "type": "axisTitle", "text": "PC 1 (23%)", "anchor": {"x": 236, "y": 350}, "anchorText": "middle"}
+  ],
+  "constraints": [
+    {"id": "same-domains", "type": "sharedScale", "panels": "all", "coordinateSystem": "shared-pc1-pc3"},
+    {"id": "paired-markers", "type": "markerPair", "requiredForEachPanel": ["startPoint", "endPoint"]},
+    {"id": "qa-separation", "type": "sourceUsage", "rule": "Source raster appears only in reference view and is not used for generated SVG layers."}
+  ],
+  "validation": {
+    "expectedPanelCount": 8,
+    "expectedTrajectoryCount": 8,
+    "expectedBandCount": 8,
+    "expectedStartMarkerCount": 8,
+    "expectedEndMarkerCount": 8
+  },
+  "confidence": [
+    {"target": "trajectory coordinates", "confidence": "medium", "note": "Trajectory geometry is visually approximated from source; it is semantic and editable, not digitized data."},
+    {"target": "SEM bands", "confidence": "medium-low", "note": "Bands are curve-following generated offsets with per-panel radius, approximating visible translucent envelopes."},
+    {"target": "typography", "confidence": "medium-low", "note": "Font family and exact text metrics are approximate first-pass settings."}
+  ]
+}
+
+exec
+/bin/zsh -lc "sed -n '1,220p' outputs/reference-04-motor-manifold-B-make-figure-batch/reference-04-motor-manifold-B.html" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-04-motor-manifold-B reconstruction</title>
+  <style>
+    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #d0d0d0; }
+    h1 { margin: 0; font-size: 15px; font-weight: 700; }
+    .note { margin-top: 3px; font-size: 12px; color: #555555; }
+    .toggle { display: inline-flex; overflow: hidden; border: 1px solid #999999; border-radius: 4px; }
+    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
+    .toggle button.active { background: #111111; color: #ffffff; }
+    main { min-height: calc(100vh - 50px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
+    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
+    .surface, .reference-wrap { position: absolute; inset: 0; }
+    .reference-wrap { display: none; }
+    .reference-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .qa-label { position: absolute; left: 8px; bottom: 8px; padding: 3px 6px; border: 1px solid #777777; background: rgba(255,255,255,0.9); font-size: 11px; font-weight: 700; }
+    .show-reference .surface { display: none; }
+    .show-reference .reference-wrap { display: block; }
+    svg { position: absolute; inset: 0; overflow: visible; }
+    text { paint-order: stroke; stroke: #ffffff; stroke-width: 2px; stroke-linejoin: round; }
+    .axis text, .title, .figure-title, .figure-label, .orientation-label { stroke-width: 2.5px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-04-motor-manifold-B</h1>
+      <div class="note">Generated candidate is SVG rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <div id="referenceWrap" class="reference-wrap">
+        <img id="reference" alt="QA reference source image">
+        <div class="qa-label">QA reference only: source raster</div>
+      </div>
+    </div>
+  </main>
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const SPEC_PATH = 'reference-04-motor-manifold-B.json';
+
+    function el(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function scale(domain, range, value) {
+      return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+    }
+
+    function panelScales(panel) {
+      const box = panel.plot.bbox;
+      return {
+        x: value => scale([-6, 6], [box.x, box.x + box.width], value),
+        y: value => scale([-4, 4], [box.y + box.height, box.y], value)
+      };
+    }
+
+    function catmullRomPath(points, closed = false) {
+      if (!points.length) return '';
+      if (points.length < 2) return `M ${points[0][0]} ${points[0][1]}`;
+      let d = `M ${points[0][0].toFixed(2)} ${points[0][1].toFixed(2)}`;
+      for (let i = 0; i < points.length - 1; i++) {
+        const p0 = points[Math.max(0, i - 1)];
+        const p1 = points[i];
+        const p2 = points[i + 1];
+        const p3 = points[Math.min(points.length - 1, i + 2)];
+        const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+        const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+        d += ` C ${c1[0].toFixed(2)} ${c1[1].toFixed(2)}, ${c2[0].toFixed(2)} ${c2[1].toFixed(2)}, ${p2[0].toFixed(2)} ${p2[1].toFixed(2)}`;
+      }
+      return closed ? `${d} Z` : d;
+    }
+
+    function bandPolygon(panel, points, scales) {
+      const radius = panel.bandRadius || 0.7;
+      const pxRadius = radius * panel.plot.bbox.height / 8;
+      const upper = [];
+      const lower = [];
+      for (let i = 0; i < points.length; i++) {
+        const prev = points[Math.max(0, i - 1)];
+        const next = points[Math.min(points.length - 1, i + 1)];
+        const dx = next[0] - prev[0];
+        const dy = next[1] - prev[1];
+        const length = Math.hypot(dx, dy) || 1;
+        const nx = -dy / length;
+        const ny = dx / length;
+        upper.push([points[i][0] + nx * pxRadius, points[i][1] + ny * pxRadius]);
+        lower.push([points[i][0] - nx * pxRadius, points[i][1] - ny * pxRadius]);
+      }
+      return catmullRomPath(upper.concat(lower.reverse()), true);
+    }
+
+    function addText(svg, text, x, y, attrs = {}) {
+      const node = el('text', {
+        x, y,
+        fill: attrs.fill || '#111111',
+        'font-size': attrs.size || 12,
+        'font-weight': attrs.weight || 400,
+        'text-anchor': attrs.anchor || 'start',
+        'dominant-baseline': attrs.baseline || 'auto',
+        class: attrs.class || ''
+      });
+      if (attrs.rotate) node.setAttribute('transform', `rotate(${attrs.rotate} ${x} ${y})`);
+      node.textContent = text;
+      svg.appendChild(node);
+      return node;
+    }
+
+    function renderAxes(svg, panel, styles) {
+      const box = panel.plot.bbox;
+      const g = el('g', {'class': 'axis', 'data-panel': panel.id});
+      g.appendChild(el('line', {x1: box.x, y1: box.y, x2: box.x, y2: box.y + box.height, stroke: styles.axisStroke, 'stroke-width': styles.axisStrokeWidth}));
+      g.appendChild(el('line', {x1: box.x, y1: box.y + box.height, x2: box.x + box.width, y2: box.y + box.height, stroke: styles.axisStroke, 'stroke-width': styles.axisStrokeWidth}));
+      const xTicks = panel.id.endsWith('180') || panel.id.endsWith('225') || panel.id.endsWith('270') ? [-6, 0, 6] : [];
+      const yTicks = panel.id.endsWith('000') || panel.id.endsWith('180') ? [-4, 0, 4] : [];
+      const scales = panelScales(panel);
+      for (const value of xTicks) {
+        const x = scales.x(value);
+        g.appendChild(el('line', {x1: x, y1: box.y + box.height, x2: x, y2: box.y + box.height + 4, stroke: styles.axisStroke, 'stroke-width': styles.tickStrokeWidth, 'data-axis': 'pc1', 'data-value': value}));
+        addText(g, String(value), x, box.y + box.height + 17, {size: 16, anchor: 'middle'});
+      }
+      for (const value of yTicks) {
+        const y = scales.y(value);
+        g.appendChild(el('line', {x1: box.x - 4, y1: y, x2: box.x, y2: y, stroke: styles.axisStroke, 'stroke-width': styles.tickStrokeWidth, 'data-axis': 'pc3', 'data-value': value}));
+        addText(g, String(value), box.x - 11, y + 5, {size: 16, anchor: 'end'});
+      }
+      svg.appendChild(g);
+    }
+
+    function renderPanel(svg, panel, styles) {
+      const scales = panelScales(panel);
+      const points = panel.trajectory.map(([x, y]) => [scales.x(x), scales.y(y)]);
+      renderAxes(svg, panel, styles);
+      addText(svg, panel.title.text, panel.plot.bbox.x + panel.plot.bbox.width / 2, panel.plot.bbox.y - 9, {size: 16, anchor: 'middle', class: 'title'});
+      svg.appendChild(el('path', {d: bandPolygon(panel, points, scales), fill: panel.bandColor, opacity: styles.bandOpacity, stroke: 'none', 'data-panel': panel.id, 'data-mark-type': 'uncertaintyBand'}));
+      svg.appendChild(el('path', {d: catmullRomPath(points), fill: 'none', stroke: panel.seriesColor, 'stroke-width': styles.meanStrokeWidth, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'data-panel': panel.id, 'data-mark-type': 'meanTrajectory'}));
+      const start = [scales.x(panel.startPoint[0]), scales.y(panel.startPoint[1])];
+      const end = [scales.x(panel.endPoint[0]), scales.y(panel.endPoint[1])];
+      svg.appendChild(el('circle', {cx: start[0], cy: start[1], r: 4.8, fill: styles.startFill, stroke: '#777777', 'stroke-width': 1, 'data-panel': panel.id, 'data-marker': 'start'}));
+      svg.appendChild(el('circle', {cx: end[0], cy: end[1], r: 3.6, fill: '#ffffff', stroke: styles.markerStroke, 'stroke-width': 1.2, 'data-panel': panel.id, 'data-marker': 'end'}));
+    }
+
+    function renderOrientationKey(svg, key) {
+      const x = key.anchor.x;
+      const y = key.anchor.y;
+      svg.appendChild(el('line', {x1: x, y1: y, x2: x, y2: y - 35, stroke: '#111111', 'stroke-width': 2, 'marker-end': 'url(#arrow)'}));
+      svg.appendChild(el('line', {x1: x, y1: y, x2: x + 32, y2: y, stroke: '#111111', 'stroke-width': 2, 'marker-end': 'url(#arrow)'}));
+      addText(svg, 'PC 3', x + 8, y - 32, {size: 14, class: 'orientation-label'});
+      addText(svg, 'PC 1', x + 36, y + 4, {size: 14, baseline: 'middle', class: 'orientation-label'});
+    }
+
+    function render(spec) {
+      document.getElementById('title').textContent = spec.id;
+      const frame = document.getElementById('frame');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      const reference = document.getElementById('reference');
+      reference.src = spec.source.path;
+      const surface = document.getElementById('surface');
+      surface.innerHTML = '';
+      const svg = el('svg', {viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, width: spec.canvas.width, height: spec.canvas.height, role: 'img', 'aria-label': spec.id});
+      svg.style.backgroundColor = spec.canvas.background;
+      const defs = el('defs');
+      const marker = el('marker', {id: 'arrow', viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 5, markerHeight: 5, orient: 'auto-start-reverse'});
+      marker.appendChild(el('path', {d: 'M 0 0 L 10 5 L 0 10 z', fill: '#111111'}));
+      defs.appendChild(marker);
+      svg.appendChild(defs);
+      addText(svg, 'B', 3, 22, {size: 22, weight: 700, class: 'figure-label'});
+      addText(svg, 'Condition-aligned trajectories (mean +/- SEM)', 28, 22, {size: 16, weight: 700, class: 'figure-title'});
+      for (const panel of spec.panels) renderPanel(svg, panel, spec.rendering.styles);
+      addText(svg, 'PC 3 (9%)', 8, 176, {size: 15, rotate: -90, anchor: 'middle'});
+      addText(svg, 'PC 1 (23%)', 236, 350, {size: 16, anchor: 'middle'});
+      renderOrientationKey(svg, spec.layoutObjects.find(item => item.id === 'axis-key'));
+      surface.appendChild(svg);
+    }
+
+    async function boot() {
+      const response = await fetch(SPEC_PATH);
+      const spec = await response.json();
+      render(spec);
+      const frame = document.getElementById('frame');
+      document.getElementById('generatedButton').addEventListener('click', () => {
+        frame.classList.remove('show-reference');
+        generatedButton.classList.add('active');
+        referenceButton.classList.remove('active');
+      });
+      document.getElementById('referenceButton').addEventListener('click', () => {
+        frame.classList.add('show-reference');
+        referenceButton.classList.add('active');
+        generatedButton.classList.remove('active');
+      });
+    }
+
+    boot().catch(error => {
+      document.getElementById('surface').textContent = `Unable to load reconstruction JSON: ${error.message}`;
+      console.error(error);
+    });
+  </script>
+</body>
+</html>
+
+exec
+/bin/zsh -lc 'ls -ld outputs outputs/reference-04-motor-manifold-F-make-figure-batch || true' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+drwxr-xr-x  41 alex  staff  1312 Jun  6 15:37 outputs
+drwxr-xr-x   2 alex  staff    64 Jun  6 15:37 outputs/reference-04-motor-manifold-F-make-figure-batch
+
+codex
+I found the repository’s existing batch outputs use a JSON-driven standalone HTML pattern with a clearly separated reference toggle. I’m going to mirror that structure, but implement this panel as semantic heatmap small multiples with canvas-generated matrix cells and SVG/DOM text, ticks, colorbar, and legend fragments.
+apply patch
+patch: completed
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json
+diff --git a/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json b/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..a1de4be053eb852f576a0b9de3f70c1e9725dd93
+--- /dev/null
++++ b/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json
+@@ -0,0 +1,142 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-04-motor-manifold-F",
++  "source": {
++    "path": "../../assets/reference/reference-04-motor-manifold-F-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "First-pass reconstruction inferred visually from the raster crop. Generated visual layers are canvas heatmaps plus SVG text, axes, legend swatches, and colorbar; the source raster is only available in the labeled QA/reference view."
++  },
++  "canvas": {
++    "width": 745,
++    "height": 296,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 13,
++    "color": "#111111",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial", "Helvetica", "Liberation Sans", "Roboto Condensed"],
++    "calibration": {
++      "fontStretch": "condensed",
++      "letterSpacing": 0,
++      "lineHeight": 1.05,
++      "notes": "Approximate compact sans-serif typography from visual inspection; no OCR/font calibration run for this first pass."
++    }
++  },
++  "coordinateSystems": [
++    {
++      "id": "direction-matrix",
++      "type": "matrix",
++      "domain": {
++        "trueDirectionDegrees": [0, 45, 90, 135, 180, 225, 270, 315],
++        "predictedDirectionDegrees": [0, 45, 90, 135, 180, 225, 270, 315]
++      },
++      "cellCount": 8,
++      "directionTickLabels": [
++        {"value": 0, "label": "0"},
++        {"value": 90, "label": "90"},
++        {"value": 180, "label": "180"},
++        {"value": 270, "label": "270"}
++      ],
++      "notes": "Rows encode true movement direction and columns encode predicted movement direction; shared 8 x 8 matrix scale."
++    },
++    {
++      "id": "probability-blue",
++      "type": "colorScale",
++      "domain": [0, 1],
++      "range": ["#f7fbff", "#08306b"],
++      "interpolation": "linearRgb"
++    }
++  ],
++  "layoutObjects": [
++    {"id": "panel-label", "type": "panelLabel", "text": "F", "anchor": {"x": 160, "y": 32}},
++    {"id": "figure-title", "type": "title", "text": "Crosss-validated confusion matrices (movement epoch)", "anchor": {"x": 192, "y": 31}},
++    {
++      "id": "series-legend",
++      "type": "lineLegend",
++      "bbox": {"x": 30, "y": 91, "width": 116, "height": 121},
++      "items": [
++        {"id": "legend-pca10", "label": "PCA (10D)", "color": "#7f32d8", "y": 96},
++        {"id": "legend-pca20", "label": "PCA (20D)", "color": "#006de5", "y": 121},
++        {"id": "legend-pls", "label": "PLS", "color": "#249000", "y": 145},
++        {"id": "legend-lda", "label": "LDA", "color": "#ff5a00", "y": 170},
++        {"id": "legend-ridge", "label": "Ridge", "color": "#e90000", "y": 195}
++      ],
++      "chanceText": {"text": "Chance (12.5%)", "anchor": {"x": 6, "y": 232}}
++    },
++    {
++      "id": "shared-y-axis-title",
++      "type": "axisTitle",
++      "text": "True dir. (deg)",
++      "anchor": {"x": 171, "y": 147},
++      "rotation": -90,
++      "axis": "trueDirectionDegrees"
++    },
++    {
++      "id": "shared-x-axis-title",
++      "type": "axisTitle",
++      "text": "Predicted dir. (deg)",
++      "anchor": {"x": 405, "y": 255},
++      "axis": "predictedDirectionDegrees"
++    },
++    {
++      "id": "probability-colorbar",
++      "type": "colorbar",
++      "colorScale": "probability-blue",
++      "bbox": {"x": 701, "y": 134, "width": 11, "height": 86},
++      "ticks": [
++        {"value": 1, "label": "1.0"},
++        {"value": 0.5, "label": "0.5"},
++        {"value": 0, "label": "0"}
++      ],
++      "title": {"text": "Prob.", "anchor": {"x": 700, "y": 119}}
++    }
++  ],
++  "panels": [
++    {"id": "matrix-pca-10d", "decoder": "PCA (10D)", "title": {"text": "PCA (10D)"}, "plot": {"bbox": {"x": 208, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 209, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.86, "offDiagonalStrength": 0.18, "seed": 4101},
++    {"id": "matrix-pca-20d", "decoder": "PCA (20D)", "title": {"text": "PCA (20D)"}, "plot": {"bbox": {"x": 304, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 305, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.91, "offDiagonalStrength": 0.13, "seed": 4102},
++    {"id": "matrix-pls", "decoder": "PLS", "title": {"text": "PLS"}, "plot": {"bbox": {"x": 400, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 401, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.92, "offDiagonalStrength": 0.10, "seed": 4103},
++    {"id": "matrix-lda", "decoder": "LDA", "title": {"text": "LDA"}, "plot": {"bbox": {"x": 495, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 496, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.94, "offDiagonalStrength": 0.08, "seed": 4104},
++    {"id": "matrix-ridge", "decoder": "Ridge", "title": {"text": "Ridge"}, "plot": {"bbox": {"x": 592, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 593, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.93, "offDiagonalStrength": 0.07, "seed": 4105}
++  ],
++  "data": {
++    "matrixRecipe": {
++      "type": "generatedConfusionMatrix",
++      "size": 8,
++      "description": "Editable recipe creates strong diagonal probabilities with faint adjacent confusions and low-amplitude deterministic texture. Values are visual approximations, not digitized measurements."
++    }
++  },
++  "rendering": {
++    "renderer": "hybrid",
++    "layers": ["legend", "heatmapCells", "matrixAxes", "titles", "sharedAxisTitles", "colorbar"],
++    "styles": {
++      "axisStroke": "#222222",
++      "axisStrokeWidth": 1,
++      "tickStrokeWidth": 1,
++      "matrixBorder": "#222222",
++      "legendStrokeWidth": 3,
++      "heatmapCellGap": 0,
++      "heatmapLow": "#f7fbff",
++      "heatmapHigh": "#08306b"
++    }
++  },
++  "constraints": [
++    {"id": "shared-matrix-scale", "type": "sharedScale", "panels": "all", "coordinateSystem": "direction-matrix"},
++    {"id": "colorbar-uses-heatmap-scale", "type": "colorScaleReference", "colorbar": "probability-colorbar", "scale": "probability-blue"},
++    {"id": "qa-separation", "type": "sourceUsage", "rule": "Source raster appears only in labeled reference view and is not used for generated canvas/SVG layers."}
++  ],
++  "validation": {
++    "expectedMatrixCount": 5,
++    "expectedCellsPerMatrix": 64,
++    "expectedLegendItems": 5,
++    "expectedColorbarTicks": 3
++  },
++  "confidence": [
++    {"target": "matrix values", "confidence": "medium-low", "note": "Heatmap values are generated to match the visible diagonal-dominant pattern; exact probabilities were not digitized."},
++    {"target": "layout", "confidence": "medium", "note": "Panel boxes, colorbar, title, and axis labels were visually estimated from native-resolution crop."},
++    {"target": "typography", "confidence": "medium-low", "note": "The source uses compact publication typography; font metrics are approximate for this first pass."},
++    {"target": "title text", "confidence": "medium", "note": "Title is transcribed as visible in the raster, including the apparent triple-s spelling in Crosss-validated."}
++  ]
++}
+
+diff --git a/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json b/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..a1de4be053eb852f576a0b9de3f70c1e9725dd93
+--- /dev/null
++++ b/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json
+@@ -0,0 +1,142 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-04-motor-manifold-F",
++  "source": {
++    "path": "../../assets/reference/reference-04-motor-manifold-F-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "First-pass reconstruction inferred visually from the raster crop. Generated visual layers are canvas heatmaps plus SVG text, axes, legend swatches, and colorbar; the source raster is only available in the labeled QA/reference view."
++  },
++  "canvas": {
++    "width": 745,
++    "height": 296,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 13,
++    "color": "#111111",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial", "Helvetica", "Liberation Sans", "Roboto Condensed"],
++    "calibration": {
++      "fontStretch": "condensed",
++      "letterSpacing": 0,
++      "lineHeight": 1.05,
++      "notes": "Approximate compact sans-serif typography from visual inspection; no OCR/font calibration run for this first pass."
++    }
++  },
++  "coordinateSystems": [
++    {
++      "id": "direction-matrix",
++      "type": "matrix",
++      "domain": {
++        "trueDirectionDegrees": [0, 45, 90, 135, 180, 225, 270, 315],
++        "predictedDirectionDegrees": [0, 45, 90, 135, 180, 225, 270, 315]
++      },
++      "cellCount": 8,
++      "directionTickLabels": [
++        {"value": 0, "label": "0"},
++        {"value": 90, "label": "90"},
++        {"value": 180, "label": "180"},
++        {"value": 270, "label": "270"}
++      ],
++      "notes": "Rows encode true movement direction and columns encode predicted movement direction; shared 8 x 8 matrix scale."
++    },
++    {
++      "id": "probability-blue",
++      "type": "colorScale",
++      "domain": [0, 1],
++      "range": ["#f7fbff", "#08306b"],
++      "interpolation": "linearRgb"
++    }
++  ],
++  "layoutObjects": [
++    {"id": "panel-label", "type": "panelLabel", "text": "F", "anchor": {"x": 160, "y": 32}},
++    {"id": "figure-title", "type": "title", "text": "Crosss-validated confusion matrices (movement epoch)", "anchor": {"x": 192, "y": 31}},
++    {
++      "id": "series-legend",
++      "type": "lineLegend",
++      "bbox": {"x": 30, "y": 91, "width": 116, "height": 121},
++      "items": [
++        {"id": "legend-pca10", "label": "PCA (10D)", "color": "#7f32d8", "y": 96},
++        {"id": "legend-pca20", "label": "PCA (20D)", "color": "#006de5", "y": 121},
++        {"id": "legend-pls", "label": "PLS", "color": "#249000", "y": 145},
++        {"id": "legend-lda", "label": "LDA", "color": "#ff5a00", "y": 170},
++        {"id": "legend-ridge", "label": "Ridge", "color": "#e90000", "y": 195}
++      ],
++      "chanceText": {"text": "Chance (12.5%)", "anchor": {"x": 6, "y": 232}}
++    },
++    {
++      "id": "shared-y-axis-title",
++      "type": "axisTitle",
++      "text": "True dir. (deg)",
++      "anchor": {"x": 171, "y": 147},
++      "rotation": -90,
++      "axis": "trueDirectionDegrees"
++    },
++    {
++      "id": "shared-x-axis-title",
++      "type": "axisTitle",
++      "text": "Predicted dir. (deg)",
++      "anchor": {"x": 405, "y": 255},
++      "axis": "predictedDirectionDegrees"
++    },
++    {
++      "id": "probability-colorbar",
++      "type": "colorbar",
++      "colorScale": "probability-blue",
++      "bbox": {"x": 701, "y": 134, "width": 11, "height": 86},
++      "ticks": [
++        {"value": 1, "label": "1.0"},
++        {"value": 0.5, "label": "0.5"},
++        {"value": 0, "label": "0"}
++      ],
++      "title": {"text": "Prob.", "anchor": {"x": 700, "y": 119}}
++    }
++  ],
++  "panels": [
++    {"id": "matrix-pca-10d", "decoder": "PCA (10D)", "title": {"text": "PCA (10D)"}, "plot": {"bbox": {"x": 208, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 209, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.86, "offDiagonalStrength": 0.18, "seed": 4101},
++    {"id": "matrix-pca-20d", "decoder": "PCA (20D)", "title": {"text": "PCA (20D)"}, "plot": {"bbox": {"x": 304, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 305, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.91, "offDiagonalStrength": 0.13, "seed": 4102},
++    {"id": "matrix-pls", "decoder": "PLS", "title": {"text": "PLS"}, "plot": {"bbox": {"x": 400, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 401, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.92, "offDiagonalStrength": 0.10, "seed": 4103},
++    {"id": "matrix-lda", "decoder": "LDA", "title": {"text": "LDA"}, "plot": {"bbox": {"x": 495, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 496, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.94, "offDiagonalStrength": 0.08, "seed": 4104},
++    {"id": "matrix-ridge", "decoder": "Ridge", "title": {"text": "Ridge"}, "plot": {"bbox": {"x": 592, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 593, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.93, "offDiagonalStrength": 0.07, "seed": 4105}
++  ],
++  "data": {
++    "matrixRecipe": {
++      "type": "generatedConfusionMatrix",
++      "size": 8,
++      "description": "Editable recipe creates strong diagonal probabilities with faint adjacent confusions and low-amplitude deterministic texture. Values are visual approximations, not digitized measurements."
++    }
++  },
++  "rendering": {
++    "renderer": "hybrid",
++    "layers": ["legend", "heatmapCells", "matrixAxes", "titles", "sharedAxisTitles", "colorbar"],
++    "styles": {
++      "axisStroke": "#222222",
++      "axisStrokeWidth": 1,
++      "tickStrokeWidth": 1,
++      "matrixBorder": "#222222",
++      "legendStrokeWidth": 3,
++      "heatmapCellGap": 0,
++      "heatmapLow": "#f7fbff",
++      "heatmapHigh": "#08306b"
++    }
++  },
++  "constraints": [
++    {"id": "shared-matrix-scale", "type": "sharedScale", "panels": "all", "coordinateSystem": "direction-matrix"},
++    {"id": "colorbar-uses-heatmap-scale", "type": "colorScaleReference", "colorbar": "probability-colorbar", "scale": "probability-blue"},
++    {"id": "qa-separation", "type": "sourceUsage", "rule": "Source raster appears only in labeled reference view and is not used for generated canvas/SVG layers."}
++  ],
++  "validation": {
++    "expectedMatrixCount": 5,
++    "expectedCellsPerMatrix": 64,
++    "expectedLegendItems": 5,
++    "expectedColorbarTicks": 3
++  },
++  "confidence": [
++    {"target": "matrix values", "confidence": "medium-low", "note": "Heatmap values are generated to match the visible diagonal-dominant pattern; exact probabilities were not digitized."},
++    {"target": "layout", "confidence": "medium", "note": "Panel boxes, colorbar, title, and axis labels were visually estimated from native-resolution crop."},
++    {"target": "typography", "confidence": "medium-low", "note": "The source uses compact publication typography; font metrics are approximate for this first pass."},
++    {"target": "title text", "confidence": "medium", "note": "Title is transcribed as visible in the raster, including the apparent triple-s spelling in Crosss-validated."}
++  ]
++}
+
+codex
+The semantic JSON is in place with editable matrix panels, shared direction ticks, legend items, and a colorbar. Next I’m adding the HTML renderer so those JSON objects generate the figure without any raster-backed drawing.
+apply patch
+patch: completed
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html
+diff --git a/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html b/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..092c54b469a8ff175d1124661dfcab5c70c1d36a
+--- /dev/null
++++ b/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html
+@@ -0,0 +1,258 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-04-motor-manifold-F reconstruction</title>
++  <style>
++    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
++    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #d0d0d0; }
++    h1 { margin: 0; font-size: 15px; font-weight: 700; }
++    .note { margin-top: 3px; font-size: 12px; color: #555555; }
++    .toggle { display: inline-flex; overflow: hidden; border: 1px solid #999999; border-radius: 4px; }
++    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
++    .toggle button.active { background: #111111; color: #ffffff; }
++    main { min-height: calc(100vh - 50px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
++    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
++    .surface, .reference-wrap { position: absolute; inset: 0; }
++    .heatmap-layer, svg { position: absolute; inset: 0; }
++    .reference-wrap { display: none; }
++    .reference-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
++    .qa-label { position: absolute; left: 8px; bottom: 8px; padding: 3px 6px; border: 1px solid #777777; background: rgba(255,255,255,0.92); font-size: 11px; font-weight: 700; }
++    .show-reference .surface { display: none; }
++    .show-reference .reference-wrap { display: block; }
++    svg { overflow: visible; }
++    text { paint-order: stroke; stroke: #ffffff; stroke-width: 2px; stroke-linejoin: round; }
++    .panel-label, .figure-title, .matrix-title, .axis-title { stroke-width: 2.4px; }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1 id="title">reference-04-motor-manifold-F</h1>
++      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">Reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <div id="referenceWrap" class="reference-wrap">
++        <img id="reference" alt="QA reference source image">
++        <div class="qa-label">QA reference only: source raster</div>
++      </div>
++    </div>
++  </main>
++  <script>
++    const SVG_NS = 'http://www.w3.org/2000/svg';
++    const SPEC_PATH = 'reference-04-motor-manifold-F.json';
++
++    function el(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
++      for (const [key, value] of Object.entries(attrs)) {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      }
++      return node;
++    }
++
++    function addText(parent, text, x, y, attrs = {}) {
++      const node = el('text', {
++        x, y,
++        fill: attrs.fill || '#111111',
++        'font-size': attrs.size || 13,
++        'font-weight': attrs.weight || 400,
++        'font-family': attrs.family || 'Arial, Helvetica, sans-serif',
++        'text-anchor': attrs.anchor || 'start',
++        'dominant-baseline': attrs.baseline || 'auto',
++        class: attrs.class || ''
++      });
++      if (attrs.rotate) node.setAttribute('transform', `rotate(${attrs.rotate} ${x} ${y})`);
++      node.textContent = text;
++      parent.appendChild(node);
++      return node;
++    }
++
++    function mulberry32(seed) {
++      return function random() {
++        let t = seed += 0x6D2B79F5;
++        t = Math.imul(t ^ t >>> 15, t | 1);
++        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
++        return ((t ^ t >>> 14) >>> 0) / 4294967296;
++      };
++    }
++
++    function clamp(value, lo, hi) {
++      return Math.max(lo, Math.min(hi, value));
++    }
++
++    function blue(value) {
++      const v = clamp(value, 0, 1);
++      const stops = [
++        [0.00, [247, 251, 255]],
++        [0.18, [222, 235, 247]],
++        [0.36, [198, 219, 239]],
++        [0.56, [107, 174, 214]],
++        [0.76, [33, 113, 181]],
++        [1.00, [8, 48, 107]]
++      ];
++      for (let i = 0; i < stops.length - 1; i++) {
++        const a = stops[i];
++        const b = stops[i + 1];
++        if (v >= a[0] && v <= b[0]) {
++          const t = (v - a[0]) / (b[0] - a[0]);
++          const rgb = a[1].map((channel, j) => Math.round(channel + (b[1][j] - channel) * t));
++          return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
++        }
++      }
++      return 'rgb(8, 48, 107)';
++    }
++
++    function matrixValues(panel) {
++      const size = 8;
++      const random = mulberry32(panel.seed);
++      const values = [];
++      for (let r = 0; r < size; r++) {
++        const row = [];
++        for (let c = 0; c < size; c++) {
++          const distance = Math.min(Math.abs(r - c), size - Math.abs(r - c));
++          let value = panel.offDiagonalStrength * Math.exp(-distance * 0.9) + random() * 0.045;
++          if (distance === 0) value = panel.diagonalStrength + (random() - 0.5) * 0.11;
++          if (distance === 1) value += 0.09 + random() * 0.04;
++          row.push(clamp(value, 0, 1));
++        }
++        values.push(row);
++      }
++      return values;
++    }
++
++    function renderHeatmaps(spec, canvas) {
++      const ctx = canvas.getContext('2d');
++      ctx.clearRect(0, 0, canvas.width, canvas.height);
++      for (const panel of spec.panels) {
++        const box = panel.plot.matrixBbox;
++        const values = matrixValues(panel);
++        const cellW = box.width / 8;
++        const cellH = box.height / 8;
++        for (let r = 0; r < 8; r++) {
++          for (let c = 0; c < 8; c++) {
++            ctx.fillStyle = blue(values[r][c]);
++            ctx.fillRect(box.x + c * cellW, box.y + r * cellH, Math.ceil(cellW) + 0.3, Math.ceil(cellH) + 0.3);
++          }
++        }
++      }
++    }
++
++    function renderLegend(svg, spec) {
++      const legend = spec.layoutObjects.find(item => item.id === 'series-legend');
++      for (const item of legend.items) {
++        svg.appendChild(el('line', {
++          x1: legend.bbox.x, y1: item.y, x2: legend.bbox.x + 22, y2: item.y,
++          stroke: item.color, 'stroke-width': spec.rendering.styles.legendStrokeWidth,
++          'data-legend-item': item.id
++        }));
++        addText(svg, item.label, legend.bbox.x + 36, item.y + 5, {size: 14});
++      }
++      addText(svg, legend.chanceText.text, legend.chanceText.anchor.x, legend.chanceText.anchor.y, {size: 14});
++    }
++
++    function renderMatrixAxes(svg, spec, panel, panelIndex) {
++      const outer = panel.plot.bbox;
++      const matrix = panel.plot.matrixBbox;
++      svg.appendChild(el('rect', {
++        x: outer.x, y: outer.y, width: outer.width, height: outer.height,
++        fill: 'none', stroke: spec.rendering.styles.matrixBorder, 'stroke-width': 1,
++        'data-panel': panel.id, 'data-role': 'matrix-frame'
++      }));
++      addText(svg, panel.title.text, outer.x + outer.width / 2, outer.y - 9, {size: 14, anchor: 'middle', class: 'matrix-title'});
++      const tickValues = [0, 90, 180, 270];
++      for (const value of tickValues) {
++        const center = value / 315 * 7 + 0.5;
++        const x = matrix.x + center * matrix.width / 8;
++        const y = matrix.y + center * matrix.height / 8;
++        if (panelIndex < 2) {
++          svg.appendChild(el('line', {x1: x, y1: outer.y + outer.height, x2: x, y2: outer.y + outer.height + 4, stroke: '#222222', 'stroke-width': 1, 'data-axis': 'predictedDirectionDegrees', 'data-value': value}));
++          addText(svg, String(value), x, outer.y + outer.height + 18, {size: 13, anchor: 'middle'});
++        }
++        if (panelIndex === 0) {
++          svg.appendChild(el('line', {x1: outer.x - 4, y1: y, x2: outer.x, y2: y, stroke: '#222222', 'stroke-width': 1, 'data-axis': 'trueDirectionDegrees', 'data-value': value}));
++          addText(svg, String(value), outer.x - 10, y + 5, {size: 13, anchor: 'end'});
++        }
++      }
++    }
++
++    function renderColorbar(svg, spec) {
++      const bar = spec.layoutObjects.find(item => item.id === 'probability-colorbar');
++      const defs = svg.querySelector('defs');
++      const gradient = el('linearGradient', {id: 'probabilityGradient', x1: '0%', y1: '100%', x2: '0%', y2: '0%'});
++      gradient.appendChild(el('stop', {offset: '0%', 'stop-color': blue(0)}));
++      gradient.appendChild(el('stop', {offset: '50%', 'stop-color': blue(0.5)}));
++      gradient.appendChild(el('stop', {offset: '100%', 'stop-color': blue(1)}));
++      defs.appendChild(gradient);
++      addText(svg, bar.title.text, bar.title.anchor.x, bar.title.anchor.y, {size: 13});
++      svg.appendChild(el('rect', {x: bar.bbox.x, y: bar.bbox.y, width: bar.bbox.width, height: bar.bbox.height, fill: 'url(#probabilityGradient)', stroke: '#777777', 'stroke-width': 0.6}));
++      for (const tick of bar.ticks) {
++        const y = bar.bbox.y + (1 - tick.value) * bar.bbox.height;
++        svg.appendChild(el('line', {x1: bar.bbox.x + bar.bbox.width, y1: y, x2: bar.bbox.x + bar.bbox.width + 4, y2: y, stroke: '#333333', 'stroke-width': 0.8, 'data-colorbar-tick': tick.value}));
++        addText(svg, tick.label, bar.bbox.x + bar.bbox.width + 9, y + 4, {size: 12});
++      }
++    }
++
++    function render(spec) {
++      document.getElementById('title').textContent = spec.id;
++      const frame = document.getElementById('frame');
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      document.getElementById('reference').src = spec.source.path;
++
++      const surface = document.getElementById('surface');
++      surface.innerHTML = '';
++      const canvas = document.createElement('canvas');
++      canvas.className = 'heatmap-layer';
++      canvas.width = spec.canvas.width;
++      canvas.height = spec.canvas.height;
++      surface.appendChild(canvas);
++      renderHeatmaps(spec, canvas);
++
++      const svg = el('svg', {viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, width: spec.canvas.width, height: spec.canvas.height, role: 'img', 'aria-label': spec.id});
++      svg.style.backgroundColor = 'transparent';
++      svg.appendChild(el('defs'));
++      renderLegend(svg, spec);
++      addText(svg, 'F', 160, 32, {size: 22, weight: 700, class: 'panel-label'});
++      addText(svg, 'Crosss-validated confusion matrices', 192, 32, {size: 17, weight: 700, class: 'figure-title'});
++      addText(svg, '(movement epoch)', 459, 32, {size: 15, class: 'figure-title'});
++      spec.panels.forEach((panel, index) => renderMatrixAxes(svg, spec, panel, index));
++      addText(svg, 'True dir. (deg)', 174, 147, {size: 15, rotate: -90, anchor: 'middle', class: 'axis-title'});
++      addText(svg, 'Predicted dir. (deg)', 405, 258, {size: 16, anchor: 'middle', class: 'axis-title'});
++      renderColorbar(svg, spec);
++      surface.appendChild(svg);
++    }
++
++    async function boot() {
++      const response = await fetch(SPEC_PATH);
++      const spec = await response.json();
++      render(spec);
++      const frame = document.getElementById('frame');
++      const generatedButton = document.getElementById('generatedButton');
++      const referenceButton = document.getElementById('referenceButton');
++      generatedButton.addEventListener('click', () => {
++        frame.classList.remove('show-reference');
++        generatedButton.classList.add('active');
++        referenceButton.classList.remove('active');
++      });
++      referenceButton.addEventListener('click', () => {
++        frame.classList.add('show-reference');
++        referenceButton.classList.add('active');
++        generatedButton.classList.remove('active');
++      });
++    }
++
++    boot().catch(error => {
++      document.getElementById('surface').textContent = `Unable to load reconstruction JSON: ${error.message}`;
++      console.error(error);
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json b/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..a1de4be053eb852f576a0b9de3f70c1e9725dd93
+--- /dev/null
++++ b/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json
+@@ -0,0 +1,142 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-04-motor-manifold-F",
++  "source": {
++    "path": "../../assets/reference/reference-04-motor-manifold-F-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "First-pass reconstruction inferred visually from the raster crop. Generated visual layers are canvas heatmaps plus SVG text, axes, legend swatches, and colorbar; the source raster is only available in the labeled QA/reference view."
++  },
++  "canvas": {
++    "width": 745,
++    "height": 296,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 13,
++    "color": "#111111",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial", "Helvetica", "Liberation Sans", "Roboto Condensed"],
++    "calibration": {
++      "fontStretch": "condensed",
++      "letterSpacing": 0,
++      "lineHeight": 1.05,
++      "notes": "Approximate compact sans-serif typography from visual inspection; no OCR/font calibration run for this first pass."
++    }
++  },
++  "coordinateSystems": [
++    {
++      "id": "direction-matrix",
++      "type": "matrix",
++      "domain": {
++        "trueDirectionDegrees": [0, 45, 90, 135, 180, 225, 270, 315],
++        "predictedDirectionDegrees": [0, 45, 90, 135, 180, 225, 270, 315]
++      },
++      "cellCount": 8,
++      "directionTickLabels": [
++        {"value": 0, "label": "0"},
++        {"value": 90, "label": "90"},
++        {"value": 180, "label": "180"},
++        {"value": 270, "label": "270"}
++      ],
++      "notes": "Rows encode true movement direction and columns encode predicted movement direction; shared 8 x 8 matrix scale."
++    },
++    {
++      "id": "probability-blue",
++      "type": "colorScale",
++      "domain": [0, 1],
++      "range": ["#f7fbff", "#08306b"],
++      "interpolation": "linearRgb"
++    }
++  ],
++  "layoutObjects": [
++    {"id": "panel-label", "type": "panelLabel", "text": "F", "anchor": {"x": 160, "y": 32}},
++    {"id": "figure-title", "type": "title", "text": "Crosss-validated confusion matrices (movement epoch)", "anchor": {"x": 192, "y": 31}},
++    {
++      "id": "series-legend",
++      "type": "lineLegend",
++      "bbox": {"x": 30, "y": 91, "width": 116, "height": 121},
++      "items": [
++        {"id": "legend-pca10", "label": "PCA (10D)", "color": "#7f32d8", "y": 96},
++        {"id": "legend-pca20", "label": "PCA (20D)", "color": "#006de5", "y": 121},
++        {"id": "legend-pls", "label": "PLS", "color": "#249000", "y": 145},
++        {"id": "legend-lda", "label": "LDA", "color": "#ff5a00", "y": 170},
++        {"id": "legend-ridge", "label": "Ridge", "color": "#e90000", "y": 195}
++      ],
++      "chanceText": {"text": "Chance (12.5%)", "anchor": {"x": 6, "y": 232}}
++    },
++    {
++      "id": "shared-y-axis-title",
++      "type": "axisTitle",
++      "text": "True dir. (deg)",
++      "anchor": {"x": 171, "y": 147},
++      "rotation": -90,
++      "axis": "trueDirectionDegrees"
++    },
++    {
++      "id": "shared-x-axis-title",
++      "type": "axisTitle",
++      "text": "Predicted dir. (deg)",
++      "anchor": {"x": 405, "y": 255},
++      "axis": "predictedDirectionDegrees"
++    },
++    {
++      "id": "probability-colorbar",
++      "type": "colorbar",
++      "colorScale": "probability-blue",
++      "bbox": {"x": 701, "y": 134, "width": 11, "height": 86},
++      "ticks": [
++        {"value": 1, "label": "1.0"},
++        {"value": 0.5, "label": "0.5"},
++        {"value": 0, "label": "0"}
++      ],
++      "title": {"text": "Prob.", "anchor": {"x": 700, "y": 119}}
++    }
++  ],
++  "panels": [
++    {"id": "matrix-pca-10d", "decoder": "PCA (10D)", "title": {"text": "PCA (10D)"}, "plot": {"bbox": {"x": 208, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 209, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.86, "offDiagonalStrength": 0.18, "seed": 4101},
++    {"id": "matrix-pca-20d", "decoder": "PCA (20D)", "title": {"text": "PCA (20D)"}, "plot": {"bbox": {"x": 304, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 305, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.91, "offDiagonalStrength": 0.13, "seed": 4102},
++    {"id": "matrix-pls", "decoder": "PLS", "title": {"text": "PLS"}, "plot": {"bbox": {"x": 400, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 401, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.92, "offDiagonalStrength": 0.10, "seed": 4103},
++    {"id": "matrix-lda", "decoder": "LDA", "title": {"text": "LDA"}, "plot": {"bbox": {"x": 495, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 496, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.94, "offDiagonalStrength": 0.08, "seed": 4104},
++    {"id": "matrix-ridge", "decoder": "Ridge", "title": {"text": "Ridge"}, "plot": {"bbox": {"x": 592, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 593, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.93, "offDiagonalStrength": 0.07, "seed": 4105}
++  ],
++  "data": {
++    "matrixRecipe": {
++      "type": "generatedConfusionMatrix",
++      "size": 8,
++      "description": "Editable recipe creates strong diagonal probabilities with faint adjacent confusions and low-amplitude deterministic texture. Values are visual approximations, not digitized measurements."
++    }
++  },
++  "rendering": {
++    "renderer": "hybrid",
++    "layers": ["legend", "heatmapCells", "matrixAxes", "titles", "sharedAxisTitles", "colorbar"],
++    "styles": {
++      "axisStroke": "#222222",
++      "axisStrokeWidth": 1,
++      "tickStrokeWidth": 1,
++      "matrixBorder": "#222222",
++      "legendStrokeWidth": 3,
++      "heatmapCellGap": 0,
++      "heatmapLow": "#f7fbff",
++      "heatmapHigh": "#08306b"
++    }
++  },
++  "constraints": [
++    {"id": "shared-matrix-scale", "type": "sharedScale", "panels": "all", "coordinateSystem": "direction-matrix"},
++    {"id": "colorbar-uses-heatmap-scale", "type": "colorScaleReference", "colorbar": "probability-colorbar", "scale": "probability-blue"},
++    {"id": "qa-separation", "type": "sourceUsage", "rule": "Source raster appears only in labeled reference view and is not used for generated canvas/SVG layers."}
++  ],
++  "validation": {
++    "expectedMatrixCount": 5,
++    "expectedCellsPerMatrix": 64,
++    "expectedLegendItems": 5,
++    "expectedColorbarTicks": 3
++  },
++  "confidence": [
++    {"target": "matrix values", "confidence": "medium-low", "note": "Heatmap values are generated to match the visible diagonal-dominant pattern; exact probabilities were not digitized."},
++    {"target": "layout", "confidence": "medium", "note": "Panel boxes, colorbar, title, and axis labels were visually estimated from native-resolution crop."},
++    {"target": "typography", "confidence": "medium-low", "note": "The source uses compact publication typography; font metrics are approximate for this first pass."},
++    {"target": "title text", "confidence": "medium", "note": "Title is transcribed as visible in the raster, including the apparent triple-s spelling in Crosss-validated."}
++  ]
++}
+
+diff --git a/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html b/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..092c54b469a8ff175d1124661dfcab5c70c1d36a
+--- /dev/null
++++ b/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html
+@@ -0,0 +1,258 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-04-motor-manifold-F reconstruction</title>
++  <style>
++    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
++    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #d0d0d0; }
++    h1 { margin: 0; font-size: 15px; font-weight: 700; }
++    .note { margin-top: 3px; font-size: 12px; color: #555555; }
++    .toggle { display: inline-flex; overflow: hidden; border: 1px solid #999999; border-radius: 4px; }
++    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
++    .toggle button.active { background: #111111; color: #ffffff; }
++    main { min-height: calc(100vh - 50px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
++    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
++    .surface, .reference-wrap { position: absolute; inset: 0; }
++    .heatmap-layer, svg { position: absolute; inset: 0; }
++    .reference-wrap { display: none; }
++    .reference-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
++    .qa-label { position: absolute; left: 8px; bottom: 8px; padding: 3px 6px; border: 1px solid #777777; background: rgba(255,255,255,0.92); font-size: 11px; font-weight: 700; }
++    .show-reference .surface { display: none; }
++    .show-reference .reference-wrap { display: block; }
++    svg { overflow: visible; }
++    text { paint-order: stroke; stroke: #ffffff; stroke-width: 2px; stroke-linejoin: round; }
++    .panel-label, .figure-title, .matrix-title, .axis-title { stroke-width: 2.4px; }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1 id="title">reference-04-motor-manifold-F</h1>
++      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">Reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <div id="referenceWrap" class="reference-wrap">
++        <img id="reference" alt="QA reference source image">
++        <div class="qa-label">QA reference only: source raster</div>
++      </div>
++    </div>
++  </main>
++  <script>
++    const SVG_NS = 'http://www.w3.org/2000/svg';
++    const SPEC_PATH = 'reference-04-motor-manifold-F.json';
++
++    function el(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
++      for (const [key, value] of Object.entries(attrs)) {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      }
++      return node;
++    }
++
++    function addText(parent, text, x, y, attrs = {}) {
++      const node = el('text', {
++        x, y,
++        fill: attrs.fill || '#111111',
++        'font-size': attrs.size || 13,
++        'font-weight': attrs.weight || 400,
++        'font-family': attrs.family || 'Arial, Helvetica, sans-serif',
++        'text-anchor': attrs.anchor || 'start',
++        'dominant-baseline': attrs.baseline || 'auto',
++        class: attrs.class || ''
++      });
++      if (attrs.rotate) node.setAttribute('transform', `rotate(${attrs.rotate} ${x} ${y})`);
++      node.textContent = text;
++      parent.appendChild(node);
++      return node;
++    }
++
++    function mulberry32(seed) {
++      return function random() {
++        let t = seed += 0x6D2B79F5;
++        t = Math.imul(t ^ t >>> 15, t | 1);
++        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
++        return ((t ^ t >>> 14) >>> 0) / 4294967296;
++      };
++    }
++
++    function clamp(value, lo, hi) {
++      return Math.max(lo, Math.min(hi, value));
++    }
++
++    function blue(value) {
++      const v = clamp(value, 0, 1);
++      const stops = [
++        [0.00, [247, 251, 255]],
++        [0.18, [222, 235, 247]],
++        [0.36, [198, 219, 239]],
++        [0.56, [107, 174, 214]],
++        [0.76, [33, 113, 181]],
++        [1.00, [8, 48, 107]]
++      ];
++      for (let i = 0; i < stops.length - 1; i++) {
++        const a = stops[i];
++        const b = stops[i + 1];
++        if (v >= a[0] && v <= b[0]) {
++          const t = (v - a[0]) / (b[0] - a[0]);
++          const rgb = a[1].map((channel, j) => Math.round(channel + (b[1][j] - channel) * t));
++          return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
++        }
++      }
++      return 'rgb(8, 48, 107)';
++    }
++
++    function matrixValues(panel) {
++      const size = 8;
++      const random = mulberry32(panel.seed);
++      const values = [];
++      for (let r = 0; r < size; r++) {
++        const row = [];
++        for (let c = 0; c < size; c++) {
++          const distance = Math.min(Math.abs(r - c), size - Math.abs(r - c));
++          let value = panel.offDiagonalStrength * Math.exp(-distance * 0.9) + random() * 0.045;
++          if (distance === 0) value = panel.diagonalStrength + (random() - 0.5) * 0.11;
++          if (distance === 1) value += 0.09 + random() * 0.04;
++          row.push(clamp(value, 0, 1));
++        }
++        values.push(row);
++      }
++      return values;
++    }
++
++    function renderHeatmaps(spec, canvas) {
++      const ctx = canvas.getContext('2d');
++      ctx.clearRect(0, 0, canvas.width, canvas.height);
++      for (const panel of spec.panels) {
++        const box = panel.plot.matrixBbox;
++        const values = matrixValues(panel);
++        const cellW = box.width / 8;
++        const cellH = box.height / 8;
++        for (let r = 0; r < 8; r++) {
++          for (let c = 0; c < 8; c++) {
++            ctx.fillStyle = blue(values[r][c]);
++            ctx.fillRect(box.x + c * cellW, box.y + r * cellH, Math.ceil(cellW) + 0.3, Math.ceil(cellH) + 0.3);
++          }
++        }
++      }
++    }
++
++    function renderLegend(svg, spec) {
++      const legend = spec.layoutObjects.find(item => item.id === 'series-legend');
++      for (const item of legend.items) {
++        svg.appendChild(el('line', {
++          x1: legend.bbox.x, y1: item.y, x2: legend.bbox.x + 22, y2: item.y,
++          stroke: item.color, 'stroke-width': spec.rendering.styles.legendStrokeWidth,
++          'data-legend-item': item.id
++        }));
++        addText(svg, item.label, legend.bbox.x + 36, item.y + 5, {size: 14});
++      }
++      addText(svg, legend.chanceText.text, legend.chanceText.anchor.x, legend.chanceText.anchor.y, {size: 14});
++    }
++
++    function renderMatrixAxes(svg, spec, panel, panelIndex) {
++      const outer = panel.plot.bbox;
++      const matrix = panel.plot.matrixBbox;
++      svg.appendChild(el('rect', {
++        x: outer.x, y: outer.y, width: outer.width, height: outer.height,
++        fill: 'none', stroke: spec.rendering.styles.matrixBorder, 'stroke-width': 1,
++        'data-panel': panel.id, 'data-role': 'matrix-frame'
++      }));
++      addText(svg, panel.title.text, outer.x + outer.width / 2, outer.y - 9, {size: 14, anchor: 'middle', class: 'matrix-title'});
++      const tickValues = [0, 90, 180, 270];
++      for (const value of tickValues) {
++        const center = value / 315 * 7 + 0.5;
++        const x = matrix.x + center * matrix.width / 8;
++        const y = matrix.y + center * matrix.height / 8;
++        if (panelIndex < 2) {
++          svg.appendChild(el('line', {x1: x, y1: outer.y + outer.height, x2: x, y2: outer.y + outer.height + 4, stroke: '#222222', 'stroke-width': 1, 'data-axis': 'predictedDirectionDegrees', 'data-value': value}));
++          addText(svg, String(value), x, outer.y + outer.height + 18, {size: 13, anchor: 'middle'});
++        }
++        if (panelIndex === 0) {
++          svg.appendChild(el('line', {x1: outer.x - 4, y1: y, x2: outer.x, y2: y, stroke: '#222222', 'stroke-width': 1, 'data-axis': 'trueDirectionDegrees', 'data-value': value}));
++          addText(svg, String(value), outer.x - 10, y + 5, {size: 13, anchor: 'end'});
++        }
++      }
++    }
++
++    function renderColorbar(svg, spec) {
++      const bar = spec.layoutObjects.find(item => item.id === 'probability-colorbar');
++      const defs = svg.querySelector('defs');
++      const gradient = el('linearGradient', {id: 'probabilityGradient', x1: '0%', y1: '100%', x2: '0%', y2: '0%'});
++      gradient.appendChild(el('stop', {offset: '0%', 'stop-color': blue(0)}));
++      gradient.appendChild(el('stop', {offset: '50%', 'stop-color': blue(0.5)}));
++      gradient.appendChild(el('stop', {offset: '100%', 'stop-color': blue(1)}));
++      defs.appendChild(gradient);
++      addText(svg, bar.title.text, bar.title.anchor.x, bar.title.anchor.y, {size: 13});
++      svg.appendChild(el('rect', {x: bar.bbox.x, y: bar.bbox.y, width: bar.bbox.width, height: bar.bbox.height, fill: 'url(#probabilityGradient)', stroke: '#777777', 'stroke-width': 0.6}));
++      for (const tick of bar.ticks) {
++        const y = bar.bbox.y + (1 - tick.value) * bar.bbox.height;
++        svg.appendChild(el('line', {x1: bar.bbox.x + bar.bbox.width, y1: y, x2: bar.bbox.x + bar.bbox.width + 4, y2: y, stroke: '#333333', 'stroke-width': 0.8, 'data-colorbar-tick': tick.value}));
++        addText(svg, tick.label, bar.bbox.x + bar.bbox.width + 9, y + 4, {size: 12});
++      }
++    }
++
++    function render(spec) {
++      document.getElementById('title').textContent = spec.id;
++      const frame = document.getElementById('frame');
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      document.getElementById('reference').src = spec.source.path;
++
++      const surface = document.getElementById('surface');
++      surface.innerHTML = '';
++      const canvas = document.createElement('canvas');
++      canvas.className = 'heatmap-layer';
++      canvas.width = spec.canvas.width;
++      canvas.height = spec.canvas.height;
++      surface.appendChild(canvas);
++      renderHeatmaps(spec, canvas);
++
++      const svg = el('svg', {viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, width: spec.canvas.width, height: spec.canvas.height, role: 'img', 'aria-label': spec.id});
++      svg.style.backgroundColor = 'transparent';
++      svg.appendChild(el('defs'));
++      renderLegend(svg, spec);
++      addText(svg, 'F', 160, 32, {size: 22, weight: 700, class: 'panel-label'});
++      addText(svg, 'Crosss-validated confusion matrices', 192, 32, {size: 17, weight: 700, class: 'figure-title'});
++      addText(svg, '(movement epoch)', 459, 32, {size: 15, class: 'figure-title'});
++      spec.panels.forEach((panel, index) => renderMatrixAxes(svg, spec, panel, index));
++      addText(svg, 'True dir. (deg)', 174, 147, {size: 15, rotate: -90, anchor: 'middle', class: 'axis-title'});
++      addText(svg, 'Predicted dir. (deg)', 405, 258, {size: 16, anchor: 'middle', class: 'axis-title'});
++      renderColorbar(svg, spec);
++      surface.appendChild(svg);
++    }
++
++    async function boot() {
++      const response = await fetch(SPEC_PATH);
++      const spec = await response.json();
++      render(spec);
++      const frame = document.getElementById('frame');
++      const generatedButton = document.getElementById('generatedButton');
++      const referenceButton = document.getElementById('referenceButton');
++      generatedButton.addEventListener('click', () => {
++        frame.classList.remove('show-reference');
++        generatedButton.classList.add('active');
++        referenceButton.classList.remove('active');
++      });
++      referenceButton.addEventListener('click', () => {
++        frame.classList.add('show-reference');
++        referenceButton.classList.add('active');
++        generatedButton.classList.remove('active');
++      });
++    }
++
++    boot().catch(error => {
++      document.getElementById('surface').textContent = `Unable to load reconstruction JSON: ${error.message}`;
++      console.error(error);
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json b/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..a1de4be053eb852f576a0b9de3f70c1e9725dd93
+--- /dev/null
++++ b/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json
+@@ -0,0 +1,142 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-04-motor-manifold-F",
++  "source": {
++    "path": "../../assets/reference/reference-04-motor-manifold-F-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "First-pass reconstruction inferred visually from the raster crop. Generated visual layers are canvas heatmaps plus SVG text, axes, legend swatches, and colorbar; the source raster is only available in the labeled QA/reference view."
++  },
++  "canvas": {
++    "width": 745,
++    "height": 296,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 13,
++    "color": "#111111",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial", "Helvetica", "Liberation Sans", "Roboto Condensed"],
++    "calibration": {
++      "fontStretch": "condensed",
++      "letterSpacing": 0,
++      "lineHeight": 1.05,
++      "notes": "Approximate compact sans-serif typography from visual inspection; no OCR/font calibration run for this first pass."
++    }
++  },
++  "coordinateSystems": [
++    {
++      "id": "direction-matrix",
++      "type": "matrix",
++      "domain": {
++        "trueDirectionDegrees": [0, 45, 90, 135, 180, 225, 270, 315],
++        "predictedDirectionDegrees": [0, 45, 90, 135, 180, 225, 270, 315]
++      },
++      "cellCount": 8,
++      "directionTickLabels": [
++        {"value": 0, "label": "0"},
++        {"value": 90, "label": "90"},
++        {"value": 180, "label": "180"},
++        {"value": 270, "label": "270"}
++      ],
++      "notes": "Rows encode true movement direction and columns encode predicted movement direction; shared 8 x 8 matrix scale."
++    },
++    {
++      "id": "probability-blue",
++      "type": "colorScale",
++      "domain": [0, 1],
++      "range": ["#f7fbff", "#08306b"],
++      "interpolation": "linearRgb"
++    }
++  ],
++  "layoutObjects": [
++    {"id": "panel-label", "type": "panelLabel", "text": "F", "anchor": {"x": 160, "y": 32}},
++    {"id": "figure-title", "type": "title", "text": "Crosss-validated confusion matrices (movement epoch)", "anchor": {"x": 192, "y": 31}},
++    {
++      "id": "series-legend",
++      "type": "lineLegend",
++      "bbox": {"x": 30, "y": 91, "width": 116, "height": 121},
++      "items": [
++        {"id": "legend-pca10", "label": "PCA (10D)", "color": "#7f32d8", "y": 96},
++        {"id": "legend-pca20", "label": "PCA (20D)", "color": "#006de5", "y": 121},
++        {"id": "legend-pls", "label": "PLS", "color": "#249000", "y": 145},
++        {"id": "legend-lda", "label": "LDA", "color": "#ff5a00", "y": 170},
++        {"id": "legend-ridge", "label": "Ridge", "color": "#e90000", "y": 195}
++      ],
++      "chanceText": {"text": "Chance (12.5%)", "anchor": {"x": 6, "y": 232}}
++    },
++    {
++      "id": "shared-y-axis-title",
++      "type": "axisTitle",
++      "text": "True dir. (deg)",
++      "anchor": {"x": 171, "y": 147},
++      "rotation": -90,
++      "axis": "trueDirectionDegrees"
++    },
++    {
++      "id": "shared-x-axis-title",
++      "type": "axisTitle",
++      "text": "Predicted dir. (deg)",
++      "anchor": {"x": 405, "y": 255},
++      "axis": "predictedDirectionDegrees"
++    },
++    {
++      "id": "probability-colorbar",
++      "type": "colorbar",
++      "colorScale": "probability-blue",
++      "bbox": {"x": 701, "y": 134, "width": 11, "height": 86},
++      "ticks": [
++        {"value": 1, "label": "1.0"},
++        {"value": 0.5, "label": "0.5"},
++        {"value": 0, "label": "0"}
++      ],
++      "title": {"text": "Prob.", "anchor": {"x": 700, "y": 119}}
++    }
++  ],
++  "panels": [
++    {"id": "matrix-pca-10d", "decoder": "PCA (10D)", "title": {"text": "PCA (10D)"}, "plot": {"bbox": {"x": 208, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 209, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.86, "offDiagonalStrength": 0.18, "seed": 4101},
++    {"id": "matrix-pca-20d", "decoder": "PCA (20D)", "title": {"text": "PCA (20D)"}, "plot": {"bbox": {"x": 304, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 305, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.91, "offDiagonalStrength": 0.13, "seed": 4102},
++    {"id": "matrix-pls", "decoder": "PLS", "title": {"text": "PLS"}, "plot": {"bbox": {"x": 400, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 401, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.92, "offDiagonalStrength": 0.10, "seed": 4103},
++    {"id": "matrix-lda", "decoder": "LDA", "title": {"text": "LDA"}, "plot": {"bbox": {"x": 495, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 496, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.94, "offDiagonalStrength": 0.08, "seed": 4104},
++    {"id": "matrix-ridge", "decoder": "Ridge", "title": {"text": "Ridge"}, "plot": {"bbox": {"x": 592, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 593, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.93, "offDiagonalStrength": 0.07, "seed": 4105}
++  ],
++  "data": {
++    "matrixRecipe": {
++      "type": "generatedConfusionMatrix",
++      "size": 8,
++      "description": "Editable recipe creates strong diagonal probabilities with faint adjacent confusions and low-amplitude deterministic texture. Values are visual approximations, not digitized measurements."
++    }
++  },
++  "rendering": {
++    "renderer": "hybrid",
++    "layers": ["legend", "heatmapCells", "matrixAxes", "titles", "sharedAxisTitles", "colorbar"],
++    "styles": {
++      "axisStroke": "#222222",
++      "axisStrokeWidth": 1,
++      "tickStrokeWidth": 1,
++      "matrixBorder": "#222222",
++      "legendStrokeWidth": 3,
++      "heatmapCellGap": 0,
++      "heatmapLow": "#f7fbff",
++      "heatmapHigh": "#08306b"
++    }
++  },
++  "constraints": [
++    {"id": "shared-matrix-scale", "type": "sharedScale", "panels": "all", "coordinateSystem": "direction-matrix"},
++    {"id": "colorbar-uses-heatmap-scale", "type": "colorScaleReference", "colorbar": "probability-colorbar", "scale": "probability-blue"},
++    {"id": "qa-separation", "type": "sourceUsage", "rule": "Source raster appears only in labeled reference view and is not used for generated canvas/SVG layers."}
++  ],
++  "validation": {
++    "expectedMatrixCount": 5,
++    "expectedCellsPerMatrix": 64,
++    "expectedLegendItems": 5,
++    "expectedColorbarTicks": 3
++  },
++  "confidence": [
++    {"target": "matrix values", "confidence": "medium-low", "note": "Heatmap values are generated to match the visible diagonal-dominant pattern; exact probabilities were not digitized."},
++    {"target": "layout", "confidence": "medium", "note": "Panel boxes, colorbar, title, and axis labels were visually estimated from native-resolution crop."},
++    {"target": "typography", "confidence": "medium-low", "note": "The source uses compact publication typography; font metrics are approximate for this first pass."},
++    {"target": "title text", "confidence": "medium", "note": "Title is transcribed as visible in the raster, including the apparent triple-s spelling in Crosss-validated."}
++  ]
++}
+
+codex
+The renderer has been added. I’m validating the JSON and scanning the generated outputs for forbidden source-raster reuse patterns such as `drawImage`, CSS backgrounds, or candidate-layer references to the PNG.
+exec
+/bin/zsh -lc "rg -n \"drawImage|background(-image)?\\s*:|reference-04-motor-manifold-F-reference\\.png|assets/reference|source raster|QA reference\" outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json:5:    "path": "../../assets/reference/reference-04-motor-manifold-F-reference.png",
+outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json:7:    "notes": "First-pass reconstruction inferred visually from the raster crop. Generated visual layers are canvas heatmaps plus SVG text, axes, legend swatches, and colorbar; the source raster is only available in the labeled QA/reference view."
+outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html:8:    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
+outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html:9:    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #d0d0d0; }
+outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html:13:    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
+outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html:14:    .toggle button.active { background: #111111; color: #ffffff; }
+outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html:16:    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
+outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html:21:    .qa-label { position: absolute; left: 8px; bottom: 8px; padding: 3px 6px; border: 1px solid #777777; background: rgba(255,255,255,0.92); font-size: 11px; font-weight: 700; }
+outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html:44:        <img id="reference" alt="QA reference source image">
+outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html:45:        <div class="qa-label">QA reference only: source raster</div>
+
+exec
+/bin/zsh -lc "node -e \"JSON.parse(require('fs').readFileSync('outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json','utf8')); console.log('JSON valid')\"" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+JSON valid
+
+exec
+/bin/zsh -lc 'git status --short -- outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+?? outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html
+?? outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json
+
+diff --git a/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html b/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..092c54b469a8ff175d1124661dfcab5c70c1d36a
+--- /dev/null
++++ b/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html
+@@ -0,0 +1,258 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-04-motor-manifold-F reconstruction</title>
++  <style>
++    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
++    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #d0d0d0; }
++    h1 { margin: 0; font-size: 15px; font-weight: 700; }
++    .note { margin-top: 3px; font-size: 12px; color: #555555; }
++    .toggle { display: inline-flex; overflow: hidden; border: 1px solid #999999; border-radius: 4px; }
++    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
++    .toggle button.active { background: #111111; color: #ffffff; }
++    main { min-height: calc(100vh - 50px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
++    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
++    .surface, .reference-wrap { position: absolute; inset: 0; }
++    .heatmap-layer, svg { position: absolute; inset: 0; }
++    .reference-wrap { display: none; }
++    .reference-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
++    .qa-label { position: absolute; left: 8px; bottom: 8px; padding: 3px 6px; border: 1px solid #777777; background: rgba(255,255,255,0.92); font-size: 11px; font-weight: 700; }
++    .show-reference .surface { display: none; }
++    .show-reference .reference-wrap { display: block; }
++    svg { overflow: visible; }
++    text { paint-order: stroke; stroke: #ffffff; stroke-width: 2px; stroke-linejoin: round; }
++    .panel-label, .figure-title, .matrix-title, .axis-title { stroke-width: 2.4px; }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1 id="title">reference-04-motor-manifold-F</h1>
++      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">Reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <div id="referenceWrap" class="reference-wrap">
++        <img id="reference" alt="QA reference source image">
++        <div class="qa-label">QA reference only: source raster</div>
++      </div>
++    </div>
++  </main>
++  <script>
++    const SVG_NS = 'http://www.w3.org/2000/svg';
++    const SPEC_PATH = 'reference-04-motor-manifold-F.json';
++
++    function el(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
++      for (const [key, value] of Object.entries(attrs)) {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      }
++      return node;
++    }
++
++    function addText(parent, text, x, y, attrs = {}) {
++      const node = el('text', {
++        x, y,
++        fill: attrs.fill || '#111111',
++        'font-size': attrs.size || 13,
++        'font-weight': attrs.weight || 400,
++        'font-family': attrs.family || 'Arial, Helvetica, sans-serif',
++        'text-anchor': attrs.anchor || 'start',
++        'dominant-baseline': attrs.baseline || 'auto',
++        class: attrs.class || ''
++      });
++      if (attrs.rotate) node.setAttribute('transform', `rotate(${attrs.rotate} ${x} ${y})`);
++      node.textContent = text;
++      parent.appendChild(node);
++      return node;
++    }
++
++    function mulberry32(seed) {
++      return function random() {
++        let t = seed += 0x6D2B79F5;
++        t = Math.imul(t ^ t >>> 15, t | 1);
++        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
++        return ((t ^ t >>> 14) >>> 0) / 4294967296;
++      };
++    }
++
++    function clamp(value, lo, hi) {
++      return Math.max(lo, Math.min(hi, value));
++    }
++
++    function blue(value) {
++      const v = clamp(value, 0, 1);
++      const stops = [
++        [0.00, [247, 251, 255]],
++        [0.18, [222, 235, 247]],
++        [0.36, [198, 219, 239]],
++        [0.56, [107, 174, 214]],
++        [0.76, [33, 113, 181]],
++        [1.00, [8, 48, 107]]
++      ];
++      for (let i = 0; i < stops.length - 1; i++) {
++        const a = stops[i];
++        const b = stops[i + 1];
++        if (v >= a[0] && v <= b[0]) {
++          const t = (v - a[0]) / (b[0] - a[0]);
++          const rgb = a[1].map((channel, j) => Math.round(channel + (b[1][j] - channel) * t));
++          return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
++        }
++      }
++      return 'rgb(8, 48, 107)';
++    }
++
++    function matrixValues(panel) {
++      const size = 8;
++      const random = mulberry32(panel.seed);
++      const values = [];
++      for (let r = 0; r < size; r++) {
++        const row = [];
++        for (let c = 0; c < size; c++) {
++          const distance = Math.min(Math.abs(r - c), size - Math.abs(r - c));
++          let value = panel.offDiagonalStrength * Math.exp(-distance * 0.9) + random() * 0.045;
++          if (distance === 0) value = panel.diagonalStrength + (random() - 0.5) * 0.11;
++          if (distance === 1) value += 0.09 + random() * 0.04;
++          row.push(clamp(value, 0, 1));
++        }
++        values.push(row);
++      }
++      return values;
++    }
++
++    function renderHeatmaps(spec, canvas) {
++      const ctx = canvas.getContext('2d');
++      ctx.clearRect(0, 0, canvas.width, canvas.height);
++      for (const panel of spec.panels) {
++        const box = panel.plot.matrixBbox;
++        const values = matrixValues(panel);
++        const cellW = box.width / 8;
++        const cellH = box.height / 8;
++        for (let r = 0; r < 8; r++) {
++          for (let c = 0; c < 8; c++) {
++            ctx.fillStyle = blue(values[r][c]);
++            ctx.fillRect(box.x + c * cellW, box.y + r * cellH, Math.ceil(cellW) + 0.3, Math.ceil(cellH) + 0.3);
++          }
++        }
++      }
++    }
++
++    function renderLegend(svg, spec) {
++      const legend = spec.layoutObjects.find(item => item.id === 'series-legend');
++      for (const item of legend.items) {
++        svg.appendChild(el('line', {
++          x1: legend.bbox.x, y1: item.y, x2: legend.bbox.x + 22, y2: item.y,
++          stroke: item.color, 'stroke-width': spec.rendering.styles.legendStrokeWidth,
++          'data-legend-item': item.id
++        }));
++        addText(svg, item.label, legend.bbox.x + 36, item.y + 5, {size: 14});
++      }
++      addText(svg, legend.chanceText.text, legend.chanceText.anchor.x, legend.chanceText.anchor.y, {size: 14});
++    }
++
++    function renderMatrixAxes(svg, spec, panel, panelIndex) {
++      const outer = panel.plot.bbox;
++      const matrix = panel.plot.matrixBbox;
++      svg.appendChild(el('rect', {
++        x: outer.x, y: outer.y, width: outer.width, height: outer.height,
++        fill: 'none', stroke: spec.rendering.styles.matrixBorder, 'stroke-width': 1,
++        'data-panel': panel.id, 'data-role': 'matrix-frame'
++      }));
++      addText(svg, panel.title.text, outer.x + outer.width / 2, outer.y - 9, {size: 14, anchor: 'middle', class: 'matrix-title'});
++      const tickValues = [0, 90, 180, 270];
++      for (const value of tickValues) {
++        const center = value / 315 * 7 + 0.5;
++        const x = matrix.x + center * matrix.width / 8;
++        const y = matrix.y + center * matrix.height / 8;
++        if (panelIndex < 2) {
++          svg.appendChild(el('line', {x1: x, y1: outer.y + outer.height, x2: x, y2: outer.y + outer.height + 4, stroke: '#222222', 'stroke-width': 1, 'data-axis': 'predictedDirectionDegrees', 'data-value': value}));
++          addText(svg, String(value), x, outer.y + outer.height + 18, {size: 13, anchor: 'middle'});
++        }
++        if (panelIndex === 0) {
++          svg.appendChild(el('line', {x1: outer.x - 4, y1: y, x2: outer.x, y2: y, stroke: '#222222', 'stroke-width': 1, 'data-axis': 'trueDirectionDegrees', 'data-value': value}));
++          addText(svg, String(value), outer.x - 10, y + 5, {size: 13, anchor: 'end'});
++        }
++      }
++    }
++
++    function renderColorbar(svg, spec) {
++      const bar = spec.layoutObjects.find(item => item.id === 'probability-colorbar');
++      const defs = svg.querySelector('defs');
++      const gradient = el('linearGradient', {id: 'probabilityGradient', x1: '0%', y1: '100%', x2: '0%', y2: '0%'});
++      gradient.appendChild(el('stop', {offset: '0%', 'stop-color': blue(0)}));
++      gradient.appendChild(el('stop', {offset: '50%', 'stop-color': blue(0.5)}));
++      gradient.appendChild(el('stop', {offset: '100%', 'stop-color': blue(1)}));
++      defs.appendChild(gradient);
++      addText(svg, bar.title.text, bar.title.anchor.x, bar.title.anchor.y, {size: 13});
++      svg.appendChild(el('rect', {x: bar.bbox.x, y: bar.bbox.y, width: bar.bbox.width, height: bar.bbox.height, fill: 'url(#probabilityGradient)', stroke: '#777777', 'stroke-width': 0.6}));
++      for (const tick of bar.ticks) {
++        const y = bar.bbox.y + (1 - tick.value) * bar.bbox.height;
++        svg.appendChild(el('line', {x1: bar.bbox.x + bar.bbox.width, y1: y, x2: bar.bbox.x + bar.bbox.width + 4, y2: y, stroke: '#333333', 'stroke-width': 0.8, 'data-colorbar-tick': tick.value}));
++        addText(svg, tick.label, bar.bbox.x + bar.bbox.width + 9, y + 4, {size: 12});
++      }
++    }
++
++    function render(spec) {
++      document.getElementById('title').textContent = spec.id;
++      const frame = document.getElementById('frame');
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      document.getElementById('reference').src = spec.source.path;
++
++      const surface = document.getElementById('surface');
++      surface.innerHTML = '';
++      const canvas = document.createElement('canvas');
++      canvas.className = 'heatmap-layer';
++      canvas.width = spec.canvas.width;
++      canvas.height = spec.canvas.height;
++      surface.appendChild(canvas);
++      renderHeatmaps(spec, canvas);
++
++      const svg = el('svg', {viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, width: spec.canvas.width, height: spec.canvas.height, role: 'img', 'aria-label': spec.id});
++      svg.style.backgroundColor = 'transparent';
++      svg.appendChild(el('defs'));
++      renderLegend(svg, spec);
++      addText(svg, 'F', 160, 32, {size: 22, weight: 700, class: 'panel-label'});
++      addText(svg, 'Crosss-validated confusion matrices', 192, 32, {size: 17, weight: 700, class: 'figure-title'});
++      addText(svg, '(movement epoch)', 459, 32, {size: 15, class: 'figure-title'});
++      spec.panels.forEach((panel, index) => renderMatrixAxes(svg, spec, panel, index));
++      addText(svg, 'True dir. (deg)', 174, 147, {size: 15, rotate: -90, anchor: 'middle', class: 'axis-title'});
++      addText(svg, 'Predicted dir. (deg)', 405, 258, {size: 16, anchor: 'middle', class: 'axis-title'});
++      renderColorbar(svg, spec);
++      surface.appendChild(svg);
++    }
++
++    async function boot() {
++      const response = await fetch(SPEC_PATH);
++      const spec = await response.json();
++      render(spec);
++      const frame = document.getElementById('frame');
++      const generatedButton = document.getElementById('generatedButton');
++      const referenceButton = document.getElementById('referenceButton');
++      generatedButton.addEventListener('click', () => {
++        frame.classList.remove('show-reference');
++        generatedButton.classList.add('active');
++        referenceButton.classList.remove('active');
++      });
++      referenceButton.addEventListener('click', () => {
++        frame.classList.add('show-reference');
++        referenceButton.classList.add('active');
++        generatedButton.classList.remove('active');
++      });
++    }
++
++    boot().catch(error => {
++      document.getElementById('surface').textContent = `Unable to load reconstruction JSON: ${error.message}`;
++      console.error(error);
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json b/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..a1de4be053eb852f576a0b9de3f70c1e9725dd93
+--- /dev/null
++++ b/outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json
+@@ -0,0 +1,142 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-04-motor-manifold-F",
++  "source": {
++    "path": "../../assets/reference/reference-04-motor-manifold-F-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "First-pass reconstruction inferred visually from the raster crop. Generated visual layers are canvas heatmaps plus SVG text, axes, legend swatches, and colorbar; the source raster is only available in the labeled QA/reference view."
++  },
++  "canvas": {
++    "width": 745,
++    "height": 296,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 13,
++    "color": "#111111",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial", "Helvetica", "Liberation Sans", "Roboto Condensed"],
++    "calibration": {
++      "fontStretch": "condensed",
++      "letterSpacing": 0,
++      "lineHeight": 1.05,
++      "notes": "Approximate compact sans-serif typography from visual inspection; no OCR/font calibration run for this first pass."
++    }
++  },
++  "coordinateSystems": [
++    {
++      "id": "direction-matrix",
++      "type": "matrix",
++      "domain": {
++        "trueDirectionDegrees": [0, 45, 90, 135, 180, 225, 270, 315],
++        "predictedDirectionDegrees": [0, 45, 90, 135, 180, 225, 270, 315]
++      },
++      "cellCount": 8,
++      "directionTickLabels": [
++        {"value": 0, "label": "0"},
++        {"value": 90, "label": "90"},
++        {"value": 180, "label": "180"},
++        {"value": 270, "label": "270"}
++      ],
++      "notes": "Rows encode true movement direction and columns encode predicted movement direction; shared 8 x 8 matrix scale."
++    },
++    {
++      "id": "probability-blue",
++      "type": "colorScale",
++      "domain": [0, 1],
++      "range": ["#f7fbff", "#08306b"],
++      "interpolation": "linearRgb"
++    }
++  ],
++  "layoutObjects": [
++    {"id": "panel-label", "type": "panelLabel", "text": "F", "anchor": {"x": 160, "y": 32}},
++    {"id": "figure-title", "type": "title", "text": "Crosss-validated confusion matrices (movement epoch)", "anchor": {"x": 192, "y": 31}},
++    {
++      "id": "series-legend",
++      "type": "lineLegend",
++      "bbox": {"x": 30, "y": 91, "width": 116, "height": 121},
++      "items": [
++        {"id": "legend-pca10", "label": "PCA (10D)", "color": "#7f32d8", "y": 96},
++        {"id": "legend-pca20", "label": "PCA (20D)", "color": "#006de5", "y": 121},
++        {"id": "legend-pls", "label": "PLS", "color": "#249000", "y": 145},
++        {"id": "legend-lda", "label": "LDA", "color": "#ff5a00", "y": 170},
++        {"id": "legend-ridge", "label": "Ridge", "color": "#e90000", "y": 195}
++      ],
++      "chanceText": {"text": "Chance (12.5%)", "anchor": {"x": 6, "y": 232}}
++    },
++    {
++      "id": "shared-y-axis-title",
++      "type": "axisTitle",
++      "text": "True dir. (deg)",
++      "anchor": {"x": 171, "y": 147},
++      "rotation": -90,
++      "axis": "trueDirectionDegrees"
++    },
++    {
++      "id": "shared-x-axis-title",
++      "type": "axisTitle",
++      "text": "Predicted dir. (deg)",
++      "anchor": {"x": 405, "y": 255},
++      "axis": "predictedDirectionDegrees"
++    },
++    {
++      "id": "probability-colorbar",
++      "type": "colorbar",
++      "colorScale": "probability-blue",
++      "bbox": {"x": 701, "y": 134, "width": 11, "height": 86},
++      "ticks": [
++        {"value": 1, "label": "1.0"},
++        {"value": 0.5, "label": "0.5"},
++        {"value": 0, "label": "0"}
++      ],
++      "title": {"text": "Prob.", "anchor": {"x": 700, "y": 119}}
++    }
++  ],
++  "panels": [
++    {"id": "matrix-pca-10d", "decoder": "PCA (10D)", "title": {"text": "PCA (10D)"}, "plot": {"bbox": {"x": 208, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 209, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.86, "offDiagonalStrength": 0.18, "seed": 4101},
++    {"id": "matrix-pca-20d", "decoder": "PCA (20D)", "title": {"text": "PCA (20D)"}, "plot": {"bbox": {"x": 304, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 305, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.91, "offDiagonalStrength": 0.13, "seed": 4102},
++    {"id": "matrix-pls", "decoder": "PLS", "title": {"text": "PLS"}, "plot": {"bbox": {"x": 400, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 401, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.92, "offDiagonalStrength": 0.10, "seed": 4103},
++    {"id": "matrix-lda", "decoder": "LDA", "title": {"text": "LDA"}, "plot": {"bbox": {"x": 495, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 496, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.94, "offDiagonalStrength": 0.08, "seed": 4104},
++    {"id": "matrix-ridge", "decoder": "Ridge", "title": {"text": "Ridge"}, "plot": {"bbox": {"x": 592, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 593, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.93, "offDiagonalStrength": 0.07, "seed": 4105}
++  ],
++  "data": {
++    "matrixRecipe": {
++      "type": "generatedConfusionMatrix",
++      "size": 8,
++      "description": "Editable recipe creates strong diagonal probabilities with faint adjacent confusions and low-amplitude deterministic texture. Values are visual approximations, not digitized measurements."
++    }
++  },
++  "rendering": {
++    "renderer": "hybrid",
++    "layers": ["legend", "heatmapCells", "matrixAxes", "titles", "sharedAxisTitles", "colorbar"],
++    "styles": {
++      "axisStroke": "#222222",
++      "axisStrokeWidth": 1,
++      "tickStrokeWidth": 1,
++      "matrixBorder": "#222222",
++      "legendStrokeWidth": 3,
++      "heatmapCellGap": 0,
++      "heatmapLow": "#f7fbff",
++      "heatmapHigh": "#08306b"
++    }
++  },
++  "constraints": [
++    {"id": "shared-matrix-scale", "type": "sharedScale", "panels": "all", "coordinateSystem": "direction-matrix"},
++    {"id": "colorbar-uses-heatmap-scale", "type": "colorScaleReference", "colorbar": "probability-colorbar", "scale": "probability-blue"},
++    {"id": "qa-separation", "type": "sourceUsage", "rule": "Source raster appears only in labeled reference view and is not used for generated canvas/SVG layers."}
++  ],
++  "validation": {
++    "expectedMatrixCount": 5,
++    "expectedCellsPerMatrix": 64,
++    "expectedLegendItems": 5,
++    "expectedColorbarTicks": 3
++  },
++  "confidence": [
++    {"target": "matrix values", "confidence": "medium-low", "note": "Heatmap values are generated to match the visible diagonal-dominant pattern; exact probabilities were not digitized."},
++    {"target": "layout", "confidence": "medium", "note": "Panel boxes, colorbar, title, and axis labels were visually estimated from native-resolution crop."},
++    {"target": "typography", "confidence": "medium-low", "note": "The source uses compact publication typography; font metrics are approximate for this first pass."},
++    {"target": "title text", "confidence": "medium", "note": "Title is transcribed as visible in the raster, including the apparent triple-s spelling in Crosss-validated."}
++  ]
++}
+

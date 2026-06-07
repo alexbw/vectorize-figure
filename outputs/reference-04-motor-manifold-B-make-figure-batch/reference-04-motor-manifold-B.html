@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-04-motor-manifold-B reconstruction</title>
+  <style>
+    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #d0d0d0; }
+    h1 { margin: 0; font-size: 15px; font-weight: 700; }
+    .note { margin-top: 3px; font-size: 12px; color: #555555; }
+    .toggle { display: inline-flex; overflow: hidden; border: 1px solid #999999; border-radius: 4px; }
+    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
+    .toggle button.active { background: #111111; color: #ffffff; }
+    main { min-height: calc(100vh - 50px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
+    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
+    .surface, .reference-wrap { position: absolute; inset: 0; }
+    .reference-wrap { display: none; }
+    .reference-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .qa-label { position: absolute; left: 8px; bottom: 8px; padding: 3px 6px; border: 1px solid #777777; background: rgba(255,255,255,0.9); font-size: 11px; font-weight: 700; }
+    .show-reference .surface { display: none; }
+    .show-reference .reference-wrap { display: block; }
+    svg { position: absolute; inset: 0; overflow: visible; }
+    text { paint-order: stroke; stroke: #ffffff; stroke-width: 2px; stroke-linejoin: round; }
+    .axis text, .title, .figure-title, .figure-label, .orientation-label { stroke-width: 2.5px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-04-motor-manifold-B</h1>
+      <div class="note">Generated candidate is SVG rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <div id="referenceWrap" class="reference-wrap">
+        <img id="reference" alt="QA reference source image">
+        <div class="qa-label">QA reference only: source raster</div>
+      </div>
+    </div>
+  </main>
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const SPEC_PATH = 'reference-04-motor-manifold-B.json';
+
+    function el(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function scale(domain, range, value) {
+      return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+    }
+
+    function panelScales(panel) {
+      const box = panel.plot.bbox;
+      return {
+        x: value => scale([-6, 6], [box.x, box.x + box.width], value),
+        y: value => scale([-4, 4], [box.y + box.height, box.y], value)
+      };
+    }
+
+    function catmullRomPath(points, closed = false) {
+      if (!points.length) return '';
+      if (points.length < 2) return `M ${points[0][0]} ${points[0][1]}`;
+      let d = `M ${points[0][0].toFixed(2)} ${points[0][1].toFixed(2)}`;
+      for (let i = 0; i < points.length - 1; i++) {
+        const p0 = points[Math.max(0, i - 1)];
+        const p1 = points[i];
+        const p2 = points[i + 1];
+        const p3 = points[Math.min(points.length - 1, i + 2)];
+        const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+        const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+        d += ` C ${c1[0].toFixed(2)} ${c1[1].toFixed(2)}, ${c2[0].toFixed(2)} ${c2[1].toFixed(2)}, ${p2[0].toFixed(2)} ${p2[1].toFixed(2)}`;
+      }
+      return closed ? `${d} Z` : d;
+    }
+
+    function bandPolygon(panel, points, scales) {
+      const radius = panel.bandRadius || 0.7;
+      const pxRadius = radius * panel.plot.bbox.height / 8;
+      const upper = [];
+      const lower = [];
+      for (let i = 0; i < points.length; i++) {
+        const prev = points[Math.max(0, i - 1)];
+        const next = points[Math.min(points.length - 1, i + 1)];
+        const dx = next[0] - prev[0];
+        const dy = next[1] - prev[1];
+        const length = Math.hypot(dx, dy) || 1;
+        const nx = -dy / length;
+        const ny = dx / length;
+        upper.push([points[i][0] + nx * pxRadius, points[i][1] + ny * pxRadius]);
+        lower.push([points[i][0] - nx * pxRadius, points[i][1] - ny * pxRadius]);
+      }
+      return catmullRomPath(upper.concat(lower.reverse()), true);
+    }
+
+    function addText(svg, text, x, y, attrs = {}) {
+      const node = el('text', {
+        x, y,
+        fill: attrs.fill || '#111111',
+        'font-size': attrs.size || 12,
+        'font-weight': attrs.weight || 400,
+        'text-anchor': attrs.anchor || 'start',
+        'dominant-baseline': attrs.baseline || 'auto',
+        class: attrs.class || '',
+        'data-role': attrs.role || null,
+        'data-protected-text': attrs.protectedText ? 'true' : null,
+        'data-axis': attrs.axis || null,
+        'data-value': attrs.value ?? null
+      });
+      if (attrs.rotate) node.setAttribute('transform', `rotate(${attrs.rotate} ${x} ${y})`);
+      node.textContent = text;
+      svg.appendChild(node);
+      return node;
+    }
+
+    function renderAxes(svg, panel, styles) {
+      const box = panel.plot.bbox;
+      const g = el('g', {'class': 'axis', 'data-panel': panel.id});
+      const scales = panelScales(panel);
+      g.appendChild(el('line', {x1: box.x, y1: box.y, x2: box.x, y2: box.y + box.height, stroke: styles.axisStroke, 'stroke-width': styles.axisStrokeWidth}));
+      const xAxisEnd = panel.plot.truncateXAxisAfter === undefined ? box.x + box.width : scales.x(panel.plot.truncateXAxisAfter);
+      g.appendChild(el('line', {x1: box.x, y1: box.y + box.height, x2: xAxisEnd, y2: box.y + box.height, stroke: styles.axisStroke, 'stroke-width': styles.axisStrokeWidth}));
+      const xTicks = panel.plot.xTicks || (panel.plot.forceXTicks || panel.id.endsWith('180') || panel.id.endsWith('225') || panel.id.endsWith('270') ? [-6, 0, 6] : []);
+      const yTicks = panel.id.endsWith('000') || panel.id.endsWith('180') ? [-4, 0, 4] : [];
+      for (const value of xTicks) {
+        const x = scales.x(value);
+        g.appendChild(el('line', {x1: x, y1: box.y + box.height, x2: x, y2: box.y + box.height + 4, stroke: styles.axisStroke, 'stroke-width': styles.tickStrokeWidth, 'data-role': 'axis-tick-mark', 'data-axis': 'pc1', 'data-value': value, 'data-source-x': x, 'data-source-y': box.y + box.height}));
+        addText(g, String(value), x, box.y + box.height + 17, {size: 16, anchor: 'middle', role: 'tick-label', protectedText: true, axis: 'pc1', value});
+      }
+      for (const value of yTicks) {
+        const y = scales.y(value);
+        g.appendChild(el('line', {x1: box.x - 4, y1: y, x2: box.x, y2: y, stroke: styles.axisStroke, 'stroke-width': styles.tickStrokeWidth, 'data-axis': 'pc3', 'data-value': value}));
+        addText(g, String(value), box.x - 11, y + 5, {size: 16, anchor: 'end'});
+      }
+      svg.appendChild(g);
+    }
+
+    function renderPanel(svg, panel, styles) {
+      const scales = panelScales(panel);
+      const points = panel.trajectory.map(([x, y]) => [scales.x(x), scales.y(y)]);
+      renderAxes(svg, panel, styles);
+      addText(svg, panel.title.text, panel.plot.bbox.x + panel.plot.bbox.width / 2, panel.plot.bbox.y - 9, {size: 16, anchor: 'middle', class: 'title'});
+      svg.appendChild(el('path', {d: bandPolygon(panel, points, scales), fill: panel.bandColor, opacity: styles.bandOpacity, stroke: 'none', 'data-panel': panel.id, 'data-mark-type': 'uncertaintyBand'}));
+      svg.appendChild(el('path', {d: catmullRomPath(points), fill: 'none', stroke: panel.seriesColor, 'stroke-width': styles.meanStrokeWidth, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'data-panel': panel.id, 'data-mark-type': 'meanTrajectory'}));
+      const start = [scales.x(panel.startPoint[0]), scales.y(panel.startPoint[1])];
+      const end = [scales.x(panel.endPoint[0]), scales.y(panel.endPoint[1])];
+      svg.appendChild(el('circle', {cx: start[0], cy: start[1], r: 4.8, fill: styles.startFill, stroke: '#777777', 'stroke-width': 1, 'data-panel': panel.id, 'data-marker': 'start'}));
+      svg.appendChild(el('circle', {cx: end[0], cy: end[1], r: 3.6, fill: '#ffffff', stroke: styles.markerStroke, 'stroke-width': 1.2, 'data-panel': panel.id, 'data-marker': 'end'}));
+    }
+
+    function renderOrientationKey(svg, key) {
+      const x = key.anchor.x;
+      const y = key.anchor.y;
+      svg.appendChild(el('line', {x1: x, y1: y, x2: x, y2: y - 35, stroke: '#111111', 'stroke-width': 2, 'marker-end': 'url(#arrow)'}));
+      svg.appendChild(el('line', {x1: x, y1: y, x2: x + 32, y2: y, stroke: '#111111', 'stroke-width': 2, 'marker-end': 'url(#arrow)'}));
+      addText(svg, 'PC 3', x + 8, y - 32, {size: 14, class: 'orientation-label'});
+      addText(svg, 'PC 1', x + 36, y + 4, {size: 14, baseline: 'middle', class: 'orientation-label'});
+    }
+
+    function render(spec) {
+      document.getElementById('title').textContent = spec.id;
+      const frame = document.getElementById('frame');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      const reference = document.getElementById('reference');
+      reference.src = spec.source.path;
+      const surface = document.getElementById('surface');
+      surface.innerHTML = '';
+      const svg = el('svg', {viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, width: spec.canvas.width, height: spec.canvas.height, role: 'img', 'aria-label': spec.id});
+      svg.style.backgroundColor = spec.canvas.background;
+      const defs = el('defs');
+      const marker = el('marker', {id: 'arrow', viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 5, markerHeight: 5, orient: 'auto-start-reverse'});
+      marker.appendChild(el('path', {d: 'M 0 0 L 10 5 L 0 10 z', fill: '#111111'}));
+      defs.appendChild(marker);
+      svg.appendChild(defs);
+      addText(svg, 'B', 3, 22, {size: 22, weight: 700, class: 'figure-label'});
+      addText(svg, 'Condition-aligned trajectories (mean +/- SEM)', 28, 22, {size: 16, weight: 700, class: 'figure-title'});
+      for (const panel of spec.panels) renderPanel(svg, panel, spec.rendering.styles);
+      addText(svg, 'PC 3 (9%)', 8, 176, {size: 15, rotate: -90, anchor: 'middle'});
+      addText(svg, 'PC 1 (23%)', 236, 350, {size: 16, anchor: 'middle'});
+      renderOrientationKey(svg, spec.layoutObjects.find(item => item.id === 'axis-key'));
+      surface.appendChild(svg);
+    }
+
+    async function boot() {
+      const response = await fetch(SPEC_PATH);
+      const spec = await response.json();
+      render(spec);
+      const frame = document.getElementById('frame');
+      document.getElementById('generatedButton').addEventListener('click', () => {
+        frame.classList.remove('show-reference');
+        generatedButton.classList.add('active');
+        referenceButton.classList.remove('active');
+      });
+      document.getElementById('referenceButton').addEventListener('click', () => {
+        frame.classList.add('show-reference');
+        referenceButton.classList.add('active');
+        generatedButton.classList.remove('active');
+      });
+    }
+
+    boot().catch(error => {
+      document.getElementById('surface').textContent = `Unable to load reconstruction JSON: ${error.message}`;
+      console.error(error);
+    });
+  </script>
+</body>
+</html>

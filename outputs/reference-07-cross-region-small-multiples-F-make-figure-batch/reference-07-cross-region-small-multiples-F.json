@@ -1,0 +1,455 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-07-cross-region-small-multiples-F",
+  "source": {
+    "path": "../../assets/reference/reference-07-cross-region-small-multiples-F-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "nativeSize": {
+      "width": 364,
+      "height": 330
+    },
+    "notes": "Single cropped panel F showing five region-specific sparse population raster strips across position."
+  },
+  "canvas": {
+    "width": 364,
+    "height": 330,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": [
+      "Arial",
+      "Helvetica",
+      "Helvetica Neue",
+      "Arimo",
+      "Roboto"
+    ],
+    "calibration": {
+      "fontStretch": "condensed-like",
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "Approximates compact journal sans-serif typography using native Arial/Helvetica."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "position-x",
+      "type": "linear",
+      "domain": [
+        0,
+        50
+      ],
+      "range": [
+        54,
+        361
+      ],
+      "unit": "cm"
+    }
+  ],
+  "layoutObjects": [
+    {
+      "id": "panel-label",
+      "type": "panelLabel",
+      "text": "F",
+      "anchor": {
+        "x": 7,
+        "y": 55
+      }
+    },
+    {
+      "id": "panel-title",
+      "type": "title",
+      "text": "Sparse population raster (example session)",
+      "anchor": {
+        "x": 34,
+        "y": 47
+      }
+    },
+    {
+      "id": "top-axis-title",
+      "type": "axisTitle",
+      "text": "Position (cm)",
+      "anchorTo": "position-x",
+      "anchor": {
+        "x": 162,
+        "y": 9
+      }
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-f",
+      "label": {
+        "text": "F",
+        "x": 7,
+        "y": 55,
+        "fontSize": 22,
+        "fontWeight": 700
+      },
+      "title": {
+        "text": "Sparse population raster (example session)",
+        "x": 34,
+        "y": 47,
+        "fontSize": 16,
+        "fontWeight": 700,
+        "sourceBox": {
+          "x": 34,
+          "y": 37,
+          "width": 286,
+          "height": 19
+        },
+        "fit": "visual"
+      },
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 364,
+        "height": 330
+      },
+      "plot": {
+        "dataBbox": {
+          "x": 54,
+          "y": 74,
+          "width": 307,
+          "height": 238
+        },
+        "x": {
+          "scale": "linear",
+          "domain": [
+            0,
+            50
+          ],
+          "ticks": [
+            {
+              "value": 0,
+              "label": "0"
+            },
+            {
+              "value": 10,
+              "label": "10"
+            },
+            {
+              "value": 20,
+              "label": "20"
+            },
+            {
+              "value": 30,
+              "label": "30"
+            },
+            {
+              "value": 40,
+              "label": "40"
+            }
+          ],
+          "label": {
+            "text": "Position (cm)",
+            "x": 162,
+            "y": 9,
+            "fontSize": 13,
+            "fontWeight": 400,
+            "anchor": "middle"
+          }
+        },
+        "tickInside": true,
+        "showVerticalBorders": true,
+        "boundedMarks": {
+          "eventTicks": {
+            "owner": "group.box",
+            "clipToOwner": true
+          },
+          "axisTicks": {
+            "owner": "plot.dataBbox",
+            "clipToOwner": false,
+            "requireEndpointsInside": true
+          }
+        }
+      },
+      "groups": [
+        {
+          "id": "ca1",
+          "type": "rasterGroup",
+          "label": "CA1",
+          "count": 142,
+          "color": "#1a47bf",
+          "box": {
+            "x": 54,
+            "y": 76,
+            "width": 307,
+            "height": 38
+          },
+          "rowCount": 10,
+          "generationRecipe": {
+            "type": "clusteredSparseRaster",
+            "seed": 14201,
+            "baselineEvents": 45,
+            "clusters": [
+              {
+                "center": 2.5,
+                "spread": 1.8,
+                "events": 17
+              },
+              {
+                "center": 12.5,
+                "spread": 2.2,
+                "events": 55
+              },
+              {
+                "center": 19,
+                "spread": 2,
+                "events": 27
+              },
+              {
+                "center": 35,
+                "spread": 2.8,
+                "events": 70
+              },
+              {
+                "center": 46.5,
+                "spread": 2.1,
+                "events": 41
+              }
+            ],
+            "tickHeight": 5.2,
+            "tickWidth": 0.9
+          }
+        },
+        {
+          "id": "ca3",
+          "type": "rasterGroup",
+          "label": "CA3",
+          "count": 123,
+          "color": "#1f5fd0",
+          "box": {
+            "x": 54,
+            "y": 123,
+            "width": 307,
+            "height": 38
+          },
+          "rowCount": 9,
+          "generationRecipe": {
+            "type": "clusteredSparseRaster",
+            "seed": 12303,
+            "baselineEvents": 24,
+            "clusters": [
+              {
+                "center": 12.5,
+                "spread": 1.9,
+                "events": 44
+              },
+              {
+                "center": 20.2,
+                "spread": 2.4,
+                "events": 18
+              },
+              {
+                "center": 35.8,
+                "spread": 3.1,
+                "events": 30
+              },
+              {
+                "center": 43.2,
+                "spread": 2,
+                "events": 14
+              }
+            ],
+            "tickHeight": 4.6,
+            "tickWidth": 0.8
+          }
+        },
+        {
+          "id": "dg",
+          "type": "rasterGroup",
+          "label": "DG",
+          "count": 96,
+          "color": "#168d31",
+          "box": {
+            "x": 54,
+            "y": 171,
+            "width": 307,
+            "height": 38
+          },
+          "rowCount": 8,
+          "generationRecipe": {
+            "type": "clusteredSparseRaster",
+            "seed": 9607,
+            "baselineEvents": 38,
+            "clusters": [
+              {
+                "center": 6.5,
+                "spread": 2.2,
+                "events": 22
+              },
+              {
+                "center": 16.5,
+                "spread": 2.6,
+                "events": 33
+              },
+              {
+                "center": 32,
+                "spread": 3.5,
+                "events": 32
+              },
+              {
+                "center": 44,
+                "spread": 2.8,
+                "events": 22
+              }
+            ],
+            "tickHeight": 4.3,
+            "tickWidth": 0.8
+          }
+        },
+        {
+          "id": "pfc",
+          "type": "rasterGroup",
+          "label": "PFC",
+          "count": 118,
+          "color": "#f05a22",
+          "box": {
+            "x": 54,
+            "y": 219,
+            "width": 307,
+            "height": 38
+          },
+          "rowCount": 9,
+          "generationRecipe": {
+            "type": "clusteredSparseRaster",
+            "seed": 11811,
+            "baselineEvents": 42,
+            "clusters": [
+              {
+                "center": 4.5,
+                "spread": 2,
+                "events": 24
+              },
+              {
+                "center": 18.2,
+                "spread": 2.7,
+                "events": 34
+              },
+              {
+                "center": 29,
+                "spread": 2.5,
+                "events": 28
+              },
+              {
+                "center": 42.5,
+                "spread": 3.1,
+                "events": 46
+              }
+            ],
+            "tickHeight": 4.4,
+            "tickWidth": 0.8
+          }
+        },
+        {
+          "id": "rsc",
+          "type": "rasterGroup",
+          "label": "RSC",
+          "count": 110,
+          "color": "#ff0000",
+          "box": {
+            "x": 54,
+            "y": 267,
+            "width": 307,
+            "height": 42
+          },
+          "rowCount": 9,
+          "generationRecipe": {
+            "type": "clusteredSparseRaster",
+            "seed": 11013,
+            "baselineEvents": 30,
+            "clusters": [
+              {
+                "center": 7,
+                "spread": 2,
+                "events": 20
+              },
+              {
+                "center": 19.5,
+                "spread": 2.4,
+                "events": 25
+              },
+              {
+                "center": 39.5,
+                "spread": 3.4,
+                "events": 28
+              },
+              {
+                "center": 46,
+                "spread": 1.9,
+                "events": 24
+              }
+            ],
+            "tickHeight": 4.1,
+            "tickWidth": 0.8
+          }
+        }
+      ],
+      "marks": [
+        {
+          "id": "raster-strips",
+          "type": "raster",
+          "usesTransform": "position-x",
+          "groups": [
+            "ca1",
+            "ca3",
+            "dg",
+            "pfc",
+            "rsc"
+          ],
+          "renderer": "svg",
+          "style": {
+            "stroke": "#111111",
+            "strokeWidth": 0.8,
+            "opacity": 0.82
+          }
+        }
+      ],
+      "annotations": [],
+      "provenance": [
+        {
+          "target": "raster events",
+          "confidence": "medium",
+          "note": "Spike locations are generated from visually estimated density clusters to match sparse raster grammar; they are not extracted measurements."
+        },
+        {
+          "target": "row counts",
+          "confidence": "high",
+          "note": "Displayed population counts are transcribed from the source crop."
+        }
+      ]
+    }
+  ],
+  "rendering": {
+    "renderer": "hybrid-svg",
+    "layerOrder": [
+      "background",
+      "labels",
+      "group boxes",
+      "raster ticks",
+      "axis ticks"
+    ],
+    "styleTokens": {
+      "ruleStroke": "#111111",
+      "minorStroke": "#bbbbbb",
+      "tickStroke": "#111111"
+    }
+  },
+  "validation": {
+    "expectedGroups": 5,
+    "expectedXAxisTicks": 5,
+    "sourceRasterPolicy": "Source path may only be assigned to the QA image element, never to generated SVG/canvas/CSS background."
+  },
+  "confidence": [
+    {
+      "target": "overall first-pass reconstruction",
+      "confidence": "medium",
+      "note": "Designed for visual inspection; raster density and typography are approximate and editable."
+    }
+  ]
+}

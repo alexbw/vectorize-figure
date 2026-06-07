@@ -1,0 +1,338 @@
+[
+  {
+    "id": "panel-label",
+    "text": "B",
+    "family": "Arial Narrow",
+    "size": 24.8,
+    "weight": 600,
+    "lineHeight": 1,
+    "scaleX": 0.955,
+    "naturalWidth": 14.68,
+    "x": 10,
+    "y": 33.75,
+    "score": 0.27213,
+    "baselineScore": 1.05814,
+    "improvement": 0.78602,
+    "crop": {
+      "x": 6,
+      "y": 12,
+      "width": 22,
+      "height": 27
+    }
+  },
+  {
+    "id": "panel-title",
+    "text": "Population place fields",
+    "family": "Arial Narrow",
+    "size": 19.38,
+    "weight": 600,
+    "lineHeight": 1,
+    "scaleX": 0.98,
+    "naturalWidth": 173.02,
+    "x": 41.25,
+    "y": 35,
+    "score": 0.17103,
+    "baselineScore": 0.86349,
+    "improvement": 0.69246,
+    "crop": {
+      "x": 39,
+      "y": 16,
+      "width": 175,
+      "height": 27
+    }
+  },
+  {
+    "id": "legend-control",
+    "text": "Control (no light)",
+    "family": "Arimo",
+    "size": 15.78,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 0.95,
+    "naturalWidth": 111.33,
+    "x": 107,
+    "y": 81.25,
+    "score": 0.45215,
+    "baselineScore": 0.78435,
+    "improvement": 0.3322,
+    "crop": {
+      "x": 103,
+      "y": 66,
+      "width": 112,
+      "height": 24
+    }
+  },
+  {
+    "id": "legend-opto",
+    "text": "Optogenetic inhibition (ArchT)",
+    "family": "Arial Narrow",
+    "size": 16.94,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1.05,
+    "naturalWidth": 183.78,
+    "x": 106.25,
+    "y": 104,
+    "score": 0.3131,
+    "baselineScore": 0.85758,
+    "improvement": 0.54448,
+    "crop": {
+      "x": 103,
+      "y": 88,
+      "width": 197,
+      "height": 23
+    }
+  },
+  {
+    "id": "y-tick-20",
+    "text": "20",
+    "family": "Arial Narrow",
+    "size": 17.92,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1.005,
+    "naturalWidth": 16.34,
+    "x": 30.25,
+    "y": 76.75,
+    "score": 0.22761,
+    "baselineScore": 1.12571,
+    "improvement": 0.89809,
+    "crop": {
+      "x": 27,
+      "y": 60,
+      "width": 23,
+      "height": 21
+    }
+  },
+  {
+    "id": "y-tick-15",
+    "text": "15",
+    "family": "Arial Narrow",
+    "size": 17.92,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1.005,
+    "naturalWidth": 16.34,
+    "x": 30.25,
+    "y": 168.75,
+    "score": 0.24328,
+    "baselineScore": 1.05122,
+    "improvement": 0.80794,
+    "crop": {
+      "x": 27,
+      "y": 152,
+      "width": 23,
+      "height": 21
+    }
+  },
+  {
+    "id": "y-tick-10",
+    "text": "10",
+    "family": "Arimo",
+    "size": 16.8,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 0.95,
+    "naturalWidth": 16.79,
+    "x": 31,
+    "y": 259.75,
+    "score": 0.32909,
+    "baselineScore": 0.97601,
+    "improvement": 0.64692,
+    "crop": {
+      "x": 27,
+      "y": 243,
+      "width": 24,
+      "height": 22
+    }
+  },
+  {
+    "id": "y-tick-5",
+    "text": "5",
+    "family": "Arial Narrow",
+    "size": 16.8,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 0.95,
+    "naturalWidth": 7.66,
+    "x": 39,
+    "y": 352.25,
+    "score": 0.32924,
+    "baselineScore": 1.09647,
+    "improvement": 0.76723,
+    "crop": {
+      "x": 35,
+      "y": 335,
+      "width": 15,
+      "height": 21
+    }
+  },
+  {
+    "id": "y-tick-0",
+    "text": "0",
+    "family": "Arial Narrow",
+    "size": 17.92,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 0.93,
+    "naturalWidth": 8.17,
+    "x": 39,
+    "y": 445,
+    "score": 0.31619,
+    "baselineScore": 1.00737,
+    "improvement": 0.69118,
+    "crop": {
+      "x": 35,
+      "y": 427,
+      "width": 15,
+      "height": 22
+    }
+  },
+  {
+    "id": "y-label",
+    "text": "Mean firing rate (Hz)",
+    "family": "Arial Narrow",
+    "size": 11.44,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 0.73,
+    "naturalWidth": 85.5,
+    "x": 19.75,
+    "y": 200.75,
+    "score": 3.67859,
+    "baselineScore": 9.60241,
+    "improvement": 5.92382,
+    "crop": {
+      "x": 1,
+      "y": 172,
+      "width": 26,
+      "height": 185
+    }
+  },
+  {
+    "id": "x-tick-0",
+    "text": "0",
+    "family": "Arial Narrow",
+    "size": 17.84,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1.005,
+    "naturalWidth": 8.14,
+    "x": 58,
+    "y": 462.25,
+    "score": 0.18625,
+    "baselineScore": 0.87447,
+    "improvement": 0.68822,
+    "crop": {
+      "x": 50,
+      "y": 445,
+      "width": 16,
+      "height": 21
+    }
+  },
+  {
+    "id": "x-tick-50",
+    "text": "50",
+    "family": "Arial Narrow",
+    "size": 17.84,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1.03,
+    "naturalWidth": 16.27,
+    "x": 141.5,
+    "y": 462.25,
+    "score": 0.23933,
+    "baselineScore": 1.01298,
+    "improvement": 0.77365,
+    "crop": {
+      "x": 130,
+      "y": 445,
+      "width": 23,
+      "height": 21
+    }
+  },
+  {
+    "id": "x-tick-100",
+    "text": "100",
+    "family": "Arimo",
+    "size": 16.8,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1,
+    "naturalWidth": 25.18,
+    "x": 224.5,
+    "y": 461,
+    "score": 0.37404,
+    "baselineScore": 0.94553,
+    "improvement": 0.57149,
+    "crop": {
+      "x": 209,
+      "y": 445,
+      "width": 31,
+      "height": 21
+    }
+  },
+  {
+    "id": "x-tick-150",
+    "text": "150",
+    "family": "Helvetica Neue",
+    "size": 15.68,
+    "weight": 500,
+    "lineHeight": 1,
+    "scaleX": 0.95,
+    "naturalWidth": 26.15,
+    "x": 307,
+    "y": 461,
+    "score": 0.29989,
+    "baselineScore": 0.87643,
+    "improvement": 0.57654,
+    "crop": {
+      "x": 291,
+      "y": 445,
+      "width": 32,
+      "height": 21
+    }
+  },
+  {
+    "id": "x-tick-200",
+    "text": "200",
+    "family": "Arial Narrow",
+    "size": 17.84,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1.05,
+    "naturalWidth": 24.41,
+    "x": 392,
+    "y": 462.25,
+    "score": 0.15794,
+    "baselineScore": 1.01102,
+    "improvement": 0.85308,
+    "crop": {
+      "x": 376,
+      "y": 445,
+      "width": 32,
+      "height": 21
+    }
+  },
+  {
+    "id": "x-label",
+    "text": "Position (cm)",
+    "family": "Arial Narrow",
+    "size": 18.99,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 0.975,
+    "naturalWidth": 90.86,
+    "x": 229.5,
+    "y": 489.75,
+    "score": 0.28939,
+    "baselineScore": 1.03399,
+    "improvement": 0.7446,
+    "crop": {
+      "x": 182,
+      "y": 472,
+      "width": 95,
+      "height": 25
+    }
+  }
+]

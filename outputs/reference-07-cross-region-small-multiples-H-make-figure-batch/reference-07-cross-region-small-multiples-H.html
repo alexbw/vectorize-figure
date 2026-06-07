@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-07-cross-region-small-multiples-H reconstruction</title>
+  <style>
+    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #cfcfcf; }
+    h1 { margin: 0; font-size: 16px; font-weight: 700; }
+    .note { margin-top: 3px; font-size: 12px; color: #555555; }
+    .toggle { display: inline-flex; border: 1px solid #aaaaaa; border-radius: 4px; overflow: hidden; flex: 0 0 auto; }
+    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
+    .toggle button.active { background: #111111; color: #ffffff; }
+    main { min-height: calc(100vh - 48px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
+    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
+    .surface, .reference { position: absolute; inset: 0; }
+    .reference { display: none; width: 100%; height: 100%; object-fit: contain; background: #ffffff; }
+    .show-reference .surface { display: none; }
+    .show-reference .reference { display: block; }
+    svg { position: absolute; inset: 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <div><h1 id="title">reference-07-cross-region-small-multiples-H</h1><div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div></div>
+    <div class="toggle" aria-label="View mode"><button id="generatedButton" class="active" type="button">Generated</button><button id="referenceButton" type="button">Reference</button></div>
+  </header>
+  <main><div id="frame" class="frame"><div id="surface" class="surface"></div><img id="reference" class="reference" alt="QA reference source image"></div></main>
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const SPEC_URL = 'reference-07-cross-region-small-multiples-H.json';
+    const $ = id => document.getElementById(id);
+    function el(name, attrs = {}, parent) {
+      const node = document.createElementNS(SVG_NS, name);
+      for (const [key, value] of Object.entries(attrs)) if (value !== undefined && value !== null) node.setAttribute(key, value);
+      if (parent) parent.appendChild(node);
+      return node;
+    }
+    function text(parent, value, attrs = {}) {
+      const node = el('text', attrs, parent);
+      node.textContent = value;
+      return node;
+    }
+    function colorAt(value, scale) {
+      if (value === null || value === undefined) return scale.missingColor;
+      const t = Math.max(0, Math.min(1, (value - scale.domain[0]) / (scale.domain[1] - scale.domain[0])));
+      const start = [255, 255, 255], end = [11, 60, 149];
+      const rgb = start.map((s, i) => Math.round(s + (end[i] - s) * t));
+      return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+    }
+    function render(spec) {
+      const panel = spec.panels[0];
+      const grid = spec.coordinateSystems.find(item => item.id === 'heatmap-grid');
+      const scale = spec.coordinateSystems.find(item => item.id === 'decoding-color');
+      const frame = $('frame');
+      frame.style.width = spec.canvas.width + 'px';
+      frame.style.height = spec.canvas.height + 'px';
+      $('reference').src = spec.source.path;
+      const svg = el('svg', {width: spec.canvas.width, height: spec.canvas.height, viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, role: 'img', 'aria-label': spec.id});
+      el('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}, svg);
+      $('surface').replaceChildren(svg);
+      text(svg, panel.label.text, {x: panel.label.x, y: panel.label.y, 'font-size': panel.label.fontSize, 'font-weight': panel.label.fontWeight});
+      text(svg, panel.title.text, {x: panel.title.x, y: panel.title.y, 'font-size': panel.title.fontSize, 'font-weight': panel.title.fontWeight});
+      const corner = panel.layoutObjects.find(item => item.id === 'train-test-corner');
+      corner.lines.forEach(line => text(svg, line.text, {x: line.x, y: line.y, 'font-size': line.fontSize}));
+      const matrix = el('g', {'data-mark-type': 'heatmap'}, svg);
+      panel.data.values.forEach((row, r) => row.forEach((value, c) => {
+        const x = grid.bbox.x + c * grid.cellWidth;
+        const y = grid.bbox.y + r * grid.cellHeight;
+        el('rect', {x, y, width: grid.cellWidth, height: grid.cellHeight, fill: colorAt(value, scale), stroke: '#eef2f8', 'stroke-width': 1}, matrix);
+        text(matrix, value === null ? '—' : value.toFixed(2), {x: x + grid.cellWidth / 2, y: y + grid.cellHeight / 2 + 4, 'text-anchor': 'middle', 'font-size': 10});
+      }));
+      const regionLabels = panel.annotations.find(item => item.id === 'region-labels');
+      panel.data.rows.forEach((region, i) => text(svg, region, {x: regionLabels.rowLabelX, y: grid.bbox.y + i * grid.cellHeight + grid.cellHeight / 2 + regionLabels.rowLabelDy, 'font-size': regionLabels.fontSize, 'text-anchor': 'end', fill: regionLabels.colors[region]}));
+      panel.data.columns.forEach((region, i) => text(svg, region, {x: grid.bbox.x + i * grid.cellWidth + grid.cellWidth / 2, y: regionLabels.columnLabelY, 'font-size': regionLabels.fontSize, 'text-anchor': 'middle', fill: regionLabels.colors[region]}));
+      const frameObj = panel.layoutObjects.find(item => item.id === 'matrix-frame');
+      el('rect', {x: frameObj.bbox.x, y: frameObj.bbox.y, width: frameObj.bbox.width, height: frameObj.bbox.height, fill: 'none', stroke: frameObj.stroke, 'stroke-width': frameObj.strokeWidth}, svg);
+      const colorbar = panel.layoutObjects.find(item => item.id === 'colorbar');
+      const defs = el('defs', {}, svg);
+      const gradient = el('linearGradient', {id: 'decoding-color-gradient', x1: '0%', x2: '100%', y1: '0%', y2: '0%'}, defs);
+      el('stop', {offset: '0%', 'stop-color': scale.range[0]}, gradient);
+      el('stop', {offset: '100%', 'stop-color': scale.range[1]}, gradient);
+      text(svg, colorbar.label.text, {x: colorbar.label.x, y: colorbar.label.y, 'font-size': colorbar.label.fontSize, 'text-anchor': colorbar.label.textAnchor});
+      el('rect', {x: colorbar.bbox.x, y: colorbar.bbox.y, width: colorbar.bbox.width, height: colorbar.bbox.height, fill: 'url(#decoding-color-gradient)', stroke: '#111111', 'stroke-width': 0.8}, svg);
+      colorbar.ticks.forEach(tick => {
+        const x = colorbar.bbox.x + (tick.value - scale.domain[0]) / (scale.domain[1] - scale.domain[0]) * colorbar.bbox.width;
+        el('line', {x1: x, x2: x, y1: colorbar.bbox.y + colorbar.bbox.height, y2: colorbar.bbox.y + colorbar.bbox.height + 5, stroke: '#111111', 'stroke-width': 0.8}, svg);
+        text(svg, tick.label, {x, y: colorbar.bbox.y + colorbar.bbox.height + 18, 'font-size': 12, 'text-anchor': 'middle'});
+      });
+    }
+    function setMode(reference) {
+      $('frame').classList.toggle('show-reference', reference);
+      $('generatedButton').classList.toggle('active', !reference);
+      $('referenceButton').classList.toggle('active', reference);
+    }
+    $('generatedButton').addEventListener('click', () => setMode(false));
+    $('referenceButton').addEventListener('click', () => setMode(true));
+    fetch(SPEC_URL).then(r => r.json()).then(render).catch(error => { $('surface').textContent = error.message; });
+  </script>
+</body>
+</html>

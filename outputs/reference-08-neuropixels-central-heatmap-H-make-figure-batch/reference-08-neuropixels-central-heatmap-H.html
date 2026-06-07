@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-08-neuropixels-central-heatmap-H reconstruction</title>
+  <style>
+    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #cfcfcf; }
+    h1 { margin: 0; font-size: 16px; line-height: 1.15; }
+    .note { margin-top: 3px; font-size: 12px; color: #555555; }
+    .toggle { display: inline-flex; border: 1px solid #999999; border-radius: 4px; overflow: hidden; flex: 0 0 auto; }
+    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
+    .toggle button.active { background: #111111; color: #ffffff; }
+    main { min-height: calc(100vh - 52px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
+    .frame { position: relative; background-color: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
+    .surface, .reference { position: absolute; inset: 0; }
+    .reference { display: none; width: 100%; height: 100%; object-fit: contain; background-color: #ffffff; }
+    .show-reference .surface { display: none; }
+    .show-reference .reference { display: block; }
+    svg, canvas { position: absolute; inset: 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="pageTitle">reference-08-neuropixels-central-heatmap-H</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">QA reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA reference source image">
+    </div>
+  </main>
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const $ = id => document.getElementById(id);
+    const make = (tag, attrs = {}) => {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    };
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+    const scale = (domain, range, value) => range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+    function rng(seed) {
+      return function random() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    function hexToRgb(hex) {
+      const n = parseInt(hex.slice(1), 16);
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    }
+    function rgbString(rgb) {
+      return `rgb(${Math.round(rgb[0])},${Math.round(rgb[1])},${Math.round(rgb[2])})`;
+    }
+    function colorAt(stops, value) {
+      for (let i = 1; i < stops.length; i++) {
+        if (value <= stops[i].value) {
+          const a = stops[i - 1], b = stops[i];
+          const t = clamp((value - a.value) / (b.value - a.value), 0, 1);
+          const ar = hexToRgb(a.color), br = hexToRgb(b.color);
+          return rgbString([ar[0] + (br[0] - ar[0]) * t, ar[1] + (br[1] - ar[1]) * t, ar[2] + (br[2] - ar[2]) * t]);
+        }
+      }
+      return stops[stops.length - 1].color;
+    }
+    function text(svg, obj) {
+      const node = make('text', {
+        id: obj.id,
+        x: obj.x,
+        y: obj.y,
+        fill: obj.fill || '#111111',
+        'font-size': obj.fontSize || 14,
+        'font-weight': obj.fontWeight || 400,
+        'text-anchor': obj.anchor || 'start',
+        'dominant-baseline': obj.baseline || 'alphabetic',
+        transform: obj.rotation ? `rotate(${obj.rotation} ${obj.x} ${obj.y})` : null
+      });
+      node.textContent = obj.text;
+      svg.appendChild(node);
+      return node;
+    }
+    function line(svg, obj) {
+      svg.appendChild(make('line', {
+        x1: obj.x1, y1: obj.y1, x2: obj.x2, y2: obj.y2,
+        stroke: obj.stroke || '#111111',
+        'stroke-width': obj.strokeWidth || 1,
+        'stroke-dasharray': obj.dasharray || null
+      }));
+    }
+    function renderHeatmap(ctx, mark, colorScale) {
+      const rand = rng(mark.matrix.seed);
+      const box = mark.bbox;
+      const rows = mark.matrix.rows;
+      const cols = mark.matrix.cols;
+      const cw = box.width / cols;
+      const rh = box.height / rows;
+      ctx.fillStyle = colorAt(colorScale.stops, 0);
+      ctx.fillRect(box.x, box.y, box.width, box.height);
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const diagonal = r - (rows - 1 - c * (rows - 1) / (cols - 1));
+          const ridge = Math.exp(-(diagonal * diagonal) / (2 * mark.matrix.diagonalSigmaCells * mark.matrix.diagonalSigmaCells));
+          const rowBand = (Math.sin(r / 2.7) + 1) * mark.matrix.horizontalBandStrength;
+          const colBand = (Math.sin(c / 5.8 + r / 19) + 1) * mark.matrix.verticalBandStrength;
+          const speckle = rand() < mark.matrix.speckleProbability ? rand() * mark.matrix.speckleAmplitude : 0;
+          const gap = 1 - 0.17 * Math.exp(-Math.pow((c - 24) / 12, 2)) - 0.12 * Math.exp(-Math.pow((c - 76) / 17, 2));
+          const value = clamp(mark.matrix.baseProbability + ridge * mark.matrix.diagonalAmplitude * gap + rowBand + colBand + speckle, 0, 0.15);
+          ctx.fillStyle = colorAt(colorScale.stops, value);
+          ctx.fillRect(box.x + c * cw, box.y + r * rh, Math.ceil(cw) + 0.3, Math.ceil(rh) + 0.3);
+        }
+      }
+      ctx.strokeStyle = '#111111';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(box.x, box.y, box.width, box.height);
+    }
+    function renderColorbar(ctx, svg, obj, colorScale) {
+      const grad = ctx.createLinearGradient(0, obj.bbox.y + obj.bbox.height, 0, obj.bbox.y);
+      colorScale.stops.forEach((stop, i) => grad.addColorStop(i / (colorScale.stops.length - 1), stop.color));
+      ctx.fillStyle = grad;
+      ctx.fillRect(obj.bbox.x, obj.bbox.y, obj.bbox.width, obj.bbox.height);
+      ctx.strokeStyle = '#333333';
+      ctx.lineWidth = 0.8;
+      ctx.strokeRect(obj.bbox.x, obj.bbox.y, obj.bbox.width, obj.bbox.height);
+      text(svg, obj.label);
+      obj.ticks.forEach(t => text(svg, {text: t.label, x: t.x, y: t.y, fontSize: 14}));
+    }
+    function renderMatrixAxes(svg, panel) {
+      const plot = panel.plot;
+      const box = plot.dataBbox;
+      line(svg, {...plot.axes.xAxis.line, stroke: '#222222', strokeWidth: 1.1});
+      line(svg, {...plot.axes.yAxis.line, stroke: '#222222', strokeWidth: 1.1});
+      plot.x.ticks.forEach(t => {
+        const x = scale(plot.x.domain, [box.x, box.x + box.width], t.value);
+        line(svg, {x1: x, y1: plot.axes.xAxis.line.y1, x2: x, y2: plot.axes.xAxis.line.y1 + plot.axes.xAxis.tickLength, stroke: '#222222'});
+        text(svg, {text: t.label, x, y: plot.axes.xAxis.line.y1 + 22, fontSize: 16, anchor: 'middle'});
+      });
+      plot.y.ticks.forEach(t => {
+        const y = scale(plot.y.domain, [box.y + box.height, box.y], t.value);
+        line(svg, {x1: plot.axes.yAxis.line.x1 - plot.axes.yAxis.tickLength, y1: y, x2: plot.axes.yAxis.line.x1, y2: y, stroke: '#222222'});
+        text(svg, {text: t.label, x: plot.axes.yAxis.line.x1 - 12, y: y + 5, fontSize: 16, anchor: 'end'});
+      });
+      text(svg, plot.x.label);
+      text(svg, plot.y.label);
+    }
+    function renderLegend(svg, legend) {
+      legend.items.forEach(item => {
+        line(svg, {x1: item.x1, y1: item.y1, x2: item.x2, y2: item.y2, stroke: item.color, strokeWidth: 1.6, dasharray: item.dasharray});
+        text(svg, {text: item.label, x: item.x2 + 10, y: item.y1 + 5, fontSize: 14, fill: item.color === '#777777' ? '#555555' : item.color});
+      });
+    }
+    function renderRightTrace(svg, panelH, tracePanel, coord) {
+      const axis = panelH.layoutObjects.find(o => o.id === 'right-error-trace-axis');
+      axis.titleTop.forEach(t => text(svg, t));
+      line(svg, {...axis.xAxis.line, stroke: '#222222', strokeWidth: 1.1});
+      line(svg, {...axis.yAxis.line, stroke: '#222222', strokeWidth: 1.1});
+      axis.xAxis.ticks.forEach(t => {
+        const x = scale(coord.xDomain, coord.xRange, t.value);
+        line(svg, {x1: x, y1: axis.xAxis.line.y1, x2: x, y2: axis.xAxis.line.y1 + axis.xAxis.tickLength, stroke: '#222222'});
+        text(svg, {text: t.label, x, y: axis.xAxis.line.y1 + 22, fontSize: 15, anchor: 'middle'});
+      });
+      axis.yAxis.ticks.forEach(t => {
+        const y = scale(coord.yDomain, coord.yRange, t.value);
+        line(svg, {x1: axis.yAxis.line.x1 - axis.yAxis.tickLength, y1: y, x2: axis.yAxis.line.x1, y2: y, stroke: '#222222'});
+      });
+      text(svg, axis.xAxis.label);
+      const mark = tracePanel.marks[0];
+      const rand = rng(mark.jitter.seed);
+      const points = [];
+      for (let i = 0; i < mark.jitter.count; i++) {
+        const t = i / (mark.jitter.count - 1);
+        const targetY = t * 300;
+        let a = mark.points[0], b = mark.points[mark.points.length - 1];
+        for (let j = 1; j < mark.points.length; j++) {
+          if (targetY <= mark.points[j][0]) {
+            a = mark.points[j - 1];
+            b = mark.points[j];
+            break;
+          }
+        }
+        const local = (targetY - a[0]) / (b[0] - a[0] || 1);
+        const err = a[1] + (b[1] - a[1]) * local + (rand() - 0.5) * 2 * mark.jitter.amplitude;
+        points.push([scale(coord.xDomain, coord.xRange, err), scale(coord.yDomain, coord.yRange, targetY)]);
+      }
+      const d = points.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
+      svg.appendChild(make('path', {d, fill: 'none', stroke: mark.stroke, 'stroke-width': mark.strokeWidth, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', 'data-mark-id': mark.id}));
+    }
+    async function loadSpec() {
+      const response = await fetch('reference-08-neuropixels-central-heatmap-H.json');
+      return response.json();
+    }
+    function render(spec) {
+      document.title = spec.id + ' reconstruction';
+      $('pageTitle').textContent = spec.id;
+      $('frame').style.width = spec.canvas.width + 'px';
+      $('frame').style.height = spec.canvas.height + 'px';
+      $('reference').src = spec.source.path;
+      const surface = $('surface');
+      surface.innerHTML = '';
+      const canvas = document.createElement('canvas');
+      canvas.width = spec.canvas.width;
+      canvas.height = spec.canvas.height;
+      const ctx = canvas.getContext('2d');
+      const svg = make('svg', {width: spec.canvas.width, height: spec.canvas.height, viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, role: 'img'});
+      svg.style.fontFamily = spec.typography.fontFamily;
+      svg.appendChild(make('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
+      surface.appendChild(canvas);
+      surface.appendChild(svg);
+      const panel = spec.panels.find(p => p.id === 'panel-h');
+      const trace = spec.panels.find(p => p.id === 'right-trace');
+      text(svg, panel.label);
+      text(svg, panel.title);
+      renderHeatmap(ctx, panel.marks.find(m => m.type === 'heatmap'), spec.coordinateSystems.probabilityColor);
+      renderMatrixAxes(svg, panel);
+      renderColorbar(ctx, svg, panel.layoutObjects.find(o => o.id === 'probability-colorbar'), spec.coordinateSystems.probabilityColor);
+      renderLegend(svg, panel.layoutObjects.find(o => o.id === 'layer-legend'));
+      renderRightTrace(svg, panel, trace, spec.coordinateSystems['rightTrace.xy']);
+    }
+    $('generatedButton').addEventListener('click', () => {
+      $('frame').classList.remove('show-reference');
+      $('generatedButton').classList.add('active');
+      $('referenceButton').classList.remove('active');
+    });
+    $('referenceButton').addEventListener('click', () => {
+      $('frame').classList.add('show-reference');
+      $('referenceButton').classList.add('active');
+      $('generatedButton').classList.remove('active');
+    });
+    loadSpec().then(render).catch(error => {
+      document.body.insertAdjacentHTML('beforeend', `<pre style="color:#a00;padding:16px">${String(error)}</pre>`);
+      throw error;
+    });
+  </script>
+</body>
+</html>

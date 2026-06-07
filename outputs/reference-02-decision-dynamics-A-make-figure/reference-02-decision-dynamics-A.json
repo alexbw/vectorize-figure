@@ -12,13 +12,13 @@
     "background": "#ffffff"
   },
   "typography": {
-    "fontFamily": "Arial, Helvetica, sans-serif",
+    "fontFamily": "Arial Narrow, Helvetica Neue, Arial, sans-serif",
     "defaultSize": 13,
     "color": "#111111",
     "calibration": {
       "letterSpacing": 0,
       "lineHeight": 1.08,
-      "notes": "Known font mismatch is tracked in GitHub issue #1."
+      "notes": "Panel-level narrow sans selected after visual text matching; dense table labels kept semantic rather than OCR-positioned."
     }
   },
   "panels": [
@@ -71,11 +71,12 @@
           "targetPoint": "bottom-center",
           "anchorPoint": "top-center",
           "dx": 0,
-          "dy": 7,
+          "dy": 11,
           "fontSize": 14,
           "anchor": "middle",
           "role": "axis-title",
-          "minGapFromTarget": 7
+          "minGapFromTarget": 7,
+          "calibrationNote": "manual visual override: collision-aware tick label band placed the semantic axis title above the source baseline"
         },
         "ticks": [
           {
@@ -153,7 +154,7 @@
           "id": "fixate",
           "title": "Fixate\n500 ms",
           "titleX": 50,
-          "titleY": 93,
+          "titleY": 96,
           "screen": {
             "x": 15,
             "y": 136,
@@ -167,7 +168,7 @@
           "id": "stimulus",
           "title": "Stimulus\n200 ms",
           "titleX": 136,
-          "titleY": 93,
+          "titleY": 96,
           "screen": {
             "x": 100,
             "y": 136,
@@ -181,7 +182,7 @@
           "id": "delay",
           "title": "Delay\n~1,000 ms",
           "titleX": 220,
-          "titleY": 93,
+          "titleY": 96,
           "screen": {
             "x": 183,
             "y": 136,
@@ -195,7 +196,7 @@
           "id": "response",
           "title": "Go\n(response)",
           "titleX": 304,
-          "titleY": 93,
+          "titleY": 96,
           "screen": {
             "x": 269,
             "y": 136,
@@ -213,7 +214,7 @@
           "id": "outcome",
           "title": "Outcome\n500 ms",
           "titleX": 378,
-          "titleY": 93,
+          "titleY": 96,
           "screen": {
             "x": 346,
             "y": 136,

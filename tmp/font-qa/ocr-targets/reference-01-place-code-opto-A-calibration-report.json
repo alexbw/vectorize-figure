@@ -1,0 +1,135 @@
+[
+  {
+    "id": "ocr-01",
+    "text": "A Hippocampal CA1 place cells (n 162)",
+    "family": "Helvetica Neue",
+    "size": 18.6,
+    "weight": 600,
+    "lineHeight": 1,
+    "scaleX": 0.95,
+    "naturalWidth": 340.55,
+    "x": 22.25,
+    "y": 34.7,
+    "score": 0.57981,
+    "crop": {
+      "x": 15,
+      "y": 12,
+      "width": 334,
+      "height": 31
+    }
+  },
+  {
+    "id": "ocr-02",
+    "text": "Control (no light)",
+    "family": "Source Sans 3",
+    "size": 9.57,
+    "weight": 600,
+    "lineHeight": 1,
+    "scaleX": 0.755,
+    "naturalWidth": 73.92,
+    "x": 160.75,
+    "y": 83.15,
+    "score": 1.20031,
+    "crop": {
+      "x": 100,
+      "y": 57,
+      "width": 113,
+      "height": 24
+    }
+  },
+  {
+    "id": "ocr-03",
+    "text": "a Firing rate",
+    "family": "Helvetica Neue",
+    "size": 36.64,
+    "weight": 500,
+    "lineHeight": 1,
+    "scaleX": 1.25,
+    "naturalWidth": 201.63,
+    "x": 29.75,
+    "y": 213.75,
+    "score": 1.79673,
+    "crop": {
+      "x": 24,
+      "y": 183,
+      "width": 465,
+      "height": 42
+    }
+  },
+  {
+    "id": "ocr-04",
+    "text": "iring rate",
+    "family": "Helvetica",
+    "size": 14.14,
+    "weight": 400,
+    "lineHeight": 1,
+    "scaleX": 0.95,
+    "naturalWidth": 55.01,
+    "x": 466.5,
+    "y": 218.7,
+    "score": 0.48081,
+    "crop": {
+      "x": 437,
+      "y": 207,
+      "width": 59,
+      "height": 21
+    }
+  },
+  {
+    "id": "ocr-05",
+    "text": "3 (z-scored)",
+    "family": "Helvetica Neue",
+    "size": 36.64,
+    "weight": 500,
+    "lineHeight": 1,
+    "scaleX": 1.25,
+    "naturalWidth": 199.61,
+    "x": 29.75,
+    "y": 246.25,
+    "score": 1.82528,
+    "crop": {
+      "x": 20,
+      "y": 217,
+      "width": 475,
+      "height": 42
+    }
+  },
+  {
+    "id": "ocr-06",
+    "text": "3 A",
+    "family": "Helvetica",
+    "size": 21.54,
+    "weight": 400,
+    "lineHeight": 1,
+    "scaleX": 1.25,
+    "naturalWidth": 32.33,
+    "x": 27.25,
+    "y": 389.95,
+    "score": 2.56916,
+    "crop": {
+      "x": 24,
+      "y": 371,
+      "width": 462,
+      "height": 26
+    }
+  },
+  {
+    "id": "ocr-07",
+    "text": "Position (cm) Position (cm)",
+    "family": "Helvetica",
+    "size": 19.89,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1.13,
+    "naturalWidth": 236.17,
+    "x": 114.25,
+    "y": 490.1,
+    "score": 0.82519,
+    "crop": {
+      "x": 112,
+      "y": 471,
+      "width": 275,
+      "height": 27
+    }
+  }
+]

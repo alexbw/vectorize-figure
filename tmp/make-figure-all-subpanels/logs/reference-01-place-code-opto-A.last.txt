@@ -1,0 +1,11 @@
+Generated the first-pass reconstruction in the two requested files:
+
+- [reference-01-place-code-opto-A.json](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-01-place-code-opto-A-make-figure-batch/reference-01-place-code-opto-A.json)
+- [reference-01-place-code-opto-A.html](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-01-place-code-opto-A-make-figure-batch/reference-01-place-code-opto-A.html)
+
+What’s included: semantic editable JSON, procedural canvas heatmaps, SVG axes/text/colorbar, and a clearly labeled QA reference toggle. The generated visual layers do not reuse the source raster.
+
+Verification completed:
+- JSON validity: `python3 -m json.tool` passed.
+- Source reuse search: no `drawImage`, no source raster CSS background/image layer. The only source path is `source.path` in JSON for QA reference mode.
+- Static server attempt failed because the sandbox blocks port binding: `PermissionError: [Errno 1] Operation not permitted`.

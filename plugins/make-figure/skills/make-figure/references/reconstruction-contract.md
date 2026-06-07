@@ -391,13 +391,30 @@ reconstructions. The shared template exposes `window.figureTextQa` whenever
 `sourceBox` fields are present, and `?fontQa=1` also scores
 `typography.fontCandidates` in `window.figureFontQa`.
 
+For source-box-driven text calibration, use `scripts/font-calibration/` as the
+shared harness. It renders candidate text in the browser, compares masks against
+source crops, writes calibrated text fields back to the spec, and emits
+`baselineScore`, `score`, and `improvement` per label. Use the scores to catch
+regressions, but use results-only overlays for acceptance. The target is a
+clear visual improvement over the baseline reconstruction, not pixel identity
+with the source raster.
+
 ## Text Collision Rules
 
 Text overlap is a reconstruction failure for protected layout text. Axis
-titles, tick labels, colorbar titles, legend labels, table headers, and table
-cell labels must reserve space from each other with measured or estimated text
-boxes. Do not rely on a single fixed `x`/`y` offset when a label is visually
-attached to another text row.
+titles, tick labels, colorbar titles, colorbar tick labels, legend labels,
+table headers, table cell labels, panel labels, phase labels, and region labels
+must reserve space from each other with measured or estimated text boxes. Do
+not rely on a single fixed `x`/`y` offset when a label is visually attached to
+another text row.
+
+Protected text must be measured in the rendered browser before finishing. For
+SVG text, use `getBBox()` after fonts are ready; for DOM text, use
+`getBoundingClientRect()`. Treat a collision with another protected text box,
+an axis spine, a plot boundary, or a clipping rectangle as a failed render.
+Generated HTML should expose a collision report such as
+`window.figureLayoutQa.protectedTextCollisions`, and any nonempty collision
+list must be fixed before the output is considered complete.
 
 For axes with tick labels, model the axis title as anchored to a
 `tickLabelBand` rather than directly to the axis line whenever the source places
@@ -444,6 +461,206 @@ boundaries. If the source shows strong horizontal rules but weak or absent
 vertical strokes, encode a row/band object with top and bottom rules plus
 optional separators and highlighted cells. Do not force every cell into an
 identical full-stroke rectangle.
+
+For compact schematic phase tables or task timelines, model the visual rows
+explicitly:
+
+```json
+{
+  "phaseTable": {
+    "bbox": {"x": 15, "y": 312, "width": 395, "height": 180},
+    "columns": [
+      {"id": "stim", "label": "Stim", "x": 94, "width": 74, "accent": "#3769b1"}
+    ],
+    "rows": [
+      {"id": "header", "height": 36, "minTextGap": 4},
+      {"id": "process", "height": 54, "minTextGap": 5},
+      {"id": "behavior", "height": 58, "minTextGap": 5}
+    ],
+    "rules": {"top": true, "bottom": false, "columnGap": 3, "strokeWidth": 1}
+  }
+}
+```
+
+Renderers must measure multiline text inside every phase/table cell. If text
+does not fit, first reduce the local font size within the declared hierarchy,
+then wrap or increase row height if the source has room. Never accept clipped
+or overlapping cell text.
+
+### Tick Bands In Small Multiples
+
+For arrays of heatmaps or small multiples, each plot has its own data box and
+its own tick-label band. Adjacent tick labels are protected text even if they
+belong to different plots. Labels such as `100` at the right edge of one plot
+and `0` at the left edge of the next plot must not collide.
+
+Encode enough layout to prevent this:
+
+```json
+{
+  "smallMultiple": {
+    "plotGap": 12,
+    "xTickLabelBand": {"height": 20, "minNeighborGap": 3},
+    "xTicks": [
+      {"value": 0, "label": "0", "edgePolicy": "inside"},
+      {"value": 100, "label": "100", "edgePolicy": "inside"}
+    ]
+  }
+}
+```
+
+When edge tick labels collide, prefer a source-faithful inward anchor (`start`
+for left edge, `end` for right edge), local text fitting, or a larger plot gap.
+Do not simply nudge one label until it overlaps a different object. Do not move
+the tick mark away from its source-calibrated coordinate to make room for text.
+
+### Tick Coordinate Invariants
+
+Every visible tick has two related but separate objects:
+
+- the tick mark coordinate, derived from the source axis scale
+- the tick label box, which may have an anchor or offset for legibility
+
+Renderers must expose both relationships in the DOM:
+
+```html
+<line data-role="axis-tick-mark" data-axis="x" data-value="100" data-source-x="129">
+<text data-role="tick-label" data-axis="x" data-value="100" data-label-offset-x="0">
+```
+
+Moving a label to avoid collision is allowed only if the tick mark remains at
+the calibrated coordinate. Moving both the mark and the label together to make
+room is a geometry error.
+
+### Protected Exclusion Zones
+
+Text collision checks must include more than text-vs-text intersections. Any
+layout object that occupies protected visual space must declare an exclusion
+box or path:
+
+```json
+{
+  "id": "pc-orientation-key",
+  "type": "orientationKey",
+  "bbox": {"x": 394, "y": 275, "width": 70, "height": 56},
+  "exclusionZone": {"paddingPx": 2}
+}
+```
+
+Protected text must not intersect plot boxes, colorbars, orientation keys,
+legend marks, helper strips, or explicitly reserved regions unless the source
+visibly overlaps those elements. If an exception is source-faithful, record it
+in provenance and tag the text or exclusion zone with the exception id.
+
+### Colorbars
+
+Colorbars are not generic rectangles with default ticks. Encode all of:
+
+- `orientation`: vertical or horizontal
+- `tickSide`: left, right, top, or bottom
+- `tickDirection`: inward or outward relative to the bar
+- `tickLength`
+- `labelAnchor` and `titleAnchor`
+- the color scale used by the corresponding data mark
+
+Example:
+
+```json
+{
+  "colorbar": {
+    "id": "activity-colorbar",
+    "orientation": "vertical",
+    "bbox": {"x": 304, "y": 247, "width": 8, "height": 108},
+    "tickSide": "right",
+    "tickDirection": "outward",
+    "ticks": [{"value": 0, "label": "0"}, {"value": 2, "label": "2"}]
+  }
+}
+```
+
+Before finishing, compare the generated tick side to the source. A colorbar
+whose ticks or labels are on the wrong side fails validation even if the bar
+colors are correct.
+
+### Axis Truncation And Orientation Keys
+
+Some source panels intentionally truncate an axis to leave room for an
+orientation key, inset, legend, or annotation. Represent this as semantic axis
+geometry, not as a missing tick:
+
+```json
+{
+  "xAxis": {
+    "visibleSegments": [
+      {"from": -6, "to": 3.2}
+    ],
+    "ticks": [
+      {"value": -6, "label": "-6", "showMark": true, "showLabel": true},
+      {"value": 0, "label": "0", "showMark": true, "showLabel": true},
+      {"value": 6, "label": "6", "showMark": true, "showLabel": true}
+    ],
+    "occluders": ["pc-orientation-key"]
+  }
+}
+```
+
+Do not delete tick labels merely because a visible axis segment is truncated.
+If a source tick label is visible but its mark lies outside the shortened
+segment, encode a source-calibrated tick mark or label anchor.
+
+### Polar Labels
+
+Polar angle labels are anchored labels, not arbitrary page text. Store the
+angle, offset, anchor, and minimum gap:
+
+```json
+{
+  "angleLabels": [
+    {"value": 0, "label": "0°", "radialOffsetPx": 7, "minGapPx": 3, "anchor": "start"}
+  ]
+}
+```
+
+The label should be close enough to read as part of the polar plot but clearly
+separated from the circle, curve, and preferred-direction marker. Excessive
+offsets that detach the label from the plot are also failures.
+
+### Raster Plot Boundaries And Ticks
+
+Raster plots and strip panels must inventory visible boundary strokes. If the
+source shows a left spine, encode and render it. If ticks are drawn inside the
+plot bounds, store `tickDirection: "in"` and keep ticks inside the data or axis
+box. Do not allow bottom ticks to extend below the boundary unless the source
+does that.
+
+Raster/event ticks, inward axis ticks, boxed-strip marks, and similar generated
+line marks must have an owner box. A mark must either be clipped by a clip path
+whose rectangle matches the owner box, or all of its endpoints must lie inside
+that owner box:
+
+```json
+{
+  "id": "ca1-event-42",
+  "type": "rasterTick",
+  "ownerBox": "ca1.box",
+  "clipToOwner": true
+}
+```
+
+Renderer QA should emit a mismatch if an un-clipped bounded mark extends
+outside the owner box. This is especially important for sparse raster strips
+where tick height, jitter, or row spacing can otherwise push strokes beyond
+clearly drawn boundaries.
+
+### Colored Side Strips And Region Bands
+
+Colored strips adjacent to heatmaps are semantic axis/layout objects. Inventory
+their orientation, segments, boundaries, colors, and relationship to the
+corresponding axis before rendering. Do not add a strip to an axis that does
+not visibly have one in the source. In particular, do not invent colored x-axis
+bars to explain y-axis sorting strips or event/region colors. When text labels
+and colored strips share an axis area, reserve separate bands so labels never
+overlap the strip.
 
 ## Provenance And Confidence
 

@@ -12,13 +12,13 @@
     "background": "#ffffff"
   },
   "typography": {
-    "fontFamily": "Arial, Helvetica, sans-serif",
+    "fontFamily": "Arial Narrow, Helvetica Neue, Arial, sans-serif",
     "defaultSize": 12,
     "color": "#111111",
     "calibration": {
       "letterSpacing": 0,
       "lineHeight": 1.08,
-      "notes": "Known font mismatch is tracked in GitHub issue #1."
+      "notes": "Panel-level narrow sans selected after visual text matching; 3D annotation positions kept semantic."
     }
   },
   "panels": [
@@ -255,10 +255,10 @@
           "strokeWidth": 1.05
         },
         "grid": {
-          "stroke": "#c6c6c6",
-          "strokeWidth": 0.72,
+          "stroke": "#dddddd",
+          "strokeWidth": 0.42,
           "dasharray": "1.4 3",
-          "opacity": 0.95,
+          "opacity": 0,
           "planeFills": [
             {
               "id": "floor-pc1-pc2-fill",
@@ -268,7 +268,8 @@
               "u": "pc1",
               "v": "pc2",
               "fill": "#f2f2f2",
-              "opacity": 0.42
+              "opacity": 0,
+              "calibrationNote": "manual visual override: floor fill removed because even very light continuous fill made the generated pane read as a skewed surface"
             }
           ],
           "sourceInventory": {
@@ -471,7 +472,121 @@
               }
             ]
           },
-          "generatedPlanes": [
+          "projectedPlanes": [
+            {
+              "id": "source-visible-apex-guide",
+              "lines": [
+                {
+                  "x1": 202,
+                  "y1": 110,
+                  "x2": 202,
+                  "y2": 417,
+                  "stroke": "#dddddd",
+                  "strokeWidth": 0.42,
+                  "dasharray": "1.4 3",
+                  "opacity": 0,
+                  "axis": "pc3",
+                  "value": "source-visible-boundary",
+                  "boundary": true,
+                  "calibrationNote": "manual visual override: this faint vertical guide is visible in the source behind the trajectories; omitting it made the two side panes read as skewed standalone faces"
+                }
+              ]
+            },
+            {
+              "id": "floor-pc1-pc2",
+              "lines": [
+                {
+                  "x1": 114.5,
+                  "y1": 297,
+                  "x2": 259,
+                  "y2": 387,
+                  "stroke": "#dddddd",
+                  "strokeWidth": 0.42,
+                  "dasharray": "1.4 3",
+                  "opacity": 0,
+                  "axis": "pc1",
+                  "value": 0,
+                  "boundary": false
+                },
+                {
+                  "x1": 129.5,
+                  "y1": 372,
+                  "x2": 244,
+                  "y2": 312,
+                  "stroke": "#dddddd",
+                  "strokeWidth": 0.42,
+                  "dasharray": "1.4 3",
+                  "opacity": 0,
+                  "axis": "pc2",
+                  "value": 0,
+                  "boundary": false
+                }
+              ]
+            },
+            {
+              "id": "pc2-pc3-pane",
+              "lines": [
+                {
+                  "x1": 129.5,
+                  "y1": 372,
+                  "x2": 129.5,
+                  "y2": 126.5,
+                  "stroke": "#dddddd",
+                  "strokeWidth": 0.42,
+                  "dasharray": "1.4 3",
+                  "opacity": 0,
+                  "axis": "pc2",
+                  "value": 0,
+                  "boundary": false
+                },
+                {
+                  "x1": 57,
+                  "y1": 235,
+                  "x2": 202,
+                  "y2": 263.5,
+                  "stroke": "#dddddd",
+                  "strokeWidth": 0.42,
+                  "dasharray": "1.4 3",
+                  "opacity": 0,
+                  "axis": "pc3",
+                  "value": 0,
+                  "boundary": false
+                }
+              ]
+            },
+            {
+              "id": "pc1-pc3-pane",
+              "lines": [
+                {
+                  "x1": 259,
+                  "y1": 387,
+                  "x2": 259,
+                  "y2": 141,
+                  "stroke": "#dddddd",
+                  "strokeWidth": 0.42,
+                  "dasharray": "1.4 3",
+                  "opacity": 0,
+                  "axis": "pc1",
+                  "value": 0,
+                  "boundary": false
+                },
+                {
+                  "x1": 202,
+                  "y1": 263.5,
+                  "x2": 316,
+                  "y2": 264.5,
+                  "stroke": "#dddddd",
+                  "strokeWidth": 0.42,
+                  "dasharray": "1.4 3",
+                  "opacity": 0,
+                  "axis": "pc3",
+                  "value": 0,
+                  "boundary": false
+                }
+              ]
+            }
+          ],
+          "generatedPlanesOriginal": [
             {
               "id": "floor-pc1-pc2",
               "fixed": {
@@ -562,7 +677,8 @@
                 }
               ]
             }
-          ]
+          ],
+          "calibrationNote": "Manual visual override: generated SVG grid guides are hidden in normal rendering. The source guides are raster-soft and heavily occluded; rendering them as continuous editable SVG lines destroyed the perceived 3D perspective even at very low opacity. Grid metadata is retained and can be inspected in Geometry QA mode, but box edges and trajectories carry the visible perspective."
         },
         "axes": [
           {
@@ -596,10 +712,11 @@
             },
             "label": {
               "text": "PC 1\n(25%)",
-              "x": 286,
-              "y": 449,
+              "x": 278,
+              "y": 432,
               "fontSize": 15,
-              "anchor": "middle"
+              "anchor": "middle",
+              "calibrationNote": "manual visual override: source 3D PC1 axis title is artist-positioned rather than the projected semantic anchor"
             },
             "ticks": [
               {
@@ -776,10 +893,11 @@
             },
             "label": {
               "text": "PC 3\n(8%)",
-              "x": 16,
-              "y": 245,
+              "x": 18,
+              "y": 238,
               "fontSize": 15,
-              "anchor": "middle"
+              "anchor": "middle",
+              "calibrationNote": "manual visual override: source PC3 title is artist-positioned rather than the projected z-axis label anchor"
             },
             "ticks": [
               {
@@ -841,15 +959,15 @@
             "id": "left-choice",
             "label": "Left choice",
             "color": "#124fbe",
-            "faintOpacity": 0.22,
-            "faintStrokeWidth": 0.75,
-            "meanStrokeWidth": 3.0,
-            "count": 58,
+            "faintOpacity": 0.13,
+            "faintStrokeWidth": 0.7,
+            "meanStrokeWidth": 3,
+            "count": 115,
             "seed": 3201,
             "jitter": {
-              "pc1": 0.26,
-              "pc2": 0.22,
-              "pc3": 0.26
+              "pc1": 0.4,
+              "pc2": 0.42,
+              "pc3": 0.36
             },
             "mean": [
               [
@@ -907,15 +1025,15 @@
             "id": "right-choice",
             "label": "Right choice",
             "color": "#dd1717",
-            "faintOpacity": 0.21,
-            "faintStrokeWidth": 0.75,
-            "meanStrokeWidth": 3.0,
-            "count": 62,
+            "faintOpacity": 0.12,
+            "faintStrokeWidth": 0.7,
+            "meanStrokeWidth": 3,
+            "count": 125,
             "seed": 4107,
             "jitter": {
-              "pc1": 0.28,
-              "pc2": 0.3,
-              "pc3": 0.22
+              "pc1": 0.46,
+              "pc2": 0.54,
+              "pc3": 0.36
             },
             "mean": [
               [
@@ -934,7 +1052,7 @@
                 0.14
               ],
               [
-                0.0,
+                0,
                 0.4,
                 -0.08
               ],
@@ -945,7 +1063,7 @@
               ],
               [
                 1.54,
-                2.0,
+                2,
                 -0.64
               ]
             ],

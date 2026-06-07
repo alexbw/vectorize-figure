@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-04-motor-manifold-I reconstruction</title>
+  <style>
+    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #cccccc; }
+    h1 { margin: 0; font-size: 16px; font-weight: 700; }
+    .note { margin-top: 3px; font-size: 12px; color: #555555; }
+    .toggle { display: inline-flex; border: 1px solid #aaaaaa; border-radius: 4px; overflow: hidden; flex: 0 0 auto; }
+    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
+    .toggle button.active { background: #111111; color: #ffffff; }
+    main { min-height: calc(100vh - 49px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
+    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
+    .surface, .reference { position: absolute; inset: 0; }
+    .reference { display: none; width: 100%; height: 100%; object-fit: contain; background: #ffffff; }
+    .show-reference .surface { display: none; }
+    .show-reference .reference { display: block; }
+    svg { position: absolute; inset: 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-04-motor-manifold-I</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">QA reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA reference source image">
+    </div>
+  </main>
+  <script>
+    const SPEC_URL = './reference-04-motor-manifold-I.json';
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function byId(id) { return document.getElementById(id); }
+    function node(tag, attrs = {}) {
+      const el = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) el.setAttribute(key, value);
+      }
+      return el;
+    }
+    function addText(svg, spec, defaults = {}) {
+      const lines = String(spec.text || '').split('\n');
+      const text = node('text', {
+        x: spec.x, y: spec.y, fill: spec.fill || defaults.color || '#111111',
+        'font-family': spec.fontFamily || defaults.fontFamily || 'Arial, Helvetica, sans-serif',
+        'font-size': spec.fontSize || defaults.defaultSize || 12,
+        'font-weight': spec.fontWeight || 400,
+        'text-anchor': spec.anchor || 'start',
+        'dominant-baseline': spec.baseline || 'alphabetic',
+        'letter-spacing': spec.letterSpacing ?? defaults.calibration?.letterSpacing ?? 0,
+        transform: spec.rotation ? `rotate(${spec.rotation} ${spec.x} ${spec.y})` : undefined,
+        'data-id': spec.id || undefined,
+        'data-role': spec.role || 'text'
+      });
+      lines.forEach((line, i) => {
+        const span = node('tspan', {x: spec.x, dy: i === 0 ? 0 : (spec.lineHeight || 14)});
+        span.textContent = line;
+        text.appendChild(span);
+      });
+      svg.appendChild(text);
+      return text;
+    }
+    function scaleY(plot, value) {
+      const system = systems[plot.usesTransform];
+      const d = system.y.domain;
+      const r = system.y.range;
+      return r[0] + (value - d[0]) / (d[1] - d[0]) * (r[1] - r[0]);
+    }
+    function seriesX(plot, index) {
+      const step = plot.bbox.width / 5;
+      return plot.bbox.x + step * (index + 0.5);
+    }
+    function jitter(i, n) {
+      const pattern = [-0.32, 0.28, -0.15, 0.08, 0.36, -0.38, 0.18, -0.04, 0.42, -0.24, 0.0, 0.24, -0.44];
+      return pattern[i % pattern.length] * 10;
+    }
+    function renderAxes(svg, plot, defaults) {
+      const left = plot.bbox.x;
+      const right = plot.bbox.x + plot.bbox.width;
+      const bottom = plot.bbox.y + plot.bbox.height;
+      svg.appendChild(node('line', {x1: left, y1: plot.bbox.y, x2: left, y2: bottom, stroke: '#111111', 'stroke-width': 1.2, 'data-role': 'y-axis', 'data-plot': plot.id}));
+      svg.appendChild(node('line', {x1: left, y1: bottom, x2: right, y2: bottom, stroke: '#111111', 'stroke-width': 1.2, 'data-role': 'x-axis', 'data-plot': plot.id}));
+      for (const tick of plot.yAxis.ticks) {
+        const y = scaleY(plot, tick.value);
+        svg.appendChild(node('line', {x1: left - 4, y1: y, x2: left, y2: y, stroke: '#111111', 'stroke-width': 1, 'data-role': 'y-tick', 'data-value': tick.value, 'data-plot': plot.id}));
+        addText(svg, {text: tick.label, x: left - 7, y: y + 4, fontSize: 13, anchor: 'end', role: 'y-tick-label'}, defaults);
+      }
+      addText(svg, plot.title, defaults);
+    }
+    function renderBoxplots(svg, plot, seriesMap) {
+      plot.data.forEach((group, i) => {
+        const series = seriesMap[group.series];
+        const x = seriesX(plot, i);
+        const bw = plot.boxWidth;
+        const s = group.summary;
+        const yMin = scaleY(plot, s.min);
+        const yMax = scaleY(plot, s.max);
+        const yQ1 = scaleY(plot, s.q1);
+        const yQ3 = scaleY(plot, s.q3);
+        const yMed = scaleY(plot, s.median);
+        svg.appendChild(node('line', {x1: x, y1: yMax, x2: x, y2: yMin, stroke: series.color, 'stroke-width': 1.3, 'data-role': 'whisker', 'data-series': group.series, 'data-plot': plot.id}));
+        svg.appendChild(node('line', {x1: x - 4, y1: yMax, x2: x + 4, y2: yMax, stroke: series.color, 'stroke-width': 1.3, 'data-role': 'whisker-cap', 'data-series': group.series}));
+        svg.appendChild(node('line', {x1: x - 4, y1: yMin, x2: x + 4, y2: yMin, stroke: series.color, 'stroke-width': 1.3, 'data-role': 'whisker-cap', 'data-series': group.series}));
+        svg.appendChild(node('rect', {x: x - bw / 2, y: yQ3, width: bw, height: Math.max(1, yQ1 - yQ3), fill: series.color, 'fill-opacity': 0.28, stroke: series.color, 'stroke-width': 1.5, 'data-role': 'iqr-box', 'data-series': group.series, 'data-plot': plot.id}));
+        svg.appendChild(node('line', {x1: x - bw / 2, y1: yMed, x2: x + bw / 2, y2: yMed, stroke: series.color, 'stroke-width': 1.5, 'data-role': 'median', 'data-series': group.series, 'data-plot': plot.id}));
+        group.points.forEach((value, j) => {
+          svg.appendChild(node('circle', {cx: x + jitter(j, group.points.length), cy: scaleY(plot, value), r: 1.75, fill: '#ffffff', stroke: series.color, 'stroke-width': 1.45, 'data-role': 'jitter-point', 'data-series': group.series, 'data-value': value, 'data-plot': plot.id}));
+        });
+      });
+    }
+    function renderLegend(svg, legend, seriesMap, defaults) {
+      svg.appendChild(node('rect', {x: legend.bbox.x, y: legend.bbox.y, width: legend.bbox.width, height: legend.bbox.height, fill: '#ffffff', stroke: '#111111', 'stroke-width': 1, 'data-role': 'legend-box', 'data-id': legend.id}));
+      legend.items.forEach(item => {
+        const series = seriesMap[item.series];
+        svg.appendChild(node('rect', {x: item.x, y: item.y - 7, width: 12, height: 14, fill: series.color, stroke: '#555555', 'stroke-width': 0.7, 'data-role': 'legend-swatch', 'data-series': item.series}));
+        addText(svg, {text: series.label, x: item.x + 25, y: item.y + 5, fontSize: 14, role: 'legend-label'}, defaults);
+      });
+    }
+
+    let systems = {};
+    async function loadSpec() {
+      const response = await fetch(SPEC_URL);
+      if (!response.ok) throw new Error(`Unable to load ${SPEC_URL}`);
+      return response.json();
+    }
+    function render(spec) {
+      systems = Object.fromEntries(spec.coordinateSystems.map(system => [system.id, system]));
+      byId('title').textContent = spec.id;
+      const frame = byId('frame');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      byId('reference').src = spec.source.path;
+      const surface = byId('surface');
+      surface.textContent = '';
+      const svg = node('svg', {viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, width: spec.canvas.width, height: spec.canvas.height, role: 'img', 'aria-label': `${spec.id} generated reconstruction`});
+      svg.appendChild(node('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background || '#ffffff'}));
+      const panel = spec.panels[0];
+      const seriesMap = Object.fromEntries(spec.series.map(s => [s.id, s]));
+      addText(svg, panel.label, spec.typography);
+      addText(svg, panel.title, spec.typography);
+      addText(svg, panel.subtitle, spec.typography);
+      panel.plots.forEach(plot => {
+        renderAxes(svg, plot, spec.typography);
+        renderBoxplots(svg, plot, seriesMap);
+      });
+      renderLegend(svg, panel.legend, seriesMap, spec.typography);
+      surface.appendChild(svg);
+    }
+    function setMode(referenceMode) {
+      byId('frame').classList.toggle('show-reference', referenceMode);
+      byId('generatedButton').classList.toggle('active', !referenceMode);
+      byId('referenceButton').classList.toggle('active', referenceMode);
+    }
+    byId('generatedButton').addEventListener('click', () => setMode(false));
+    byId('referenceButton').addEventListener('click', () => setMode(true));
+    loadSpec().then(render).catch(error => {
+      byId('surface').textContent = error.message;
+      console.error(error);
+    });
+  </script>
+</body>
+</html>

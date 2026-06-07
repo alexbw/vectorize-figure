@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-06-replay-stimulation-A reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cccccc;
+    }
+    h1 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #999999;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+    main {
+      min-height: calc(100vh - 50px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .frame {
+      position: relative;
+      background: #ffffff;
+      overflow: hidden;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.10);
+    }
+    .surface, .reference, canvas, svg {
+      position: absolute;
+      inset: 0;
+    }
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+    }
+    .show-reference .surface {
+      display: none;
+    }
+    .show-reference .reference {
+      display: block;
+    }
+    text {
+      dominant-baseline: alphabetic;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">Replay event raster reconstruction</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA reference source image">
+    </div>
+  </main>
+  <script id="fallback-spec" type="application/json">{"schema":"scientific_figure_reconstruction.v1","id":"reference-06-replay-stimulation-A","source":{"path":"../../assets/reference/reference-06-replay-stimulation-A-reference.png","usage":"QA-only; not used by generated candidate."},"canvas":{"width":378,"height":500,"background":"#ffffff"},"typography":{"fontFamily":"Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif","defaultSize":14,"color":"#111111"},"panels":[]}</script>
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function el(id) {
+      return document.getElementById(id);
+    }
+
+    function svgNode(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function rng(seed) {
+      return function random() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function scale(domain, range, value) {
+      return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+    }
+
+    function transforms(plot) {
+      const box = plot.dataBbox;
+      return {
+        x: value => scale(plot.x.domain, [box.x, box.x + box.width], value),
+        y: value => scale(plot.y.domain, [box.y + box.height, box.y], value)
+      };
+    }
+
+    function textAttrs(spec, typography, extra = {}) {
+      return {
+        x: spec.x,
+        y: spec.y,
+        fill: spec.fill || typography.color || '#111111',
+        'font-family': spec.fontFamily || typography.fontFamily,
+        'font-size': spec.fontSize || typography.defaultSize || 12,
+        'font-weight': spec.fontWeight || 400,
+        'text-anchor': spec.anchor || 'start',
+        transform: spec.rotation ? `rotate(${spec.rotation} ${spec.x} ${spec.y})` : undefined,
+        ...extra
+      };
+    }
+
+    function addText(svg, spec, typography, className) {
+      const text = svgNode('text', textAttrs(spec, typography, {id: spec.id, class: className}));
+      const lines = String(spec.text || '').split('\n');
+      lines.forEach((line, index) => {
+        const tspan = svgNode('tspan', {
+          x: spec.x,
+          dy: index === 0 ? 0 : `${(spec.lineHeight || 1.1)}em`
+        });
+        tspan.textContent = line;
+        text.appendChild(tspan);
+      });
+      svg.appendChild(text);
+      return text;
+    }
+
+    function generatedPoints(mark) {
+      const recipe = mark.recipe;
+      const rand = rng(recipe.seed);
+      const points = [];
+      for (let i = 0; i < recipe.backgroundCount; i += 1) {
+        points.push([
+          recipe.positionDomain[0] + rand() * (recipe.positionDomain[1] - recipe.positionDomain[0]),
+          recipe.rowDomain[0] + rand() * (recipe.rowDomain[1] - recipe.rowDomain[0])
+        ]);
+      }
+      for (const band of recipe.bands || []) {
+        for (let i = 0; i < band.count; i += 1) {
+          const t = rand();
+          const x = band.start[0] + (band.end[0] - band.start[0]) * t + (rand() - 0.5) * 2 * band.jitterX;
+          const y = band.start[1] + (band.end[1] - band.start[1]) * t + (rand() - 0.5) * 2 * band.jitterY;
+          points.push([x, y]);
+        }
+      }
+      return points;
+    }
+
+    function renderRasterMarks(ctx, panel) {
+      const map = transforms(panel.plot);
+      for (const mark of panel.marks || []) {
+        if (mark.type !== 'raster') continue;
+        ctx.save();
+        if (mark.clipToPlot) {
+          const b = panel.plot.dataBbox;
+          ctx.beginPath();
+          ctx.rect(b.x, b.y, b.width, b.height);
+          ctx.clip();
+        }
+        ctx.globalAlpha = mark.opacity || 1;
+        ctx.fillStyle = mark.color;
+        const radius = mark.markerRadius || 1.2;
+        for (const point of generatedPoints(mark)) {
+          ctx.beginPath();
+          ctx.arc(map.x(point[0]), map.y(point[1]), radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+    }
+
+    function renderAxes(svg, panel, typography) {
+      const plot = panel.plot;
+      const map = transforms(plot);
+      const axisStyle = {stroke: '#111111', 'stroke-width': 1.1, fill: 'none', 'shape-rendering': 'crispEdges'};
+      svg.appendChild(svgNode('line', {...axisStyle, ...plot.axes.xAxis.line, id: plot.axes.xAxis.id}));
+      svg.appendChild(svgNode('line', {...axisStyle, ...plot.axes.yAxis.line, id: plot.axes.yAxis.id}));
+
+      for (const tick of plot.x.ticks) {
+        const x = map.x(tick.value);
+        svg.appendChild(svgNode('line', {x1: x, y1: plot.axes.xAxis.line.y1, x2: x, y2: plot.axes.xAxis.line.y1 + plot.axes.xAxis.tickLength, ...axisStyle, 'data-axis': 'x', 'data-value': tick.value}));
+        addText(svg, {text: tick.label, x, y: plot.axes.xAxis.line.y1 + 24, fontSize: 16, anchor: 'middle'}, typography, 'tick-label x-tick-label');
+      }
+      for (const tick of plot.y.ticks) {
+        const y = map.y(tick.value);
+        svg.appendChild(svgNode('line', {x1: plot.axes.yAxis.line.x1 - plot.axes.yAxis.tickLength, y1: y, x2: plot.axes.yAxis.line.x1, y2: y, ...axisStyle, 'data-axis': 'y', 'data-value': tick.value}));
+        addText(svg, {text: tick.label, x: plot.axes.yAxis.line.x1 - 10, y: y + 5, fontSize: 16, anchor: 'end'}, typography, 'tick-label y-tick-label');
+      }
+      addText(svg, plot.x.label, typography, 'axis-label x-axis-label');
+      addText(svg, plot.y.label, typography, 'axis-label y-axis-label');
+      const splitY = map.y(plot.split.yValue);
+      svg.appendChild(svgNode('line', {
+        id: plot.split.id,
+        x1: plot.dataBbox.x,
+        y1: splitY,
+        x2: plot.dataBbox.x + plot.dataBbox.width,
+        y2: splitY,
+        stroke: plot.split.stroke,
+        'stroke-width': plot.split.strokeWidth,
+        'stroke-dasharray': plot.split.dasharray,
+        'shape-rendering': 'crispEdges'
+      }));
+    }
+
+    function renderLegend(svg, panel, typography) {
+      const legend = panel.legend;
+      for (const item of legend.items) {
+        svg.appendChild(svgNode('circle', {id: item.id + '-marker', cx: item.x, cy: item.y, r: legend.markerRadius, fill: item.color}));
+        addText(svg, {text: item.label, x: item.x + 12, y: item.y + 5, fontSize: legend.fontSize, anchor: 'start'}, typography, 'legend-label');
+      }
+    }
+
+    function renderColorbar(svg, annotation, typography) {
+      const b = annotation.bbox;
+      const gradientId = annotation.id + '-gradient';
+      const defs = svgNode('defs');
+      const gradient = svgNode('linearGradient', {id: gradientId, x1: '0%', y1: '100%', x2: '0%', y2: '0%'});
+      gradient.appendChild(svgNode('stop', {offset: '0%', 'stop-color': '#f4f4f4'}));
+      gradient.appendChild(svgNode('stop', {offset: '100%', 'stop-color': '#111111'}));
+      defs.appendChild(gradient);
+      svg.appendChild(defs);
+      svg.appendChild(svgNode('rect', {id: annotation.id, x: b.x, y: b.y, width: b.width, height: b.height, fill: `url(#${gradientId})`, stroke: '#555555', 'stroke-width': 0.8}));
+      addText(svg, annotation.title, typography, 'colorbar-title');
+      for (const tick of annotation.ticks) {
+        const y = scale([0, 1], [b.y + b.height, b.y], tick.value);
+        svg.appendChild(svgNode('line', {x1: b.x + b.width, y1: y, x2: b.x + b.width + 5, y2: y, stroke: '#111111', 'stroke-width': 1, 'shape-rendering': 'crispEdges'}));
+        addText(svg, {text: tick.label, x: b.x + b.width + 12, y: y + 5, fontSize: 14, anchor: 'start'}, typography, 'colorbar-tick-label');
+      }
+    }
+
+    async function loadSpec() {
+      try {
+        const response = await fetch('reference-06-replay-stimulation-A.json', {cache: 'no-cache'});
+        if (response.ok) return response.json();
+      } catch (error) {
+        console.warn('Falling back to embedded spec.', error);
+      }
+      return JSON.parse(el('fallback-spec').textContent);
+    }
+
+    function render(spec) {
+      const frame = el('frame');
+      const surface = el('surface');
+      frame.style.width = spec.canvas.width + 'px';
+      frame.style.height = spec.canvas.height + 'px';
+      surface.replaceChildren();
+      surface.style.background = spec.canvas.background || '#ffffff';
+      el('reference').src = spec.source.path;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = spec.canvas.width;
+      canvas.height = spec.canvas.height;
+      const svg = svgNode('svg', {width: spec.canvas.width, height: spec.canvas.height, viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, role: 'img'});
+      surface.appendChild(canvas);
+      surface.appendChild(svg);
+
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = spec.canvas.background || '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const typography = spec.typography;
+      for (const panel of spec.panels) {
+        renderRasterMarks(ctx, panel);
+        addText(svg, panel.label, typography, 'panel-label');
+        addText(svg, panel.title, typography, 'panel-title');
+        renderLegend(svg, panel, typography);
+        renderAxes(svg, panel, typography);
+        for (const annotation of panel.annotations || []) {
+          if (annotation.type === 'colorbar') renderColorbar(svg, annotation, typography);
+        }
+      }
+    }
+
+    function setupToggle() {
+      const frame = el('frame');
+      const generated = el('generatedButton');
+      const reference = el('referenceButton');
+      generated.addEventListener('click', () => {
+        frame.classList.remove('show-reference');
+        generated.classList.add('active');
+        reference.classList.remove('active');
+      });
+      reference.addEventListener('click', () => {
+        frame.classList.add('show-reference');
+        reference.classList.add('active');
+        generated.classList.remove('active');
+      });
+    }
+
+    setupToggle();
+    loadSpec().then(render);
+  </script>
+</body>
+</html>

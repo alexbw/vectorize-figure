@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-03-learning-remapping-C reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #aaaaaa;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+    .surface, .reference {
+      position: absolute;
+      inset: 0;
+    }
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+    }
+    .show-reference .surface {
+      display: none;
+    }
+    .show-reference .reference {
+      display: block;
+    }
+    svg {
+      position: absolute;
+      inset: 0;
+    }
+    text {
+      dominant-baseline: alphabetic;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-03-learning-remapping-C</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA reference source image">
+    </div>
+  </main>
+
+  <script id="fallback-spec" type="application/json">
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-03-learning-remapping-C",
+  "source": {"path": "../../assets/reference/reference-03-learning-remapping-C-reference.png", "usage": "QA-only; not used by generated candidate.", "nativeSize": {"width": 502, "height": 526}},
+  "canvas": {"width": 502, "height": 526, "background": "#ffffff"},
+  "typography": {"fontFamily": "Arial, Helvetica, sans-serif", "defaultSize": 14, "color": "#111111"},
+  "coordinateSystems": [{"id": "trace-time", "type": "linear", "domain": [0, 7], "range": [68, 480], "unit": "day"}],
+  "panels": [{"id": "panel-c", "label": {"text": "C", "x": 35, "y": 28, "fontSize": 20, "fontWeight": 700, "anchor": "middle"}, "title": {"text": "Representative calcium traces", "x": 61, "y": 29, "fontSize": 16, "fontWeight": 400, "anchor": "start"}, "bbox": {"x": 0, "y": 0, "width": 502, "height": 526}, "plot": {"dataBbox": {"x": 68, "y": 55, "width": 412, "height": 385}, "x": {"domain": [0, 7], "ticks": [{"value": 0.45, "label": "Day 1"}, {"value": 1.35, "label": "Day 2"}, {"value": 2.35, "label": "Day 3"}, {"value": 3.35, "label": "Day 4"}, {"value": 4.35, "label": "Day 5"}, {"value": 5.35, "label": "Day 6"}, {"value": 6.35, "label": "Day 7"}], "dayBoundaryValues": [1, 2, 3, 4, 5.9, 6.85]}, "rows": []}, "annotations": []}]
+}
+  </script>
+
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const JSON_FILE = 'reference-03-learning-remapping-C.json';
+
+    function $(id) {
+      return document.getElementById(id);
+    }
+
+    function make(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function seededRandom(seed) {
+      return function random() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function scale(domain, range, value) {
+      return range[0] + ((value - domain[0]) / (domain[1] - domain[0])) * (range[1] - range[0]);
+    }
+
+    function textNode(textSpec, extra = {}) {
+      const node = make('text', {
+        x: textSpec.x,
+        y: textSpec.y,
+        'font-size': textSpec.fontSize || extra.fontSize || 14,
+        'font-weight': textSpec.fontWeight || extra.fontWeight || 400,
+        'text-anchor': textSpec.anchor || extra.anchor || 'start',
+        fill: textSpec.fill || extra.fill || '#111111',
+        transform: textSpec.rotation ? `rotate(${textSpec.rotation} ${textSpec.x} ${textSpec.y})` : undefined,
+        'data-id': textSpec.id || extra.id
+      });
+      node.textContent = textSpec.text;
+      return node;
+    }
+
+    function tracePath(row, xDomain, xRange) {
+      const random = seededRandom(row.recipe.seed);
+      const [yMin, yMax] = row.domain;
+      const yRange = [row.axis.yBottom, row.axis.yTop];
+      const samples = row.recipe.samples;
+      const points = [];
+      let smooth = row.baseline || 0;
+      for (let i = 0; i < samples; i += 1) {
+        const t = xDomain[0] + (i / (samples - 1)) * (xDomain[1] - xDomain[0]);
+        const rough = (random() - 0.5) * row.recipe.noise * 2;
+        smooth = smooth * 0.56 + rough * 0.44;
+        let value = (row.baseline || 0) + smooth + Math.sin(t * 6.1 + row.recipe.seed) * (row.recipe.drift || 0);
+        for (const spike of row.recipe.spikes) {
+          const [center, amp, width] = spike;
+          const d = (t - center) / width;
+          value += amp * Math.exp(-0.5 * d * d);
+        }
+        if (row.kind === 'speed') {
+          value = Math.max(0, value + Math.abs(rough) * 2.2);
+        }
+        const x = scale(xDomain, xRange, t);
+        const y = scale([yMin, yMax], yRange, Math.max(yMin, Math.min(yMax, value)));
+        points.push([x, y]);
+      }
+      return points.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+    }
+
+    function render(spec) {
+      document.title = `${spec.id} reconstruction`;
+      $('title').textContent = spec.id;
+      const frame = $('frame');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      frame.style.background = spec.canvas.background;
+      const surface = $('surface');
+      surface.innerHTML = '';
+
+      const svg = make('svg', {
+        width: spec.canvas.width,
+        height: spec.canvas.height,
+        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
+        role: 'img',
+        'aria-label': `${spec.id} generated reconstruction`
+      });
+      surface.appendChild(svg);
+
+      const panel = spec.panels[0];
+      const plot = panel.plot;
+      const xDomain = plot.x.domain;
+      const xRange = [plot.dataBbox.x, plot.dataBbox.x + plot.dataBbox.width];
+
+      svg.appendChild(make('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
+      svg.appendChild(textNode(panel.label));
+      svg.appendChild(textNode(panel.title));
+
+      const grid = make('g', {'data-layer': 'day-boundary-grid'});
+      for (const value of plot.x.dayBoundaryValues) {
+        const x = scale(xDomain, xRange, value);
+        grid.appendChild(make('line', {
+          x1: x, y1: 55, x2: x, y2: 440,
+          stroke: spec.rendering.styleTokens.gridStroke,
+          'stroke-width': 1,
+          'stroke-dasharray': '2 3',
+          'data-value': value
+        }));
+      }
+      svg.appendChild(grid);
+
+      const rows = make('g', {'data-layer': 'trace-rows'});
+      for (const row of plot.rows) {
+        const group = make('g', {'data-row-id': row.id});
+        group.appendChild(textNode({
+          text: row.label,
+          x: row.labelAnchor.x,
+          y: row.labelAnchor.y,
+          fontSize: 14,
+          anchor: 'start'
+        }, {id: `${row.id}-label`}));
+        group.appendChild(make('line', {x1: row.axis.x, y1: row.axis.yTop, x2: row.axis.x, y2: row.axis.yBottom, stroke: '#111111', 'stroke-width': 1}));
+        for (const tick of row.axis.tickValues) {
+          const y = scale(row.domain, [row.axis.yBottom, row.axis.yTop], tick);
+          group.appendChild(make('line', {x1: row.axis.x - 5, y1: y, x2: row.axis.x, y2: y, stroke: '#111111', 'stroke-width': 1, 'data-tick-value': tick}));
+          group.appendChild(textNode({text: String(tick), x: row.axis.x - 10, y: y + 4, fontSize: 13, anchor: 'end'}, {id: `${row.id}-tick-${tick}`}));
+        }
+        group.appendChild(make('path', {
+          d: tracePath(row, xDomain, xRange),
+          fill: 'none',
+          stroke: row.traceColor,
+          'stroke-width': row.kind === 'speed' ? 1.05 : 1.25,
+          'stroke-linejoin': 'round',
+          'stroke-linecap': 'round',
+          'data-mark-type': 'lineSeries',
+          'data-row-id': row.id
+        }));
+        rows.appendChild(group);
+      }
+      svg.appendChild(rows);
+
+      const xAxis = make('g', {'data-layer': 'day-labels'});
+      for (const tick of plot.x.ticks) {
+        const x = scale(xDomain, xRange, tick.value);
+        xAxis.appendChild(textNode({text: tick.label, x, y: 466, fontSize: 14, anchor: 'middle'}, {id: `day-${tick.label.replace(/\s+/g, '-').toLowerCase()}`}));
+      }
+      svg.appendChild(xAxis);
+
+      for (const annotation of panel.annotations) {
+        if (annotation.type === 'text') {
+          svg.appendChild(textNode(annotation));
+        } else if (annotation.type === 'scaleBar') {
+          const g = make('g', {'data-id': annotation.id});
+          g.appendChild(make('line', {x1: annotation.x1, y1: annotation.y, x2: annotation.x2, y2: annotation.y, stroke: '#111111', 'stroke-width': 3}));
+          g.appendChild(textNode({text: annotation.label, x: annotation.labelX, y: annotation.labelY, fontSize: 12, anchor: 'middle'}));
+          svg.appendChild(g);
+        }
+      }
+
+      $('reference').src = spec.source.path;
+    }
+
+    async function loadSpec() {
+      try {
+        const response = await fetch(JSON_FILE, {cache: 'no-store'});
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return await response.json();
+      } catch (error) {
+        console.warn('Using embedded fallback spec because adjacent JSON could not be loaded.', error);
+        return JSON.parse($('fallback-spec').textContent);
+      }
+    }
+
+    function setMode(mode) {
+      const reference = mode === 'reference';
+      $('frame').classList.toggle('show-reference', reference);
+      $('generatedButton').classList.toggle('active', !reference);
+      $('referenceButton').classList.toggle('active', reference);
+    }
+
+    $('generatedButton').addEventListener('click', () => setMode('generated'));
+    $('referenceButton').addEventListener('click', () => setMode('reference'));
+    loadSpec().then(render);
+  </script>
+</body>
+</html>

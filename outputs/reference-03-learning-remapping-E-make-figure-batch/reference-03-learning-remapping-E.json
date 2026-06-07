@@ -1,0 +1,197 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-03-learning-remapping-E",
+  "source": {
+    "path": "../../assets/reference/reference-03-learning-remapping-E-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "nativeSize": {"width": 339, "height": 498},
+    "notes": "Single-panel animal-level stability slope chart reconstructed as editable SVG axes, text, points, and error bars."
+  },
+  "canvas": {"width": 339, "height": 498, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Roboto", "Noto Sans"],
+    "calibration": {
+      "fontStretch": "condensed source-like",
+      "letterSpacing": 0,
+      "lineHeight": 1.1,
+      "notes": "Approximate first-pass typography using Arial/Helvetica with explicit sizes and source-positioned anchors."
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-e",
+      "bbox": {"x": 0, "y": 0, "width": 339, "height": 498},
+      "label": {
+        "id": "panel-e-label",
+        "text": "E",
+        "x": 6,
+        "y": 28,
+        "fontSize": 20,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 6, "y": 13, "width": 13, "height": 18}
+      },
+      "title": {
+        "id": "panel-e-title",
+        "text": "Animal-level stability slope",
+        "x": 34,
+        "y": 29,
+        "fontSize": 16,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 34, "y": 15, "width": 191, "height": 18}
+      },
+      "plot": {
+        "id": "panel-e-plot",
+        "bbox": {"x": 78, "y": 73, "width": 212, "height": 266},
+        "axisStyle": {"stroke": "#4c4c4c", "strokeWidth": 1.1, "tickLength": 7},
+        "x": {
+          "id": "panel-e-x",
+          "scale": "linear",
+          "domain": [0.55, 8.45],
+          "axisDomain": [0.5, 8.5],
+          "ticks": [
+            {"value": 1, "label": "1"},
+            {"value": 2, "label": "2"},
+            {"value": 3, "label": "3"},
+            {"value": 4, "label": "4"},
+            {"value": 5, "label": "5"},
+            {"value": 6, "label": "6"},
+            {"value": 7, "label": "7"},
+            {"value": 8, "label": "8"},
+            {"value": 9, "label": "9"},
+            {"value": 10, "label": "10", "labelOnly": true}
+          ],
+          "label": {
+            "id": "panel-e-x-label",
+            "text": "Animals",
+            "x": 184,
+            "y": 393,
+            "fontSize": 16,
+            "fontWeight": 400,
+            "anchor": "middle"
+          }
+        },
+        "y": {
+          "id": "panel-e-y",
+          "scale": "linear",
+          "domain": [-0.2, 0.1],
+          "ticks": [
+            {"value": -0.2, "label": "-0.20"},
+            {"value": -0.1, "label": "-0.10"},
+            {"value": 0, "label": "0"},
+            {"value": 0.1, "label": "0.10"}
+          ],
+          "label": {
+            "id": "panel-e-y-label",
+            "text": "Stability slope (\u0394r / day)",
+            "x": 20,
+            "y": 207,
+            "fontSize": 16,
+            "fontWeight": 400,
+            "anchor": "middle",
+            "rotation": -90
+          }
+        }
+      },
+      "data": {
+        "series": [
+          {
+            "id": "animal-stability-slopes",
+            "label": "Animal-level stability slopes",
+            "units": "\u0394r / day",
+            "points": [
+              {"animal": 1, "slope": -0.046, "ciLow": -0.077, "ciHigh": -0.025},
+              {"animal": 2, "slope": -0.024, "ciLow": -0.041, "ciHigh": -0.009},
+              {"animal": 3, "slope": -0.035, "ciLow": -0.064, "ciHigh": -0.008},
+              {"animal": 4, "slope": -0.056, "ciLow": -0.082, "ciHigh": -0.034},
+              {"animal": 5, "slope": -0.042, "ciLow": -0.079, "ciHigh": 0.001},
+              {"animal": 6, "slope": -0.028, "ciLow": -0.059, "ciHigh": 0.006},
+              {"animal": 7, "slope": -0.034, "ciLow": -0.083, "ciHigh": 0.019},
+              {"animal": 8, "slope": -0.049, "ciLow": -0.064, "ciHigh": -0.036}
+            ]
+          }
+        ]
+      },
+      "marks": [
+        {
+          "id": "zero-reference-line",
+          "type": "referenceLine",
+          "orientation": "horizontal",
+          "value": 0,
+          "stroke": "#b4b4b4",
+          "strokeWidth": 1,
+          "dasharray": "4 4"
+        },
+        {
+          "id": "animal-points",
+          "type": "pointWithErrorBars",
+          "series": "animal-stability-slopes",
+          "xField": "animal",
+          "yField": "slope",
+          "lowField": "ciLow",
+          "highField": "ciHigh",
+          "stroke": "#5b168e",
+          "fill": "#5b168e",
+          "strokeWidth": 1.15,
+          "radius": 4,
+          "capWidth": 4
+        }
+      ],
+      "annotations": [
+        {
+          "id": "mean-ci-label",
+          "type": "textBlock",
+          "lines": ["Mean \u00b1 95% CI", "-0.015 \u00b1 0.006"],
+          "x": 142,
+          "y": 82,
+          "fontSize": 14,
+          "fontWeight": 400,
+          "lineHeight": 20,
+          "fill": "#4a148c",
+          "anchor": "start",
+          "sourceBox": {"x": 142, "y": 70, "width": 104, "height": 37}
+        }
+      ],
+      "provenance": [
+        {
+          "target": "panel-e-plot",
+          "confidence": "medium",
+          "note": "Plot bbox and data values were visually estimated from the raster; coordinates are first-pass and editable."
+        },
+        {
+          "target": "animal-stability-slopes",
+          "confidence": "medium-low",
+          "note": "The source appears to show eight animal data points, while the x-axis includes labels through 10. The last two labels are preserved as layout text."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "expected": {
+      "panels": 1,
+      "dataPoints": 8,
+      "errorBars": 8,
+      "xTickLabels": 10,
+      "yTickLabels": 4,
+      "qaReferenceOnly": true
+    },
+    "constraints": [
+      "Generated candidate must contain no source raster image layer.",
+      "All axes, ticks, labels, points, and error bars render as SVG from JSON.",
+      "The reference PNG may appear only in the explicitly labeled QA/reference view."
+    ]
+  },
+  "confidence": [
+    {
+      "target": "overall",
+      "confidence": "first-pass",
+      "note": "Designed for visual inspection; exact OCR typography and point coordinates can be refined after overlay review."
+    }
+  ]
+}

@@ -1,0 +1,133 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-04-motor-manifold-E",
+  "source": {
+    "path": "../../assets/reference/reference-04-motor-manifold-E-reference.png",
+    "usage": "QA/reference only; never used as a generated candidate layer.",
+    "notes": "Single cropped panel E showing cross-validated decoding accuracy over time with cue, delay, move, and hold epochs."
+  },
+  "canvas": {
+    "width": 409,
+    "height": 296,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "calibration": {
+      "fontStretch": "condensed visual approximation",
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "First-pass manual calibration against source crop; title and tick labels approximate a compact sans-serif publication font."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "panel-e.plot.xy",
+      "type": "cartesian2d",
+      "xDomain": [-1, 1],
+      "yDomain": [0, 100],
+      "dataBbox": {"x": 125, "y": 60, "width": 283, "height": 191}
+    },
+    {
+      "id": "panel-e.epochs",
+      "type": "eventAnchors",
+      "anchors": [
+        {"id": "cue", "x0": -1, "x1": -0.42, "label": "Cue"},
+        {"id": "delay", "x0": -0.42, "x1": 0, "label": "Delay"},
+        {"id": "move", "x0": 0, "x1": 0.52, "label": "Move"},
+        {"id": "hold", "x0": 0.52, "x1": 1, "label": "Hold"}
+      ]
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-e",
+      "bbox": {"x": 0, "y": 0, "width": 409, "height": 296},
+      "label": {"id": "panel-e-label", "text": "E", "x": 82, "y": 27, "fontSize": 22, "fontWeight": 700},
+      "title": {"id": "panel-e-title", "text": "Cross-validated decoding of reach direction", "x": 109, "y": 25, "fontSize": 16, "fontWeight": 700},
+      "plot": {
+        "id": "panel-e-main-plot",
+        "usesTransform": "panel-e.plot.xy",
+        "dataBbox": {"x": 125, "y": 60, "width": 283, "height": 191},
+        "axes": {
+          "x": {
+            "id": "panel-e-x-axis",
+            "domain": [-1, 1],
+            "label": {"id": "panel-e-x-label", "text": "Time (s)", "fontSize": 16, "offset": 38},
+            "ticks": [
+              {"value": -1, "label": "-1.0"},
+              {"value": -0.5, "label": "-0.5"},
+              {"value": 0, "label": "0"},
+              {"value": 0.5, "label": "0.5"},
+              {"value": 1, "label": "1"}
+            ]
+          },
+          "y": {
+            "id": "panel-e-y-axis",
+            "domain": [0, 100],
+            "label": {"id": "panel-e-y-label", "text": "Decoding accuracy (%)", "fontSize": 16, "offset": 46},
+            "ticks": [
+              {"value": 0, "label": "0"},
+              {"value": 25, "label": "25"},
+              {"value": 50, "label": "50"},
+              {"value": 75, "label": "75"},
+              {"value": 100, "label": "100"}
+            ]
+          }
+        },
+        "chanceLine": {"id": "panel-e-chance", "y": 12, "stroke": "#666666", "strokeDasharray": "7 6"},
+        "epochs": [
+          {"id": "cue", "label": "Cue", "x0": -1, "x1": -0.42, "fill": "#f3f3f3"},
+          {"id": "delay", "label": "Delay", "x0": -0.42, "x1": 0, "fill": "#fafafa"},
+          {"id": "move", "label": "Move", "x0": 0, "x1": 0.52, "fill": "#f3f3f3"},
+          {"id": "hold", "label": "Hold", "x0": 0.52, "x1": 1, "fill": "#fafafa"}
+        ]
+      },
+      "marks": [
+        {"id": "decode-red", "type": "lineSeries", "usesTransform": "panel-e.plot.xy", "label": "2", "color": "#ef3b2c", "bandOpacity": 0.20, "bandHalfWidth": 3.2, "points": [[-1,24],[-0.8,25],[-0.6,26],[-0.4,28],[-0.2,31],[0,42],[0.1,64],[0.2,82],[0.35,88],[0.55,91],[0.75,90],[1,86]]},
+        {"id": "decode-orange", "type": "lineSeries", "usesTransform": "panel-e.plot.xy", "label": "1", "color": "#fd8d3c", "bandOpacity": 0.18, "bandHalfWidth": 3.0, "points": [[-1,22],[-0.8,23],[-0.6,24],[-0.4,26],[-0.2,29],[0,39],[0.1,58],[0.2,75],[0.35,84],[0.55,87],[0.75,86],[1,82]]},
+        {"id": "decode-green", "type": "lineSeries", "usesTransform": "panel-e.plot.xy", "label": "0.5", "color": "#6ab04c", "bandOpacity": 0.18, "bandHalfWidth": 3.1, "points": [[-1,20],[-0.8,21],[-0.6,22],[-0.4,24],[-0.2,27],[0,34],[0.1,48],[0.2,64],[0.35,72],[0.55,76],[0.75,76],[1,73]]},
+        {"id": "decode-blue", "type": "lineSeries", "usesTransform": "panel-e.plot.xy", "label": "-1", "color": "#4a90d9", "bandOpacity": 0.20, "bandHalfWidth": 3.4, "points": [[-1,18],[-0.8,19],[-0.6,20],[-0.4,22],[-0.2,24],[0,30],[0.1,40],[0.2,52],[0.35,60],[0.55,64],[0.75,64],[1,61]]},
+        {"id": "decode-purple", "type": "lineSeries", "usesTransform": "panel-e.plot.xy", "label": "-2", "color": "#7e3fb2", "bandOpacity": 0.20, "bandHalfWidth": 3.6, "points": [[-1,16],[-0.8,17],[-0.6,18],[-0.4,20],[-0.2,22],[0,27],[0.1,34],[0.2,43],[0.35,49],[0.55,52],[0.75,52],[1,50]]}
+      ],
+      "annotations": [
+        {"id": "panel-e-event-zero", "type": "eventLine", "usesTransform": "panel-e.plot.xy", "x": 0, "stroke": "#111111", "strokeWidth": 1.8},
+        {"id": "panel-e-colorbar-label", "type": "text", "text": "score", "x": 1, "y": 135, "fontSize": 12, "anchor": "start"}
+      ],
+      "legends": [
+        {
+          "id": "panel-e-score-colorbar",
+          "type": "colorbar",
+          "bbox": {"x": 0, "y": 148, "width": 6, "height": 94},
+          "domain": [-2, 2],
+          "colors": ["#2166ac", "#f7f7f7", "#d73027"],
+          "ticks": [
+            {"value": 2, "label": "2", "x": 13, "y": 154},
+            {"value": 0, "label": "0", "x": 13, "y": 196},
+            {"value": -2, "label": "-2", "x": 13, "y": 239}
+          ]
+        }
+      ],
+      "provenance": [
+        {"object": "curves", "confidence": "medium", "note": "Mean trajectories and uncertainty bands are visually estimated from the raster, with small deterministic wiggle added by renderer to mimic trial-averaged traces."},
+        {"object": "plot geometry", "confidence": "medium-high", "note": "Plot box, axis ticks, zero event line, and epoch boundaries are manually measured from the source crop."}
+      ]
+    }
+  ],
+  "rendering": {
+    "renderer": "svg-dom",
+    "layerOrder": ["epoch-shading", "axes", "chance-line", "bands", "curves", "event-line", "labels", "qa-reference"],
+    "generatedCandidateUsesSourceRaster": false
+  },
+  "validation": {
+    "expectedSeriesCount": 5,
+    "expectedXAxisTicks": 5,
+    "expectedYAxisTicks": 5,
+    "sourceReuseAudit": "Search generated outputs for source image compositing APIs or candidate-layer CSS image reuse; QA references are allowed only where explicitly labeled."
+  },
+  "confidence": [
+    {"aspect": "overall first-pass visual match", "level": "medium", "note": "Editable semantic reconstruction intended for visual inspection, not digitized numerical recovery."}
+  ]
+}

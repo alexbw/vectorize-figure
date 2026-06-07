@@ -1,0 +1,3689 @@
+Reading additional input from stdin...
+OpenAI Codex v0.137.0
+--------
+workdir: /Users/alex/Code/scientific-figure-reconstruction
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: low
+reasoning summaries: none
+session id: 019e9e74-a59e-7080-854a-326bb94a28dc
+--------
+user
+$make-figure assets/reference/reference-05-grid-remapping-B-reference.png. Generate an independent first-pass reconstruction for visual inspection. Write outputs only to outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json and outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html. Use the make-figure skill contract and the repository command/skill code: generated visual layers must not reuse the source raster; the source may appear only as a clearly labeled QA/reference view. Keep the JSON semantic and editable. Verify JSON validity and search the output for accidental drawImage/background source reuse. Do not modify existing output directories, docs, skills, plugins, source assets, or unrelated files.
+codex
+Using the `make-figure` skill for this reconstruction. I’ll inspect the reference image and the project conventions, then write only the two requested output files and run the contract checks.
+exec
+/bin/zsh -lc "sed -n '1,220p' skills/make-figure/references/semantic-figure-ir.md" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+# Semantic Figure IR
+
+Use this document with `reconstruction-contract.md`. The reconstruction output
+is a semantic figure intermediate representation, not a collection of detected
+bounding boxes.
+
+## Core Model
+
+A scientific figure reconstruction is a typed scene graph:
+
+```text
+source evidence
+  -> semantic figure objects
+  -> named coordinate systems and transforms
+  -> derived layout objects
+  -> renderable marks and text
+  -> validation constraints
+```
+
+Bounding boxes, OCR text, detected line segments, and color samples are source
+evidence. They help infer the graph, but they are not the graph itself.
+
+## Common Object Fields
+
+Any semantic object may use these fields:
+
+```json
+{
+  "id": "panel-a-x-tick-0",
+  "type": "axisTick",
+  "parent": "panel-a-x-axis",
+  "children": ["panel-a-x-tick-0-mark", "panel-a-x-tick-0-label"],
+  "usesTransform": "panel-a.xy",
+  "anchorTo": "panel-a-x-axis",
+  "derivesFrom": "panel-a.x.ticks[0]",
+  "sourceEvidence": ["bbox-17", "line-04"],
+  "provenance": {"confidence": "medium", "note": "Tick position measured from source."}
+}
+```
+
+Prefer stable ids and explicit relationships over free-floating pixel objects.
+When an object needs source-calibrated coordinates, keep those coordinates on
+the semantic object as measured anchors instead of detaching the rendered mark
+or text.
+
+## Top-Level IR Concepts
+
+- `sourceEvidence`: source bboxes, OCR snippets, measured line segments, color
+  samples, and notes. These are evidence records, not render instructions.
+- `coordinateSystems`: named transforms such as Cartesian data scales,
+  categorical scales, event anchors, color scales, image/matrix ranges, and
+  projected 3D scenes.
+- `layoutObjects`: axes, tick-label bands, legends, colorbars, tables, insets,
+  panel titles, scale bars, and other objects that reserve space or anchor text.
+- `data`: exact data, approximate data, or generation recipes.
+- `marks`: visual encodings derived from data or layout objects.
+- `annotations`: labels, arrows, brackets, callouts, and event labels anchored
+  to data points, marks, or layout objects.
+- `constraints`: relationship and layout invariants that must survive rendering.
+- `rendering`: renderer hints, layer order, and style tokens.
+- `validation`: renderer- or harness-readable checks and expected counts.
+- `provenance`: object-level confidence and unresolved inferences.
+
+Panel-specific schemas may organize these concepts differently, but they should
+preserve the same relationships.
+
+## Required Relationship Invariants
+
+Renderers and validation scripts should enforce these when the source shows the
+corresponding objects:
+
+- Labeled ticks render one tick mark and one tick label with matching
+  `axis`/`value` metadata.
+- Axis titles anchor to an axis, tick-label band, or measured source anchor;
+  they are not independent guessed text.
+- Event-aligned ticks, event lines, brackets, and annotations share a named
+  event anchor or explicit measured visual anchor.
+- Grid lines belong to named grid planes and families; grid lines must not be
+  confused with solid box edges.
+- Legends reference real series, marker classes, or mark groups.
+- Colorbars reference a color scale and own their ticks and title.
+- Table cell text, row rules, separators, and highlights remain separate
+  objects when their visual styles differ.
+- Annotations anchor to data coordinates, generated marks, or layout objects
+  unless they are explicitly page-positioned.
+- Generated visuals never reuse the source raster as a generated layer.
+
+## Relationship Inventory Step
+
+Before writing the final JSON for a nontrivial panel, produce a short inventory:
+
+- plot type and renderer strategy
+- coordinate systems and named anchors
+- layout objects and their children
+- data-driven marks and their series/group ownership
+- annotations and what each one anchors to
+- source-calibrated overrides and why the transform alone is insufficient
+- validation constraints that should be checked in the rendered DOM
+
+Do this before visual tuning. If a generated object looks wrong, first ask which
+relationship or transform is missing before changing pixels.
+
+
+exec
+/bin/zsh -lc "pwd && rg --files | sed -n '1,120p'" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+/Users/alex/Code/scientific-figure-reconstruction
+outputs/reference-02-decision-dynamics-A-make-figure-batch/reference-02-decision-dynamics-A.html
+outputs/reference-02-decision-dynamics-A-make-figure-batch/reference-02-decision-dynamics-A.json
+outputs/reference-01-place-code-opto-B-make-figure-batch/reference-01-place-code-opto-B.json
+outputs/reference-01-place-code-opto-B-make-figure-batch/reference-01-place-code-opto-B.html
+outputs/reference-02-decision-dynamics-A-make-figure/reference-02-decision-dynamics-A.html
+outputs/reference-02-decision-dynamics-A-make-figure/reference-02-decision-dynamics-A.json
+outputs/reference-02-decision-dynamics-D-make-figure-batch/reference-02-decision-dynamics-D.json
+outputs/reference-02-decision-dynamics-D-make-figure-batch/reference-02-decision-dynamics-D.html
+outputs/reference-01-place-code-opto-D-make-figure-test/reference-01-place-code-opto-D.json
+outputs/reference-01-place-code-opto-D-make-figure-test/reference-01-place-code-opto-D.html
+outputs/reference-01-place-code-opto-C-make-figure-batch/reference-01-place-code-opto-C.json
+outputs/reference-01-place-code-opto-C-make-figure-batch/reference-01-place-code-opto-C.html
+outputs/reference-02-decision-dynamics-E-make-figure-batch/reference-02-decision-dynamics-E.json
+outputs/reference-02-decision-dynamics-E-make-figure-batch/reference-02-decision-dynamics-E.html
+outputs/reference-01-place-code-opto-F-make-figure-batch/reference-01-place-code-opto-F.html
+outputs/reference-01-place-code-opto-F-make-figure-batch/reference-01-place-code-opto-F.json
+outputs/reference-02-decision-dynamics-C-make-figure-batch/reference-02-decision-dynamics-C.json
+outputs/reference-02-decision-dynamics-C-make-figure-batch/reference-02-decision-dynamics-C.html
+outputs/reference-01-place-code-opto-F-make-figure/reference-01-place-code-opto-F.html
+outputs/reference-01-place-code-opto-F-make-figure/reference-01-place-code-opto-F.json
+outputs/reference-02-decision-dynamics-F-make-figure-batch/reference-02-decision-dynamics-F.html
+outputs/reference-02-decision-dynamics-F-make-figure-batch/reference-02-decision-dynamics-F.json
+outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.json
+outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.html
+outputs/reference-05-grid-remapping-D-make-figure-test/reference-05-grid-remapping-D.json
+outputs/reference-05-grid-remapping-D-make-figure-test/reference-05-grid-remapping-D.html
+outputs/reference-02-decision-dynamics-B-make-figure-batch/reference-02-decision-dynamics-B.json
+outputs/reference-02-decision-dynamics-B-make-figure-batch/reference-02-decision-dynamics-B.html
+outputs/_regression-baselines/reference-01-place-code-opto-A.png
+outputs/_regression-baselines/reference-01-place-code-opto-C.png
+outputs/_regression-baselines/reference-01-place-code-opto-B.png
+outputs/_regression-baselines/reference-01-place-code-opto-F.png
+outputs/_regression-baselines/reference-02-decision-dynamics-A.png
+outputs/_regression-baselines/reference-02-decision-dynamics-B.png
+outputs/reference-01-place-code-opto-A-make-figure-batch/reference-01-place-code-opto-A.html
+outputs/reference-01-place-code-opto-A-make-figure-batch/reference-01-place-code-opto-A.json
+outputs/reference-02-decision-dynamics-B-make-figure/reference-02-decision-dynamics-B.json
+outputs/reference-02-decision-dynamics-B-make-figure/reference-02-decision-dynamics-B-current.png
+outputs/reference-02-decision-dynamics-B-make-figure/reference-02-decision-dynamics-B.html
+outputs/reference-01-place-code-opto-C-make-figure/reference-01-place-code-opto-C.json
+outputs/reference-01-place-code-opto-C-make-figure/reference-01-place-code-opto-C.html
+outputs/reference-02-decision-dynamics-G-make-figure-batch/reference-02-decision-dynamics-G.html
+outputs/reference-02-decision-dynamics-G-make-figure-batch/reference-02-decision-dynamics-G.json
+outputs/reference-01-place-code-opto-D-make-figure-batch/reference-01-place-code-opto-D.json
+outputs/reference-01-place-code-opto-D-make-figure-batch/reference-01-place-code-opto-D.html
+outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.html
+outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.json
+outputs/reference-05-grid-remapping-C-make-figure-test/reference-05-grid-remapping-C.json
+outputs/reference-05-grid-remapping-C-make-figure-test/reference-05-grid-remapping-C.html
+outputs/reference-04-motor-manifold-G-make-figure-batch/reference-04-motor-manifold-G.json
+outputs/reference-04-motor-manifold-G-make-figure-batch/reference-04-motor-manifold-G.html
+outputs/reference-01-place-code-opto-A-make-figure/reference-01-place-code-opto-A.html
+outputs/reference-01-place-code-opto-A-make-figure/reference-01-place-code-opto-A.json
+outputs/reference-03-learning-remapping-C-make-figure-batch/reference-03-learning-remapping-C.html
+outputs/reference-03-learning-remapping-C-make-figure-batch/reference-03-learning-remapping-C.json
+README.md
+outputs/reference-03-learning-remapping-G-make-figure-batch/reference-03-learning-remapping-G.json
+outputs/reference-03-learning-remapping-G-make-figure-batch/reference-03-learning-remapping-G.html
+outputs/reference-04-motor-manifold-A-make-figure-batch/reference-04-motor-manifold-A.json
+outputs/reference-04-motor-manifold-A-make-figure-batch/reference-04-motor-manifold-A.html
+outputs/reference-01-place-code-opto-B-make-figure/reference-01-place-code-opto-B.json
+outputs/reference-01-place-code-opto-B-make-figure/reference-01-place-code-opto-B.html
+docs/text-positioning-mismatch-plan.md
+docs/session-handoff-2026-06-06.md
+docs/figure-reconstruction-skill.md
+outputs/reference-04-motor-manifold-E-make-figure-batch/reference-04-motor-manifold-E.html
+outputs/reference-04-motor-manifold-E-make-figure-batch/reference-04-motor-manifold-E.json
+skills/make-figure/assets/hybrid-renderer-template.html
+skills/make-figure/SKILL.md
+outputs/reference-04-motor-manifold-B-make-figure-batch/reference-04-motor-manifold-B.html
+outputs/reference-04-motor-manifold-B-make-figure-batch/reference-04-motor-manifold-B.json
+outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json
+outputs/reference-03-learning-remapping-A-make-figure-batch/reference-03-learning-remapping-A.json
+outputs/reference-03-learning-remapping-A-make-figure-batch/reference-03-learning-remapping-A.html
+outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html
+outputs/reference-03-learning-remapping-E-make-figure-batch/reference-03-learning-remapping-E.html
+outputs/reference-03-learning-remapping-E-make-figure-batch/reference-03-learning-remapping-E.json
+skills/make-figure/agents/openai.yaml
+outputs/reference-02-decision-dynamics-H-make-figure-batch/reference-02-decision-dynamics-H.json
+outputs/reference-02-decision-dynamics-H-make-figure-batch/reference-02-decision-dynamics-H.html
+scripts/validate_make_figure_outputs.py
+skills/make-figure/references/reconstruction-contract.md
+skills/make-figure/references/semantic-figure-ir.md
+examples/no-image-1c/reference-01-place-code-opto-C.json
+examples/no-image-1c/index.html
+outputs/reference-03-learning-remapping-B-make-figure-batch/reference-03-learning-remapping-B.html
+outputs/reference-03-learning-remapping-B-make-figure-batch/reference-03-learning-remapping-B.json
+tmp/make-figure-batch/reference-05-grid-remapping-C.stdout.log
+tmp/make-figure-batch/reference-05-grid-remapping-D.last.txt
+tmp/make-figure-batch/reference-05-grid-remapping-D.stdout.log
+tmp/make-figure-batch/reference-01-place-code-opto-E.stdout.log
+plugins/make-figure/commands/make-figure.md
+examples/no-image-four/index.html
+examples/no-image-four/no-image-four.json
+scripts/font-calibration/assert-improvement.mjs
+scripts/font-calibration/run-calibration.mjs
+scripts/font-calibration/calibrate.html
+scripts/font-calibration/apply-text-calibration.mjs
+scripts/font-calibration/README.md
+scripts/font-calibration/build-ocr-targets.mjs
+outputs/reference-03-learning-remapping-F-make-figure-batch/reference-03-learning-remapping-F.json
+outputs/reference-03-learning-remapping-F-make-figure-batch/reference-03-learning-remapping-F.html
+plugins/make-figure/skills/make-figure/SKILL.md
+outputs/reference-04-motor-manifold-C-make-figure-batch/reference-04-motor-manifold-C.html
+outputs/reference-04-motor-manifold-C-make-figure-batch/reference-04-motor-manifold-C.json
+tmp/font-qa/reference-01-place-code-opto-B-alltext-calibration-report.json
+tmp/font-qa/promoted-reference-01-place-code-opto-C-calibrated.json
+tmp/font-qa/reference-01-place-code-opto-B-alltext.json
+tmp/font-qa/scale-fit.json
+tmp/font-qa/build-ocr-targets.mjs
+tmp/font-qa/reference-01-place-code-opto-C-calibration-report.json
+tmp/font-qa/textlength-fit.json
+tmp/font-qa/evidence.html
+plugins/make-figure/skills/make-figure/references/reconstruction-contract.md
+plugins/make-figure/skills/make-figure/references/semantic-figure-ir.md
+tmp/font-qa/calibrate.html
+tmp/font-qa/actual-panel-viewer.html
+tmp/font-qa/reference-01-place-code-opto-A-alltext.json
+tmp/font-qa/reference-01-place-code-opto-F-alltext.json
+plugins/make-figure/skills/make-figure/assets/hybrid-renderer-template.html
+
+exec
+/bin/zsh -lc "sed -n '1,220p' skills/make-figure/references/reconstruction-contract.md" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+# Reconstruction Contract
+
+Use this contract when converting a raster scientific figure into configurable HTML and JSON.
+
+Read `semantic-figure-ir.md` alongside this contract. The JSON may be
+panel-specific, but it must preserve semantic relationships between data,
+transforms, layout objects, marks, labels, and validation constraints.
+
+## JSON Shape
+
+Minimum top-level fields:
+
+```json
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "figure-id",
+  "source": {
+    "path": "./source.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "What was inferred visually."
+  },
+  "canvas": {
+    "width": 800,
+    "height": 600,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [
+      "https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&display=swap"
+    ],
+    "fontFaces": [
+      {"family": "FigureSans", "weight": 400, "src": "./fonts/FigureSans-Regular.woff2"},
+      {"family": "FigureSans", "weight": 700, "src": "./fonts/FigureSans-Bold.woff2"}
+    ],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Source Sans 3", "Roboto", "Noto Sans"],
+    "calibration": {
+      "fontStretch": "normal",
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Use measured source text boxes to tune font family, stretch, size, and line height."
+    }
+  },
+  "panels": [],
+  "confidence": []
+}
+```
+
+`fontImports` is for lightweight browser-based experimentation with external
+CSS font providers such as Google Fonts. `fontFaces` is for reproducible local
+or adjacent font files when a typeface has been selected. Do not introduce a
+build system only to test fonts; use browser-native font loading and SVG text
+measurement first.
+
+## Panel Shape
+
+Represent each subpanel explicitly. For a single cropped panel, use one item in `panels`.
+
+```json
+{
+  "id": "panel-a",
+  "label": {"text": "A", "x": 16, "y": 20, "fontSize": 24, "fontWeight": 700},
+  "title": {"text": "Panel title", "x": 56, "y": 24, "fontSize": 16, "fontWeight": 700},
+  "bbox": {"x": 0, "y": 0, "width": 400, "height": 300},
+  "plot": {
+    "dataBbox": {"x": 64, "y": 48, "width": 300, "height": 210},
+    "axes": {
+      "xAxis": {"id": "panel-a-x-axis", "line": {"x1": 64, "y1": 258, "x2": 364, "y2": 258}, "tickLength": 6},
+      "yAxis": {"id": "panel-a-y-axis", "line": {"x1": 64, "y1": 48, "x2": 64, "y2": 258}, "tickLength": 6}
+    },
+    "x": {
+      "scale": "linear",
+      "domain": [0, 10],
+      "ticks": [{"value": 0, "label": "0"}, {"value": 5, "label": "5"}, {"value": 10, "label": "10"}],
+      "label": {"text": "Time (s)"}
+    },
+    "y": {
+      "scale": "linear",
+      "domain": [0, 1],
+      "ticks": [{"value": 0, "label": "0"}, {"value": 0.5, "label": "0.5"}, {"value": 1, "label": "1"}],
+      "label": {"text": "Response"}
+    }
+  },
+  "marks": [],
+  "annotations": [],
+  "provenance": []
+}
+```
+
+## Mark Types
+
+Use semantic mark objects. Add fields as needed, but keep the meaning explicit.
+
+- `lineSeries`: data points plus stroke, width, optional uncertainty band.
+- `scatter`: points, marker shape, size, fill, stroke, opacity.
+- `bar`: categorical or numeric bars with baseline, fill, stroke.
+- `heatmap`: matrix, color scale, bounds, interpolation flag.
+- `raster`: event times by row or a generation recipe with seed and density.
+- `violin`: category, outline path or generated KDE recipe, median/quantile marks.
+- `path`: editable SVG path data for contours, arrows, outlines, or schematic curves.
+- `rect`, `circle`, `ellipse`, `text`, `bracket`, `arrow`: annotations and schematics.
+- `imageRecipe`: generated texture or synthetic field; never point this at the source raster.
+
+## Coordinate Systems
+
+Define named transforms before rendering marks:
+
+- `plot.dataBbox` maps data to pixels.
+- For charts where the visual data rectangle is offset from axes, split
+  `dataBbox` from `axisBbox` or explicit axis anchors such as `yAxisX` and
+  `xAxisY`. Do not force source axis offsets into the data transform.
+- `x.domain` and `y.domain` map quantitative axes.
+- `categories` map categorical positions.
+- `eventAnchor` maps event-aligned plots.
+- `colorScale.domain` maps heatmaps and colorbars.
+
+Avoid mixing hard-coded pixel marks with data-space marks unless the mark is truly an annotation. Ticks, event lines, and data marks should share the same transform.
+
+### 3D Scientific Plots
+
+Recognize 3D plots from visual cues such as three nonparallel labeled axes,
+isometric or perspective box frames, oblique grid planes, tick labels attached
+to multiple axis directions, and data paths or markers that overlap within a
+projected volume. Do not require the user to identify a panel as 3D.
+
+For static publication-style 3D plots made of axes, grid lines, trajectories,
+markers, and labels, prefer semantic 3D data rendered into SVG through an
+explicit projection function. Reserve WebGL or Three.js for genuinely complex
+surfaces, dense point clouds, lighting, meshes, or interactive rotation.
+
+Represent 3D scenes with explicit camera or projection metadata:
+
+```json
+{
+  "scene": {
+    "projection": {
+      "type": "orthographicBasis",
+      "corner": {"x": 58, "y": 327},
+      "domainCorner": {"pc1": -2, "pc2": -2, "pc3": -2},
+      "basis": {
+        "pc1": {"x": 258, "y": 30},
+        "pc2": {"x": 145, "y": 90},
+        "pc3": {"x": 0, "y": -184}
+      }
+    },
+    "domains": {"pc1": [-2, 2], "pc2": [-2, 2], "pc3": [-2, 2]},
+    "trajectories": [{"points": [[-1.5, -1.6, -0.3], [0.7, -1.1, 1.8]]}]
+  }
+}
+```
+
+`fontImports` is for lightweight browser-based experimentation with external
+CSS font providers such as Google Fonts. `fontFaces` is for reproducible local
+or adjacent font files when a typeface has been selected. Do not introduce a
+build system only to test fonts; use browser-native font loading and SVG text
+measurement first.
+
+Axes, grid planes, trajectories, markers, and annotations must use the same
+3D-to-2D projection. Depth-sort generated marks when overlap matters: back grid
+and box edges first, faint trial clouds, mean trajectories, timepoint markers,
+then text labels. Labels should anchor to projected 3D points or axis objects
+and then participate in the normal text-collision pass.
+
+When using source-calibrated projected grid segments, avoid segments that
+duplicate solid box edges or accidentally close into polygons. Grid lines should
+read as independent faint plane guides unless the source explicitly shows a
+closed projected face.
+
+Prefer named 3D grid planes over a flat list of projected line segments. For
+example, encode separate `floor`, `backWall`, and `sideWall` grid groups so each
+axis pair has its own Cartesian grid. Inventory the source grid before tuning:
+for every plane, count visible interior guides separately from boundary-aligned
+guides that are merged with or hidden under box edges. Encode grid lines as
+per-family values, such as independent `pc1`, `pc2`, and `pc3` guide families,
+instead of one shared plane-level value list. Each family should state whether
+domain-boundary values are included, and generated SVG lines should expose
+stable plane/family attributes so count validation can catch drift. A 3D
+state-space panel with PC1, PC2, and PC3 axes should not collapse into one wall
+plus a triangular base.
+
+If the source uses faint face shading, encode plane fills separately from grid
+lines and generate the fill polygon from the same 3D projection. Do not bake the
+shading into arbitrary background shapes. Tick labels in 3D plots are layout
+text: allow source-calibrated text positions or offsets from projected ticks so
+labels do not collide with each other, axis titles, or spines.
+
+3D tick labels should be placed by semantic layout rules, not by one-shot
+coordinates alone. Treat axis spines and tick marks as protected geometry with
+padded hit zones. Treat faint grid lines and trajectory clouds as non-protected
+unless the source clearly reserves label space around them. Tick labels may use
+source-calibrated initial positions, but renderers should measure the final text
+box and apply a constrained outward nudge if it intersects protected axis
+geometry:
+
+```json
+{
+  "axis": {
+    "id": "pc1",
+    "tickLabelPlacement": {
+      "avoid": ["axis-spine"],
+      "minGap": 5,
+      "nudge": {"x": 8, "y": 7},
+      "maxSteps": 6
+    }
+  }
+}
+```
+
+3D axes with visible tick labels should also render visible tick marks unless
+the source suppresses them. Store tick geometry as a projected tick anchor, a
+short `markVector`, and a label offset or outward normal. The label should be
+placed from the tick mark first; collision correction is a secondary adjustment,
+not the primary placement mechanism.
+
+When a source-fitted frame or projection still does not reproduce the source's
+tick text positions, keep the numeric tick `value` semantic but add separate
+source-calibrated `markAnchor` and/or `labelAnchor` fields. Do not force tick
+labels through one shared offset vector if the source clearly uses
+
+codex
+I found the contract and existing batch outputs. Next I’m checking the native crop geometry and nearby grid-remapping examples so the generated panel uses the same schema style without touching those files.
+exec
+/bin/zsh -lc "sed -n '1,180p' outputs/reference-05-grid-remapping-C-make-figure-test/reference-05-grid-remapping-C.json" in /Users/alex/Code/scientific-figure-reconstruction
+exec
+/bin/zsh -lc "sed -n '1,180p' outputs/reference-05-grid-remapping-D-make-figure-test/reference-05-grid-remapping-D.json" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-05-grid-remapping-C",
+  "source": {
+    "path": "../../assets/reference/reference-05-grid-remapping-C-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Native raster crop shows panel C, two spatial autocorrelogram heatmaps, axes at -60/0/60 cm, and a vertical normalized-counts colorbar."
+  },
+  "canvas": {
+    "width": 566,
+    "height": 500,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#050505",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Arial", "Helvetica", "Roboto Condensed"],
+    "calibration": {
+      "fontStretch": "condensed",
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Approximate source typography: heavy condensed sans for panel label/title, regular condensed sans for axes and ticks."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "env-a.xy",
+      "type": "cartesian",
+      "domain": {"x": [-70, 70], "y": [-70, 70]},
+      "range": {"x": [103, 275], "y": [398, 184]}
+    },
+    {
+      "id": "env-b.xy",
+      "type": "cartesian",
+      "domain": {"x": [-70, 70], "y": [-70, 70]},
+      "range": {"x": [286, 468], "y": [398, 184]}
+    },
+    {
+      "id": "norm-counts",
+      "type": "colorScale",
+      "domain": [0, 1],
+      "stops": [
+        {"value": 0, "color": "#010101"},
+        {"value": 0.18, "color": "#3b1a0b"},
+        {"value": 0.48, "color": "#b76513"},
+        {"value": 0.75, "color": "#efc766"},
+        {"value": 1, "color": "#fffbe6"}
+      ]
+    }
+  ],
+  "layoutObjects": [
+    {
+      "id": "panel-label",
+      "type": "panelLabel",
+      "text": "C",
+      "anchor": {"x": 50, "y": 91},
+      "fontSize": 31,
+      "fontWeight": 700,
+      "sourceBox": {"x": 49, "y": 69, "width": 20, "height": 28},
+      "fit": "visual"
+    },
+    {
+      "id": "panel-title",
+      "type": "title",
+      "text": "Spatial autocorrelogram",
+      "anchor": {"x": 90, "y": 95},
+      "fontSize": 23,
+      "fontWeight": 700,
+      "sourceBox": {"x": 89, "y": 77, "width": 229, "height": 23},
+      "fit": "visual"
+    },
+    {
+      "id": "env-a-title",
+      "type": "panelTitle",
+      "text": "Environment A",
+      "anchor": {"x": 189, "y": 158},
+      "fontSize": 20,
+      "fontWeight": 700,
+      "fill": "#74300f",
+      "textAnchor": "middle"
+    },
+    {
+      "id": "env-b-title",
+      "type": "panelTitle",
+      "text": "Environment B",
+      "anchor": {"x": 375, "y": 158},
+      "fontSize": 20,
+      "fontWeight": 700,
+      "fill": "#006f74",
+      "textAnchor": "middle"
+    },
+    {
+      "id": "colorbar",
+      "type": "colorbar",
+      "colorScale": "norm-counts",
+      "bbox": {"x": 493, "y": 214, "width": 16, "height": 174},
+      "ticks": [
+        {"value": 0, "label": "0"},
+        {"value": 0.5, "label": "0.5"},
+        {"value": 1, "label": "1.0"}
+      ],
+      "title": {"text": "Norm.\ncounts", "x": 490, "y": 181, "fontSize": 16, "lineHeight": 18}
+    }
+  ],
+  "panels": [
+    {
+      "id": "env-a",
+      "label": {"text": "Environment A", "layoutObject": "env-a-title"},
+      "plot": {
+        "bbox": {"x": 103, "y": 184, "width": 172, "height": 214},
+        "dataBbox": {"x": 103, "y": 184, "width": 172, "height": 214},
+        "usesTransform": "env-a.xy",
+        "x": {
+          "domain": [-70, 70],
+          "ticks": [
+            {"value": -60, "label": "-60"},
+            {"value": 0, "label": "0"},
+            {"value": 60, "label": "60"}
+          ],
+          "label": {"text": "\u0394x (cm)", "x": 189, "y": 454, "fontSize": 19}
+        },
+        "y": {
+          "domain": [-70, 70],
+          "ticks": [
+            {"value": -60, "label": "-60"},
+            {"value": 0, "label": "0"},
+            {"value": 60, "label": "60"}
+          ],
+          "label": {"text": "\u0394y (cm)", "x": 65, "y": 291, "fontSize": 19, "rotation": -90}
+        },
+        "axes": {"stroke": "#111111", "strokeWidth": 1.4, "tickLength": 7}
+      },
+      "marks": [
+        {
+          "id": "env-a-field",
+          "type": "heatmap",
+          "renderer": "canvas",
+          "usesTransform": "env-a.xy",
+          "colorScale": "norm-counts",
+          "resolution": {"columns": 172, "rows": 214},
+          "backgroundNoise": {"seed": 351, "amplitude": 0.1, "grain": 0.58},
+          "latticeRecipe": {
+            "spacing": 29,
+            "sigma": 5.6,
+            "centerSigma": 10,
+            "centerGain": 1.35,
+            "angularJitter": 0.08,
+            "radialJitter": 2.6,
+            "seed": 1005
+          },
+          "spots": [
+            {"x": 0, "y": 0, "amplitude": 1.0, "sigma": 7.5},
+            {"x": -20, "y": 18, "amplitude": 0.78, "sigma": 5.8},
+            {"x": 19, "y": -21, "amplitude": 0.74, "sigma": 5.5},
+            {"x": 34, "y": 27, "amplitude": 0.62, "sigma": 5.3},
+            {"x": -36, "y": -29, "amplitude": 0.58, "sigma": 5.4}
+          ]
+        }
+      ],
+      "provenance": [{"confidence": "medium", "note": "Grid-like bright spots are generated from a triangular lattice recipe tuned by visual inspection, not extracted data."}]
+    },
+    {
+      "id": "env-b",
+      "label": {"text": "Environment B", "layoutObject": "env-b-title"},
+      "plot": {
+        "bbox": {"x": 286, "y": 184, "width": 182, "height": 214},
+        "dataBbox": {"x": 286, "y": 184, "width": 182, "height": 214},
+        "usesTransform": "env-b.xy",
+        "x": {
+          "domain": [-70, 70],
+          "ticks": [
+            {"value": -60, "label": "-60"},
+            {"value": 0, "label": "0"},
+            {"value": 60, "label": "60"}
+          ],
+          "label": {"text": "\u0394x (cm)", "x": 377, "y": 454, "fontSize": 19}
+        },
+
+ succeeded in 0ms:
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-05-grid-remapping-D",
+  "source": {
+    "path": "../../assets/reference/reference-05-grid-remapping-D-reference.png",
+    "usage": "QA-only reference image; not used by generated candidate layers.",
+    "notes": "Single cropped panel D showing two categorical gridness score distributions as violins with dense jittered points, summary bars, y-axis, dashed zero line, and p-value bracket."
+  },
+  "canvas": {
+    "width": 486,
+    "height": 524,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 16,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Roboto", "Noto Sans"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "First-pass manual typography from source crop; title and labels resemble condensed bold publication sans but remain editable."
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-d",
+      "bbox": {"x": 0, "y": 0, "width": 486, "height": 524},
+      "label": {
+        "id": "panel-label",
+        "text": "D",
+        "x": 23,
+        "y": 54,
+        "fontSize": 29,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 23, "y": 31, "width": 20, "height": 28},
+        "fit": "manual"
+      },
+      "title": {
+        "id": "panel-title",
+        "text": "Gridness score distribution",
+        "x": 74,
+        "y": 59,
+        "fontSize": 23,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 75, "y": 40, "width": 258, "height": 25},
+        "fit": "manual"
+      },
+      "plot": {
+        "id": "gridness-violin-plot",
+        "dataBbox": {"x": 86, "y": 88, "width": 346, "height": 322},
+        "axisBbox": {"x": 86, "y": 88, "width": 346, "height": 322},
+        "x": {
+          "scale": "categorical",
+          "categories": [
+            {"id": "env-a", "label": "Environment A", "x": 169, "color": "#8a3f12", "n": 156},
+            {"id": "env-b", "label": "Environment B", "x": 340, "color": "#00747d", "n": 156}
+          ]
+        },
+        "y": {
+          "scale": "linear",
+          "domain": [-1.5, 1.5],
+          "ticks": [
+            {"value": -1.5, "label": "-1.5"},
+            {"value": -1.0, "label": "-1.0"},
+            {"value": -0.5, "label": "-0.5"},
+            {"value": 0, "label": "0"},
+            {"value": 0.5, "label": "0.5"},
+            {"value": 1.0, "label": "1.0"},
+            {"value": 1.5, "label": "1.5"}
+          ],
+          "label": {"text": "Gridness score", "x": 20, "y": 249, "rotation": -90}
+        }
+      },
+      "data": {
+        "distributions": [
+          {
+            "id": "env-a-dist",
+            "category": "env-a",
+            "seed": 4917,
+            "count": 156,
+            "recipe": "mixture-normal",
+            "components": [
+              {"weight": 0.68, "mean": 0.18, "sd": 0.25},
+              {"weight": 0.22, "mean": 0.48, "sd": 0.22},
+              {"weight": 0.10, "mean": -0.48, "sd": 0.35}
+            ],
+            "clip": [-1.25, 1.28],
+            "median": 0.28,
+            "iqr": [-0.04, 0.58],
+            "violin": {
+              "bandwidth": 0.16,
+              "maxHalfWidth": 48,
+              "sampleStep": 0.06,
+              "fill": "#b87743",
+              "stroke": "#8a3f12",
+              "fillOpacity": 0.46,
+              "strokeWidth": 1.8
+            }
+          },
+          {
+            "id": "env-b-dist",
+            "category": "env-b",
+            "seed": 6183,
+            "count": 156,
+            "recipe": "mixture-normal",
+            "components": [
+              {"weight": 0.66, "mean": 0.22, "sd": 0.24},
+              {"weight": 0.24, "mean": 0.43, "sd": 0.20},
+              {"weight": 0.10, "mean": -0.44, "sd": 0.34}
+            ],
+            "clip": [-1.20, 1.28],
+            "median": 0.31,
+            "iqr": [-0.01, 0.58],
+            "violin": {
+              "bandwidth": 0.16,
+              "maxHalfWidth": 48,
+              "sampleStep": 0.06,
+              "fill": "#3b9ba0",
+              "stroke": "#00747d",
+              "fillOpacity": 0.43,
+              "strokeWidth": 1.8
+            }
+          }
+        ]
+      },
+      "marks": [
+        {
+          "id": "zero-line",
+          "type": "line",
+          "usesTransform": "gridness-violin-plot.y",
+          "orientation": "horizontal",
+          "value": 0,
+          "x1": 86,
+          "x2": 432,
+          "stroke": "#111111",
+          "strokeWidth": 1.5,
+          "dasharray": "5 4"
+        },
+        {
+          "id": "env-a-violin",
+          "type": "violin",
+          "distribution": "env-a-dist",
+          "renderer": "svg",
+          "sourceEvidence": ["source violin silhouette approximated from density envelope"]
+        },
+        {
+          "id": "env-b-violin",
+          "type": "violin",
+          "distribution": "env-b-dist",
+          "renderer": "svg",
+          "sourceEvidence": ["source violin silhouette approximated from density envelope"]
+        },
+        {
+          "id": "env-a-scatter",
+          "type": "scatter",
+          "distribution": "env-a-dist",
+          "renderer": "canvas",
+          "jitterHalfWidth": 46,
+          "radius": 2.05,
+          "fill": "#a65d2b",
+          "opacity": 0.72
+        },
+        {
+          "id": "env-b-scatter",
+          "type": "scatter",
+          "distribution": "env-b-dist",
+          "renderer": "canvas",
+          "jitterHalfWidth": 46,
+          "radius": 2.05,
+          "fill": "#087f87",
+          "opacity": 0.70
+        },
+        {
+          "id": "summary-bars",
+          "type": "summaryOverlay",
+
+exec
+/bin/zsh -lc "sed -n '1,200p' skills/make-figure/assets/hybrid-renderer-template.html" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scientific figure reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #aaaaaa;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .surface,
+    .reference {
+      position: absolute;
+      inset: 0;
+    }
+
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+    }
+
+    .show-reference .surface {
+      display: none;
+    }
+
+    .show-reference .reference {
+      display: block;
+    }
+
+    svg,
+    canvas {
+      position: absolute;
+      inset: 0;
+    }
+
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">Scientific figure reconstruction</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="Reference source image">
+    </div>
+  </main>
+
+  <script id="fallback-spec" type="application/json">
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "example-panel",
+  "source": {
+    "path": "",
+    "usage": "QA-only; not used by generated candidate."
+  },
+  "canvas": {"width": 640, "height": 420, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Source Sans 3", "Roboto", "Noto Sans"]
+  },
+  "panels": [
+    {
+      "id": "panel-a",
+      "label": {"text": "A", "x": 18, "y": 28, "fontSize": 24, "fontWeight": 700},
+      "title": {"text": "Example configurable panel", "x": 58, "y": 30, "fontSize": 16, "fontWeight": 700},
+      "plot": {
+        "bbox": {"x": 80, "y": 70, "width": 470, "height": 270},
+        "x": {"domain": [0, 10], "ticks": [{"value": 0, "label": "0"}, {"value": 5, "label": "5"}, {"value": 10, "label": "10"}], "label": {"text": "Time (s)"}},
+        "y": {"domain": [0, 1], "ticks": [{"value": 0, "label": "0"}, {"value": 0.5, "label": "0.5"}, {"value": 1, "label": "1"}], "label": {"text": "Response"}}
+      },
+      "marks": [
+        {"id": "series-1", "type": "lineSeries", "points": [[0, 0.22], [2, 0.32], [4, 0.71], [6, 0.54], [8, 0.82], [10, 0.76]], "stroke": "#111111", "strokeWidth": 2.5},
+        {"id": "event", "type": "line", "x1": 315, "y1": 70, "x2": 315, "y2": 340, "stroke": "#008f96", "strokeWidth": 1.5, "dasharray": "4 4"},
+        {"id": "event-label", "type": "text", "text": "event", "x": 315, "y": 54, "fontSize": 13, "fill": "#008f96", "anchor": "middle"}
+      ]
+    }
+  ],
+  "confidence": [{"target": "example-panel", "confidence": "demo", "note": "Replace fallback spec with an adjacent JSON file."}]
+}
+  </script>
+
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function $(id) {
+      return document.getElementById(id);
+    }
+
+    function make(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function rng(seed) {
+      return function random() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function scale(domain, range, value) {
+      return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+    }
+
+    function pointScales(plot) {
+      const box = plot.bbox;
+      return {
+        x: value => scale(plot.x.domain, [box.x, box.x + box.width], value),
+        y: value => scale(plot.y.domain, [box.y + box.height, box.y], value)
+      };
+
+exec
+/bin/zsh -lc 'sips -g pixelWidth -g pixelHeight assets/reference/reference-05-grid-remapping-B-reference.png' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+/Users/alex/Code/scientific-figure-reconstruction/assets/reference/reference-05-grid-remapping-B-reference.png
+  pixelWidth: 456
+  pixelHeight: 500
+
+codex
+The target crop is `456 x 500`. From the raster, this is panel B: two side-by-side lap-by-position firing-rate heatmaps with shared lap axis, colored environment headers, and a small right colorbar partly clipped by the crop.
+codex
+I’m going to encode the heatmaps as generated canvas fields: dark noisy backgrounds, sparse raster-like bins, and editable vertical place-field ridge recipes for each environment. Axes, headers, labels, and colorbar will stay SVG/DOM from JSON.
+exec
+/bin/zsh -lc 'mkdir -p outputs/reference-05-grid-remapping-B-make-figure-batch && test ! -e outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json && test ! -e outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html; status=$?; if [ $status -eq 0 ]; then echo ready; else echo target-files-already-exist-or-test-failed; fi' in /Users/alex/Code/scientific-figure-reconstruction
+ exited 1 in 0ms:
+zsh:1: read-only variable: status
+
+exec
+/bin/zsh -lc 'mkdir -p outputs/reference-05-grid-remapping-B-make-figure-batch && test ! -e outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json && test ! -e outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html; rc=$?; if [ $rc -eq 0 ]; then echo ready; else echo target-files-already-exist-or-test-failed; fi' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+ready
+
+codex
+The requested output directory is ready and the two target filenames did not previously exist. I’m writing those two files now, keeping the source path only in QA metadata and the reference-only toggle.
+apply patch
+patch: completed
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json
+diff --git a/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html b/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..684c41fbed1777e21b0c16dade383a9262a6f00e
+--- /dev/null
++++ b/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html
+@@ -0,0 +1,263 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-05-grid-remapping-B reconstruction</title>
++  <style>
++    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
++    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #cfcfcf; }
++    h1 { margin: 0; font-size: 16px; font-weight: 700; }
++    .note { margin-top: 3px; font-size: 12px; color: #555555; }
++    .toggle { display: inline-flex; border: 1px solid #aaaaaa; border-radius: 4px; overflow: hidden; }
++    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
++    .toggle button.active { background: #111111; color: #ffffff; }
++    main { min-height: calc(100vh - 48px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
++    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
++    .surface, .reference { position: absolute; inset: 0; }
++    .reference { display: none; width: 100%; height: 100%; object-fit: contain; background: #ffffff; }
++    .show-reference .surface { display: none; }
++    .show-reference .reference { display: block; }
++    svg, canvas { position: absolute; inset: 0; }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1 id="title">reference-05-grid-remapping-B</h1>
++      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">Reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <img id="reference" class="reference" alt="QA reference source image">
++    </div>
++  </main>
++  <script>
++    const SVG_NS = 'http://www.w3.org/2000/svg';
++    const JSON_PATH = './reference-05-grid-remapping-B.json';
++
++    function el(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
++      Object.entries(attrs).forEach(([key, value]) => {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      });
++      return node;
++    }
++
++    function rng(seed) {
++      return function random() {
++        let t = seed += 0x6D2B79F5;
++        t = Math.imul(t ^ (t >>> 15), t | 1);
++        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
++        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
++      };
++    }
++
++    function clamp(value, min, max) {
++      return Math.max(min, Math.min(max, value));
++    }
++
++    function hexToRgb(hex) {
++      const n = parseInt(hex.slice(1), 16);
++      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
++    }
++
++    function colorAt(scale, value) {
++      const stops = scale.stops;
++      const v = clamp(value, scale.domain[0], scale.domain[1]);
++      let a = stops[0], b = stops[stops.length - 1];
++      for (let i = 0; i < stops.length - 1; i++) {
++        if (v >= stops[i].value && v <= stops[i + 1].value) {
++          a = stops[i]; b = stops[i + 1]; break;
++        }
++      }
++      const t = (v - a.value) / (b.value - a.value || 1);
++      const ca = hexToRgb(a.color), cb = hexToRgb(b.color);
++      return [
++        Math.round(ca[0] + (cb[0] - ca[0]) * t),
++        Math.round(ca[1] + (cb[1] - ca[1]) * t),
++        Math.round(ca[2] + (cb[2] - ca[2]) * t)
++      ];
++    }
++
++    function drawHeatmap(ctx, panel, mark, scale) {
++      const box = panel.plot.dataBbox;
++      const w = Math.round(box.width), h = Math.round(box.height);
++      const values = new Float32Array(w * h);
++      const noiseRand = rng(mark.backgroundNoise.seed);
++      for (let y = 0; y < h; y++) {
++        for (let x = 0; x < w; x++) {
++          const coarse = (noiseRand() - 0.5) * mark.backgroundNoise.amplitude;
++          values[y * w + x] = Math.max(0, 0.025 + coarse);
++        }
++      }
++      const binsRand = rng(mark.sparseBins.seed);
++      for (let i = 0; i < mark.sparseBins.count; i++) {
++        const bx = Math.floor(binsRand() * w);
++        const by = Math.floor(binsRand() * h);
++        const val = binsRand() * mark.sparseBins.maxValue;
++        for (let yy = 0; yy < mark.sparseBins.height; yy++) {
++          for (let xx = 0; xx < mark.sparseBins.width; xx++) {
++            const px = bx + xx, py = by + yy;
++            if (px < w && py < h) values[py * w + px] += val;
++          }
++        }
++      }
++      const ridge = mark.ridgeRecipe;
++      const jitterRand = rng(ridge.seed);
++      for (let y = 0; y < h; y++) {
++        const lap = y / h * 39 + 1;
++        let cx = ridge.centerX + (lap - 20) * ridge.lapSlope;
++        ridge.waviness.forEach(wave => { cx += Math.sin(lap / wave.period * Math.PI * 2) * wave.amplitude; });
++        cx += (jitterRand() - 0.5) * ridge.lapJitter;
++        for (let x = 0; x < w; x++) {
++          const d = x - cx;
++          const g = Math.exp(-(d * d) / (2 * ridge.sigmaX * ridge.sigmaX));
++          values[y * w + x] += g * ridge.amplitude * (0.82 + 0.3 * jitterRand());
++        }
++      }
++      const img = ctx.createImageData(w, h);
++      for (let i = 0; i < values.length; i++) {
++        const [r, g, b] = colorAt(scale, values[i]);
++        img.data[i * 4] = r; img.data[i * 4 + 1] = g; img.data[i * 4 + 2] = b; img.data[i * 4 + 3] = 255;
++      }
++      const off = document.createElement('canvas');
++      off.width = w; off.height = h;
++      off.getContext('2d').putImageData(img, 0, 0);
++      ctx.imageSmoothingEnabled = false;
++      ctx.drawImage(off, box.x, box.y);
++    }
++
++    function scaleX(plot, value) {
++      const d = plot.x.domain, b = plot.dataBbox;
++      return b.x + (value - d[0]) / (d[1] - d[0]) * b.width;
++    }
++
++    function scaleY(plot, value) {
++      const d = plot.y.domain, b = plot.dataBbox;
++      return b.y + (value - d[0]) / (d[1] - d[0]) * b.height;
++    }
++
++    function addText(svg, spec, textObject) {
++      const anchor = textObject.anchor || {x: textObject.x, y: textObject.y};
++      const t = el('text', {
++        x: anchor.x,
++        y: anchor.y,
++        fill: textObject.fill || spec.typography.color,
++        'font-family': spec.typography.fontFamily,
++        'font-size': textObject.fontSize || spec.typography.defaultSize,
++        'font-weight': textObject.fontWeight || 400,
++        'text-anchor': textObject.textAnchor || textObject.anchor || 'start'
++      });
++      if (textObject.rotation) t.setAttribute('transform', `rotate(${textObject.rotation} ${anchor.x} ${anchor.y})`);
++      const lines = String(textObject.text).split('\n');
++      lines.forEach((line, i) => {
++        const span = el('tspan', {x: anchor.x, dy: i ? (textObject.lineHeight || textObject.fontSize || 16) : 0});
++        span.textContent = line;
++        t.appendChild(span);
++      });
++      svg.appendChild(t);
++      return t;
++    }
++
++    function drawAxes(svg, spec, panel) {
++      const plot = panel.plot;
++      const b = plot.dataBbox;
++      svg.appendChild(el('rect', {x: b.x, y: b.y, width: b.width, height: b.height, fill: 'none', stroke: '#111111', 'stroke-width': 1.1}));
++      plot.x.ticks.forEach(tick => {
++        const x = scaleX(plot, tick.value);
++        const y = b.y + b.height;
++        const text = el('text', {x, y: y + 28, fill: '#050505', 'font-family': spec.typography.fontFamily, 'font-size': 20, 'text-anchor': 'middle'});
++        text.textContent = tick.label;
++        svg.appendChild(text);
++      });
++    }
++
++    function drawLayout(svg, spec) {
++      spec.layoutObjects.forEach(obj => {
++        if (obj.type === 'colorbar') return;
++        if (obj.text) addText(svg, spec, obj);
++        if (obj.underline) svg.appendChild(el('line', obj.underline));
++        if (obj.type === 'axis' && obj.orientation === 'left') {
++          svg.appendChild(el('line', {...obj.line, stroke: '#111111', 'stroke-width': 1.1}));
++          const plot = spec.panels[0].plot;
++          obj.ticks.forEach(tick => {
++            const y = scaleY(plot, tick.value);
++            const tx = el('text', {x: obj.line.x1 - 9, y: y + 6, fill: '#050505', 'font-family': spec.typography.fontFamily, 'font-size': 20, 'text-anchor': 'end'});
++            tx.textContent = tick.label;
++            svg.appendChild(tx);
++          });
++          addText(svg, spec, obj.label);
++        }
++        if (obj.type === 'axisLabel') addText(svg, spec, obj);
++      });
++    }
++
++    function drawColorbar(svg, spec) {
++      const colorbar = spec.layoutObjects.find(o => o.type === 'colorbar');
++      const scale = spec.coordinateSystems.find(s => s.id === colorbar.colorScale);
++      addText(svg, spec, colorbar.title);
++      const defs = el('defs');
++      const grad = el('linearGradient', {id: 'rateBarGradient', x1: 0, y1: 1, x2: 0, y2: 0});
++      scale.stops.forEach(stop => grad.appendChild(el('stop', {offset: `${stop.value * 100}%`, 'stop-color': stop.color})));
++      defs.appendChild(grad);
++      svg.appendChild(defs);
++      svg.appendChild(el('rect', {x: colorbar.bbox.x, y: colorbar.bbox.y, width: colorbar.bbox.width, height: colorbar.bbox.height, fill: 'url(#rateBarGradient)', stroke: '#111111', 'stroke-width': 1}));
++      svg.appendChild(el('line', {x1: colorbar.bbox.x + colorbar.bbox.width, y1: colorbar.bbox.y + colorbar.bbox.height / 2, x2: colorbar.bbox.x + colorbar.bbox.width + 8, y2: colorbar.bbox.y + colorbar.bbox.height / 2, stroke: '#111111', 'stroke-width': 1}));
++    }
++
++    function render(spec) {
++      document.getElementById('title').textContent = spec.id;
++      const frame = document.getElementById('frame');
++      const surface = document.getElementById('surface');
++      const reference = document.getElementById('reference');
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      reference.src = spec.source.path;
++      surface.innerHTML = '';
++      const canvas = document.createElement('canvas');
++      canvas.width = spec.canvas.width;
++      canvas.height = spec.canvas.height;
++      const ctx = canvas.getContext('2d');
++      ctx.fillStyle = spec.canvas.background;
++      ctx.fillRect(0, 0, canvas.width, canvas.height);
++      spec.panels.forEach(panel => {
++        panel.marks.filter(mark => mark.renderer === 'canvas').forEach(mark => {
++          const scale = spec.coordinateSystems.find(s => s.id === mark.colorScale);
++          drawHeatmap(ctx, panel, mark, scale);
++        });
++      });
++      surface.appendChild(canvas);
++      const svg = el('svg', {width: spec.canvas.width, height: spec.canvas.height, viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`});
++      spec.panels.forEach(panel => drawAxes(svg, spec, panel));
++      drawLayout(svg, spec);
++      drawColorbar(svg, spec);
++      surface.appendChild(svg);
++    }
++
++    fetch(JSON_PATH)
++      .then(response => response.json())
++      .then(render);
++
++    const frame = document.getElementById('frame');
++    const generatedButton = document.getElementById('generatedButton');
++    const referenceButton = document.getElementById('referenceButton');
++    generatedButton.addEventListener('click', () => {
++      frame.classList.remove('show-reference');
++      generatedButton.classList.add('active');
++      referenceButton.classList.remove('active');
++    });
++    referenceButton.addEventListener('click', () => {
++      frame.classList.add('show-reference');
++      referenceButton.classList.add('active');
++      generatedButton.classList.remove('active');
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json b/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..bf74aa5372d989d3e251e6af644954ab549d2c95
+--- /dev/null
++++ b/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json
+@@ -0,0 +1,245 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-05-grid-remapping-B",
++  "source": {
++    "path": "../../assets/reference/reference-05-grid-remapping-B-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "Native crop is a partial panel B showing firing-rate maps across laps for Environment A and Environment B. Left edge is cropped from a larger figure title; right colorbar/title are partly clipped."
++  },
++  "canvas": {
++    "width": 456,
++    "height": 500,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
++    "defaultSize": 16,
++    "color": "#050505",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Arial", "Helvetica", "Roboto Condensed"],
++    "calibration": {
++      "fontStretch": "condensed",
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "First-pass manual typography. Source resembles a condensed sans; title and panel label are bold, axis labels regular."
++    }
++  },
++  "coordinateSystems": [
++    {
++      "id": "env-a.positionLap",
++      "type": "cartesian",
++      "domain": {"x": [0, 240], "y": [1, 40]},
++      "range": {"x": [58, 236], "y": [164, 442]}
++    },
++    {
++      "id": "env-b.positionLap",
++      "type": "cartesian",
++      "domain": {"x": [0, 240], "y": [1, 40]},
++      "range": {"x": [255, 423], "y": [164, 442]}
++    },
++    {
++      "id": "rate-map-a",
++      "type": "colorScale",
++      "domain": [0, 1],
++      "stops": [
++        {"value": 0, "color": "#030303"},
++        {"value": 0.18, "color": "#22110a"},
++        {"value": 0.44, "color": "#9b4a16"},
++        {"value": 0.72, "color": "#efb153"},
++        {"value": 1, "color": "#fff7d5"}
++      ]
++    },
++    {
++      "id": "rate-map-b",
++      "type": "colorScale",
++      "domain": [0, 1],
++      "stops": [
++        {"value": 0, "color": "#031011"},
++        {"value": 0.22, "color": "#053436"},
++        {"value": 0.48, "color": "#118f8c"},
++        {"value": 0.76, "color": "#9af4dc"},
++        {"value": 1, "color": "#f4fff2"}
++      ]
++    }
++  ],
++  "layoutObjects": [
++    {
++      "id": "cropped-parent-title",
++      "type": "croppedContextTitle",
++      "text": "emapping across virtual envi",
++      "anchor": {"x": -2, "y": 40},
++      "fontSize": 31,
++      "fontWeight": 700,
++      "sourceBox": {"x": 0, "y": 17, "width": 456, "height": 39},
++      "fit": "cropped-visible-fragment",
++      "provenance": {"confidence": "low", "note": "Only the visible cropped fragment of the larger figure heading is represented."}
++    },
++    {
++      "id": "panel-label",
++      "type": "panelLabel",
++      "text": "B",
++      "anchor": {"x": 19, "y": 92},
++      "fontSize": 29,
++      "fontWeight": 700,
++      "sourceBox": {"x": 19, "y": 69, "width": 20, "height": 29},
++      "fit": "manual"
++    },
++    {
++      "id": "panel-title",
++      "type": "title",
++      "text": "Firing rate map across laps",
++      "anchor": {"x": 61, "y": 94},
++      "fontSize": 23,
++      "fontWeight": 700,
++      "sourceBox": {"x": 61, "y": 77, "width": 290, "height": 24},
++      "fit": "manual"
++    },
++    {
++      "id": "env-a-title",
++      "type": "panelTitle",
++      "text": "Environment A",
++      "anchor": {"x": 147, "y": 143},
++      "fontSize": 20,
++      "fontWeight": 700,
++      "fill": "#78310f",
++      "textAnchor": "middle",
++      "underline": {"x1": 59, "y1": 152, "x2": 235, "y2": 152, "stroke": "#78310f", "strokeWidth": 1.4}
++    },
++    {
++      "id": "env-b-title",
++      "type": "panelTitle",
++      "text": "Environment B",
++      "anchor": {"x": 338, "y": 143},
++      "fontSize": 20,
++      "fontWeight": 700,
++      "fill": "#00747a",
++      "textAnchor": "middle",
++      "underline": {"x1": 241, "y1": 152, "x2": 422, "y2": 152, "stroke": "#00747a", "strokeWidth": 1.4}
++    },
++    {
++      "id": "shared-y-axis",
++      "type": "axis",
++      "transform": "env-a.positionLap",
++      "orientation": "left",
++      "line": {"x1": 58, "y1": 164, "x2": 58, "y2": 442},
++      "ticks": [
++        {"value": 1, "label": "1"},
++        {"value": 10, "label": "10"},
++        {"value": 20, "label": "20"},
++        {"value": 30, "label": "30"},
++        {"value": 40, "label": "40"}
++      ],
++      "label": {"text": "Lap", "x": 17, "y": 304, "fontSize": 20, "rotation": -90}
++    },
++    {
++      "id": "shared-x-axis-label",
++      "type": "axisLabel",
++      "text": "Linearized position (cm)",
++      "anchor": {"x": 234, "y": 499},
++      "fontSize": 19,
++      "textAnchor": "middle",
++      "sourceBox": {"x": 136, "y": 486, "width": 204, "height": 14},
++      "fit": "bottom-cropped"
++    },
++    {
++      "id": "rate-colorbar",
++      "type": "colorbar",
++      "colorScale": "rate-map-a",
++      "bbox": {"x": 440, "y": 248, "width": 14, "height": 154},
++      "ticks": [
++        {"value": 0, "label": "0"},
++        {"value": 0.5, "label": "0.5"},
++        {"value": 1, "label": "1"}
++      ],
++      "title": {"text": "Rate\n(Hz)", "x": 440, "y": 201, "fontSize": 16, "lineHeight": 17},
++      "provenance": {"confidence": "low", "note": "Right side of colorbar label and tick text are clipped in the source crop."}
++    }
++  ],
++  "panels": [
++    {
++      "id": "env-a",
++      "label": {"text": "Environment A", "layoutObject": "env-a-title"},
++      "plot": {
++        "bbox": {"x": 58, "y": 164, "width": 178, "height": 278},
++        "dataBbox": {"x": 58, "y": 164, "width": 178, "height": 278},
++        "usesTransform": "env-a.positionLap",
++        "x": {
++          "domain": [0, 240],
++          "ticks": [{"value": 0, "label": "0"}, {"value": 100, "label": "100"}, {"value": 200, "label": "200"}]
++        },
++        "y": {"domain": [1, 40], "ticks": [1, 10, 20, 30, 40]},
++        "axes": {"stroke": "#111111", "strokeWidth": 1.1, "tickLength": 0}
++      },
++      "marks": [
++        {
++          "id": "env-a-rate-field",
++          "type": "heatmap",
++          "renderer": "canvas",
++          "usesTransform": "env-a.positionLap",
++          "colorScale": "rate-map-a",
++          "resolution": {"columns": 178, "rows": 278},
++          "backgroundNoise": {"seed": 5105, "amplitude": 0.12, "grain": 0.9},
++          "sparseBins": {"seed": 5129, "count": 1080, "maxValue": 0.55, "width": 3, "height": 2},
++          "ridgeRecipe": {
++            "seed": 5191,
++            "centerX": 132,
++            "sigmaX": 14.5,
++            "lapJitter": 10,
++            "amplitude": 0.95,
++            "lapSlope": 0.6,
++            "waviness": [{"period": 14, "amplitude": 13}, {"period": 31, "amplitude": 7}]
++          }
++        }
++      ],
++      "provenance": [{"confidence": "medium", "note": "Primary vertical firing field is generated from a wavy ridge recipe with sparse noisy bins; not measured per-lap data."}]
++    },
++    {
++      "id": "env-b",
++      "label": {"text": "Environment B", "layoutObject": "env-b-title"},
++      "plot": {
++        "bbox": {"x": 255, "y": 164, "width": 168, "height": 278},
++        "dataBbox": {"x": 255, "y": 164, "width": 168, "height": 278},
++        "usesTransform": "env-b.positionLap",
++        "x": {
++          "domain": [0, 240],
++          "ticks": [{"value": 0, "label": "0"}, {"value": 100, "label": "100"}, {"value": 200, "label": "200"}]
++        },
++        "y": {"domain": [1, 40], "ticks": [1, 10, 20, 30, 40]},
++        "axes": {"stroke": "#111111", "strokeWidth": 1.1, "tickLength": 0}
++      },
++      "marks": [
++        {
++          "id": "env-b-rate-field",
++          "type": "heatmap",
++          "renderer": "canvas",
++          "usesTransform": "env-b.positionLap",
++          "colorScale": "rate-map-b",
++          "resolution": {"columns": 168, "rows": 278},
++          "backgroundNoise": {"seed": 6105, "amplitude": 0.15, "grain": 0.9},
++          "sparseBins": {"seed": 6129, "count": 1250, "maxValue": 0.52, "width": 3, "height": 2},
++          "ridgeRecipe": {
++            "seed": 6191,
++            "centerX": 126,
++            "sigmaX": 13,
++            "lapJitter": 8,
++            "amplitude": 0.92,
++            "lapSlope": -0.18,
++            "waviness": [{"period": 17, "amplitude": 11}, {"period": 37, "amplitude": 5}]
++          }
++        }
++      ],
++      "provenance": [{"confidence": "medium", "note": "Cyan firing field and surrounding low-rate bins are generated from an editable recipe."}]
++    }
++  ],
++  "annotations": [],
++  "constraints": [
++    {"id": "same-lap-axis", "type": "sharedAxis", "objects": ["env-a", "env-b"], "axis": "y"},
++    {"id": "header-underlines-align-plots", "type": "alignment", "objects": ["env-a-title", "env-b-title"], "target": "plot top edges"},
++    {"id": "no-source-as-layer", "type": "contract", "note": "Generated candidate must not draw or background the source raster."}
++  ],
++  "confidence": [
++    {"target": "panel geometry", "confidence": "medium", "note": "Plot and title anchors manually estimated from native raster."},
++    {"target": "colorbar", "confidence": "low", "note": "Right edge of colorbar region is clipped; tick labels are intentionally omitted from generated visible crop."}
++  ]
++}
+
+diff --git a/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html b/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..684c41fbed1777e21b0c16dade383a9262a6f00e
+--- /dev/null
++++ b/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html
+@@ -0,0 +1,263 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-05-grid-remapping-B reconstruction</title>
++  <style>
++    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
++    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #cfcfcf; }
++    h1 { margin: 0; font-size: 16px; font-weight: 700; }
++    .note { margin-top: 3px; font-size: 12px; color: #555555; }
++    .toggle { display: inline-flex; border: 1px solid #aaaaaa; border-radius: 4px; overflow: hidden; }
++    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
++    .toggle button.active { background: #111111; color: #ffffff; }
++    main { min-height: calc(100vh - 48px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
++    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
++    .surface, .reference { position: absolute; inset: 0; }
++    .reference { display: none; width: 100%; height: 100%; object-fit: contain; background: #ffffff; }
++    .show-reference .surface { display: none; }
++    .show-reference .reference { display: block; }
++    svg, canvas { position: absolute; inset: 0; }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1 id="title">reference-05-grid-remapping-B</h1>
++      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">Reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <img id="reference" class="reference" alt="QA reference source image">
++    </div>
++  </main>
++  <script>
++    const SVG_NS = 'http://www.w3.org/2000/svg';
++    const JSON_PATH = './reference-05-grid-remapping-B.json';
++
++    function el(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
++      Object.entries(attrs).forEach(([key, value]) => {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      });
++      return node;
++    }
++
++    function rng(seed) {
++      return function random() {
++        let t = seed += 0x6D2B79F5;
++        t = Math.imul(t ^ (t >>> 15), t | 1);
++        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
++        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
++      };
++    }
++
++    function clamp(value, min, max) {
++      return Math.max(min, Math.min(max, value));
++    }
++
++    function hexToRgb(hex) {
++      const n = parseInt(hex.slice(1), 16);
++      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
++    }
++
++    function colorAt(scale, value) {
++      const stops = scale.stops;
++      const v = clamp(value, scale.domain[0], scale.domain[1]);
++      let a = stops[0], b = stops[stops.length - 1];
++      for (let i = 0; i < stops.length - 1; i++) {
++        if (v >= stops[i].value && v <= stops[i + 1].value) {
++          a = stops[i]; b = stops[i + 1]; break;
++        }
++      }
++      const t = (v - a.value) / (b.value - a.value || 1);
++      const ca = hexToRgb(a.color), cb = hexToRgb(b.color);
++      return [
++        Math.round(ca[0] + (cb[0] - ca[0]) * t),
++        Math.round(ca[1] + (cb[1] - ca[1]) * t),
++        Math.round(ca[2] + (cb[2] - ca[2]) * t)
++      ];
++    }
++
++    function drawHeatmap(ctx, panel, mark, scale) {
++      const box = panel.plot.dataBbox;
++      const w = Math.round(box.width), h = Math.round(box.height);
++      const values = new Float32Array(w * h);
++      const noiseRand = rng(mark.backgroundNoise.seed);
++      for (let y = 0; y < h; y++) {
++        for (let x = 0; x < w; x++) {
++          const coarse = (noiseRand() - 0.5) * mark.backgroundNoise.amplitude;
++          values[y * w + x] = Math.max(0, 0.025 + coarse);
++        }
++      }
++      const binsRand = rng(mark.sparseBins.seed);
++      for (let i = 0; i < mark.sparseBins.count; i++) {
++        const bx = Math.floor(binsRand() * w);
++        const by = Math.floor(binsRand() * h);
++        const val = binsRand() * mark.sparseBins.maxValue;
++        for (let yy = 0; yy < mark.sparseBins.height; yy++) {
++          for (let xx = 0; xx < mark.sparseBins.width; xx++) {
++            const px = bx + xx, py = by + yy;
++            if (px < w && py < h) values[py * w + px] += val;
++          }
++        }
++      }
++      const ridge = mark.ridgeRecipe;
++      const jitterRand = rng(ridge.seed);
++      for (let y = 0; y < h; y++) {
++        const lap = y / h * 39 + 1;
++        let cx = ridge.centerX + (lap - 20) * ridge.lapSlope;
++        ridge.waviness.forEach(wave => { cx += Math.sin(lap / wave.period * Math.PI * 2) * wave.amplitude; });
++        cx += (jitterRand() - 0.5) * ridge.lapJitter;
++        for (let x = 0; x < w; x++) {
++          const d = x - cx;
++          const g = Math.exp(-(d * d) / (2 * ridge.sigmaX * ridge.sigmaX));
++          values[y * w + x] += g * ridge.amplitude * (0.82 + 0.3 * jitterRand());
++        }
++      }
++      const img = ctx.createImageData(w, h);
++      for (let i = 0; i < values.length; i++) {
++        const [r, g, b] = colorAt(scale, values[i]);
++        img.data[i * 4] = r; img.data[i * 4 + 1] = g; img.data[i * 4 + 2] = b; img.data[i * 4 + 3] = 255;
++      }
++      const off = document.createElement('canvas');
++      off.width = w; off.height = h;
++      off.getContext('2d').putImageData(img, 0, 0);
++      ctx.imageSmoothingEnabled = false;
++      ctx.drawImage(off, box.x, box.y);
++    }
++
++    function scaleX(plot, value) {
++      const d = plot.x.domain, b = plot.dataBbox;
++      return b.x + (value - d[0]) / (d[1] - d[0]) * b.width;
++    }
++
++    function scaleY(plot, value) {
++      const d = plot.y.domain, b = plot.dataBbox;
++      return b.y + (value - d[0]) / (d[1] - d[0]) * b.height;
++    }
++
++    function addText(svg, spec, textObject) {
++      const anchor = textObject.anchor || {x: textObject.x, y: textObject.y};
++      const t = el('text', {
++        x: anchor.x,
++        y: anchor.y,
++        fill: textObject.fill || spec.typography.color,
++        'font-family': spec.typography.fontFamily,
++        'font-size': textObject.fontSize || spec.typography.defaultSize,
++        'font-weight': textObject.fontWeight || 400,
++        'text-anchor': textObject.textAnchor || textObject.anchor || 'start'
++      });
++      if (textObject.rotation) t.setAttribute('transform', `rotate(${textObject.rotation} ${anchor.x} ${anchor.y})`);
++      const lines = String(textObject.text).split('\n');
++      lines.forEach((line, i) => {
++        const span = el('tspan', {x: anchor.x, dy: i ? (textObject.lineHeight || textObject.fontSize || 16) : 0});
++        span.textContent = line;
++        t.appendChild(span);
++      });
++      svg.appendChild(t);
++      return t;
++    }
++
++    function drawAxes(svg, spec, panel) {
++      const plot = panel.plot;
++      const b = plot.dataBbox;
++      svg.appendChild(el('rect', {x: b.x, y: b.y, width: b.width, height: b.height, fill: 'none', stroke: '#111111', 'stroke-width': 1.1}));
++      plot.x.ticks.forEach(tick => {
++        const x = scaleX(plot, tick.value);
++        const y = b.y + b.height;
++        const text = el('text', {x, y: y + 28, fill: '#050505', 'font-family': spec.typography.fontFamily, 'font-size': 20, 'text-anchor': 'middle'});
++        text.textContent = tick.label;
++        svg.appendChild(text);
++      });
++    }
++
++    function drawLayout(svg, spec) {
++      spec.layoutObjects.forEach(obj => {
++        if (obj.type === 'colorbar') return;
++        if (obj.text) addText(svg, spec, obj);
++        if (obj.underline) svg.appendChild(el('line', obj.underline));
++        if (obj.type === 'axis' && obj.orientation === 'left') {
++          svg.appendChild(el('line', {...obj.line, stroke: '#111111', 'stroke-width': 1.1}));
++          const plot = spec.panels[0].plot;
++          obj.ticks.forEach(tick => {
++            const y = scaleY(plot, tick.value);
++            const tx = el('text', {x: obj.line.x1 - 9, y: y + 6, fill: '#050505', 'font-family': spec.typography.fontFamily, 'font-size': 20, 'text-anchor': 'end'});
++            tx.textContent = tick.label;
++            svg.appendChild(tx);
++          });
++          addText(svg, spec, obj.label);
++        }
++        if (obj.type === 'axisLabel') addText(svg, spec, obj);
++      });
++    }
++
++    function drawColorbar(svg, spec) {
++      const colorbar = spec.layoutObjects.find(o => o.type === 'colorbar');
++      const scale = spec.coordinateSystems.find(s => s.id === colorbar.colorScale);
++      addText(svg, spec, colorbar.title);
++      const defs = el('defs');
++      const grad = el('linearGradient', {id: 'rateBarGradient', x1: 0, y1: 1, x2: 0, y2: 0});
++      scale.stops.forEach(stop => grad.appendChild(el('stop', {offset: `${stop.value * 100}%`, 'stop-color': stop.color})));
++      defs.appendChild(grad);
++      svg.appendChild(defs);
++      svg.appendChild(el('rect', {x: colorbar.bbox.x, y: colorbar.bbox.y, width: colorbar.bbox.width, height: colorbar.bbox.height, fill: 'url(#rateBarGradient)', stroke: '#111111', 'stroke-width': 1}));
++      svg.appendChild(el('line', {x1: colorbar.bbox.x + colorbar.bbox.width, y1: colorbar.bbox.y + colorbar.bbox.height / 2, x2: colorbar.bbox.x + colorbar.bbox.width + 8, y2: colorbar.bbox.y + colorbar.bbox.height / 2, stroke: '#111111', 'stroke-width': 1}));
++    }
++
++    function render(spec) {
++      document.getElementById('title').textContent = spec.id;
++      const frame = document.getElementById('frame');
++      const surface = document.getElementById('surface');
++      const reference = document.getElementById('reference');
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      reference.src = spec.source.path;
++      surface.innerHTML = '';
++      const canvas = document.createElement('canvas');
++      canvas.width = spec.canvas.width;
++      canvas.height = spec.canvas.height;
++      const ctx = canvas.getContext('2d');
++      ctx.fillStyle = spec.canvas.background;
++      ctx.fillRect(0, 0, canvas.width, canvas.height);
++      spec.panels.forEach(panel => {
++        panel.marks.filter(mark => mark.renderer === 'canvas').forEach(mark => {
++          const scale = spec.coordinateSystems.find(s => s.id === mark.colorScale);
++          drawHeatmap(ctx, panel, mark, scale);
++        });
++      });
++      surface.appendChild(canvas);
++      const svg = el('svg', {width: spec.canvas.width, height: spec.canvas.height, viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`});
++      spec.panels.forEach(panel => drawAxes(svg, spec, panel));
++      drawLayout(svg, spec);
++      drawColorbar(svg, spec);
++      surface.appendChild(svg);
++    }
++
++    fetch(JSON_PATH)
++      .then(response => response.json())
++      .then(render);
++
++    const frame = document.getElementById('frame');
++    const generatedButton = document.getElementById('generatedButton');
++    const referenceButton = document.getElementById('referenceButton');
++    generatedButton.addEventListener('click', () => {
++      frame.classList.remove('show-reference');
++      generatedButton.classList.add('active');
++      referenceButton.classList.remove('active');
++    });
++    referenceButton.addEventListener('click', () => {
++      frame.classList.add('show-reference');
++      referenceButton.classList.add('active');
++      generatedButton.classList.remove('active');
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json b/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..bf74aa5372d989d3e251e6af644954ab549d2c95
+--- /dev/null
++++ b/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json
+@@ -0,0 +1,245 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-05-grid-remapping-B",
++  "source": {
++    "path": "../../assets/reference/reference-05-grid-remapping-B-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "Native crop is a partial panel B showing firing-rate maps across laps for Environment A and Environment B. Left edge is cropped from a larger figure title; right colorbar/title are partly clipped."
++  },
++  "canvas": {
++    "width": 456,
++    "height": 500,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
++    "defaultSize": 16,
++    "color": "#050505",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Arial", "Helvetica", "Roboto Condensed"],
++    "calibration": {
++      "fontStretch": "condensed",
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "First-pass manual typography. Source resembles a condensed sans; title and panel label are bold, axis labels regular."
++    }
++  },
++  "coordinateSystems": [
++    {
++      "id": "env-a.positionLap",
++      "type": "cartesian",
++      "domain": {"x": [0, 240], "y": [1, 40]},
++      "range": {"x": [58, 236], "y": [164, 442]}
++    },
++    {
++      "id": "env-b.positionLap",
++      "type": "cartesian",
++      "domain": {"x": [0, 240], "y": [1, 40]},
++      "range": {"x": [255, 423], "y": [164, 442]}
++    },
++    {
++      "id": "rate-map-a",
++      "type": "colorScale",
++      "domain": [0, 1],
++      "stops": [
++        {"value": 0, "color": "#030303"},
++        {"value": 0.18, "color": "#22110a"},
++        {"value": 0.44, "color": "#9b4a16"},
++        {"value": 0.72, "color": "#efb153"},
++        {"value": 1, "color": "#fff7d5"}
++      ]
++    },
++    {
++      "id": "rate-map-b",
++      "type": "colorScale",
++      "domain": [0, 1],
++      "stops": [
++        {"value": 0, "color": "#031011"},
++        {"value": 0.22, "color": "#053436"},
++        {"value": 0.48, "color": "#118f8c"},
++        {"value": 0.76, "color": "#9af4dc"},
++        {"value": 1, "color": "#f4fff2"}
++      ]
++    }
++  ],
++  "layoutObjects": [
++    {
++      "id": "cropped-parent-title",
++      "type": "croppedContextTitle",
++      "text": "emapping across virtual envi",
++      "anchor": {"x": -2, "y": 40},
++      "fontSize": 31,
++      "fontWeight": 700,
++      "sourceBox": {"x": 0, "y": 17, "width": 456, "height": 39},
++      "fit": "cropped-visible-fragment",
++      "provenance": {"confidence": "low", "note": "Only the visible cropped fragment of the larger figure heading is represented."}
++    },
++    {
++      "id": "panel-label",
++      "type": "panelLabel",
++      "text": "B",
++      "anchor": {"x": 19, "y": 92},
++      "fontSize": 29,
++      "fontWeight": 700,
++      "sourceBox": {"x": 19, "y": 69, "width": 20, "height": 29},
++      "fit": "manual"
++    },
++    {
++      "id": "panel-title",
++      "type": "title",
++      "text": "Firing rate map across laps",
++      "anchor": {"x": 61, "y": 94},
++      "fontSize": 23,
++      "fontWeight": 700,
++      "sourceBox": {"x": 61, "y": 77, "width": 290, "height": 24},
++      "fit": "manual"
++    },
++    {
++      "id": "env-a-title",
++      "type": "panelTitle",
++      "text": "Environment A",
++      "anchor": {"x": 147, "y": 143},
++      "fontSize": 20,
++      "fontWeight": 700,
++      "fill": "#78310f",
++      "textAnchor": "middle",
++      "underline": {"x1": 59, "y1": 152, "x2": 235, "y2": 152, "stroke": "#78310f", "strokeWidth": 1.4}
++    },
++    {
++      "id": "env-b-title",
++      "type": "panelTitle",
++      "text": "Environment B",
++      "anchor": {"x": 338, "y": 143},
++      "fontSize": 20,
++      "fontWeight": 700,
++      "fill": "#00747a",
++      "textAnchor": "middle",
++      "underline": {"x1": 241, "y1": 152, "x2": 422, "y2": 152, "stroke": "#00747a", "strokeWidth": 1.4}
++    },
++    {
++      "id": "shared-y-axis",
++      "type": "axis",
++      "transform": "env-a.positionLap",
++      "orientation": "left",
++      "line": {"x1": 58, "y1": 164, "x2": 58, "y2": 442},
++      "ticks": [
++        {"value": 1, "label": "1"},
++        {"value": 10, "label": "10"},
++        {"value": 20, "label": "20"},
++        {"value": 30, "label": "30"},
++        {"value": 40, "label": "40"}
++      ],
++      "label": {"text": "Lap", "x": 17, "y": 304, "fontSize": 20, "rotation": -90}
++    },
++    {
++      "id": "shared-x-axis-label",
++      "type": "axisLabel",
++      "text": "Linearized position (cm)",
++      "anchor": {"x": 234, "y": 499},
++      "fontSize": 19,
++      "textAnchor": "middle",
++      "sourceBox": {"x": 136, "y": 486, "width": 204, "height": 14},
++      "fit": "bottom-cropped"
++    },
++    {
++      "id": "rate-colorbar",
++      "type": "colorbar",
++      "colorScale": "rate-map-a",
++      "bbox": {"x": 440, "y": 248, "width": 14, "height": 154},
++      "ticks": [
++        {"value": 0, "label": "0"},
++        {"value": 0.5, "label": "0.5"},
++        {"value": 1, "label": "1"}
++      ],
++      "title": {"text": "Rate\n(Hz)", "x": 440, "y": 201, "fontSize": 16, "lineHeight": 17},
++      "provenance": {"confidence": "low", "note": "Right side of colorbar label and tick text are clipped in the source crop."}
++    }
++  ],
++  "panels": [
++    {
++      "id": "env-a",
++      "label": {"text": "Environment A", "layoutObject": "env-a-title"},
++      "plot": {
++        "bbox": {"x": 58, "y": 164, "width": 178, "height": 278},
++        "dataBbox": {"x": 58, "y": 164, "width": 178, "height": 278},
++        "usesTransform": "env-a.positionLap",
++        "x": {
++          "domain": [0, 240],
++          "ticks": [{"value": 0, "label": "0"}, {"value": 100, "label": "100"}, {"value": 200, "label": "200"}]
++        },
++        "y": {"domain": [1, 40], "ticks": [1, 10, 20, 30, 40]},
++        "axes": {"stroke": "#111111", "strokeWidth": 1.1, "tickLength": 0}
++      },
++      "marks": [
++        {
++          "id": "env-a-rate-field",
++          "type": "heatmap",
++          "renderer": "canvas",
++          "usesTransform": "env-a.positionLap",
++          "colorScale": "rate-map-a",
++          "resolution": {"columns": 178, "rows": 278},
++          "backgroundNoise": {"seed": 5105, "amplitude": 0.12, "grain": 0.9},
++          "sparseBins": {"seed": 5129, "count": 1080, "maxValue": 0.55, "width": 3, "height": 2},
++          "ridgeRecipe": {
++            "seed": 5191,
++            "centerX": 132,
++            "sigmaX": 14.5,
++            "lapJitter": 10,
++            "amplitude": 0.95,
++            "lapSlope": 0.6,
++            "waviness": [{"period": 14, "amplitude": 13}, {"period": 31, "amplitude": 7}]
++          }
++        }
++      ],
++      "provenance": [{"confidence": "medium", "note": "Primary vertical firing field is generated from a wavy ridge recipe with sparse noisy bins; not measured per-lap data."}]
++    },
++    {
++      "id": "env-b",
++      "label": {"text": "Environment B", "layoutObject": "env-b-title"},
++      "plot": {
++        "bbox": {"x": 255, "y": 164, "width": 168, "height": 278},
++        "dataBbox": {"x": 255, "y": 164, "width": 168, "height": 278},
++        "usesTransform": "env-b.positionLap",
++        "x": {
++          "domain": [0, 240],
++          "ticks": [{"value": 0, "label": "0"}, {"value": 100, "label": "100"}, {"value": 200, "label": "200"}]
++        },
++        "y": {"domain": [1, 40], "ticks": [1, 10, 20, 30, 40]},
++        "axes": {"stroke": "#111111", "strokeWidth": 1.1, "tickLength": 0}
++      },
++      "marks": [
++        {
++          "id": "env-b-rate-field",
++          "type": "heatmap",
++          "renderer": "canvas",
++          "usesTransform": "env-b.positionLap",
++          "colorScale": "rate-map-b",
++          "resolution": {"columns": 168, "rows": 278},
++          "backgroundNoise": {"seed": 6105, "amplitude": 0.15, "grain": 0.9},
++          "sparseBins": {"seed": 6129, "count": 1250, "maxValue": 0.52, "width": 3, "height": 2},
++          "ridgeRecipe": {
++            "seed": 6191,
++            "centerX": 126,
++            "sigmaX": 13,
++            "lapJitter": 8,
++            "amplitude": 0.92,
++            "lapSlope": -0.18,
++            "waviness": [{"period": 17, "amplitude": 11}, {"period": 37, "amplitude": 5}]
++          }
++        }
++      ],
++      "provenance": [{"confidence": "medium", "note": "Cyan firing field and surrounding low-rate bins are generated from an editable recipe."}]
++    }
++  ],
++  "annotations": [],
++  "constraints": [
++    {"id": "same-lap-axis", "type": "sharedAxis", "objects": ["env-a", "env-b"], "axis": "y"},
++    {"id": "header-underlines-align-plots", "type": "alignment", "objects": ["env-a-title", "env-b-title"], "target": "plot top edges"},
++    {"id": "no-source-as-layer", "type": "contract", "note": "Generated candidate must not draw or background the source raster."}
++  ],
++  "confidence": [
++    {"target": "panel geometry", "confidence": "medium", "note": "Plot and title anchors manually estimated from native raster."},
++    {"target": "colorbar", "confidence": "low", "note": "Right edge of colorbar region is clipped; tick labels are intentionally omitted from generated visible crop."}
++  ]
++}
+
+codex
+The first pass is written. I noticed the renderer used `drawImage` for an internally generated offscreen heatmap, which is not source reuse but would fail the requested search check, so I’m replacing it with direct generated pixel placement.
+apply patch
+patch: completed
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html
+diff --git a/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html b/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..1c8858bea1c35af42cbbecafeb06834163158b35
+--- /dev/null
++++ b/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html
+@@ -0,0 +1,259 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-05-grid-remapping-B reconstruction</title>
++  <style>
++    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
++    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #cfcfcf; }
++    h1 { margin: 0; font-size: 16px; font-weight: 700; }
++    .note { margin-top: 3px; font-size: 12px; color: #555555; }
++    .toggle { display: inline-flex; border: 1px solid #aaaaaa; border-radius: 4px; overflow: hidden; }
++    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
++    .toggle button.active { background: #111111; color: #ffffff; }
++    main { min-height: calc(100vh - 48px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
++    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
++    .surface, .reference { position: absolute; inset: 0; }
++    .reference { display: none; width: 100%; height: 100%; object-fit: contain; background: #ffffff; }
++    .show-reference .surface { display: none; }
++    .show-reference .reference { display: block; }
++    svg, canvas { position: absolute; inset: 0; }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1 id="title">reference-05-grid-remapping-B</h1>
++      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">Reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <img id="reference" class="reference" alt="QA reference source image">
++    </div>
++  </main>
++  <script>
++    const SVG_NS = 'http://www.w3.org/2000/svg';
++    const JSON_PATH = './reference-05-grid-remapping-B.json';
++
++    function el(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
++      Object.entries(attrs).forEach(([key, value]) => {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      });
++      return node;
++    }
++
++    function rng(seed) {
++      return function random() {
++        let t = seed += 0x6D2B79F5;
++        t = Math.imul(t ^ (t >>> 15), t | 1);
++        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
++        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
++      };
++    }
++
++    function clamp(value, min, max) {
++      return Math.max(min, Math.min(max, value));
++    }
++
++    function hexToRgb(hex) {
++      const n = parseInt(hex.slice(1), 16);
++      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
++    }
++
++    function colorAt(scale, value) {
++      const stops = scale.stops;
++      const v = clamp(value, scale.domain[0], scale.domain[1]);
++      let a = stops[0], b = stops[stops.length - 1];
++      for (let i = 0; i < stops.length - 1; i++) {
++        if (v >= stops[i].value && v <= stops[i + 1].value) {
++          a = stops[i]; b = stops[i + 1]; break;
++        }
++      }
++      const t = (v - a.value) / (b.value - a.value || 1);
++      const ca = hexToRgb(a.color), cb = hexToRgb(b.color);
++      return [
++        Math.round(ca[0] + (cb[0] - ca[0]) * t),
++        Math.round(ca[1] + (cb[1] - ca[1]) * t),
++        Math.round(ca[2] + (cb[2] - ca[2]) * t)
++      ];
++    }
++
++    function drawHeatmap(ctx, panel, mark, scale) {
++      const box = panel.plot.dataBbox;
++      const w = Math.round(box.width), h = Math.round(box.height);
++      const values = new Float32Array(w * h);
++      const noiseRand = rng(mark.backgroundNoise.seed);
++      for (let y = 0; y < h; y++) {
++        for (let x = 0; x < w; x++) {
++          const coarse = (noiseRand() - 0.5) * mark.backgroundNoise.amplitude;
++          values[y * w + x] = Math.max(0, 0.025 + coarse);
++        }
++      }
++      const binsRand = rng(mark.sparseBins.seed);
++      for (let i = 0; i < mark.sparseBins.count; i++) {
++        const bx = Math.floor(binsRand() * w);
++        const by = Math.floor(binsRand() * h);
++        const val = binsRand() * mark.sparseBins.maxValue;
++        for (let yy = 0; yy < mark.sparseBins.height; yy++) {
++          for (let xx = 0; xx < mark.sparseBins.width; xx++) {
++            const px = bx + xx, py = by + yy;
++            if (px < w && py < h) values[py * w + px] += val;
++          }
++        }
++      }
++      const ridge = mark.ridgeRecipe;
++      const jitterRand = rng(ridge.seed);
++      for (let y = 0; y < h; y++) {
++        const lap = y / h * 39 + 1;
++        let cx = ridge.centerX + (lap - 20) * ridge.lapSlope;
++        ridge.waviness.forEach(wave => { cx += Math.sin(lap / wave.period * Math.PI * 2) * wave.amplitude; });
++        cx += (jitterRand() - 0.5) * ridge.lapJitter;
++        for (let x = 0; x < w; x++) {
++          const d = x - cx;
++          const g = Math.exp(-(d * d) / (2 * ridge.sigmaX * ridge.sigmaX));
++          values[y * w + x] += g * ridge.amplitude * (0.82 + 0.3 * jitterRand());
++        }
++      }
++      const img = ctx.createImageData(w, h);
++      for (let i = 0; i < values.length; i++) {
++        const [r, g, b] = colorAt(scale, values[i]);
++        img.data[i * 4] = r; img.data[i * 4 + 1] = g; img.data[i * 4 + 2] = b; img.data[i * 4 + 3] = 255;
++      }
++      ctx.putImageData(img, box.x, box.y);
++    }
++
++    function scaleX(plot, value) {
++      const d = plot.x.domain, b = plot.dataBbox;
++      return b.x + (value - d[0]) / (d[1] - d[0]) * b.width;
++    }
++
++    function scaleY(plot, value) {
++      const d = plot.y.domain, b = plot.dataBbox;
++      return b.y + (value - d[0]) / (d[1] - d[0]) * b.height;
++    }
++
++    function addText(svg, spec, textObject) {
++      const anchor = textObject.anchor || {x: textObject.x, y: textObject.y};
++      const t = el('text', {
++        x: anchor.x,
++        y: anchor.y,
++        fill: textObject.fill || spec.typography.color,
++        'font-family': spec.typography.fontFamily,
++        'font-size': textObject.fontSize || spec.typography.defaultSize,
++        'font-weight': textObject.fontWeight || 400,
++        'text-anchor': textObject.textAnchor || textObject.anchor || 'start'
++      });
++      if (textObject.rotation) t.setAttribute('transform', `rotate(${textObject.rotation} ${anchor.x} ${anchor.y})`);
++      const lines = String(textObject.text).split('\n');
++      lines.forEach((line, i) => {
++        const span = el('tspan', {x: anchor.x, dy: i ? (textObject.lineHeight || textObject.fontSize || 16) : 0});
++        span.textContent = line;
++        t.appendChild(span);
++      });
++      svg.appendChild(t);
++      return t;
++    }
++
++    function drawAxes(svg, spec, panel) {
++      const plot = panel.plot;
++      const b = plot.dataBbox;
++      svg.appendChild(el('rect', {x: b.x, y: b.y, width: b.width, height: b.height, fill: 'none', stroke: '#111111', 'stroke-width': 1.1}));
++      plot.x.ticks.forEach(tick => {
++        const x = scaleX(plot, tick.value);
++        const y = b.y + b.height;
++        const text = el('text', {x, y: y + 28, fill: '#050505', 'font-family': spec.typography.fontFamily, 'font-size': 20, 'text-anchor': 'middle'});
++        text.textContent = tick.label;
++        svg.appendChild(text);
++      });
++    }
++
++    function drawLayout(svg, spec) {
++      spec.layoutObjects.forEach(obj => {
++        if (obj.type === 'colorbar') return;
++        if (obj.text && obj.type !== 'axisLabel') addText(svg, spec, obj);
++        if (obj.underline) svg.appendChild(el('line', obj.underline));
++        if (obj.type === 'axis' && obj.orientation === 'left') {
++          svg.appendChild(el('line', {...obj.line, stroke: '#111111', 'stroke-width': 1.1}));
++          const plot = spec.panels[0].plot;
++          obj.ticks.forEach(tick => {
++            const y = scaleY(plot, tick.value);
++            const tx = el('text', {x: obj.line.x1 - 9, y: y + 6, fill: '#050505', 'font-family': spec.typography.fontFamily, 'font-size': 20, 'text-anchor': 'end'});
++            tx.textContent = tick.label;
++            svg.appendChild(tx);
++          });
++          addText(svg, spec, obj.label);
++        }
++        if (obj.type === 'axisLabel') addText(svg, spec, obj);
++      });
++    }
++
++    function drawColorbar(svg, spec) {
++      const colorbar = spec.layoutObjects.find(o => o.type === 'colorbar');
++      const scale = spec.coordinateSystems.find(s => s.id === colorbar.colorScale);
++      addText(svg, spec, colorbar.title);
++      const defs = el('defs');
++      const grad = el('linearGradient', {id: 'rateBarGradient', x1: 0, y1: 1, x2: 0, y2: 0});
++      scale.stops.forEach(stop => grad.appendChild(el('stop', {offset: `${stop.value * 100}%`, 'stop-color': stop.color})));
++      defs.appendChild(grad);
++      svg.appendChild(defs);
++      svg.appendChild(el('rect', {x: colorbar.bbox.x, y: colorbar.bbox.y, width: colorbar.bbox.width, height: colorbar.bbox.height, fill: 'url(#rateBarGradient)', stroke: '#111111', 'stroke-width': 1}));
++      svg.appendChild(el('line', {x1: colorbar.bbox.x + colorbar.bbox.width, y1: colorbar.bbox.y + colorbar.bbox.height / 2, x2: colorbar.bbox.x + colorbar.bbox.width + 8, y2: colorbar.bbox.y + colorbar.bbox.height / 2, stroke: '#111111', 'stroke-width': 1}));
++    }
++
++    function render(spec) {
++      document.getElementById('title').textContent = spec.id;
++      const frame = document.getElementById('frame');
++      const surface = document.getElementById('surface');
++      const reference = document.getElementById('reference');
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      reference.src = spec.source.path;
++      surface.innerHTML = '';
++      const canvas = document.createElement('canvas');
++      canvas.width = spec.canvas.width;
++      canvas.height = spec.canvas.height;
++      const ctx = canvas.getContext('2d');
++      ctx.fillStyle = spec.canvas.background;
++      ctx.fillRect(0, 0, canvas.width, canvas.height);
++      spec.panels.forEach(panel => {
++        panel.marks.filter(mark => mark.renderer === 'canvas').forEach(mark => {
++          const scale = spec.coordinateSystems.find(s => s.id === mark.colorScale);
++          drawHeatmap(ctx, panel, mark, scale);
++        });
++      });
++      surface.appendChild(canvas);
++      const svg = el('svg', {width: spec.canvas.width, height: spec.canvas.height, viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`});
++      spec.panels.forEach(panel => drawAxes(svg, spec, panel));
++      drawLayout(svg, spec);
++      drawColorbar(svg, spec);
++      surface.appendChild(svg);
++    }
++
++    fetch(JSON_PATH)
++      .then(response => response.json())
++      .then(render);
++
++    const frame = document.getElementById('frame');
++    const generatedButton = document.getElementById('generatedButton');
++    const referenceButton = document.getElementById('referenceButton');
++    generatedButton.addEventListener('click', () => {
++      frame.classList.remove('show-reference');
++      generatedButton.classList.add('active');
++      referenceButton.classList.remove('active');
++    });
++    referenceButton.addEventListener('click', () => {
++      frame.classList.add('show-reference');
++      referenceButton.classList.add('active');
++      generatedButton.classList.remove('active');
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json b/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..bf74aa5372d989d3e251e6af644954ab549d2c95
+--- /dev/null
++++ b/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json
+@@ -0,0 +1,245 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-05-grid-remapping-B",
++  "source": {
++    "path": "../../assets/reference/reference-05-grid-remapping-B-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "Native crop is a partial panel B showing firing-rate maps across laps for Environment A and Environment B. Left edge is cropped from a larger figure title; right colorbar/title are partly clipped."
++  },
++  "canvas": {
++    "width": 456,
++    "height": 500,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
++    "defaultSize": 16,
++    "color": "#050505",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Arial", "Helvetica", "Roboto Condensed"],
++    "calibration": {
++      "fontStretch": "condensed",
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "First-pass manual typography. Source resembles a condensed sans; title and panel label are bold, axis labels regular."
++    }
++  },
++  "coordinateSystems": [
++    {
++      "id": "env-a.positionLap",
++      "type": "cartesian",
++      "domain": {"x": [0, 240], "y": [1, 40]},
++      "range": {"x": [58, 236], "y": [164, 442]}
++    },
++    {
++      "id": "env-b.positionLap",
++      "type": "cartesian",
++      "domain": {"x": [0, 240], "y": [1, 40]},
++      "range": {"x": [255, 423], "y": [164, 442]}
++    },
++    {
++      "id": "rate-map-a",
++      "type": "colorScale",
++      "domain": [0, 1],
++      "stops": [
++        {"value": 0, "color": "#030303"},
++        {"value": 0.18, "color": "#22110a"},
++        {"value": 0.44, "color": "#9b4a16"},
++        {"value": 0.72, "color": "#efb153"},
++        {"value": 1, "color": "#fff7d5"}
++      ]
++    },
++    {
++      "id": "rate-map-b",
++      "type": "colorScale",
++      "domain": [0, 1],
++      "stops": [
++        {"value": 0, "color": "#031011"},
++        {"value": 0.22, "color": "#053436"},
++        {"value": 0.48, "color": "#118f8c"},
++        {"value": 0.76, "color": "#9af4dc"},
++        {"value": 1, "color": "#f4fff2"}
++      ]
++    }
++  ],
++  "layoutObjects": [
++    {
++      "id": "cropped-parent-title",
++      "type": "croppedContextTitle",
++      "text": "emapping across virtual envi",
++      "anchor": {"x": -2, "y": 40},
++      "fontSize": 31,
++      "fontWeight": 700,
++      "sourceBox": {"x": 0, "y": 17, "width": 456, "height": 39},
++      "fit": "cropped-visible-fragment",
++      "provenance": {"confidence": "low", "note": "Only the visible cropped fragment of the larger figure heading is represented."}
++    },
++    {
++      "id": "panel-label",
++      "type": "panelLabel",
++      "text": "B",
++      "anchor": {"x": 19, "y": 92},
++      "fontSize": 29,
++      "fontWeight": 700,
++      "sourceBox": {"x": 19, "y": 69, "width": 20, "height": 29},
++      "fit": "manual"
++    },
++    {
++      "id": "panel-title",
++      "type": "title",
++      "text": "Firing rate map across laps",
++      "anchor": {"x": 61, "y": 94},
++      "fontSize": 23,
++      "fontWeight": 700,
++      "sourceBox": {"x": 61, "y": 77, "width": 290, "height": 24},
++      "fit": "manual"
++    },
++    {
++      "id": "env-a-title",
++      "type": "panelTitle",
++      "text": "Environment A",
++      "anchor": {"x": 147, "y": 143},
++      "fontSize": 20,
++      "fontWeight": 700,
++      "fill": "#78310f",
++      "textAnchor": "middle",
++      "underline": {"x1": 59, "y1": 152, "x2": 235, "y2": 152, "stroke": "#78310f", "strokeWidth": 1.4}
++    },
++    {
++      "id": "env-b-title",
++      "type": "panelTitle",
++      "text": "Environment B",
++      "anchor": {"x": 338, "y": 143},
++      "fontSize": 20,
++      "fontWeight": 700,
++      "fill": "#00747a",
++      "textAnchor": "middle",
++      "underline": {"x1": 241, "y1": 152, "x2": 422, "y2": 152, "stroke": "#00747a", "strokeWidth": 1.4}
++    },
++    {
++      "id": "shared-y-axis",
++      "type": "axis",
++      "transform": "env-a.positionLap",
++      "orientation": "left",
++      "line": {"x1": 58, "y1": 164, "x2": 58, "y2": 442},
++      "ticks": [
++        {"value": 1, "label": "1"},
++        {"value": 10, "label": "10"},
++        {"value": 20, "label": "20"},
++        {"value": 30, "label": "30"},
++        {"value": 40, "label": "40"}
++      ],
++      "label": {"text": "Lap", "x": 17, "y": 304, "fontSize": 20, "rotation": -90}
++    },
++    {
++      "id": "shared-x-axis-label",
++      "type": "axisLabel",
++      "text": "Linearized position (cm)",
++      "anchor": {"x": 234, "y": 499},
++      "fontSize": 19,
++      "textAnchor": "middle",
++      "sourceBox": {"x": 136, "y": 486, "width": 204, "height": 14},
++      "fit": "bottom-cropped"
++    },
++    {
++      "id": "rate-colorbar",
++      "type": "colorbar",
++      "colorScale": "rate-map-a",
++      "bbox": {"x": 440, "y": 248, "width": 14, "height": 154},
++      "ticks": [
++        {"value": 0, "label": "0"},
++        {"value": 0.5, "label": "0.5"},
++        {"value": 1, "label": "1"}
++      ],
++      "title": {"text": "Rate\n(Hz)", "x": 440, "y": 201, "fontSize": 16, "lineHeight": 17},
++      "provenance": {"confidence": "low", "note": "Right side of colorbar label and tick text are clipped in the source crop."}
++    }
++  ],
++  "panels": [
++    {
++      "id": "env-a",
++      "label": {"text": "Environment A", "layoutObject": "env-a-title"},
++      "plot": {
++        "bbox": {"x": 58, "y": 164, "width": 178, "height": 278},
++        "dataBbox": {"x": 58, "y": 164, "width": 178, "height": 278},
++        "usesTransform": "env-a.positionLap",
++        "x": {
++          "domain": [0, 240],
++          "ticks": [{"value": 0, "label": "0"}, {"value": 100, "label": "100"}, {"value": 200, "label": "200"}]
++        },
++        "y": {"domain": [1, 40], "ticks": [1, 10, 20, 30, 40]},
++        "axes": {"stroke": "#111111", "strokeWidth": 1.1, "tickLength": 0}
++      },
++      "marks": [
++        {
++          "id": "env-a-rate-field",
++          "type": "heatmap",
++          "renderer": "canvas",
++          "usesTransform": "env-a.positionLap",
++          "colorScale": "rate-map-a",
++          "resolution": {"columns": 178, "rows": 278},
++          "backgroundNoise": {"seed": 5105, "amplitude": 0.12, "grain": 0.9},
++          "sparseBins": {"seed": 5129, "count": 1080, "maxValue": 0.55, "width": 3, "height": 2},
++          "ridgeRecipe": {
++            "seed": 5191,
++            "centerX": 132,
++            "sigmaX": 14.5,
++            "lapJitter": 10,
++            "amplitude": 0.95,
++            "lapSlope": 0.6,
++            "waviness": [{"period": 14, "amplitude": 13}, {"period": 31, "amplitude": 7}]
++          }
++        }
++      ],
++      "provenance": [{"confidence": "medium", "note": "Primary vertical firing field is generated from a wavy ridge recipe with sparse noisy bins; not measured per-lap data."}]
++    },
++    {
++      "id": "env-b",
++      "label": {"text": "Environment B", "layoutObject": "env-b-title"},
++      "plot": {
++        "bbox": {"x": 255, "y": 164, "width": 168, "height": 278},
++        "dataBbox": {"x": 255, "y": 164, "width": 168, "height": 278},
++        "usesTransform": "env-b.positionLap",
++        "x": {
++          "domain": [0, 240],
++          "ticks": [{"value": 0, "label": "0"}, {"value": 100, "label": "100"}, {"value": 200, "label": "200"}]
++        },
++        "y": {"domain": [1, 40], "ticks": [1, 10, 20, 30, 40]},
++        "axes": {"stroke": "#111111", "strokeWidth": 1.1, "tickLength": 0}
++      },
++      "marks": [
++        {
++          "id": "env-b-rate-field",
++          "type": "heatmap",
++          "renderer": "canvas",
++          "usesTransform": "env-b.positionLap",
++          "colorScale": "rate-map-b",
++          "resolution": {"columns": 168, "rows": 278},
++          "backgroundNoise": {"seed": 6105, "amplitude": 0.15, "grain": 0.9},
++          "sparseBins": {"seed": 6129, "count": 1250, "maxValue": 0.52, "width": 3, "height": 2},
++          "ridgeRecipe": {
++            "seed": 6191,
++            "centerX": 126,
++            "sigmaX": 13,
++            "lapJitter": 8,
++            "amplitude": 0.92,
++            "lapSlope": -0.18,
++            "waviness": [{"period": 17, "amplitude": 11}, {"period": 37, "amplitude": 5}]
++          }
++        }
++      ],
++      "provenance": [{"confidence": "medium", "note": "Cyan firing field and surrounding low-rate bins are generated from an editable recipe."}]
++    }
++  ],
++  "annotations": [],
++  "constraints": [
++    {"id": "same-lap-axis", "type": "sharedAxis", "objects": ["env-a", "env-b"], "axis": "y"},
++    {"id": "header-underlines-align-plots", "type": "alignment", "objects": ["env-a-title", "env-b-title"], "target": "plot top edges"},
++    {"id": "no-source-as-layer", "type": "contract", "note": "Generated candidate must not draw or background the source raster."}
++  ],
++  "confidence": [
++    {"target": "panel geometry", "confidence": "medium", "note": "Plot and title anchors manually estimated from native raster."},
++    {"target": "colorbar", "confidence": "low", "note": "Right edge of colorbar region is clipped; tick labels are intentionally omitted from generated visible crop."}
++  ]
++}
+
+diff --git a/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html b/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..1c8858bea1c35af42cbbecafeb06834163158b35
+--- /dev/null
++++ b/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html
+@@ -0,0 +1,259 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-05-grid-remapping-B reconstruction</title>
++  <style>
++    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
++    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #cfcfcf; }
++    h1 { margin: 0; font-size: 16px; font-weight: 700; }
++    .note { margin-top: 3px; font-size: 12px; color: #555555; }
++    .toggle { display: inline-flex; border: 1px solid #aaaaaa; border-radius: 4px; overflow: hidden; }
++    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
++    .toggle button.active { background: #111111; color: #ffffff; }
++    main { min-height: calc(100vh - 48px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
++    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
++    .surface, .reference { position: absolute; inset: 0; }
++    .reference { display: none; width: 100%; height: 100%; object-fit: contain; background: #ffffff; }
++    .show-reference .surface { display: none; }
++    .show-reference .reference { display: block; }
++    svg, canvas { position: absolute; inset: 0; }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1 id="title">reference-05-grid-remapping-B</h1>
++      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">Reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <img id="reference" class="reference" alt="QA reference source image">
++    </div>
++  </main>
++  <script>
++    const SVG_NS = 'http://www.w3.org/2000/svg';
++    const JSON_PATH = './reference-05-grid-remapping-B.json';
++
++    function el(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
++      Object.entries(attrs).forEach(([key, value]) => {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      });
++      return node;
++    }
++
++    function rng(seed) {
++      return function random() {
++        let t = seed += 0x6D2B79F5;
++        t = Math.imul(t ^ (t >>> 15), t | 1);
++        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
++        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
++      };
++    }
++
++    function clamp(value, min, max) {
++      return Math.max(min, Math.min(max, value));
++    }
++
++    function hexToRgb(hex) {
++      const n = parseInt(hex.slice(1), 16);
++      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
++    }
++
++    function colorAt(scale, value) {
++      const stops = scale.stops;
++      const v = clamp(value, scale.domain[0], scale.domain[1]);
++      let a = stops[0], b = stops[stops.length - 1];
++      for (let i = 0; i < stops.length - 1; i++) {
++        if (v >= stops[i].value && v <= stops[i + 1].value) {
++          a = stops[i]; b = stops[i + 1]; break;
++        }
++      }
++      const t = (v - a.value) / (b.value - a.value || 1);
++      const ca = hexToRgb(a.color), cb = hexToRgb(b.color);
++      return [
++        Math.round(ca[0] + (cb[0] - ca[0]) * t),
++        Math.round(ca[1] + (cb[1] - ca[1]) * t),
++        Math.round(ca[2] + (cb[2] - ca[2]) * t)
++      ];
++    }
++
++    function drawHeatmap(ctx, panel, mark, scale) {
++      const box = panel.plot.dataBbox;
++      const w = Math.round(box.width), h = Math.round(box.height);
++      const values = new Float32Array(w * h);
++      const noiseRand = rng(mark.backgroundNoise.seed);
++      for (let y = 0; y < h; y++) {
++        for (let x = 0; x < w; x++) {
++          const coarse = (noiseRand() - 0.5) * mark.backgroundNoise.amplitude;
++          values[y * w + x] = Math.max(0, 0.025 + coarse);
++        }
++      }
++      const binsRand = rng(mark.sparseBins.seed);
++      for (let i = 0; i < mark.sparseBins.count; i++) {
++        const bx = Math.floor(binsRand() * w);
++        const by = Math.floor(binsRand() * h);
++        const val = binsRand() * mark.sparseBins.maxValue;
++        for (let yy = 0; yy < mark.sparseBins.height; yy++) {
++          for (let xx = 0; xx < mark.sparseBins.width; xx++) {
++            const px = bx + xx, py = by + yy;
++            if (px < w && py < h) values[py * w + px] += val;
++          }
++        }
++      }
++      const ridge = mark.ridgeRecipe;
++      const jitterRand = rng(ridge.seed);
++      for (let y = 0; y < h; y++) {
++        const lap = y / h * 39 + 1;
++        let cx = ridge.centerX + (lap - 20) * ridge.lapSlope;
++        ridge.waviness.forEach(wave => { cx += Math.sin(lap / wave.period * Math.PI * 2) * wave.amplitude; });
++        cx += (jitterRand() - 0.5) * ridge.lapJitter;
++        for (let x = 0; x < w; x++) {
++          const d = x - cx;
++          const g = Math.exp(-(d * d) / (2 * ridge.sigmaX * ridge.sigmaX));
++          values[y * w + x] += g * ridge.amplitude * (0.82 + 0.3 * jitterRand());
++        }
++      }
++      const img = ctx.createImageData(w, h);
++      for (let i = 0; i < values.length; i++) {
++        const [r, g, b] = colorAt(scale, values[i]);
++        img.data[i * 4] = r; img.data[i * 4 + 1] = g; img.data[i * 4 + 2] = b; img.data[i * 4 + 3] = 255;
++      }
++      ctx.putImageData(img, box.x, box.y);
++    }
++
++    function scaleX(plot, value) {
++      const d = plot.x.domain, b = plot.dataBbox;
++      return b.x + (value - d[0]) / (d[1] - d[0]) * b.width;
++    }
++
++    function scaleY(plot, value) {
++      const d = plot.y.domain, b = plot.dataBbox;
++      return b.y + (value - d[0]) / (d[1] - d[0]) * b.height;
++    }
++
++    function addText(svg, spec, textObject) {
++      const anchor = textObject.anchor || {x: textObject.x, y: textObject.y};
++      const t = el('text', {
++        x: anchor.x,
++        y: anchor.y,
++        fill: textObject.fill || spec.typography.color,
++        'font-family': spec.typography.fontFamily,
++        'font-size': textObject.fontSize || spec.typography.defaultSize,
++        'font-weight': textObject.fontWeight || 400,
++        'text-anchor': textObject.textAnchor || textObject.anchor || 'start'
++      });
++      if (textObject.rotation) t.setAttribute('transform', `rotate(${textObject.rotation} ${anchor.x} ${anchor.y})`);
++      const lines = String(textObject.text).split('\n');
++      lines.forEach((line, i) => {
++        const span = el('tspan', {x: anchor.x, dy: i ? (textObject.lineHeight || textObject.fontSize || 16) : 0});
++        span.textContent = line;
++        t.appendChild(span);
++      });
++      svg.appendChild(t);
++      return t;
++    }
++
++    function drawAxes(svg, spec, panel) {
++      const plot = panel.plot;
++      const b = plot.dataBbox;
++      svg.appendChild(el('rect', {x: b.x, y: b.y, width: b.width, height: b.height, fill: 'none', stroke: '#111111', 'stroke-width': 1.1}));
++      plot.x.ticks.forEach(tick => {
++        const x = scaleX(plot, tick.value);
++        const y = b.y + b.height;
++        const text = el('text', {x, y: y + 28, fill: '#050505', 'font-family': spec.typography.fontFamily, 'font-size': 20, 'text-anchor': 'middle'});
++        text.textContent = tick.label;
++        svg.appendChild(text);
++      });
++    }
++
++    function drawLayout(svg, spec) {
++      spec.layoutObjects.forEach(obj => {
++        if (obj.type === 'colorbar') return;
++        if (obj.text && obj.type !== 'axisLabel') addText(svg, spec, obj);
++        if (obj.underline) svg.appendChild(el('line', obj.underline));
++        if (obj.type === 'axis' && obj.orientation === 'left') {
++          svg.appendChild(el('line', {...obj.line, stroke: '#111111', 'stroke-width': 1.1}));
++          const plot = spec.panels[0].plot;
++          obj.ticks.forEach(tick => {
++            const y = scaleY(plot, tick.value);
++            const tx = el('text', {x: obj.line.x1 - 9, y: y + 6, fill: '#050505', 'font-family': spec.typography.fontFamily, 'font-size': 20, 'text-anchor': 'end'});
++            tx.textContent = tick.label;
++            svg.appendChild(tx);
++          });
++          addText(svg, spec, obj.label);
++        }
++        if (obj.type === 'axisLabel') addText(svg, spec, obj);
++      });
++    }
++
++    function drawColorbar(svg, spec) {
++      const colorbar = spec.layoutObjects.find(o => o.type === 'colorbar');
++      const scale = spec.coordinateSystems.find(s => s.id === colorbar.colorScale);
++      addText(svg, spec, colorbar.title);
++      const defs = el('defs');
++      const grad = el('linearGradient', {id: 'rateBarGradient', x1: 0, y1: 1, x2: 0, y2: 0});
++      scale.stops.forEach(stop => grad.appendChild(el('stop', {offset: `${stop.value * 100}%`, 'stop-color': stop.color})));
++      defs.appendChild(grad);
++      svg.appendChild(defs);
++      svg.appendChild(el('rect', {x: colorbar.bbox.x, y: colorbar.bbox.y, width: colorbar.bbox.width, height: colorbar.bbox.height, fill: 'url(#rateBarGradient)', stroke: '#111111', 'stroke-width': 1}));
++      svg.appendChild(el('line', {x1: colorbar.bbox.x + colorbar.bbox.width, y1: colorbar.bbox.y + colorbar.bbox.height / 2, x2: colorbar.bbox.x + colorbar.bbox.width + 8, y2: colorbar.bbox.y + colorbar.bbox.height / 2, stroke: '#111111', 'stroke-width': 1}));
++    }
++
++    function render(spec) {
++      document.getElementById('title').textContent = spec.id;
++      const frame = document.getElementById('frame');
++      const surface = document.getElementById('surface');
++      const reference = document.getElementById('reference');
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      reference.src = spec.source.path;
++      surface.innerHTML = '';
++      const canvas = document.createElement('canvas');
++      canvas.width = spec.canvas.width;
++      canvas.height = spec.canvas.height;
++      const ctx = canvas.getContext('2d');
++      ctx.fillStyle = spec.canvas.background;
++      ctx.fillRect(0, 0, canvas.width, canvas.height);
++      spec.panels.forEach(panel => {
++        panel.marks.filter(mark => mark.renderer === 'canvas').forEach(mark => {
++          const scale = spec.coordinateSystems.find(s => s.id === mark.colorScale);
++          drawHeatmap(ctx, panel, mark, scale);
++        });
++      });
++      surface.appendChild(canvas);
++      const svg = el('svg', {width: spec.canvas.width, height: spec.canvas.height, viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`});
++      spec.panels.forEach(panel => drawAxes(svg, spec, panel));
++      drawLayout(svg, spec);
++      drawColorbar(svg, spec);
++      surface.appendChild(svg);
++    }
++
++    fetch(JSON_PATH)
++      .then(response => response.json())
++      .then(render);
++
++    const frame = document.getElementById('frame');
++    const generatedButton = document.getElementById('generatedButton');
++    const referenceButton = document.getElementById('referenceButton');
++    generatedButton.addEventListener('click', () => {
++      frame.classList.remove('show-reference');
++      generatedButton.classList.add('active');
++      referenceButton.classList.remove('active');
++    });
++    referenceButton.addEventListener('click', () => {
++      frame.classList.add('show-reference');
++      referenceButton.classList.add('active');
++      generatedButton.classList.remove('active');
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json b/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..bf74aa5372d989d3e251e6af644954ab549d2c95
+--- /dev/null
++++ b/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json
+@@ -0,0 +1,245 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-05-grid-remapping-B",
++  "source": {
++    "path": "../../assets/reference/reference-05-grid-remapping-B-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "Native crop is a partial panel B showing firing-rate maps across laps for Environment A and Environment B. Left edge is cropped from a larger figure title; right colorbar/title are partly clipped."
++  },
++  "canvas": {
++    "width": 456,
++    "height": 500,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
++    "defaultSize": 16,
++    "color": "#050505",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Arial", "Helvetica", "Roboto Condensed"],
++    "calibration": {
++      "fontStretch": "condensed",
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "First-pass manual typography. Source resembles a condensed sans; title and panel label are bold, axis labels regular."
++    }
++  },
++  "coordinateSystems": [
++    {
++      "id": "env-a.positionLap",
++      "type": "cartesian",
++      "domain": {"x": [0, 240], "y": [1, 40]},
++      "range": {"x": [58, 236], "y": [164, 442]}
++    },
++    {
++      "id": "env-b.positionLap",
++      "type": "cartesian",
++      "domain": {"x": [0, 240], "y": [1, 40]},
++      "range": {"x": [255, 423], "y": [164, 442]}
++    },
++    {
++      "id": "rate-map-a",
++      "type": "colorScale",
++      "domain": [0, 1],
++      "stops": [
++        {"value": 0, "color": "#030303"},
++        {"value": 0.18, "color": "#22110a"},
++        {"value": 0.44, "color": "#9b4a16"},
++        {"value": 0.72, "color": "#efb153"},
++        {"value": 1, "color": "#fff7d5"}
++      ]
++    },
++    {
++      "id": "rate-map-b",
++      "type": "colorScale",
++      "domain": [0, 1],
++      "stops": [
++        {"value": 0, "color": "#031011"},
++        {"value": 0.22, "color": "#053436"},
++        {"value": 0.48, "color": "#118f8c"},
++        {"value": 0.76, "color": "#9af4dc"},
++        {"value": 1, "color": "#f4fff2"}
++      ]
++    }
++  ],
++  "layoutObjects": [
++    {
++      "id": "cropped-parent-title",
++      "type": "croppedContextTitle",
++      "text": "emapping across virtual envi",
++      "anchor": {"x": -2, "y": 40},
++      "fontSize": 31,
++      "fontWeight": 700,
++      "sourceBox": {"x": 0, "y": 17, "width": 456, "height": 39},
++      "fit": "cropped-visible-fragment",
++      "provenance": {"confidence": "low", "note": "Only the visible cropped fragment of the larger figure heading is represented."}
++    },
++    {
++      "id": "panel-label",
++      "type": "panelLabel",
++      "text": "B",
++      "anchor": {"x": 19, "y": 92},
++      "fontSize": 29,
++      "fontWeight": 700,
++      "sourceBox": {"x": 19, "y": 69, "width": 20, "height": 29},
++      "fit": "manual"
++    },
++    {
++      "id": "panel-title",
++      "type": "title",
++      "text": "Firing rate map across laps",
++      "anchor": {"x": 61, "y": 94},
++      "fontSize": 23,
++      "fontWeight": 700,
++      "sourceBox": {"x": 61, "y": 77, "width": 290, "height": 24},
++      "fit": "manual"
++    },
++    {
++      "id": "env-a-title",
++      "type": "panelTitle",
++      "text": "Environment A",
++      "anchor": {"x": 147, "y": 143},
++      "fontSize": 20,
++      "fontWeight": 700,
++      "fill": "#78310f",
++      "textAnchor": "middle",
++      "underline": {"x1": 59, "y1": 152, "x2": 235, "y2": 152, "stroke": "#78310f", "strokeWidth": 1.4}
++    },
++    {
++      "id": "env-b-title",
++      "type": "panelTitle",
++      "text": "Environment B",
++      "anchor": {"x": 338, "y": 143},
++      "fontSize": 20,
++      "fontWeight": 700,
++      "fill": "#00747a",
++      "textAnchor": "middle",
++      "underline": {"x1": 241, "y1": 152, "x2": 422, "y2": 152, "stroke": "#00747a", "strokeWidth": 1.4}
++    },
++    {
++      "id": "shared-y-axis",
++      "type": "axis",
++      "transform": "env-a.positionLap",
++      "orientation": "left",
++      "line": {"x1": 58, "y1": 164, "x2": 58, "y2": 442},
++      "ticks": [
++        {"value": 1, "label": "1"},
++        {"value": 10, "label": "10"},
++        {"value": 20, "label": "20"},
++        {"value": 30, "label": "30"},
++        {"value": 40, "label": "40"}
++      ],
++      "label": {"text": "Lap", "x": 17, "y": 304, "fontSize": 20, "rotation": -90}
++    },
++    {
++      "id": "shared-x-axis-label",
++      "type": "axisLabel",
++      "text": "Linearized position (cm)",
++      "anchor": {"x": 234, "y": 499},
++      "fontSize": 19,
++      "textAnchor": "middle",
++      "sourceBox": {"x": 136, "y": 486, "width": 204, "height": 14},
++      "fit": "bottom-cropped"
++    },
++    {
++      "id": "rate-colorbar",
++      "type": "colorbar",
++      "colorScale": "rate-map-a",
++      "bbox": {"x": 440, "y": 248, "width": 14, "height": 154},
++      "ticks": [
++        {"value": 0, "label": "0"},
++        {"value": 0.5, "label": "0.5"},
++        {"value": 1, "label": "1"}
++      ],
++      "title": {"text": "Rate\n(Hz)", "x": 440, "y": 201, "fontSize": 16, "lineHeight": 17},
++      "provenance": {"confidence": "low", "note": "Right side of colorbar label and tick text are clipped in the source crop."}
++    }
++  ],
++  "panels": [
++    {
++      "id": "env-a",
++      "label": {"text": "Environment A", "layoutObject": "env-a-title"},
++      "plot": {
++        "bbox": {"x": 58, "y": 164, "width": 178, "height": 278},
++        "dataBbox": {"x": 58, "y": 164, "width": 178, "height": 278},
++        "usesTransform": "env-a.positionLap",
++        "x": {
++          "domain": [0, 240],
++          "ticks": [{"value": 0, "label": "0"}, {"value": 100, "label": "100"}, {"value": 200, "label": "200"}]
++        },
++        "y": {"domain": [1, 40], "ticks": [1, 10, 20, 30, 40]},
++        "axes": {"stroke": "#111111", "strokeWidth": 1.1, "tickLength": 0}
++      },
++      "marks": [
++        {
++          "id": "env-a-rate-field",
++          "type": "heatmap",
++          "renderer": "canvas",
++          "usesTransform": "env-a.positionLap",
++          "colorScale": "rate-map-a",
++          "resolution": {"columns": 178, "rows": 278},
++          "backgroundNoise": {"seed": 5105, "amplitude": 0.12, "grain": 0.9},
++          "sparseBins": {"seed": 5129, "count": 1080, "maxValue": 0.55, "width": 3, "height": 2},
++          "ridgeRecipe": {
++            "seed": 5191,
++            "centerX": 132,
++            "sigmaX": 14.5,
++            "lapJitter": 10,
++            "amplitude": 0.95,
++            "lapSlope": 0.6,
++            "waviness": [{"period": 14, "amplitude": 13}, {"period": 31, "amplitude": 7}]
++          }
++        }
++      ],
++      "provenance": [{"confidence": "medium", "note": "Primary vertical firing field is generated from a wavy ridge recipe with sparse noisy bins; not measured per-lap data."}]
++    },
++    {
++      "id": "env-b",
++      "label": {"text": "Environment B", "layoutObject": "env-b-title"},
++      "plot": {
++        "bbox": {"x": 255, "y": 164, "width": 168, "height": 278},
++        "dataBbox": {"x": 255, "y": 164, "width": 168, "height": 278},
++        "usesTransform": "env-b.positionLap",
++        "x": {
++          "domain": [0, 240],
++          "ticks": [{"value": 0, "label": "0"}, {"value": 100, "label": "100"}, {"value": 200, "label": "200"}]
++        },
++        "y": {"domain": [1, 40], "ticks": [1, 10, 20, 30, 40]},
++        "axes": {"stroke": "#111111", "strokeWidth": 1.1, "tickLength": 0}
++      },
++      "marks": [
++        {
++          "id": "env-b-rate-field",
++          "type": "heatmap",
++          "renderer": "canvas",
++          "usesTransform": "env-b.positionLap",
++          "colorScale": "rate-map-b",
++          "resolution": {"columns": 168, "rows": 278},
++          "backgroundNoise": {"seed": 6105, "amplitude": 0.15, "grain": 0.9},
++          "sparseBins": {"seed": 6129, "count": 1250, "maxValue": 0.52, "width": 3, "height": 2},
++          "ridgeRecipe": {
++            "seed": 6191,
++            "centerX": 126,
++            "sigmaX": 13,
++            "lapJitter": 8,
++            "amplitude": 0.92,
++            "lapSlope": -0.18,
++            "waviness": [{"period": 17, "amplitude": 11}, {"period": 37, "amplitude": 5}]
++          }
++        }
++      ],
++      "provenance": [{"confidence": "medium", "note": "Cyan firing field and surrounding low-rate bins are generated from an editable recipe."}]
++    }
++  ],
++  "annotations": [],
++  "constraints": [
++    {"id": "same-lap-axis", "type": "sharedAxis", "objects": ["env-a", "env-b"], "axis": "y"},
++    {"id": "header-underlines-align-plots", "type": "alignment", "objects": ["env-a-title", "env-b-title"], "target": "plot top edges"},
++    {"id": "no-source-as-layer", "type": "contract", "note": "Generated candidate must not draw or background the source raster."}
++  ],
++  "confidence": [
++    {"target": "panel geometry", "confidence": "medium", "note": "Plot and title anchors manually estimated from native raster."},
++    {"target": "colorbar", "confidence": "low", "note": "Right edge of colorbar region is clipped; tick labels are intentionally omitted from generated visible crop."}
++  ]
++}
+
+codex
+Now I’m running the requested verification: JSON parsing plus searches for forbidden source-raster drawing/background patterns in the two output files.
+exec
+/bin/zsh -lc 'rg -n "drawImage|background[''^;{]*reference-05-grid-remapping-B-reference|url'"\\(|sourceRaster|reference-05-grid-remapping-B-reference\\.png\" outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json:5:    "path": "../../assets/reference/reference-05-grid-remapping-B-reference.png",
+outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html:207:      svg.appendChild(el('rect', {x: colorbar.bbox.x, y: colorbar.bbox.y, width: colorbar.bbox.width, height: colorbar.bbox.height, fill: 'url(#rateBarGradient)', stroke: '#111111', 'stroke-width': 1}));
+
+exec
+/bin/zsh -lc 'python3 -m json.tool outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json >/dev/null && echo json-valid' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+json-valid
+
+exec
+/bin/zsh -lc 'git status --short -- outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+?? outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html
+?? outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json
+
+diff --git a/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html b/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..1c8858bea1c35af42cbbecafeb06834163158b35
+--- /dev/null
++++ b/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html
+@@ -0,0 +1,259 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-05-grid-remapping-B reconstruction</title>
++  <style>
++    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
++    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #cfcfcf; }
++    h1 { margin: 0; font-size: 16px; font-weight: 700; }
++    .note { margin-top: 3px; font-size: 12px; color: #555555; }
++    .toggle { display: inline-flex; border: 1px solid #aaaaaa; border-radius: 4px; overflow: hidden; }
++    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
++    .toggle button.active { background: #111111; color: #ffffff; }
++    main { min-height: calc(100vh - 48px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
++    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
++    .surface, .reference { position: absolute; inset: 0; }
++    .reference { display: none; width: 100%; height: 100%; object-fit: contain; background: #ffffff; }
++    .show-reference .surface { display: none; }
++    .show-reference .reference { display: block; }
++    svg, canvas { position: absolute; inset: 0; }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1 id="title">reference-05-grid-remapping-B</h1>
++      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">Reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <img id="reference" class="reference" alt="QA reference source image">
++    </div>
++  </main>
++  <script>
++    const SVG_NS = 'http://www.w3.org/2000/svg';
++    const JSON_PATH = './reference-05-grid-remapping-B.json';
++
++    function el(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
++      Object.entries(attrs).forEach(([key, value]) => {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      });
++      return node;
++    }
++
++    function rng(seed) {
++      return function random() {
++        let t = seed += 0x6D2B79F5;
++        t = Math.imul(t ^ (t >>> 15), t | 1);
++        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
++        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
++      };
++    }
++
++    function clamp(value, min, max) {
++      return Math.max(min, Math.min(max, value));
++    }
++
++    function hexToRgb(hex) {
++      const n = parseInt(hex.slice(1), 16);
++      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
++    }
++
++    function colorAt(scale, value) {
++      const stops = scale.stops;
++      const v = clamp(value, scale.domain[0], scale.domain[1]);
++      let a = stops[0], b = stops[stops.length - 1];
++      for (let i = 0; i < stops.length - 1; i++) {
++        if (v >= stops[i].value && v <= stops[i + 1].value) {
++          a = stops[i]; b = stops[i + 1]; break;
++        }
++      }
++      const t = (v - a.value) / (b.value - a.value || 1);
++      const ca = hexToRgb(a.color), cb = hexToRgb(b.color);
++      return [
++        Math.round(ca[0] + (cb[0] - ca[0]) * t),
++        Math.round(ca[1] + (cb[1] - ca[1]) * t),
++        Math.round(ca[2] + (cb[2] - ca[2]) * t)
++      ];
++    }
++
++    function drawHeatmap(ctx, panel, mark, scale) {
++      const box = panel.plot.dataBbox;
++      const w = Math.round(box.width), h = Math.round(box.height);
++      const values = new Float32Array(w * h);
++      const noiseRand = rng(mark.backgroundNoise.seed);
++      for (let y = 0; y < h; y++) {
++        for (let x = 0; x < w; x++) {
++          const coarse = (noiseRand() - 0.5) * mark.backgroundNoise.amplitude;
++          values[y * w + x] = Math.max(0, 0.025 + coarse);
++        }
++      }
++      const binsRand = rng(mark.sparseBins.seed);
++      for (let i = 0; i < mark.sparseBins.count; i++) {
++        const bx = Math.floor(binsRand() * w);
++        const by = Math.floor(binsRand() * h);
++        const val = binsRand() * mark.sparseBins.maxValue;
++        for (let yy = 0; yy < mark.sparseBins.height; yy++) {
++          for (let xx = 0; xx < mark.sparseBins.width; xx++) {
++            const px = bx + xx, py = by + yy;
++            if (px < w && py < h) values[py * w + px] += val;
++          }
++        }
++      }
++      const ridge = mark.ridgeRecipe;
++      const jitterRand = rng(ridge.seed);
++      for (let y = 0; y < h; y++) {
++        const lap = y / h * 39 + 1;
++        let cx = ridge.centerX + (lap - 20) * ridge.lapSlope;
++        ridge.waviness.forEach(wave => { cx += Math.sin(lap / wave.period * Math.PI * 2) * wave.amplitude; });
++        cx += (jitterRand() - 0.5) * ridge.lapJitter;
++        for (let x = 0; x < w; x++) {
++          const d = x - cx;
++          const g = Math.exp(-(d * d) / (2 * ridge.sigmaX * ridge.sigmaX));
++          values[y * w + x] += g * ridge.amplitude * (0.82 + 0.3 * jitterRand());
++        }
++      }
++      const img = ctx.createImageData(w, h);
++      for (let i = 0; i < values.length; i++) {
++        const [r, g, b] = colorAt(scale, values[i]);
++        img.data[i * 4] = r; img.data[i * 4 + 1] = g; img.data[i * 4 + 2] = b; img.data[i * 4 + 3] = 255;
++      }
++      ctx.putImageData(img, box.x, box.y);
++    }
++
++    function scaleX(plot, value) {
++      const d = plot.x.domain, b = plot.dataBbox;
++      return b.x + (value - d[0]) / (d[1] - d[0]) * b.width;
++    }
++
++    function scaleY(plot, value) {
++      const d = plot.y.domain, b = plot.dataBbox;
++      return b.y + (value - d[0]) / (d[1] - d[0]) * b.height;
++    }
++
++    function addText(svg, spec, textObject) {
++      const anchor = textObject.anchor || {x: textObject.x, y: textObject.y};
++      const t = el('text', {
++        x: anchor.x,
++        y: anchor.y,
++        fill: textObject.fill || spec.typography.color,
++        'font-family': spec.typography.fontFamily,
++        'font-size': textObject.fontSize || spec.typography.defaultSize,
++        'font-weight': textObject.fontWeight || 400,
++        'text-anchor': textObject.textAnchor || textObject.anchor || 'start'
++      });
++      if (textObject.rotation) t.setAttribute('transform', `rotate(${textObject.rotation} ${anchor.x} ${anchor.y})`);
++      const lines = String(textObject.text).split('\n');
++      lines.forEach((line, i) => {
++        const span = el('tspan', {x: anchor.x, dy: i ? (textObject.lineHeight || textObject.fontSize || 16) : 0});
++        span.textContent = line;
++        t.appendChild(span);
++      });
++      svg.appendChild(t);
++      return t;
++    }
++
++    function drawAxes(svg, spec, panel) {
++      const plot = panel.plot;
++      const b = plot.dataBbox;
++      svg.appendChild(el('rect', {x: b.x, y: b.y, width: b.width, height: b.height, fill: 'none', stroke: '#111111', 'stroke-width': 1.1}));
++      plot.x.ticks.forEach(tick => {
++        const x = scaleX(plot, tick.value);
++        const y = b.y + b.height;
++        const text = el('text', {x, y: y + 28, fill: '#050505', 'font-family': spec.typography.fontFamily, 'font-size': 20, 'text-anchor': 'middle'});
++        text.textContent = tick.label;
++        svg.appendChild(text);
++      });
++    }
++
++    function drawLayout(svg, spec) {
++      spec.layoutObjects.forEach(obj => {
++        if (obj.type === 'colorbar') return;
++        if (obj.text && obj.type !== 'axisLabel') addText(svg, spec, obj);
++        if (obj.underline) svg.appendChild(el('line', obj.underline));
++        if (obj.type === 'axis' && obj.orientation === 'left') {
++          svg.appendChild(el('line', {...obj.line, stroke: '#111111', 'stroke-width': 1.1}));
++          const plot = spec.panels[0].plot;
++          obj.ticks.forEach(tick => {
++            const y = scaleY(plot, tick.value);
++            const tx = el('text', {x: obj.line.x1 - 9, y: y + 6, fill: '#050505', 'font-family': spec.typography.fontFamily, 'font-size': 20, 'text-anchor': 'end'});
++            tx.textContent = tick.label;
++            svg.appendChild(tx);
++          });
++          addText(svg, spec, obj.label);
++        }
++        if (obj.type === 'axisLabel') addText(svg, spec, obj);
++      });
++    }
++
++    function drawColorbar(svg, spec) {
++      const colorbar = spec.layoutObjects.find(o => o.type === 'colorbar');
++      const scale = spec.coordinateSystems.find(s => s.id === colorbar.colorScale);
++      addText(svg, spec, colorbar.title);
++      const defs = el('defs');
++      const grad = el('linearGradient', {id: 'rateBarGradient', x1: 0, y1: 1, x2: 0, y2: 0});
++      scale.stops.forEach(stop => grad.appendChild(el('stop', {offset: `${stop.value * 100}%`, 'stop-color': stop.color})));
++      defs.appendChild(grad);
++      svg.appendChild(defs);
++      svg.appendChild(el('rect', {x: colorbar.bbox.x, y: colorbar.bbox.y, width: colorbar.bbox.width, height: colorbar.bbox.height, fill: 'url(#rateBarGradient)', stroke: '#111111', 'stroke-width': 1}));
++      svg.appendChild(el('line', {x1: colorbar.bbox.x + colorbar.bbox.width, y1: colorbar.bbox.y + colorbar.bbox.height / 2, x2: colorbar.bbox.x + colorbar.bbox.width + 8, y2: colorbar.bbox.y + colorbar.bbox.height / 2, stroke: '#111111', 'stroke-width': 1}));
++    }
++
++    function render(spec) {
++      document.getElementById('title').textContent = spec.id;
++      const frame = document.getElementById('frame');
++      const surface = document.getElementById('surface');
++      const reference = document.getElementById('reference');
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      reference.src = spec.source.path;
++      surface.innerHTML = '';
++      const canvas = document.createElement('canvas');
++      canvas.width = spec.canvas.width;
++      canvas.height = spec.canvas.height;
++      const ctx = canvas.getContext('2d');
++      ctx.fillStyle = spec.canvas.background;
++      ctx.fillRect(0, 0, canvas.width, canvas.height);
++      spec.panels.forEach(panel => {
++        panel.marks.filter(mark => mark.renderer === 'canvas').forEach(mark => {
++          const scale = spec.coordinateSystems.find(s => s.id === mark.colorScale);
++          drawHeatmap(ctx, panel, mark, scale);
++        });
++      });
++      surface.appendChild(canvas);
++      const svg = el('svg', {width: spec.canvas.width, height: spec.canvas.height, viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`});
++      spec.panels.forEach(panel => drawAxes(svg, spec, panel));
++      drawLayout(svg, spec);
++      drawColorbar(svg, spec);
++      surface.appendChild(svg);
++    }
++
++    fetch(JSON_PATH)
++      .then(response => response.json())
++      .then(render);
++
++    const frame = document.getElementById('frame');
++    const generatedButton = document.getElementById('generatedButton');
++    const referenceButton = document.getElementById('referenceButton');
++    generatedButton.addEventListener('click', () => {
++      frame.classList.remove('show-reference');
++      generatedButton.classList.add('active');
++      referenceButton.classList.remove('active');
++    });
++    referenceButton.addEventListener('click', () => {
++      frame.classList.add('show-reference');
++      referenceButton.classList.add('active');
++      generatedButton.classList.remove('active');
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json b/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..bf74aa5372d989d3e251e6af644954ab549d2c95
+--- /dev/null
++++ b/outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json
+@@ -0,0 +1,245 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-05-grid-remapping-B",
++  "source": {
++    "path": "../../assets/reference/reference-05-grid-remapping-B-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "Native crop is a partial panel B showing firing-rate maps across laps for Environment A and Environment B. Left edge is cropped from a larger figure title; right colorbar/title are partly clipped."
++  },
++  "canvas": {
++    "width": 456,
++    "height": 500,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
++    "defaultSize": 16,
++    "color": "#050505",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Arial", "Helvetica", "Roboto Condensed"],
++    "calibration": {
++      "fontStretch": "condensed",
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "First-pass manual typography. Source resembles a condensed sans; title and panel label are bold, axis labels regular."
++    }
++  },
++  "coordinateSystems": [
++    {
++      "id": "env-a.positionLap",
++      "type": "cartesian",
++      "domain": {"x": [0, 240], "y": [1, 40]},
++      "range": {"x": [58, 236], "y": [164, 442]}
++    },
++    {
++      "id": "env-b.positionLap",
++      "type": "cartesian",
++      "domain": {"x": [0, 240], "y": [1, 40]},
++      "range": {"x": [255, 423], "y": [164, 442]}
++    },
++    {
++      "id": "rate-map-a",
++      "type": "colorScale",
++      "domain": [0, 1],
++      "stops": [
++        {"value": 0, "color": "#030303"},
++        {"value": 0.18, "color": "#22110a"},
++        {"value": 0.44, "color": "#9b4a16"},
++        {"value": 0.72, "color": "#efb153"},
++        {"value": 1, "color": "#fff7d5"}
++      ]
++    },
++    {
++      "id": "rate-map-b",
++      "type": "colorScale",
++      "domain": [0, 1],
++      "stops": [
++        {"value": 0, "color": "#031011"},
++        {"value": 0.22, "color": "#053436"},
++        {"value": 0.48, "color": "#118f8c"},
++        {"value": 0.76, "color": "#9af4dc"},
++        {"value": 1, "color": "#f4fff2"}
++      ]
++    }
++  ],
++  "layoutObjects": [
++    {
++      "id": "cropped-parent-title",
++      "type": "croppedContextTitle",
++      "text": "emapping across virtual envi",
++      "anchor": {"x": -2, "y": 40},
++      "fontSize": 31,
++      "fontWeight": 700,
++      "sourceBox": {"x": 0, "y": 17, "width": 456, "height": 39},
++      "fit": "cropped-visible-fragment",
++      "provenance": {"confidence": "low", "note": "Only the visible cropped fragment of the larger figure heading is represented."}
++    },
++    {
++      "id": "panel-label",
++      "type": "panelLabel",
++      "text": "B",
++      "anchor": {"x": 19, "y": 92},
++      "fontSize": 29,
++      "fontWeight": 700,
++      "sourceBox": {"x": 19, "y": 69, "width": 20, "height": 29},
++      "fit": "manual"
++    },
++    {
++      "id": "panel-title",
++      "type": "title",
++      "text": "Firing rate map across laps",
++      "anchor": {"x": 61, "y": 94},
++      "fontSize": 23,
++      "fontWeight": 700,
++      "sourceBox": {"x": 61, "y": 77, "width": 290, "height": 24},
++      "fit": "manual"
++    },
++    {
++      "id": "env-a-title",
++      "type": "panelTitle",
++      "text": "Environment A",
++      "anchor": {"x": 147, "y": 143},
++      "fontSize": 20,
++      "fontWeight": 700,
++      "fill": "#78310f",
++      "textAnchor": "middle",
++      "underline": {"x1": 59, "y1": 152, "x2": 235, "y2": 152, "stroke": "#78310f", "strokeWidth": 1.4}
++    },
++    {
++      "id": "env-b-title",
++      "type": "panelTitle",
++      "text": "Environment B",
++      "anchor": {"x": 338, "y": 143},
++      "fontSize": 20,
++      "fontWeight": 700,
++      "fill": "#00747a",
++      "textAnchor": "middle",
++      "underline": {"x1": 241, "y1": 152, "x2": 422, "y2": 152, "stroke": "#00747a", "strokeWidth": 1.4}
++    },
++    {
++      "id": "shared-y-axis",
++      "type": "axis",
++      "transform": "env-a.positionLap",
++      "orientation": "left",
++      "line": {"x1": 58, "y1": 164, "x2": 58, "y2": 442},
++      "ticks": [
++        {"value": 1, "label": "1"},
++        {"value": 10, "label": "10"},
++        {"value": 20, "label": "20"},
++        {"value": 30, "label": "30"},
++        {"value": 40, "label": "40"}
++      ],
++      "label": {"text": "Lap", "x": 17, "y": 304, "fontSize": 20, "rotation": -90}
++    },
++    {
++      "id": "shared-x-axis-label",
++      "type": "axisLabel",
++      "text": "Linearized position (cm)",
++      "anchor": {"x": 234, "y": 499},
++      "fontSize": 19,
++      "textAnchor": "middle",
++      "sourceBox": {"x": 136, "y": 486, "width": 204, "height": 14},
++      "fit": "bottom-cropped"
++    },
++    {
++      "id": "rate-colorbar",
++      "type": "colorbar",
++      "colorScale": "rate-map-a",
++      "bbox": {"x": 440, "y": 248, "width": 14, "height": 154},
++      "ticks": [
++        {"value": 0, "label": "0"},
++        {"value": 0.5, "label": "0.5"},
++        {"value": 1, "label": "1"}
++      ],
++      "title": {"text": "Rate\n(Hz)", "x": 440, "y": 201, "fontSize": 16, "lineHeight": 17},
++      "provenance": {"confidence": "low", "note": "Right side of colorbar label and tick text are clipped in the source crop."}
++    }
++  ],
++  "panels": [
++    {
++      "id": "env-a",
++      "label": {"text": "Environment A", "layoutObject": "env-a-title"},
++      "plot": {
++        "bbox": {"x": 58, "y": 164, "width": 178, "height": 278},
++        "dataBbox": {"x": 58, "y": 164, "width": 178, "height": 278},
++        "usesTransform": "env-a.positionLap",
++        "x": {
++          "domain": [0, 240],
++          "ticks": [{"value": 0, "label": "0"}, {"value": 100, "label": "100"}, {"value": 200, "label": "200"}]
++        },
++        "y": {"domain": [1, 40], "ticks": [1, 10, 20, 30, 40]},
++        "axes": {"stroke": "#111111", "strokeWidth": 1.1, "tickLength": 0}
++      },
++      "marks": [
++        {
++          "id": "env-a-rate-field",
++          "type": "heatmap",
++          "renderer": "canvas",
++          "usesTransform": "env-a.positionLap",
++          "colorScale": "rate-map-a",
++          "resolution": {"columns": 178, "rows": 278},
++          "backgroundNoise": {"seed": 5105, "amplitude": 0.12, "grain": 0.9},
++          "sparseBins": {"seed": 5129, "count": 1080, "maxValue": 0.55, "width": 3, "height": 2},
++          "ridgeRecipe": {
++            "seed": 5191,
++            "centerX": 132,
++            "sigmaX": 14.5,
++            "lapJitter": 10,
++            "amplitude": 0.95,
++            "lapSlope": 0.6,
++            "waviness": [{"period": 14, "amplitude": 13}, {"period": 31, "amplitude": 7}]
++          }
++        }
++      ],
++      "provenance": [{"confidence": "medium", "note": "Primary vertical firing field is generated from a wavy ridge recipe with sparse noisy bins; not measured per-lap data."}]
++    },
++    {
++      "id": "env-b",
++      "label": {"text": "Environment B", "layoutObject": "env-b-title"},
++      "plot": {
++        "bbox": {"x": 255, "y": 164, "width": 168, "height": 278},
++        "dataBbox": {"x": 255, "y": 164, "width": 168, "height": 278},
++        "usesTransform": "env-b.positionLap",
++        "x": {
++          "domain": [0, 240],
++          "ticks": [{"value": 0, "label": "0"}, {"value": 100, "label": "100"}, {"value": 200, "label": "200"}]
++        },
++        "y": {"domain": [1, 40], "ticks": [1, 10, 20, 30, 40]},
++        "axes": {"stroke": "#111111", "strokeWidth": 1.1, "tickLength": 0}
++      },
++      "marks": [
++        {
++          "id": "env-b-rate-field",
++          "type": "heatmap",
++          "renderer": "canvas",
++          "usesTransform": "env-b.positionLap",
++          "colorScale": "rate-map-b",
++          "resolution": {"columns": 168, "rows": 278},
++          "backgroundNoise": {"seed": 6105, "amplitude": 0.15, "grain": 0.9},
++          "sparseBins": {"seed": 6129, "count": 1250, "maxValue": 0.52, "width": 3, "height": 2},
++          "ridgeRecipe": {
++            "seed": 6191,
++            "centerX": 126,
++            "sigmaX": 13,
++            "lapJitter": 8,
++            "amplitude": 0.92,
++            "lapSlope": -0.18,
++            "waviness": [{"period": 17, "amplitude": 11}, {"period": 37, "amplitude": 5}]
++          }
++        }
++      ],
++      "provenance": [{"confidence": "medium", "note": "Cyan firing field and surrounding low-rate bins are generated from an editable recipe."}]
++    }
++  ],
++  "annotations": [],
++  "constraints": [
++    {"id": "same-lap-axis", "type": "sharedAxis", "objects": ["env-a", "env-b"], "axis": "y"},
++    {"id": "header-underlines-align-plots", "type": "alignment", "objects": ["env-a-title", "env-b-title"], "target": "plot top edges"},
++    {"id": "no-source-as-layer", "type": "contract", "note": "Generated candidate must not draw or background the source raster."}
++  ],
++  "confidence": [
++    {"target": "panel geometry", "confidence": "medium", "note": "Plot and title anchors manually estimated from native raster."},
++    {"target": "colorbar", "confidence": "low", "note": "Right edge of colorbar region is clipped; tick labels are intentionally omitted from generated visible crop."}
++  ]
++}
+

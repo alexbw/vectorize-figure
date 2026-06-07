@@ -1,0 +1,13 @@
+Done.
+
+Created:
+- [reference-07-cross-region-small-multiples-A.json](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-07-cross-region-small-multiples-A-make-figure-batch/reference-07-cross-region-small-multiples-A.json)
+- [reference-07-cross-region-small-multiples-A.html](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-07-cross-region-small-multiples-A-make-figure-batch/reference-07-cross-region-small-multiples-A.html)
+
+Verification:
+- JSON validity passed with `python3 -m json.tool`.
+- Output directory contains only the two requested files.
+- Source-reuse search found no `drawImage`, no source raster CSS background, and no generated-layer source usage. The only source path usage is semantic `source.path`, embedded fallback QA metadata, and `reference.src = spec.source.path` for the labeled QA reference image.
+- Confirmed semantic counts: 430x375 canvas, 5 heatmap rows, 4 top ticks, 3 colorbar ticks.
+
+I could not complete browser rendering via the repo validator because this sandbox cannot bind localhost (`PermissionError: [Errno 1] Operation not permitted`). Safari automation also failed to navigate due a local `pw` JXA permission/application error, though `pw doctor` reports Safari installed. The HTML embeds the full JSON fallback, so it can still render when opened directly from disk.

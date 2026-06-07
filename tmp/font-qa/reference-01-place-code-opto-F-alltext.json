@@ -1,0 +1,40 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-01-place-code-opto-F-alltext",
+  "source": {"path": "/assets/reference/reference-01-place-code-opto-F-reference.png", "usage": "QA-only text calibration target."},
+  "canvas": {"width": 560, "height": 512, "background": "#ffffff"},
+  "typography": {"fontFamily": "Helvetica, Arial, sans-serif", "defaultSize": 14, "color": "#111111"},
+  "panels": [
+    {
+      "id": "panel-f-text",
+      "label": {"id": "panel-label", "text": "F", "x": 3, "y": 28, "fontSize": 24, "fontWeight": 700, "sourceBox": {"x": 1, "y": 8, "width": 11, "height": 19}},
+      "title": {"id": "panel-title", "text": "Example spatial rate map (same session)", "x": 38, "y": 29, "fontSize": 18, "fontWeight": 700, "sourceBox": {"x": 39, "y": 13, "width": 305, "height": 20}},
+      "marks": [
+        {"id": "control-title", "type": "text", "text": "Control (no light)", "x": 150, "y": 82, "fontSize": 14, "anchor": "middle", "sourceBox": {"x": 89, "y": 70, "width": 101, "height": 17}},
+        {"id": "opto-title", "type": "text", "text": "Optogenetic inhibition\n(ArchT, 532 nm)", "x": 366, "y": 64, "fontSize": 14, "anchor": "middle", "lineHeight": 1.1, "sourceBox": {"x": 307, "y": 49, "width": 136, "height": 39}},
+        {"id": "y-label", "type": "text", "text": "Y position (cm)", "x": 8, "y": 236, "fontSize": 17, "anchor": "middle", "rotation": -90, "sourceBox": {"x": 0, "y": 117, "width": 18, "height": 151}},
+        {"id": "y-tick-200", "type": "text", "text": "200", "x": 33, "y": 101, "fontSize": 16, "anchor": "end", "sourceBox": {"x": 19, "y": 89, "width": 23, "height": 14}},
+        {"id": "y-tick-100", "type": "text", "text": "100", "x": 33, "y": 241, "fontSize": 16, "anchor": "end", "sourceBox": {"x": 20, "y": 220, "width": 23, "height": 14}},
+        {"id": "y-tick-0", "type": "text", "text": "0", "x": 33, "y": 381, "fontSize": 16, "anchor": "end", "sourceBox": {"x": 49, "y": 390, "width": 8, "height": 14}},
+        {"id": "control-x-tick-0", "type": "text", "text": "0", "x": 51, "y": 404, "fontSize": 16, "anchor": "middle", "sourceBox": {"x": 49, "y": 390, "width": 8, "height": 14}},
+        {"id": "control-x-tick-100", "type": "text", "text": "100", "x": 144.81, "y": 404, "fontSize": 16, "anchor": "middle", "sourceBox": {"x": 135, "y": 390, "width": 22, "height": 14}},
+        {"id": "control-x-tick-200", "type": "text", "text": "200", "x": 238.62, "y": 404, "fontSize": 16, "anchor": "middle", "sourceBox": {"x": 226, "y": 390, "width": 23, "height": 14}},
+        {"id": "control-x-label", "type": "text", "text": "X position (cm)", "x": 149.5, "y": 418, "fontSize": 17, "anchor": "middle", "baseline": "hanging", "sourceBox": {"x": 99, "y": 415, "width": 102, "height": 20}},
+        {"id": "opto-x-tick-0", "type": "text", "text": "0", "x": 266, "y": 404, "fontSize": 16, "anchor": "middle", "sourceBox": {"x": 263, "y": 390, "width": 7, "height": 14}},
+        {"id": "opto-x-tick-100", "type": "text", "text": "100", "x": 364.57, "y": 404, "fontSize": 16, "anchor": "middle", "sourceBox": {"x": 350, "y": 390, "width": 22, "height": 14}},
+        {"id": "opto-x-tick-200", "type": "text", "text": "200", "x": 463.14, "y": 404, "fontSize": 16, "anchor": "middle", "sourceBox": {"x": 442, "y": 390, "width": 23, "height": 14}},
+        {"id": "opto-x-label", "type": "text", "text": "X position (cm)", "x": 369.5, "y": 418, "fontSize": 17, "anchor": "middle", "baseline": "hanging", "sourceBox": {"x": 318, "y": 415, "width": 101, "height": 20}},
+        {"id": "colorbar-label", "type": "text", "text": "Rate\n(Hz)", "x": 501, "y": 88, "fontSize": 15, "anchor": "middle", "baseline": "hanging", "lineHeight": 1.04, "sourceBox": {"x": 495, "y": 49, "width": 43, "height": 39}},
+        {"id": "colorbar-tick-20", "type": "text", "text": "20", "x": 521, "y": 101, "fontSize": 15, "anchor": "start", "sourceBox": {"x": 521, "y": 96, "width": 15, "height": 15}},
+        {"id": "colorbar-tick-10", "type": "text", "text": "10", "x": 521, "y": 134, "fontSize": 15, "anchor": "start", "sourceBox": {"x": 521, "y": 132, "width": 15, "height": 14}},
+        {"id": "colorbar-tick-5", "type": "text", "text": "5", "x": 521, "y": 245, "fontSize": 15, "anchor": "start", "sourceBox": {"x": 521, "y": 241, "width": 4, "height": 14}},
+        {"id": "colorbar-tick-1", "type": "text", "text": "1", "x": 521, "y": 278, "fontSize": 15, "anchor": "start", "sourceBox": {"x": 521, "y": 274, "width": 19, "height": 14}},
+        {"id": "colorbar-tick-05", "type": "text", "text": "0.5", "x": 521, "y": 319, "fontSize": 15, "anchor": "start", "sourceBox": {"x": 520, "y": 316, "width": 19, "height": 15}},
+        {"id": "colorbar-tick-02", "type": "text", "text": "0.2", "x": 521, "y": 360, "fontSize": 15, "anchor": "start", "sourceBox": {"x": 520, "y": 351, "width": 17, "height": 15}},
+        {"id": "colorbar-tick-01", "type": "text", "text": "0.1", "x": 521, "y": 381, "fontSize": 15, "anchor": "start", "sourceBox": {"x": 520, "y": 390, "width": 19, "height": 15}},
+        {"id": "legend-boundary", "type": "text", "text": "Arena boundary", "x": 137, "y": 463, "fontSize": 14, "anchor": "start", "sourceBox": {"x": 132, "y": 447, "width": 101, "height": 26}},
+        {"id": "legend-trajectory", "type": "text", "text": "Example trajectory", "x": 327, "y": 463, "fontSize": 14, "anchor": "start", "sourceBox": {"x": 320, "y": 447, "width": 116, "height": 27}}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,2225 @@
+Reading additional input from stdin...
+OpenAI Codex v0.137.0
+--------
+workdir: /Users/alex/Code/scientific-figure-reconstruction
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: low
+reasoning summaries: none
+session id: 019e9e7e-a68d-7cf3-a742-d8d003825f2d
+--------
+user
+$make-figure assets/reference/reference-07-cross-region-small-multiples-D-reference.png. Generate an independent first-pass reconstruction for visual inspection. Write outputs only to outputs/reference-07-cross-region-small-multiples-D-make-figure-batch/reference-07-cross-region-small-multiples-D.json and outputs/reference-07-cross-region-small-multiples-D-make-figure-batch/reference-07-cross-region-small-multiples-D.html. Use the make-figure skill contract and the repository command/skill code: generated visual layers must not reuse the source raster; the source may appear only as a clearly labeled QA/reference view. Keep the JSON semantic and editable. Verify JSON validity and search the output for accidental drawImage/background source reuse. Do not modify existing output directories, docs, skills, plugins, source assets, or unrelated files.
+codex
+I’ll use the `make-figure` skill and keep the work confined to the two requested output files. First I’m checking the reference image dimensions and the existing project patterns/templates so the reconstruction is generated from editable JSON rather than reusing the raster.
+exec
+/bin/zsh -lc "sed -n '1,220p' /Users/alex/Code/scientific-figure-reconstruction/skills/make-figure/SKILL.md" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+---
+name: make-figure
+description: Reconstruct raster images of scientific figures into editable, configurable HTML plus a semantic JSON specification. Use when the user invokes $make-figure, asks to recreate a paper figure from a PNG/JPEG/screenshot, wants a no-source-image HTML reconstruction, or needs chart panels converted into editable axes, marks, annotations, legends, styles, and data recipes.
+---
+
+# Make Figure
+
+## Objective
+
+Convert a raster scientific figure or cropped panel into two deliverables:
+
+- `figure-id.json`: semantic, editable figure specification.
+- `figure-id.html`: generated reconstruction rendered from the JSON spec.
+
+The generated candidate must not reuse the source raster as a visual layer. The source image may appear only in clearly labeled QA/reference views.
+
+## Workflow
+
+1. Inspect the source raster at native resolution. Determine whether the input is a single panel, multipanel figure, chart, schematic, heatmap, raster plot, microscopy image, or mixed figure.
+2. Create or infer a panel inventory with pixel dimensions, plot boxes, axes, labels, legends, colorbars, annotations, and visible mark types.
+3. Create a semantic relationship inventory: coordinate systems, layout objects, derived marks/text, source-calibrated anchors, and validation constraints.
+4. Choose renderers by layer: SVG/DOM for axes, labels, legends, paths, brackets, and annotations; canvas for heatmaps, rasters, dense dots, generated textures, and pixel-native fields.
+5. Write the JSON spec first. Include dimensions, scales, domains, ticks, text, marks, renderer hints, style tokens, provenance, and confidence notes.
+6. Build the HTML so every visible element is generated from the JSON. Keep stable IDs/classes/data attributes for programmatic edits.
+7. Calibrate typography when text mismatch is visually material. Measure representative source text boxes, try likely sans-serif families through browser-rendered text, and store the winning local fields (`fontFamily`, `fontSize`, `fontWeight`, `lineHeight`, `targetWidth`, `fit`, `sourceBox`, and calibration notes) on the text objects.
+8. Include an optional QA toggle that shows the source image separately from the generated candidate. Label it clearly as reference-only.
+9. Verify in a browser at source dimensions. Compare alignment, plot grammar, text hierarchy, mark density, axes, tick positions, and annotations. Iterate until the reconstruction is plausibly editable and visually close.
+
+Read `references/semantic-figure-ir.md` and `references/reconstruction-contract.md` when implementing a nontrivial panel or when deciding schema fields.
+
+Use `assets/hybrid-renderer-template.html` as a starting point for new outputs when no better project-local renderer exists.
+
+Use `scripts/font-calibration/` when typography is the main source of visual drift. The calibration harness may use the source raster for scoring and overlay QA, but the generated candidate still must not render the source raster as a figure layer. Treat the report as evidence of improvement over the starting text render; final acceptance is a results-only visual overlay of original text and attempted text, not a zero-pixel-diff target.
+
+## Output Contract
+
+Place outputs next to the source image unless the user gives another destination. Use clear names such as:
+
+- `my-panel.json`
+- `my-panel.html`
+- optional `my-panel-visual-elements.json`
+- optional `my-panel-qa.png` or browser screenshot
+
+The HTML must load or embed the JSON spec and render from it. Prefer loading an adjacent `.json` file for configurability. It is acceptable to embed the initial spec in a `<script type="application/json">` fallback if the file also exists separately.
+
+## Non-Negotiables
+
+- Do not use the source PNG/JPEG/SVG as the generated visual layer.
+- Do not call `drawImage(sourceRaster)` or set the source raster as a CSS background in the generated candidate.
+- Do not flatten axes, ticks, labels, legends, or annotations into an image.
+- Do not invent misleading marks, such as rectangular error boxes for curve-following uncertainty bands.
+- Record uncertain inferences in `confidence` or `provenance` instead of pretending they are measured data.
+
+## Renderer Rules
+
+- Use SVG for axes, ticks, paths, contours, brackets, arrows, legends, and moderately sized editable marks.
+- Use DOM for text-heavy schematics or labels where direct editing matters.
+- Use canvas for heatmaps, matrix images, rasters, dense scatter fields, microscopy-like generated texture, and large point sets.
+- Use hybrid rendering for most scientific figures: canvas for dense generated fields, SVG/DOM for structure.
+
+## Quality Checklist
+
+Before finishing, verify:
+
+- Native canvas/page dimensions match the source crop.
+- Plot boxes, tick labels, event anchors, and annotations share the same coordinate transforms.
+- Visible axes have editable ticks and labels unless intentionally suppressed.
+- Related objects remain linked in the rendered DOM, such as tick mark/label pairs, legends to series, colorbars to color scales, and grid lines to grid planes.
+- Text has explicit alignment and does not overlap neighboring labels.
+- Important text has been visually checked against source text overlays. When calibrated, representative labels improve versus the baseline score and the calibrated fields are recorded in JSON.
+- The JSON can be edited to change labels, domains, colors, or data recipes without rewriting HTML.
+- Any QA reference layer is visually and semantically separate from the generated candidate.
+
+exec
+/bin/zsh -lc 'file assets/reference/reference-07-cross-region-small-multiples-D-reference.png' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+assets/reference/reference-07-cross-region-small-multiples-D-reference.png: PNG image data, 398 x 375, 8-bit/color RGB, non-interlaced
+
+exec
+/bin/zsh -lc "identify -verbose assets/reference/reference-07-cross-region-small-multiples-D-reference.png | sed -n '1,80p'" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+Image:
+  Filename: assets/reference/reference-07-cross-region-small-multiples-D-reference.png
+  Permissions: rw-r--r--
+  Format: PNG (Portable Network Graphics)
+  Mime type: image/png
+  Class: DirectClass
+  Geometry: 398x375+0+0
+  Units: Undefined
+  Colorspace: sRGB
+  Type: TrueColor
+  Endianness: Undefined
+  Depth: 8-bit
+  Channels: 3.0
+  Channel depth:
+    Red: 8-bit
+    Green: 8-bit
+    Blue: 8-bit
+  Channel statistics:
+    Pixels: 149250
+    Red:
+      min: 0  (0)
+      max: 255 (1)
+      mean: 204.231 (0.800904)
+      median: 240 (0.941176)
+      standard deviation: 77.4966 (0.303908)
+      kurtosis: 1.73338
+      skewness: -1.75709
+      entropy: 0.69071
+    Green:
+      min: 0  (0)
+      max: 255 (1)
+      mean: 212.051 (0.831573)
+      median: 243 (0.952941)
+      standard deviation: 70.9722 (0.278323)
+      kurtosis: 2.22052
+      skewness: -1.92578
+      entropy: 0.675949
+    Blue:
+      min: 0  (0)
+      max: 255 (1)
+      mean: 226.913 (0.889856)
+      median: 251 (0.984314)
+      standard deviation: 55.5977 (0.21803)
+      kurtosis: 3.49744
+      skewness: -2.21369
+      entropy: 0.595106
+  Image statistics:
+    Overall:
+      min: 0  (0)
+      max: 255 (1)
+      mean: 214.398 (0.840778)
+      median: 244.667 (0.959477)
+      standard deviation: 68.0222 (0.266754)
+      kurtosis: 2.48378
+      skewness: -1.96552
+      entropy: 0.653922
+  Rendering intent: Perceptual
+  Gamma: 0.454545
+  Chromaticity:
+    red primary: (0.64,0.33,0.03)
+    green primary: (0.3,0.6,0.1)
+    blue primary: (0.15,0.06,0.79)
+    white point: (0.3127,0.329,0.3583)
+  Matte color: grey74
+  Background color: white
+  Border color: srgb(223,223,223)
+  Transparent color: black
+  Interlace: None
+  Intensity: Undefined
+  Compose: Over
+  Page geometry: 398x375+0+0
+  Dispose: Undefined
+  Iterations: 0
+  Compression: Zip
+  Orientation: Undefined
+  Properties:
+    date:create: 2026-06-04T09:38:12+00:00
+    date:modify: 2026-06-04T09:38:12+00:00
+    date:timestamp: 2026-06-06T19:52:51+00:00
+    png:IHDR.bit-depth-orig: 8
+
+exec
+/bin/zsh -lc "rg --files outputs | rg 'reference-07-cross-region-small-multiples-D|hybrid-renderer-template|reference-07'" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+outputs/reference-07-cross-region-small-multiples-A-make-figure-batch/reference-07-cross-region-small-multiples-A.json
+
+codex
+The source crop is 398 by 375 px and is a single heatmap panel with editable text, five-by-five cells, and a horizontal colorbar. I’m reading the schema guidance and then I’ll write a compact spec plus a renderer that draws cells, labels, and the legend from that spec.
+exec
+/bin/zsh -lc "sed -n '1,220p' skills/make-figure/references/semantic-figure-ir.md" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+# Semantic Figure IR
+
+Use this document with `reconstruction-contract.md`. The reconstruction output
+is a semantic figure intermediate representation, not a collection of detected
+bounding boxes.
+
+## Core Model
+
+A scientific figure reconstruction is a typed scene graph:
+
+```text
+source evidence
+  -> semantic figure objects
+  -> named coordinate systems and transforms
+  -> derived layout objects
+  -> renderable marks and text
+  -> validation constraints
+```
+
+Bounding boxes, OCR text, detected line segments, and color samples are source
+evidence. They help infer the graph, but they are not the graph itself.
+
+## Common Object Fields
+
+Any semantic object may use these fields:
+
+```json
+{
+  "id": "panel-a-x-tick-0",
+  "type": "axisTick",
+  "parent": "panel-a-x-axis",
+  "children": ["panel-a-x-tick-0-mark", "panel-a-x-tick-0-label"],
+  "usesTransform": "panel-a.xy",
+  "anchorTo": "panel-a-x-axis",
+  "derivesFrom": "panel-a.x.ticks[0]",
+  "sourceEvidence": ["bbox-17", "line-04"],
+  "provenance": {"confidence": "medium", "note": "Tick position measured from source."}
+}
+```
+
+Prefer stable ids and explicit relationships over free-floating pixel objects.
+When an object needs source-calibrated coordinates, keep those coordinates on
+the semantic object as measured anchors instead of detaching the rendered mark
+or text.
+
+## Top-Level IR Concepts
+
+- `sourceEvidence`: source bboxes, OCR snippets, measured line segments, color
+  samples, and notes. These are evidence records, not render instructions.
+- `coordinateSystems`: named transforms such as Cartesian data scales,
+  categorical scales, event anchors, color scales, image/matrix ranges, and
+  projected 3D scenes.
+- `layoutObjects`: axes, tick-label bands, legends, colorbars, tables, insets,
+  panel titles, scale bars, and other objects that reserve space or anchor text.
+- `data`: exact data, approximate data, or generation recipes.
+- `marks`: visual encodings derived from data or layout objects.
+- `annotations`: labels, arrows, brackets, callouts, and event labels anchored
+  to data points, marks, or layout objects.
+- `constraints`: relationship and layout invariants that must survive rendering.
+- `rendering`: renderer hints, layer order, and style tokens.
+- `validation`: renderer- or harness-readable checks and expected counts.
+- `provenance`: object-level confidence and unresolved inferences.
+
+Panel-specific schemas may organize these concepts differently, but they should
+preserve the same relationships.
+
+## Required Relationship Invariants
+
+Renderers and validation scripts should enforce these when the source shows the
+corresponding objects:
+
+- Labeled ticks render one tick mark and one tick label with matching
+  `axis`/`value` metadata.
+- Axis titles anchor to an axis, tick-label band, or measured source anchor;
+  they are not independent guessed text.
+- Event-aligned ticks, event lines, brackets, and annotations share a named
+  event anchor or explicit measured visual anchor.
+- Grid lines belong to named grid planes and families; grid lines must not be
+  confused with solid box edges.
+- Legends reference real series, marker classes, or mark groups.
+- Colorbars reference a color scale and own their ticks and title.
+- Table cell text, row rules, separators, and highlights remain separate
+  objects when their visual styles differ.
+- Annotations anchor to data coordinates, generated marks, or layout objects
+  unless they are explicitly page-positioned.
+- Generated visuals never reuse the source raster as a generated layer.
+
+## Relationship Inventory Step
+
+Before writing the final JSON for a nontrivial panel, produce a short inventory:
+
+- plot type and renderer strategy
+- coordinate systems and named anchors
+- layout objects and their children
+- data-driven marks and their series/group ownership
+- annotations and what each one anchors to
+- source-calibrated overrides and why the transform alone is insufficient
+- validation constraints that should be checked in the rendered DOM
+
+Do this before visual tuning. If a generated object looks wrong, first ask which
+relationship or transform is missing before changing pixels.
+
+
+exec
+/bin/zsh -lc "sed -n '1,220p' skills/make-figure/references/reconstruction-contract.md" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+# Reconstruction Contract
+
+Use this contract when converting a raster scientific figure into configurable HTML and JSON.
+
+Read `semantic-figure-ir.md` alongside this contract. The JSON may be
+panel-specific, but it must preserve semantic relationships between data,
+transforms, layout objects, marks, labels, and validation constraints.
+
+## JSON Shape
+
+Minimum top-level fields:
+
+```json
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "figure-id",
+  "source": {
+    "path": "./source.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "What was inferred visually."
+  },
+  "canvas": {
+    "width": 800,
+    "height": 600,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [
+      "https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&display=swap"
+    ],
+    "fontFaces": [
+      {"family": "FigureSans", "weight": 400, "src": "./fonts/FigureSans-Regular.woff2"},
+      {"family": "FigureSans", "weight": 700, "src": "./fonts/FigureSans-Bold.woff2"}
+    ],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Source Sans 3", "Roboto", "Noto Sans"],
+    "calibration": {
+      "fontStretch": "normal",
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Use measured source text boxes to tune font family, stretch, size, and line height."
+    }
+  },
+  "panels": [],
+  "confidence": []
+}
+```
+
+`fontImports` is for lightweight browser-based experimentation with external
+CSS font providers such as Google Fonts. `fontFaces` is for reproducible local
+or adjacent font files when a typeface has been selected. Do not introduce a
+build system only to test fonts; use browser-native font loading and SVG text
+measurement first.
+
+## Panel Shape
+
+Represent each subpanel explicitly. For a single cropped panel, use one item in `panels`.
+
+```json
+{
+  "id": "panel-a",
+  "label": {"text": "A", "x": 16, "y": 20, "fontSize": 24, "fontWeight": 700},
+  "title": {"text": "Panel title", "x": 56, "y": 24, "fontSize": 16, "fontWeight": 700},
+  "bbox": {"x": 0, "y": 0, "width": 400, "height": 300},
+  "plot": {
+    "dataBbox": {"x": 64, "y": 48, "width": 300, "height": 210},
+    "axes": {
+      "xAxis": {"id": "panel-a-x-axis", "line": {"x1": 64, "y1": 258, "x2": 364, "y2": 258}, "tickLength": 6},
+      "yAxis": {"id": "panel-a-y-axis", "line": {"x1": 64, "y1": 48, "x2": 64, "y2": 258}, "tickLength": 6}
+    },
+    "x": {
+      "scale": "linear",
+      "domain": [0, 10],
+      "ticks": [{"value": 0, "label": "0"}, {"value": 5, "label": "5"}, {"value": 10, "label": "10"}],
+      "label": {"text": "Time (s)"}
+    },
+    "y": {
+      "scale": "linear",
+      "domain": [0, 1],
+      "ticks": [{"value": 0, "label": "0"}, {"value": 0.5, "label": "0.5"}, {"value": 1, "label": "1"}],
+      "label": {"text": "Response"}
+    }
+  },
+  "marks": [],
+  "annotations": [],
+  "provenance": []
+}
+```
+
+## Mark Types
+
+Use semantic mark objects. Add fields as needed, but keep the meaning explicit.
+
+- `lineSeries`: data points plus stroke, width, optional uncertainty band.
+- `scatter`: points, marker shape, size, fill, stroke, opacity.
+- `bar`: categorical or numeric bars with baseline, fill, stroke.
+- `heatmap`: matrix, color scale, bounds, interpolation flag.
+- `raster`: event times by row or a generation recipe with seed and density.
+- `violin`: category, outline path or generated KDE recipe, median/quantile marks.
+- `path`: editable SVG path data for contours, arrows, outlines, or schematic curves.
+- `rect`, `circle`, `ellipse`, `text`, `bracket`, `arrow`: annotations and schematics.
+- `imageRecipe`: generated texture or synthetic field; never point this at the source raster.
+
+## Coordinate Systems
+
+Define named transforms before rendering marks:
+
+- `plot.dataBbox` maps data to pixels.
+- For charts where the visual data rectangle is offset from axes, split
+  `dataBbox` from `axisBbox` or explicit axis anchors such as `yAxisX` and
+  `xAxisY`. Do not force source axis offsets into the data transform.
+- `x.domain` and `y.domain` map quantitative axes.
+- `categories` map categorical positions.
+- `eventAnchor` maps event-aligned plots.
+- `colorScale.domain` maps heatmaps and colorbars.
+
+Avoid mixing hard-coded pixel marks with data-space marks unless the mark is truly an annotation. Ticks, event lines, and data marks should share the same transform.
+
+### 3D Scientific Plots
+
+Recognize 3D plots from visual cues such as three nonparallel labeled axes,
+isometric or perspective box frames, oblique grid planes, tick labels attached
+to multiple axis directions, and data paths or markers that overlap within a
+projected volume. Do not require the user to identify a panel as 3D.
+
+For static publication-style 3D plots made of axes, grid lines, trajectories,
+markers, and labels, prefer semantic 3D data rendered into SVG through an
+explicit projection function. Reserve WebGL or Three.js for genuinely complex
+surfaces, dense point clouds, lighting, meshes, or interactive rotation.
+
+Represent 3D scenes with explicit camera or projection metadata:
+
+```json
+{
+  "scene": {
+    "projection": {
+      "type": "orthographicBasis",
+      "corner": {"x": 58, "y": 327},
+      "domainCorner": {"pc1": -2, "pc2": -2, "pc3": -2},
+      "basis": {
+        "pc1": {"x": 258, "y": 30},
+        "pc2": {"x": 145, "y": 90},
+        "pc3": {"x": 0, "y": -184}
+      }
+    },
+    "domains": {"pc1": [-2, 2], "pc2": [-2, 2], "pc3": [-2, 2]},
+    "trajectories": [{"points": [[-1.5, -1.6, -0.3], [0.7, -1.1, 1.8]]}]
+  }
+}
+```
+
+`fontImports` is for lightweight browser-based experimentation with external
+CSS font providers such as Google Fonts. `fontFaces` is for reproducible local
+or adjacent font files when a typeface has been selected. Do not introduce a
+build system only to test fonts; use browser-native font loading and SVG text
+measurement first.
+
+Axes, grid planes, trajectories, markers, and annotations must use the same
+3D-to-2D projection. Depth-sort generated marks when overlap matters: back grid
+and box edges first, faint trial clouds, mean trajectories, timepoint markers,
+then text labels. Labels should anchor to projected 3D points or axis objects
+and then participate in the normal text-collision pass.
+
+When using source-calibrated projected grid segments, avoid segments that
+duplicate solid box edges or accidentally close into polygons. Grid lines should
+read as independent faint plane guides unless the source explicitly shows a
+closed projected face.
+
+Prefer named 3D grid planes over a flat list of projected line segments. For
+example, encode separate `floor`, `backWall`, and `sideWall` grid groups so each
+axis pair has its own Cartesian grid. Inventory the source grid before tuning:
+for every plane, count visible interior guides separately from boundary-aligned
+guides that are merged with or hidden under box edges. Encode grid lines as
+per-family values, such as independent `pc1`, `pc2`, and `pc3` guide families,
+instead of one shared plane-level value list. Each family should state whether
+domain-boundary values are included, and generated SVG lines should expose
+stable plane/family attributes so count validation can catch drift. A 3D
+state-space panel with PC1, PC2, and PC3 axes should not collapse into one wall
+plus a triangular base.
+
+If the source uses faint face shading, encode plane fills separately from grid
+lines and generate the fill polygon from the same 3D projection. Do not bake the
+shading into arbitrary background shapes. Tick labels in 3D plots are layout
+text: allow source-calibrated text positions or offsets from projected ticks so
+labels do not collide with each other, axis titles, or spines.
+
+3D tick labels should be placed by semantic layout rules, not by one-shot
+coordinates alone. Treat axis spines and tick marks as protected geometry with
+padded hit zones. Treat faint grid lines and trajectory clouds as non-protected
+unless the source clearly reserves label space around them. Tick labels may use
+source-calibrated initial positions, but renderers should measure the final text
+box and apply a constrained outward nudge if it intersects protected axis
+geometry:
+
+```json
+{
+  "axis": {
+    "id": "pc1",
+    "tickLabelPlacement": {
+      "avoid": ["axis-spine"],
+      "minGap": 5,
+      "nudge": {"x": 8, "y": 7},
+      "maxSteps": 6
+    }
+  }
+}
+```
+
+3D axes with visible tick labels should also render visible tick marks unless
+the source suppresses them. Store tick geometry as a projected tick anchor, a
+short `markVector`, and a label offset or outward normal. The label should be
+placed from the tick mark first; collision correction is a secondary adjustment,
+not the primary placement mechanism.
+
+When a source-fitted frame or projection still does not reproduce the source's
+tick text positions, keep the numeric tick `value` semantic but add separate
+source-calibrated `markAnchor` and/or `labelAnchor` fields. Do not force tick
+labels through one shared offset vector if the source clearly uses
+
+exec
+/bin/zsh -lc "sed -n '1,220p' skills/make-figure/assets/hybrid-renderer-template.html" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scientific figure reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #aaaaaa;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .surface,
+    .reference {
+      position: absolute;
+      inset: 0;
+    }
+
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+    }
+
+    .show-reference .surface {
+      display: none;
+    }
+
+    .show-reference .reference {
+      display: block;
+    }
+
+    svg,
+    canvas {
+      position: absolute;
+      inset: 0;
+    }
+
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">Scientific figure reconstruction</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="Reference source image">
+    </div>
+  </main>
+
+  <script id="fallback-spec" type="application/json">
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "example-panel",
+  "source": {
+    "path": "",
+    "usage": "QA-only; not used by generated candidate."
+  },
+  "canvas": {"width": 640, "height": 420, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Source Sans 3", "Roboto", "Noto Sans"]
+  },
+  "panels": [
+    {
+      "id": "panel-a",
+      "label": {"text": "A", "x": 18, "y": 28, "fontSize": 24, "fontWeight": 700},
+      "title": {"text": "Example configurable panel", "x": 58, "y": 30, "fontSize": 16, "fontWeight": 700},
+      "plot": {
+        "bbox": {"x": 80, "y": 70, "width": 470, "height": 270},
+        "x": {"domain": [0, 10], "ticks": [{"value": 0, "label": "0"}, {"value": 5, "label": "5"}, {"value": 10, "label": "10"}], "label": {"text": "Time (s)"}},
+        "y": {"domain": [0, 1], "ticks": [{"value": 0, "label": "0"}, {"value": 0.5, "label": "0.5"}, {"value": 1, "label": "1"}], "label": {"text": "Response"}}
+      },
+      "marks": [
+        {"id": "series-1", "type": "lineSeries", "points": [[0, 0.22], [2, 0.32], [4, 0.71], [6, 0.54], [8, 0.82], [10, 0.76]], "stroke": "#111111", "strokeWidth": 2.5},
+        {"id": "event", "type": "line", "x1": 315, "y1": 70, "x2": 315, "y2": 340, "stroke": "#008f96", "strokeWidth": 1.5, "dasharray": "4 4"},
+        {"id": "event-label", "type": "text", "text": "event", "x": 315, "y": 54, "fontSize": 13, "fill": "#008f96", "anchor": "middle"}
+      ]
+    }
+  ],
+  "confidence": [{"target": "example-panel", "confidence": "demo", "note": "Replace fallback spec with an adjacent JSON file."}]
+}
+  </script>
+
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function $(id) {
+      return document.getElementById(id);
+    }
+
+    function make(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function rng(seed) {
+      return function random() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function scale(domain, range, value) {
+      return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+    }
+
+    function pointScales(plot) {
+      const box = plot.bbox;
+      return {
+        x: value => scale(plot.x.domain, [box.x, box.x + box.width], value),
+        y: value => scale(plot.y.domain, [box.y + box.height, box.y], value)
+      };
+    }
+
+    function appendStylesheet(href) {
+      return new Promise(resolve => {
+        if (!href) return resolve();
+        const existing = document.querySelector(`link[data-font-import="${CSS.escape(href)}"]`);
+        if (existing) return resolve();
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = href;
+        link.dataset.fontImport = href;
+        link.onload = () => resolve();
+        link.onerror = () => {
+          console.warn(`Font stylesheet failed to load: ${href}`);
+          resolve();
+        };
+        document.head.appendChild(link);
+      });
+    }
+
+
+exec
+/bin/zsh -lc "sed -n '1,220p' outputs/reference-07-cross-region-small-multiples-A-make-figure-batch/reference-07-cross-region-small-multiples-A.json" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-07-cross-region-small-multiples-A",
+  "source": {
+    "path": "../../assets/reference/reference-07-cross-region-small-multiples-A-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Single cropped panel reconstructed from visual inspection. Heatmap matrices are seeded procedural recipes matching density, hotspot placement, strip spacing, and color scale; no source pixels are used as generated marks."
+  },
+  "canvas": {"width": 430, "height": 375, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Arial", "Helvetica"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "Condensed sans approximates the source title, axis labels, and compact side labels."
+    }
+  },
+  "styleTokens": {
+    "axis": "#111111",
+    "tick": "#111111",
+    "heatmapLow": "#090619",
+    "heatmapMid": "#b92272",
+    "heatmapHigh": "#fff06a",
+    "divider": "#ffffff",
+    "ca1": "#153ac7",
+    "ca3": "#0066c7",
+    "dg": "#0b8a18",
+    "pfc": "#ff5a1a",
+    "rsc": "#ff1717"
+  },
+  "coordinateSystems": [
+    {
+      "id": "panel-a.position",
+      "type": "linear",
+      "domain": [0, 300],
+      "range": [73, 388],
+      "axis": "x",
+      "unit": "cm"
+    },
+    {
+      "id": "panel-a.zscore-color",
+      "type": "linearColorScale",
+      "domain": [-3, 3],
+      "range": ["#090619", "#5f187f", "#d44842", "#fff06a"],
+      "bbox": {"x": 139, "y": 342, "width": 176, "height": 9}
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-a",
+      "label": {"id": "panel-a-label", "text": "A", "x": 7, "y": 20, "fontSize": 22, "fontWeight": 700, "anchor": "start"},
+      "title": {
+        "id": "panel-a-title",
+        "text": "Population rate maps by brain region",
+        "x": 36,
+        "y": 19,
+        "fontSize": 17,
+        "fontWeight": 700,
+        "anchor": "start",
+        "targetWidth": 278,
+        "sourceBox": {"x": 35, "y": 5, "width": 278, "height": 20},
+        "fit": "condensed"
+      },
+      "bbox": {"x": 0, "y": 0, "width": 430, "height": 375},
+      "plot": {
+        "id": "panel-a-small-multiple-heatmaps",
+        "dataBbox": {"x": 72, "y": 81, "width": 316, "height": 250},
+        "x": {
+          "scale": "linear",
+          "domain": [0, 300],
+          "ticks": [
+            {"value": 0, "label": "0"},
+            {"value": 100, "label": "100"},
+            {"value": 200, "label": "200"},
+            {"value": 300, "label": "300"}
+          ],
+          "label": {"id": "panel-a-x-label", "text": "Position (cm)", "x": 230, "y": 49, "fontSize": 14, "fontWeight": 400, "anchor": "middle"}
+        },
+        "leftHeader": {"id": "panel-a-left-header", "text": "Region", "x": 10, "y": 70, "fontSize": 13, "anchor": "start"},
+        "rightHeader": {"id": "panel-a-right-header", "text": "N cells", "x": 395, "y": 70, "fontSize": 12, "anchor": "start"}
+      },
+      "heatmapRows": [
+        {
+          "id": "ca1",
+          "region": "CA1",
+          "nCells": 142,
+          "labelColor": "#153ac7",
+          "bbox": {"x": 72, "y": 81, "width": 316, "height": 45},
+          "usesTransform": "panel-a.position",
+          "matrix": {"columns": 210, "rows": 42, "xDomain": [0, 300], "zDomain": [-3, 3], "interpolation": "nearest"},
+          "recipe": {
+            "seed": 7101,
+            "base": -2.15,
+            "noise": 0.75,
+            "rowStripe": 0.42,
+            "verticalTexture": 0.22,
+            "hotspots": [
+              {"x": 63, "y": 9, "amp": 2.0, "sx": 18, "sy": 5},
+              {"x": 125, "y": 16, "amp": 2.7, "sx": 20, "sy": 6},
+              {"x": 195, "y": 24, "amp": 2.5, "sx": 24, "sy": 7},
+              {"x": 258, "y": 7, "amp": 1.8, "sx": 18, "sy": 5}
+            ],
+            "bands": [
+              {"x0": 96, "x1": 205, "y0": 34, "y1": 13, "amp": 1.2, "width": 3.6},
+              {"x0": 180, "x1": 295, "y0": 38, "y1": 22, "amp": 1.1, "width": 3.2}
+            ]
+          }
+        },
+        {
+          "id": "ca3",
+          "region": "CA3",
+          "nCells": 123,
+          "labelColor": "#0066c7",
+          "bbox": {"x": 72, "y": 133, "width": 316, "height": 45},
+          "usesTransform": "panel-a.position",
+          "matrix": {"columns": 210, "rows": 40, "xDomain": [0, 300], "zDomain": [-3, 3], "interpolation": "nearest"},
+          "recipe": {
+            "seed": 7103,
+            "base": -2.2,
+            "noise": 0.68,
+            "rowStripe": 0.35,
+            "verticalTexture": 0.26,
+            "hotspots": [
+              {"x": 24, "y": 29, "amp": 2.5, "sx": 14, "sy": 5},
+              {"x": 112, "y": 8, "amp": 2.1, "sx": 20, "sy": 5},
+              {"x": 176, "y": 19, "amp": 1.9, "sx": 18, "sy": 5},
+              {"x": 270, "y": 34, "amp": 2.4, "sx": 23, "sy": 6}
+            ],
+            "bands": [
+              {"x0": 145, "x1": 300, "y0": 16, "y1": 36, "amp": 1.1, "width": 3.4}
+            ]
+          }
+        },
+        {
+          "id": "dg",
+          "region": "DG",
+          "nCells": 96,
+          "labelColor": "#0b8a18",
+          "bbox": {"x": 72, "y": 185, "width": 316, "height": 45},
+          "usesTransform": "panel-a.position",
+          "matrix": {"columns": 210, "rows": 34, "xDomain": [0, 300], "zDomain": [-3, 3], "interpolation": "nearest"},
+          "recipe": {
+            "seed": 7104,
+            "base": -2.05,
+            "noise": 0.74,
+            "rowStripe": 0.55,
+            "verticalTexture": 0.2,
+            "hotspots": [
+              {"x": 84, "y": 21, "amp": 2.6, "sx": 22, "sy": 7},
+              {"x": 127, "y": 16, "amp": 2.0, "sx": 16, "sy": 5},
+              {"x": 212, "y": 10, "amp": 2.4, "sx": 25, "sy": 5},
+              {"x": 294, "y": 20, "amp": 1.7, "sx": 17, "sy": 5}
+            ],
+            "bands": [
+              {"x0": 50, "x1": 155, "y0": 32, "y1": 13, "amp": 1.0, "width": 3.5}
+            ]
+          }
+        },
+        {
+          "id": "pfc",
+          "region": "PFC",
+          "nCells": 118,
+          "labelColor": "#ff5a1a",
+          "bbox": {"x": 72, "y": 237, "width": 316, "height": 45},
+          "usesTransform": "panel-a.position",
+          "matrix": {"columns": 210, "rows": 39, "xDomain": [0, 300], "zDomain": [-3, 3], "interpolation": "nearest"},
+          "recipe": {
+            "seed": 7118,
+            "base": -2.08,
+            "noise": 0.72,
+            "rowStripe": 0.48,
+            "verticalTexture": 0.24,
+            "hotspots": [
+              {"x": 34, "y": 10, "amp": 1.9, "sx": 18, "sy": 5},
+              {"x": 122, "y": 28, "amp": 2.7, "sx": 30, "sy": 6},
+              {"x": 188, "y": 18, "amp": 2.0, "sx": 17, "sy": 5},
+              {"x": 241, "y": 8, "amp": 2.6, "sx": 18, "sy": 5}
+            ],
+            "bands": [
+              {"x0": 86, "x1": 205, "y0": 5, "y1": 34, "amp": 1.05, "width": 3.3},
+              {"x0": 175, "x1": 286, "y0": 34, "y1": 17, "amp": 1.0, "width": 3.1}
+            ]
+          }
+        },
+        {
+          "id": "rsc",
+          "region": "RSC",
+          "nCells": 110,
+          "labelColor": "#ff1717",
+          "bbox": {"x": 72, "y": 289, "width": 316, "height": 42},
+          "usesTransform": "panel-a.position",
+          "matrix": {"columns": 210, "rows": 37, "xDomain": [0, 300], "zDomain": [-3, 3], "interpolation": "nearest"},
+          "recipe": {
+            "seed": 7110,
+            "base": -2.12,
+            "noise": 0.7,
+            "rowStripe": 0.5,
+            "verticalTexture": 0.22,
+            "hotspots": [
+              {"x": 36, "y": 15, "amp": 2.3, "sx": 18, "sy": 5},
+              {"x": 102, "y": 33, "amp": 2.1, "sx": 24, "sy": 5},
+              {"x": 173, "y": 29, "amp": 2.5, "sx": 25, "sy": 5},
+              {"x": 234, "y": 17, "amp": 2.0, "sx": 20, "sy": 5}
+            ],
+            "bands": [
+              {"x0": 62, "x1": 230, "y0": 34, "y1": 10, "amp": 1.35, "width": 3.5},
+              {"x0": 128, "x1": 280, "y0": 38, "y1": 20, "amp": 1.0, "width": 3.2}
+            ]
+          }
+        }
+      ],
+      "colorbar": {
+        "id": "panel-a-colorbar",
+        "usesTransform": "panel-a.zscore-color",
+        "bbox": {"x": 139, "y": 342, "width": 176, "height": 9},
+
+codex
+I’m going to create a new output directory and write only the requested JSON and HTML. The reconstruction will use SVG rectangles for the 25 heatmap cells and a generated SVG gradient for the Pearson colorbar; the only source path will be the labeled QA image element.
+exec
+/bin/zsh -lc 'mkdir -p outputs/reference-07-cross-region-small-multiples-D-make-figure-batch' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+apply patch
+patch: completed
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-07-cross-region-small-multiples-D-make-figure-batch/reference-07-cross-region-small-multiples-D.html
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-07-cross-region-small-multiples-D-make-figure-batch/reference-07-cross-region-small-multiples-D.json
+diff --git a/outputs/reference-07-cross-region-small-multiples-D-make-figure-batch/reference-07-cross-region-small-multiples-D.html b/outputs/reference-07-cross-region-small-multiples-D-make-figure-batch/reference-07-cross-region-small-multiples-D.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..a8a143a28a02c78216cfa46090f3890d812b4051
+--- /dev/null
++++ b/outputs/reference-07-cross-region-small-multiples-D-make-figure-batch/reference-07-cross-region-small-multiples-D.html
+@@ -0,0 +1,434 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-07-cross-region-small-multiples-D reconstruction</title>
++  <style>
++    html,
++    body {
++      margin: 0;
++      background: #eeeeee;
++      color: #111111;
++      font-family: Arial, Helvetica, sans-serif;
++    }
++
++    header {
++      display: flex;
++      align-items: center;
++      justify-content: space-between;
++      gap: 16px;
++      padding: 10px 14px;
++      background: #ffffff;
++      border-bottom: 1px solid #cfcfcf;
++      box-sizing: border-box;
++    }
++
++    h1 {
++      margin: 0;
++      font-size: 15px;
++      font-weight: 700;
++    }
++
++    .note {
++      margin-top: 3px;
++      font-size: 12px;
++      color: #555555;
++    }
++
++    .toggle {
++      display: inline-flex;
++      border: 1px solid #aaaaaa;
++      border-radius: 4px;
++      overflow: hidden;
++      flex: 0 0 auto;
++    }
++
++    .toggle button {
++      border: 0;
++      padding: 5px 10px;
++      background: #ffffff;
++      color: #111111;
++      font: inherit;
++      font-size: 12px;
++      cursor: pointer;
++    }
++
++    .toggle button.active {
++      background: #111111;
++      color: #ffffff;
++    }
++
++    main {
++      min-height: calc(100vh - 48px);
++      display: grid;
++      place-items: center;
++      padding: 16px;
++      box-sizing: border-box;
++    }
++
++    .frame {
++      position: relative;
++      background: #ffffff;
++      border: 1px solid #d0d0d0;
++      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
++      overflow: hidden;
++    }
++
++    .surface,
++    .reference-wrap {
++      position: absolute;
++      inset: 0;
++    }
++
++    .reference-wrap {
++      display: none;
++      background: #ffffff;
++    }
++
++    .reference-wrap img {
++      width: 100%;
++      height: 100%;
++      object-fit: contain;
++      display: block;
++    }
++
++    .qa-label {
++      position: absolute;
++      left: 8px;
++      top: 8px;
++      padding: 3px 6px;
++      background: rgba(255, 255, 255, 0.88);
++      border: 1px solid #bbbbbb;
++      font-size: 11px;
++      color: #333333;
++    }
++
++    .show-reference .surface {
++      display: none;
++    }
++
++    .show-reference .reference-wrap {
++      display: block;
++    }
++
++    svg {
++      position: absolute;
++      inset: 0;
++      overflow: visible;
++    }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1 id="document-title">Cross-region correlation reconstruction</h1>
++      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">QA reference</button>
++    </div>
++  </header>
++
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <div id="referenceWrap" class="reference-wrap">
++        <img id="reference" alt="QA reference source image">
++        <div class="qa-label">QA reference only - source raster is not used by generated view</div>
++      </div>
++    </div>
++  </main>
++
++  <script>
++    const SVG_NS = 'http://www.w3.org/2000/svg';
++
++    function $(id) {
++      return document.getElementById(id);
++    }
++
++    function svgEl(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
++      for (const [key, value] of Object.entries(attrs)) {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      }
++      return node;
++    }
++
++    function lerp(a, b, t) {
++      return a + (b - a) * t;
++    }
++
++    function hexToRgb(hex) {
++      const normalized = hex.replace('#', '');
++      return [
++        parseInt(normalized.slice(0, 2), 16),
++        parseInt(normalized.slice(2, 4), 16),
++        parseInt(normalized.slice(4, 6), 16)
++      ];
++    }
++
++    function rgbToHex(rgb) {
++      return `#${rgb.map(v => Math.round(v).toString(16).padStart(2, '0')).join('')}`;
++    }
++
++    function interpolateColor(stops, t) {
++      const clamped = Math.max(0, Math.min(1, t));
++      const scaled = clamped * (stops.length - 1);
++      const index = Math.min(stops.length - 2, Math.floor(scaled));
++      const localT = scaled - index;
++      const a = hexToRgb(stops[index]);
++      const b = hexToRgb(stops[index + 1]);
++      return rgbToHex(a.map((channel, i) => lerp(channel, b[i], localT)));
++    }
++
++    function formatValue(value, pattern) {
++      if (pattern === '.2f') return value.toFixed(2);
++      return String(value);
++    }
++
++    function textNode(text, attrs = {}) {
++      const node = svgEl('text', attrs);
++      node.textContent = text;
++      return node;
++    }
++
++    function renderSpec(spec) {
++      document.title = `${spec.id} reconstruction`;
++      $('document-title').textContent = `${spec.id} reconstruction`;
++
++      const frame = $('frame');
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      frame.style.background = spec.canvas.background;
++
++      const reference = $('reference');
++      reference.src = spec.source.path;
++
++      const surface = $('surface');
++      surface.textContent = '';
++
++      const svg = svgEl('svg', {
++        width: spec.canvas.width,
++        height: spec.canvas.height,
++        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
++        role: 'img',
++        'aria-label': 'Generated cross-region correlation heatmap'
++      });
++      surface.appendChild(svg);
++
++      const defs = svgEl('defs');
++      svg.appendChild(defs);
++
++      const panel = spec.panels[0];
++      const plot = panel.plot;
++      const matrix = panel.data.matrix;
++      const colorSystem = spec.coordinateSystems.find(system => system.id === panel.colorbar.usesTransform);
++      const colorStops = colorSystem.range;
++      const font = spec.typography.fontFamily;
++
++      svg.appendChild(svgEl('rect', {
++        x: 0,
++        y: 0,
++        width: spec.canvas.width,
++        height: spec.canvas.height,
++        fill: spec.canvas.background
++      }));
++
++      svg.appendChild(textNode(panel.label.text, {
++        id: panel.label.id,
++        x: panel.label.x,
++        y: panel.label.y,
++        'font-family': font,
++        'font-size': panel.label.fontSize,
++        'font-weight': panel.label.fontWeight,
++        fill: spec.typography.color,
++        'text-anchor': panel.label.anchor,
++        'data-mark': 'panel-label'
++      }));
++
++      svg.appendChild(textNode(panel.title.text, {
++        id: panel.title.id,
++        x: panel.title.x,
++        y: panel.title.y,
++        'font-family': font,
++        'font-size': panel.title.fontSize,
++        'font-weight': panel.title.fontWeight,
++        fill: spec.typography.color,
++        'text-anchor': panel.title.anchor,
++        'data-mark': 'panel-title'
++      }));
++
++      const box = plot.dataBbox;
++      const cellW = box.width / matrix.columnOrder.length;
++      const cellH = box.height / matrix.rowOrder.length;
++      const cellLayer = svgEl('g', {id: 'panel-d-heatmap-cell-layer'});
++      const labelLayer = svgEl('g', {id: 'panel-d-heatmap-label-layer'});
++      svg.appendChild(cellLayer);
++      svg.appendChild(labelLayer);
++
++      matrix.values.forEach((row, rowIndex) => {
++        row.forEach((value, columnIndex) => {
++          const x = box.x + columnIndex * cellW;
++          const y = box.y + rowIndex * cellH;
++          const fill = interpolateColor(colorStops, value);
++          const textFill = value >= 0.72 ? '#ffffff' : '#111111';
++          cellLayer.appendChild(svgEl('rect', {
++            id: `cell-${matrix.rowOrder[rowIndex].toLowerCase()}-${matrix.columnOrder[columnIndex].toLowerCase()}`,
++            x: x.toFixed(2),
++            y: y.toFixed(2),
++            width: cellW.toFixed(2),
++            height: cellH.toFixed(2),
++            fill,
++            stroke: spec.styleTokens.cellStroke,
++            'stroke-width': panel.marks[0].cellStrokeWidth,
++            'shape-rendering': 'crispEdges',
++            'data-mark': 'heatmap-cell',
++            'data-row': matrix.rowOrder[rowIndex],
++            'data-column': matrix.columnOrder[columnIndex],
++            'data-value': value
++          }));
++          labelLayer.appendChild(textNode(formatValue(value, matrix.valueFormat), {
++            x: (x + cellW / 2).toFixed(2),
++            y: (y + cellH / 2 + 1).toFixed(2),
++            'font-family': font,
++            'font-size': panel.marks[0].label.fontSize,
++            'font-weight': panel.marks[0].label.fontWeight,
++            fill: textFill,
++            'text-anchor': panel.marks[0].label.anchor,
++            'dominant-baseline': panel.marks[0].label.baseline,
++            'data-mark': 'cell-value',
++            'data-row': matrix.rowOrder[rowIndex],
++            'data-column': matrix.columnOrder[columnIndex]
++          }));
++        });
++      });
++
++      svg.appendChild(svgEl('rect', {
++        x: box.x,
++        y: box.y,
++        width: box.width,
++        height: box.height,
++        fill: 'none',
++        stroke: spec.styleTokens.matrixBorder,
++        'stroke-width': 1.1,
++        'data-mark': 'matrix-border'
++      }));
++
++      plot.x.categories.forEach((category, index) => {
++        svg.appendChild(textNode(category.label, {
++          x: (box.x + index * cellW + cellW / 2).toFixed(2),
++          y: plot.x.tickBand.y,
++          'font-family': font,
++          'font-size': plot.x.tickBand.fontSize,
++          fill: category.color,
++          'text-anchor': plot.x.tickBand.anchor,
++          'data-mark': 'category-label',
++          'data-axis': 'x',
++          'data-category': category.label
++        }));
++      });
++
++      plot.y.categories.forEach((category, index) => {
++        svg.appendChild(textNode(category.label, {
++          x: plot.y.tickBand.x,
++          y: (box.y + index * cellH + cellH / 2 + 5).toFixed(2),
++          'font-family': font,
++          'font-size': plot.y.tickBand.fontSize,
++          fill: category.color,
++          'text-anchor': plot.y.tickBand.anchor,
++          'data-mark': 'category-label',
++          'data-axis': 'y',
++          'data-category': category.label
++        }));
++      });
++
++      const gradient = svgEl('linearGradient', {
++        id: 'pearson-r-gradient',
++        x1: '0%',
++        x2: '100%',
++        y1: '0%',
++        y2: '0%'
++      });
++      colorStops.forEach((color, index) => {
++        gradient.appendChild(svgEl('stop', {
++          offset: `${index / (colorStops.length - 1) * 100}%`,
++          'stop-color': color
++        }));
++      });
++      defs.appendChild(gradient);
++
++      const colorbar = panel.colorbar;
++      svg.appendChild(textNode(colorbar.title.text, {
++        x: colorbar.title.x,
++        y: colorbar.title.y,
++        'font-family': font,
++        'font-size': colorbar.title.fontSize,
++        fill: spec.typography.color,
++        'text-anchor': colorbar.title.anchor,
++        'data-mark': 'colorbar-title'
++      }));
++      svg.appendChild(svgEl('rect', {
++        x: colorbar.bbox.x,
++        y: colorbar.bbox.y,
++        width: colorbar.bbox.width,
++        height: colorbar.bbox.height,
++        fill: 'url(#pearson-r-gradient)',
++        stroke: '#333333',
++        'stroke-width': 0.8,
++        'data-mark': 'colorbar-ramp'
++      }));
++
++      const domain = colorSystem.domain;
++      colorbar.ticks.forEach(tick => {
++        const tx = colorbar.bbox.x + (tick.value - domain[0]) / (domain[1] - domain[0]) * colorbar.bbox.width;
++        svg.appendChild(svgEl('line', {
++          x1: tx.toFixed(2),
++          y1: colorbar.bbox.y + colorbar.bbox.height,
++          x2: tx.toFixed(2),
++          y2: colorbar.bbox.y + colorbar.bbox.height + colorbar.tickLength,
++          stroke: spec.styleTokens.tick,
++          'stroke-width': 0.8,
++          'data-mark': 'colorbar-tick',
++          'data-value': tick.value
++        }));
++        svg.appendChild(textNode(tick.label, {
++          x: tx.toFixed(2),
++          y: colorbar.tickLabelY,
++          'font-family': font,
++          'font-size': 14,
++          fill: spec.typography.color,
++          'text-anchor': 'middle',
++          'data-mark': 'colorbar-tick-label',
++          'data-value': tick.value
++        }));
++      });
++    }
++
++    async function loadSpec() {
++      try {
++        const response = await fetch('reference-07-cross-region-small-multiples-D.json', {cache: 'no-store'});
++        if (!response.ok) throw new Error(`HTTP ${response.status}`);
++        return await response.json();
++      } catch (error) {
++        throw new Error(`Unable to load adjacent JSON spec: ${error.message}`);
++      }
++    }
++
++    function setMode(showReference) {
++      $('frame').classList.toggle('show-reference', showReference);
++      $('generatedButton').classList.toggle('active', !showReference);
++      $('referenceButton').classList.toggle('active', showReference);
++    }
++
++    $('generatedButton').addEventListener('click', () => setMode(false));
++    $('referenceButton').addEventListener('click', () => setMode(true));
++
++    loadSpec().then(renderSpec).catch(error => {
++      $('surface').textContent = error.message;
++      console.error(error);
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-07-cross-region-small-multiples-D-make-figure-batch/reference-07-cross-region-small-multiples-D.json b/outputs/reference-07-cross-region-small-multiples-D-make-figure-batch/reference-07-cross-region-small-multiples-D.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..acb6aadf6a4ae0b0db82930b1b7a23addfc768d1
+--- /dev/null
++++ b/outputs/reference-07-cross-region-small-multiples-D-make-figure-batch/reference-07-cross-region-small-multiples-D.json
+@@ -0,0 +1,178 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-07-cross-region-small-multiples-D",
++  "source": {
++    "path": "../../assets/reference/reference-07-cross-region-small-multiples-D-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "Single cropped panel reconstructed from visual inspection. The generated heatmap, labels, values, border, and colorbar are SVG/DOM objects derived from semantic matrix data; no source pixels are used as generated marks."
++  },
++  "canvas": {
++    "width": 398,
++    "height": 375,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
++    "defaultSize": 14,
++    "color": "#111111",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Arial", "Helvetica"],
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.05,
++      "notes": "Condensed sans approximates the compact panel title, region labels, and numeric cell labels."
++    }
++  },
++  "styleTokens": {
++    "regionCA1": "#153ac7",
++    "regionCA3": "#0066c7",
++    "regionDG": "#0b8a18",
++    "regionPFC": "#ff5a1a",
++    "regionRSC": "#ff1717",
++    "matrixBorder": "#6f7c8a",
++    "cellStroke": "#d4dce8",
++    "heatmapLow": "#ffffff",
++    "heatmapMid": "#d5e3f5",
++    "heatmapHigh": "#08206f",
++    "tick": "#111111"
++  },
++  "coordinateSystems": [
++    {
++      "id": "panel-d.matrix-categories",
++      "type": "categoricalGrid",
++      "xCategories": ["CA1", "CA3", "DG", "PFC", "RSC"],
++      "yCategories": ["CA1", "CA3", "DG", "PFC", "RSC"],
++      "bbox": {"x": 74, "y": 37, "width": 299, "height": 241}
++    },
++    {
++      "id": "panel-d.pearson-r-color",
++      "type": "linearColorScale",
++      "domain": [0, 1],
++      "range": ["#ffffff", "#d5e3f5", "#08206f"],
++      "bbox": {"x": 113, "y": 326, "width": 227, "height": 14}
++    }
++  ],
++  "panels": [
++    {
++      "id": "panel-d",
++      "label": {
++        "id": "panel-d-label",
++        "text": "D",
++        "x": 37,
++        "y": 20,
++        "fontSize": 22,
++        "fontWeight": 700,
++        "anchor": "start",
++        "sourceBox": {"x": 36, "y": 4, "width": 16, "height": 19}
++      },
++      "title": {
++        "id": "panel-d-title",
++        "text": "Cross-region correlation",
++        "x": 68,
++        "y": 20,
++        "fontSize": 17,
++        "fontWeight": 700,
++        "anchor": "start",
++        "targetWidth": 190,
++        "sourceBox": {"x": 68, "y": 5, "width": 191, "height": 19},
++        "fit": "condensed"
++      },
++      "bbox": {"x": 0, "y": 0, "width": 398, "height": 375},
++      "plot": {
++        "id": "panel-d-correlation-heatmap",
++        "type": "correlationMatrix",
++        "dataBbox": {"x": 74, "y": 37, "width": 299, "height": 241},
++        "usesTransform": "panel-d.matrix-categories",
++        "x": {
++          "scale": "categorical",
++          "categories": [
++            {"id": "ca1-x", "label": "CA1", "color": "#153ac7"},
++            {"id": "ca3-x", "label": "CA3", "color": "#0066c7"},
++            {"id": "dg-x", "label": "DG", "color": "#0b8a18"},
++            {"id": "pfc-x", "label": "PFC", "color": "#ff5a1a"},
++            {"id": "rsc-x", "label": "RSC", "color": "#ff1717"}
++          ],
++          "tickBand": {"y": 296, "fontSize": 15, "anchor": "middle"}
++        },
++        "y": {
++          "scale": "categorical",
++          "categories": [
++            {"id": "ca1-y", "label": "CA1", "color": "#153ac7"},
++            {"id": "ca3-y", "label": "CA3", "color": "#0066c7"},
++            {"id": "dg-y", "label": "DG", "color": "#0b8a18"},
++            {"id": "pfc-y", "label": "PFC", "color": "#ff5a1a"},
++            {"id": "rsc-y", "label": "RSC", "color": "#ff1717"}
++          ],
++          "tickBand": {"x": 64, "fontSize": 15, "anchor": "end"}
++        }
++      },
++      "data": {
++        "matrix": {
++          "id": "panel-d-pearson-r",
++          "rowOrder": ["CA1", "CA3", "DG", "PFC", "RSC"],
++          "columnOrder": ["CA1", "CA3", "DG", "PFC", "RSC"],
++          "values": [
++            [1.00, 0.65, 0.48, 0.34, 0.41],
++            [0.65, 1.00, 0.53, 0.31, 0.40],
++            [0.48, 0.53, 1.00, 0.28, 0.36],
++            [0.34, 0.31, 0.28, 1.00, 0.57],
++            [0.41, 0.40, 0.36, 0.57, 1.00]
++          ],
++          "valueFormat": ".2f",
++          "symmetric": true
++        }
++      },
++      "marks": [
++        {
++          "id": "panel-d-heatmap-cells",
++          "type": "heatmap",
++          "matrixRef": "panel-d-pearson-r",
++          "usesTransform": "panel-d.matrix-categories",
++          "colorScaleRef": "panel-d.pearson-r-color",
++          "cellStroke": "#d4dce8",
++          "cellStrokeWidth": 0.8,
++          "label": {"fontSize": 13, "fontWeight": 400, "anchor": "middle", "baseline": "middle"}
++        }
++      ],
++      "colorbar": {
++        "id": "panel-d-colorbar",
++        "title": {"text": "Pearson r", "x": 226, "y": 319, "fontSize": 13, "anchor": "middle"},
++        "bbox": {"x": 113, "y": 326, "width": 227, "height": 14},
++        "usesTransform": "panel-d.pearson-r-color",
++        "ticks": [
++          {"value": 0, "label": "0"},
++          {"value": 0.5, "label": "0.5"},
++          {"value": 1, "label": "1.0"}
++        ],
++        "tickLabelY": 358,
++        "tickLength": 6
++      },
++      "provenance": [
++        {
++          "target": "panel-d-correlation-heatmap",
++          "confidence": "high",
++          "note": "Matrix values are directly legible from the source raster; cell and label positions are visually measured to first-pass precision."
++        },
++        {
++          "target": "panel-d.pearson-r-color",
++          "confidence": "medium",
++          "note": "Blue-white ramp approximates the visible Pearson r legend; exact colormap is inferred."
++        }
++      ]
++    }
++  ],
++  "constraints": [
++    {"id": "matrix-cell-count", "type": "expectedCount", "selector": "[data-mark='heatmap-cell']", "count": 25},
++    {"id": "matrix-value-count", "type": "expectedCount", "selector": "[data-mark='cell-value']", "count": 25},
++    {"id": "x-label-count", "type": "expectedCount", "selector": "[data-axis='x'][data-mark='category-label']", "count": 5},
++    {"id": "y-label-count", "type": "expectedCount", "selector": "[data-axis='y'][data-mark='category-label']", "count": 5}
++  ],
++  "confidence": [
++    {
++      "target": "overall",
++      "confidence": "first-pass",
++      "note": "Editable reconstruction intended for visual inspection; typography, grid line weight, and color ramp may need browser overlay tuning."
++    }
++  ]
++}
+
+diff --git a/outputs/reference-07-cross-region-small-multiples-D-make-figure-batch/reference-07-cross-region-small-multiples-D.html b/outputs/reference-07-cross-region-small-multiples-D-make-figure-batch/reference-07-cross-region-small-multiples-D.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..a8a143a28a02c78216cfa46090f3890d812b4051
+--- /dev/null
++++ b/outputs/reference-07-cross-region-small-multiples-D-make-figure-batch/reference-07-cross-region-small-multiples-D.html
+@@ -0,0 +1,434 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-07-cross-region-small-multiples-D reconstruction</title>
++  <style>
++    html,
++    body {
++      margin: 0;
++      background: #eeeeee;
++      color: #111111;
++      font-family: Arial, Helvetica, sans-serif;
++    }
++
++    header {
++      display: flex;
++      align-items: center;
++      justify-content: space-between;
++      gap: 16px;
++      padding: 10px 14px;
++      background: #ffffff;
++      border-bottom: 1px solid #cfcfcf;
++      box-sizing: border-box;
++    }
++
++    h1 {
++      margin: 0;
++      font-size: 15px;
++      font-weight: 700;
++    }
++
++    .note {
++      margin-top: 3px;
++      font-size: 12px;
++      color: #555555;
++    }
++
++    .toggle {
++      display: inline-flex;
++      border: 1px solid #aaaaaa;
++      border-radius: 4px;
++      overflow: hidden;
++      flex: 0 0 auto;
++    }
++
++    .toggle button {
++      border: 0;
++      padding: 5px 10px;
++      background: #ffffff;
++      color: #111111;
++      font: inherit;
++      font-size: 12px;
++      cursor: pointer;
++    }
++
++    .toggle button.active {
++      background: #111111;
++      color: #ffffff;
++    }
++
++    main {
++      min-height: calc(100vh - 48px);
++      display: grid;
++      place-items: center;
++      padding: 16px;
++      box-sizing: border-box;
++    }
++
++    .frame {
++      position: relative;
++      background: #ffffff;
++      border: 1px solid #d0d0d0;
++      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
++      overflow: hidden;
++    }
++
++    .surface,
++    .reference-wrap {
++      position: absolute;
++      inset: 0;
++    }
++
++    .reference-wrap {
++      display: none;
++      background: #ffffff;
++    }
++
++    .reference-wrap img {
++      width: 100%;
++      height: 100%;
++      object-fit: contain;
++      display: block;
++    }
++
++    .qa-label {
++      position: absolute;
++      left: 8px;
++      top: 8px;
++      padding: 3px 6px;
++      background: rgba(255, 255, 255, 0.88);
++      border: 1px solid #bbbbbb;
++      font-size: 11px;
++      color: #333333;
++    }
++
++    .show-reference .surface {
++      display: none;
++    }
++
++    .show-reference .reference-wrap {
++      display: block;
++    }
++
++    svg {
++      position: absolute;
++      inset: 0;
++      overflow: visible;
++    }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1 id="document-title">Cross-region correlation reconstruction</h1>
++      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">QA reference</button>
++    </div>
++  </header>
++
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <div id="referenceWrap" class="reference-wrap">
++        <img id="reference" alt="QA reference source image">
++        <div class="qa-label">QA reference only - source raster is not used by generated view</div>
++      </div>
++    </div>
++  </main>
++
++  <script>
++    const SVG_NS = 'http://www.w3.org/2000/svg';
++
++    function $(id) {
++      return document.getElementById(id);
++    }
++
++    function svgEl(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
++      for (const [key, value] of Object.entries(attrs)) {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      }
++      return node;
++    }
++
++    function lerp(a, b, t) {
++      return a + (b - a) * t;
++    }
++
++    function hexToRgb(hex) {
++      const normalized = hex.replace('#', '');
++      return [
++        parseInt(normalized.slice(0, 2), 16),
++        parseInt(normalized.slice(2, 4), 16),
++        parseInt(normalized.slice(4, 6), 16)
++      ];
++    }
++
++    function rgbToHex(rgb) {
++      return `#${rgb.map(v => Math.round(v).toString(16).padStart(2, '0')).join('')}`;
++    }
++
++    function interpolateColor(stops, t) {
++      const clamped = Math.max(0, Math.min(1, t));
++      const scaled = clamped * (stops.length - 1);
++      const index = Math.min(stops.length - 2, Math.floor(scaled));
++      const localT = scaled - index;
++      const a = hexToRgb(stops[index]);
++      const b = hexToRgb(stops[index + 1]);
++      return rgbToHex(a.map((channel, i) => lerp(channel, b[i], localT)));
++    }
++
++    function formatValue(value, pattern) {
++      if (pattern === '.2f') return value.toFixed(2);
++      return String(value);
++    }
++
++    function textNode(text, attrs = {}) {
++      const node = svgEl('text', attrs);
++      node.textContent = text;
++      return node;
++    }
++
++    function renderSpec(spec) {
++      document.title = `${spec.id} reconstruction`;
++      $('document-title').textContent = `${spec.id} reconstruction`;
++
++      const frame = $('frame');
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      frame.style.background = spec.canvas.background;
++
++      const reference = $('reference');
++      reference.src = spec.source.path;
++
++      const surface = $('surface');
++      surface.textContent = '';
++
++      const svg = svgEl('svg', {
++        width: spec.canvas.width,
++        height: spec.canvas.height,
++        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
++        role: 'img',
++        'aria-label': 'Generated cross-region correlation heatmap'
++      });
++      surface.appendChild(svg);
++
++      const defs = svgEl('defs');
++      svg.appendChild(defs);
++
++      const panel = spec.panels[0];
++      const plot = panel.plot;
++      const matrix = panel.data.matrix;
++      const colorSystem = spec.coordinateSystems.find(system => system.id === panel.colorbar.usesTransform);
++      const colorStops = colorSystem.range;
++      const font = spec.typography.fontFamily;
++
++      svg.appendChild(svgEl('rect', {
++        x: 0,
++        y: 0,
++        width: spec.canvas.width,
++        height: spec.canvas.height,
++        fill: spec.canvas.background
++      }));
++
++      svg.appendChild(textNode(panel.label.text, {
++        id: panel.label.id,
++        x: panel.label.x,
++        y: panel.label.y,
++        'font-family': font,
++        'font-size': panel.label.fontSize,
++        'font-weight': panel.label.fontWeight,
++        fill: spec.typography.color,
++        'text-anchor': panel.label.anchor,
++        'data-mark': 'panel-label'
++      }));
++
++      svg.appendChild(textNode(panel.title.text, {
++        id: panel.title.id,
++        x: panel.title.x,
++        y: panel.title.y,
++        'font-family': font,
++        'font-size': panel.title.fontSize,
++        'font-weight': panel.title.fontWeight,
++        fill: spec.typography.color,
++        'text-anchor': panel.title.anchor,
++        'data-mark': 'panel-title'
++      }));
++
++      const box = plot.dataBbox;
++      const cellW = box.width / matrix.columnOrder.length;
++      const cellH = box.height / matrix.rowOrder.length;
++      const cellLayer = svgEl('g', {id: 'panel-d-heatmap-cell-layer'});
++      const labelLayer = svgEl('g', {id: 'panel-d-heatmap-label-layer'});
++      svg.appendChild(cellLayer);
++      svg.appendChild(labelLayer);
++
++      matrix.values.forEach((row, rowIndex) => {
++        row.forEach((value, columnIndex) => {
++          const x = box.x + columnIndex * cellW;
++          const y = box.y + rowIndex * cellH;
++          const fill = interpolateColor(colorStops, value);
++          const textFill = value >= 0.72 ? '#ffffff' : '#111111';
++          cellLayer.appendChild(svgEl('rect', {
++            id: `cell-${matrix.rowOrder[rowIndex].toLowerCase()}-${matrix.columnOrder[columnIndex].toLowerCase()}`,
++            x: x.toFixed(2),
++            y: y.toFixed(2),
++            width: cellW.toFixed(2),
++            height: cellH.toFixed(2),
++            fill,
++            stroke: spec.styleTokens.cellStroke,
++            'stroke-width': panel.marks[0].cellStrokeWidth,
++            'shape-rendering': 'crispEdges',
++            'data-mark': 'heatmap-cell',
++            'data-row': matrix.rowOrder[rowIndex],
++            'data-column': matrix.columnOrder[columnIndex],
++            'data-value': value
++          }));
++          labelLayer.appendChild(textNode(formatValue(value, matrix.valueFormat), {
++            x: (x + cellW / 2).toFixed(2),
++            y: (y + cellH / 2 + 1).toFixed(2),
++            'font-family': font,
++            'font-size': panel.marks[0].label.fontSize,
++            'font-weight': panel.marks[0].label.fontWeight,
++            fill: textFill,
++            'text-anchor': panel.marks[0].label.anchor,
++            'dominant-baseline': panel.marks[0].label.baseline,
++            'data-mark': 'cell-value',
++            'data-row': matrix.rowOrder[rowIndex],
++            'data-column': matrix.columnOrder[columnIndex]
++          }));
++        });
++      });
++
++      svg.appendChild(svgEl('rect', {
++        x: box.x,
++        y: box.y,
++        width: box.width,
++        height: box.height,
++        fill: 'none',
++        stroke: spec.styleTokens.matrixBorder,
++        'stroke-width': 1.1,
++        'data-mark': 'matrix-border'
++      }));
++
++      plot.x.categories.forEach((category, index) => {
++        svg.appendChild(textNode(category.label, {
++          x: (box.x + index * cellW + cellW / 2).toFixed(2),
++          y: plot.x.tickBand.y,
++          'font-family': font,
++          'font-size': plot.x.tickBand.fontSize,
++          fill: category.color,
++          'text-anchor': plot.x.tickBand.anchor,
++          'data-mark': 'category-label',
++          'data-axis': 'x',
++          'data-category': category.label
++        }));
++      });
++
++      plot.y.categories.forEach((category, index) => {
++        svg.appendChild(textNode(category.label, {
++          x: plot.y.tickBand.x,
++          y: (box.y + index * cellH + cellH / 2 + 5).toFixed(2),
++          'font-family': font,
++          'font-size': plot.y.tickBand.fontSize,
++          fill: category.color,
++          'text-anchor': plot.y.tickBand.anchor,
++          'data-mark': 'category-label',
++          'data-axis': 'y',
++          'data-category': category.label
++        }));
++      });
++
++      const gradient = svgEl('linearGradient', {
++        id: 'pearson-r-gradient',
++        x1: '0%',
++        x2: '100%',
++        y1: '0%',
++        y2: '0%'
++      });
++      colorStops.forEach((color, index) => {
++        gradient.appendChild(svgEl('stop', {
++          offset: `${index / (colorStops.length - 1) * 100}%`,
++          'stop-color': color
++        }));
++      });
++      defs.appendChild(gradient);
++
++      const colorbar = panel.colorbar;
++      svg.appendChild(textNode(colorbar.title.text, {
++        x: colorbar.title.x,
++        y: colorbar.title.y,
++        'font-family': font,
++        'font-size': colorbar.title.fontSize,
++        fill: spec.typography.color,
++        'text-anchor': colorbar.title.anchor,
++        'data-mark': 'colorbar-title'
++      }));
++      svg.appendChild(svgEl('rect', {
++        x: colorbar.bbox.x,
++        y: colorbar.bbox.y,
++        width: colorbar.bbox.width,
++        height: colorbar.bbox.height,
++        fill: 'url(#pearson-r-gradient)',
++        stroke: '#333333',
++        'stroke-width': 0.8,
++        'data-mark': 'colorbar-ramp'
++      }));
++
++      const domain = colorSystem.domain;
++      colorbar.ticks.forEach(tick => {
++        const tx = colorbar.bbox.x + (tick.value - domain[0]) / (domain[1] - domain[0]) * colorbar.bbox.width;
++        svg.appendChild(svgEl('line', {
++          x1: tx.toFixed(2),
++          y1: colorbar.bbox.y + colorbar.bbox.height,
++          x2: tx.toFixed(2),
++          y2: colorbar.bbox.y + colorbar.bbox.height + colorbar.tickLength,
++          stroke: spec.styleTokens.tick,
++          'stroke-width': 0.8,
++          'data-mark': 'colorbar-tick',
++          'data-value': tick.value
++        }));
++        svg.appendChild(textNode(tick.label, {
++          x: tx.toFixed(2),
++          y: colorbar.tickLabelY,
++          'font-family': font,
++          'font-size': 14,
++          fill: spec.typography.color,
++          'text-anchor': 'middle',
++          'data-mark': 'colorbar-tick-label',
++          'data-value': tick.value
++        }));
++      });
++    }
++
++    async function loadSpec() {
++      try {
++        const response = await fetch('reference-07-cross-region-small-multiples-D.json', {cache: 'no-store'});
++        if (!response.ok) throw new Error(`HTTP ${response.status}`);
++        return await response.json();
++      } catch (error) {
++        throw new Error(`Unable to load adjacent JSON spec: ${error.message}`);
++      }
++    }
++
++    function setMode(showReference) {
++      $('frame').classList.toggle('show-reference', showReference);
++      $('generatedButton').classList.toggle('active', !showReference);
++      $('referenceButton').classList.toggle('active', showReference);
++    }
++
++    $('generatedButton').addEventListener('click', () => setMode(false));
++    $('referenceButton').addEventListener('click', () => setMode(true));
++
++    loadSpec().then(renderSpec).catch(error => {
++      $('surface').textContent = error.message;
++      console.error(error);
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-07-cross-region-small-multiples-D-make-figure-batch/reference-07-cross-region-small-multiples-D.json b/outputs/reference-07-cross-region-small-multiples-D-make-figure-batch/reference-07-cross-region-small-multiples-D.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..acb6aadf6a4ae0b0db82930b1b7a23addfc768d1
+--- /dev/null
++++ b/outputs/reference-07-cross-region-small-multiples-D-make-figure-batch/reference-07-cross-region-small-multiples-D.json
+@@ -0,0 +1,178 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-07-cross-region-small-multiples-D",
++  "source": {
++    "path": "../../assets/reference/reference-07-cross-region-small-multiples-D-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "Single cropped panel reconstructed from visual inspection. The generated heatmap, labels, values, border, and colorbar are SVG/DOM objects derived from semantic matrix data; no source pixels are used as generated marks."
++  },
++  "canvas": {
++    "width": 398,
++    "height": 375,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
++    "defaultSize": 14,
++    "color": "#111111",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Arial", "Helvetica"],
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.05,
++      "notes": "Condensed sans approximates the compact panel title, region labels, and numeric cell labels."
++    }
++  },
++  "styleTokens": {
++    "regionCA1": "#153ac7",
++    "regionCA3": "#0066c7",
++    "regionDG": "#0b8a18",
++    "regionPFC": "#ff5a1a",
++    "regionRSC": "#ff1717",
++    "matrixBorder": "#6f7c8a",
++    "cellStroke": "#d4dce8",
++    "heatmapLow": "#ffffff",
++    "heatmapMid": "#d5e3f5",
++    "heatmapHigh": "#08206f",
++    "tick": "#111111"
++  },
++  "coordinateSystems": [
++    {
++      "id": "panel-d.matrix-categories",
++      "type": "categoricalGrid",
++      "xCategories": ["CA1", "CA3", "DG", "PFC", "RSC"],
++      "yCategories": ["CA1", "CA3", "DG", "PFC", "RSC"],
++      "bbox": {"x": 74, "y": 37, "width": 299, "height": 241}
++    },
++    {
++      "id": "panel-d.pearson-r-color",
++      "type": "linearColorScale",
++      "domain": [0, 1],
++      "range": ["#ffffff", "#d5e3f5", "#08206f"],
++      "bbox": {"x": 113, "y": 326, "width": 227, "height": 14}
++    }
++  ],
++  "panels": [
++    {
++      "id": "panel-d",
++      "label": {
++        "id": "panel-d-label",
++        "text": "D",
++        "x": 37,
++        "y": 20,
++        "fontSize": 22,
++        "fontWeight": 700,
++        "anchor": "start",
++        "sourceBox": {"x": 36, "y": 4, "width": 16, "height": 19}
++      },
++      "title": {
++        "id": "panel-d-title",
++        "text": "Cross-region correlation",
++        "x": 68,
++        "y": 20,
++        "fontSize": 17,
++        "fontWeight": 700,
++        "anchor": "start",
++        "targetWidth": 190,
++        "sourceBox": {"x": 68, "y": 5, "width": 191, "height": 19},
++        "fit": "condensed"
++      },
++      "bbox": {"x": 0, "y": 0, "width": 398, "height": 375},
++      "plot": {
++        "id": "panel-d-correlation-heatmap",
++        "type": "correlationMatrix",
++        "dataBbox": {"x": 74, "y": 37, "width": 299, "height": 241},
++        "usesTransform": "panel-d.matrix-categories",
++        "x": {
++          "scale": "categorical",
++          "categories": [
++            {"id": "ca1-x", "label": "CA1", "color": "#153ac7"},
++            {"id": "ca3-x", "label": "CA3", "color": "#0066c7"},
++            {"id": "dg-x", "label": "DG", "color": "#0b8a18"},
++            {"id": "pfc-x", "label": "PFC", "color": "#ff5a1a"},
++            {"id": "rsc-x", "label": "RSC", "color": "#ff1717"}
++          ],
++          "tickBand": {"y": 296, "fontSize": 15, "anchor": "middle"}
++        },
++        "y": {
++          "scale": "categorical",
++          "categories": [
++            {"id": "ca1-y", "label": "CA1", "color": "#153ac7"},
++            {"id": "ca3-y", "label": "CA3", "color": "#0066c7"},
++            {"id": "dg-y", "label": "DG", "color": "#0b8a18"},
++            {"id": "pfc-y", "label": "PFC", "color": "#ff5a1a"},
++            {"id": "rsc-y", "label": "RSC", "color": "#ff1717"}
++          ],
++          "tickBand": {"x": 64, "fontSize": 15, "anchor": "end"}
++        }
++      },
++      "data": {
++        "matrix": {
++          "id": "panel-d-pearson-r",
++          "rowOrder": ["CA1", "CA3", "DG", "PFC", "RSC"],
++          "columnOrder": ["CA1", "CA3", "DG", "PFC", "RSC"],
++          "values": [
++            [1.00, 0.65, 0.48, 0.34, 0.41],
++            [0.65, 1.00, 0.53, 0.31, 0.40],
++            [0.48, 0.53, 1.00, 0.28, 0.36],
++            [0.34, 0.31, 0.28, 1.00, 0.57],
++            [0.41, 0.40, 0.36, 0.57, 1.00]
++          ],
++          "valueFormat": ".2f",
++          "symmetric": true
++        }
++      },
++      "marks": [
++        {
++          "id": "panel-d-heatmap-cells",
++          "type": "heatmap",
++          "matrixRef": "panel-d-pearson-r",
++          "usesTransform": "panel-d.matrix-categories",
++          "colorScaleRef": "panel-d.pearson-r-color",
++          "cellStroke": "#d4dce8",
++          "cellStrokeWidth": 0.8,
++          "label": {"fontSize": 13, "fontWeight": 400, "anchor": "middle", "baseline": "middle"}
++        }
++      ],
++      "colorbar": {
++        "id": "panel-d-colorbar",
++        "title": {"text": "Pearson r", "x": 226, "y": 319, "fontSize": 13, "anchor": "middle"},
++        "bbox": {"x": 113, "y": 326, "width": 227, "height": 14},
++        "usesTransform": "panel-d.pearson-r-color",
++        "ticks": [
++          {"value": 0, "label": "0"},
++          {"value": 0.5, "label": "0.5"},
++          {"value": 1, "label": "1.0"}
++        ],
++        "tickLabelY": 358,
++        "tickLength": 6
++      },
++      "provenance": [
++        {
++          "target": "panel-d-correlation-heatmap",
++          "confidence": "high",
++          "note": "Matrix values are directly legible from the source raster; cell and label positions are visually measured to first-pass precision."
++        },
++        {
++          "target": "panel-d.pearson-r-color",
++          "confidence": "medium",
++          "note": "Blue-white ramp approximates the visible Pearson r legend; exact colormap is inferred."
++        }
++      ]
++    }
++  ],
++  "constraints": [
++    {"id": "matrix-cell-count", "type": "expectedCount", "selector": "[data-mark='heatmap-cell']", "count": 25},
++    {"id": "matrix-value-count", "type": "expectedCount", "selector": "[data-mark='cell-value']", "count": 25},
++    {"id": "x-label-count", "type": "expectedCount", "selector": "[data-axis='x'][data-mark='category-label']", "count": 5},
++    {"id": "y-label-count", "type": "expectedCount", "selector": "[data-axis='y'][data-mark='category-label']", "count": 5}
++  ],
++  "confidence": [
++    {
++      "target": "overall",
++      "confidence": "first-pass",
++      "note": "Editable reconstruction intended for visual inspection; typography, grid line weight, and color ramp may need browser overlay tuning."
++    }
++  ]
++}
+

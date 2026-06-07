@@ -1,0 +1,243 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-02-decision-dynamics-F",
+  "source": {
+    "path": "../../assets/reference/reference-02-decision-dynamics-F-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Single cropped panel showing overlaid reaction-time density histograms for left and right choices. Geometry and bin heights were estimated visually from the raster."
+  },
+  "canvas": {
+    "width": 356,
+    "height": 510,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.12,
+      "notes": "First-pass manual typography match; title and labels use narrow sans-serif sizing approximating the source crop."
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-f",
+      "bbox": {"x": 0, "y": 0, "width": 356, "height": 510},
+      "label": {
+        "id": "panel-label",
+        "text": "F",
+        "x": 8,
+        "y": 29,
+        "fontSize": 23,
+        "fontWeight": 700,
+        "textAnchor": "start"
+      },
+      "title": {
+        "id": "panel-title",
+        "text": "Reaction time distribution",
+        "x": 33,
+        "y": 30,
+        "fontSize": 18,
+        "fontWeight": 700,
+        "textAnchor": "start",
+        "sourceBox": {"x": 33, "y": 15, "width": 221, "height": 18},
+        "fit": "manual"
+      },
+      "plot": {
+        "id": "rt-density-plot",
+        "dataBbox": {"x": 68, "y": 63, "width": 255, "height": 330},
+        "clipId": "plot-clip",
+        "x": {
+          "id": "x-rt",
+          "scale": "linear",
+          "domain": [150, 1250],
+          "ticks": [
+            {"id": "x-tick-200", "value": 200, "label": "200"},
+            {"id": "x-tick-400", "value": 400, "label": "400"},
+            {"id": "x-tick-600", "value": 600, "label": "600"},
+            {"id": "x-tick-800", "value": 800, "label": "800"},
+            {"id": "x-tick-1000", "value": 1000, "label": "1,000"},
+            {"id": "x-tick-1200", "value": 1200, "label": "1,200"}
+          ],
+          "label": {
+            "id": "x-axis-title",
+            "text": "Reaction time (ms)",
+            "fontSize": 15,
+            "sourceBox": {"x": 118, "y": 436, "width": 128, "height": 16}
+          }
+        },
+        "y": {
+          "id": "y-density",
+          "scale": "linear",
+          "domain": [0, 0.008],
+          "ticks": [
+            {"id": "y-tick-0", "value": 0, "label": "0.000"},
+            {"id": "y-tick-002", "value": 0.002, "label": "0.002"},
+            {"id": "y-tick-004", "value": 0.004, "label": "0.004"},
+            {"id": "y-tick-006", "value": 0.006, "label": "0.006"},
+            {"id": "y-tick-008", "value": 0.008, "label": "0.008"}
+          ],
+          "label": {
+            "id": "y-axis-title",
+            "text": "Probability density",
+            "fontSize": 16,
+            "rotation": -90,
+            "sourceBox": {"x": 8, "y": 159, "width": 16, "height": 150}
+          }
+        },
+        "axes": {
+          "xAxis": {"id": "x-axis", "line": {"x1": 68, "y1": 393, "x2": 323, "y2": 393}, "tickLength": 5},
+          "yAxis": {"id": "y-axis", "line": {"x1": 68, "y1": 63, "x2": 68, "y2": 393}, "tickLength": 5}
+        }
+      },
+      "data": {
+        "histograms": [
+          {
+            "id": "left-choice-histogram",
+            "seriesId": "left-choice",
+            "binWidth": 25,
+            "values": [
+              [175, 0.0001], [200, 0.0003], [225, 0.0007], [250, 0.0010],
+              [275, 0.0013], [300, 0.0016], [325, 0.0021], [350, 0.0024],
+              [375, 0.0030], [400, 0.0031], [425, 0.0034], [450, 0.0033],
+              [475, 0.0038], [500, 0.0052], [525, 0.0058], [550, 0.0064],
+              [575, 0.0065], [600, 0.0062], [625, 0.0051], [650, 0.0046],
+              [675, 0.0040], [700, 0.0036], [725, 0.0032], [750, 0.0029],
+              [775, 0.0026], [800, 0.0023], [825, 0.0020], [850, 0.0017],
+              [875, 0.0015], [900, 0.0012], [925, 0.0010], [950, 0.0008],
+              [975, 0.0006], [1000, 0.00045], [1025, 0.00032], [1050, 0.00022],
+              [1075, 0.00015], [1100, 0.00008], [1125, 0.00003]
+            ]
+          },
+          {
+            "id": "right-choice-histogram",
+            "seriesId": "right-choice",
+            "binWidth": 25,
+            "values": [
+              [375, 0.0030], [400, 0.0032], [425, 0.0034], [450, 0.0036],
+              [475, 0.0042], [500, 0.0048], [525, 0.0054], [550, 0.0059],
+              [575, 0.0062], [600, 0.0064], [625, 0.0061], [650, 0.0059],
+              [675, 0.0057], [700, 0.0053], [725, 0.0049], [750, 0.0045],
+              [775, 0.0040], [800, 0.0036], [825, 0.0031], [850, 0.0027],
+              [875, 0.0023], [900, 0.0019], [925, 0.0016], [950, 0.0013],
+              [975, 0.0010], [1000, 0.00075], [1025, 0.00055], [1050, 0.00038],
+              [1075, 0.00025], [1100, 0.00015], [1125, 0.00007], [1150, 0.00002]
+            ]
+          }
+        ]
+      },
+      "marks": [
+        {
+          "id": "left-choice",
+          "type": "histogramStep",
+          "usesTransform": "panel-f.plot.xy",
+          "dataRef": "left-choice-histogram",
+          "fill": "#8fb4ee",
+          "fillOpacity": 0.42,
+          "stroke": "#004bea",
+          "strokeWidth": 1.4,
+          "legendLabel": "Left choice"
+        },
+        {
+          "id": "right-choice",
+          "type": "histogramStep",
+          "usesTransform": "panel-f.plot.xy",
+          "dataRef": "right-choice-histogram",
+          "fill": "#ee8d8d",
+          "fillOpacity": 0.34,
+          "stroke": "#ff1515",
+          "strokeWidth": 1.4,
+          "legendLabel": "Right choice"
+        },
+        {
+          "id": "median-left",
+          "type": "eventLine",
+          "usesTransform": "panel-f.plot.xy",
+          "value": 512,
+          "orientation": "vertical",
+          "stroke": "#0067ff",
+          "strokeWidth": 1,
+          "strokeDasharray": "6 4",
+          "yRange": [0, 0.008]
+        },
+        {
+          "id": "median-right",
+          "type": "eventLine",
+          "usesTransform": "panel-f.plot.xy",
+          "value": 525,
+          "orientation": "vertical",
+          "stroke": "#ff1515",
+          "strokeWidth": 1,
+          "strokeDasharray": "6 4",
+          "yRange": [0, 0.008]
+        }
+      ],
+      "annotations": [
+        {
+          "id": "median-heading",
+          "type": "text",
+          "text": "Median RT (ms)",
+          "x": 79,
+          "y": 97,
+          "fontSize": 13,
+          "fontWeight": 400,
+          "textAnchor": "start"
+        },
+        {
+          "id": "median-left-label",
+          "type": "text",
+          "text": "Left: 512",
+          "x": 79,
+          "y": 117,
+          "fontSize": 13,
+          "fill": "#004bea",
+          "textAnchor": "start",
+          "anchorTo": "median-left"
+        },
+        {
+          "id": "median-right-label",
+          "type": "text",
+          "text": "Right: 525",
+          "x": 79,
+          "y": 137,
+          "fontSize": 13,
+          "fill": "#ff1515",
+          "textAnchor": "start",
+          "anchorTo": "median-right"
+        }
+      ],
+      "legends": [
+        {
+          "id": "choice-legend",
+          "x": 242,
+          "y": 94,
+          "items": [
+            {"seriesId": "left-choice", "label": "Left choice"},
+            {"seriesId": "right-choice", "label": "Right choice"}
+          ]
+        }
+      ],
+      "provenance": [
+        {"object": "plot.dataBbox", "confidence": "medium", "note": "Axis baseline and y spine measured visually from raster."},
+        {"object": "histograms", "confidence": "medium-low", "note": "Bin heights are hand-estimated to match the visible step geometry and density peak positions."},
+        {"object": "typography", "confidence": "medium-low", "note": "Font is approximate and intended for first-pass inspection."}
+      ]
+    }
+  ],
+  "constraints": [
+    {"id": "generated-no-source-layer", "description": "Generated SVG marks must not render the source raster."},
+    {"id": "median-lines-share-x-transform", "description": "Median event lines and x-axis ticks use the same x data transform."},
+    {"id": "legend-references-series", "description": "Legend items reference left-choice and right-choice histogram marks."}
+  ],
+  "validation": {
+    "expectedPanelCount": 1,
+    "expectedSeriesCount": 2,
+    "expectedEventLines": 2,
+    "nativeSize": {"width": 356, "height": 510}
+  },
+  "confidence": [
+    {"aspect": "overall visual match", "level": "medium", "note": "First-pass reconstruction suitable for visual inspection; exact histogram bins are approximate."}
+  ]
+}

@@ -1,0 +1,158 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-03-learning-remapping-D",
+  "source": {
+    "path": "../../assets/reference/reference-03-learning-remapping-D-reference.png",
+    "usage": "QA-only reference image; not used by generated candidate layers.",
+    "nativeSize": {"width": 443, "height": 498},
+    "notes": "Single chart panel D showing within-cell spatial correlation over seven days from first session. Data values and sample sizes transcribed visually from labels."
+  },
+  "canvas": {"width": 443, "height": 498, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Arial Narrow", "Roboto Condensed"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.1,
+      "notes": "First-pass typography uses local Arial/Helvetica with sizes chosen to approximate the narrow source labels."
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-d",
+      "label": {"id": "panel-label", "text": "D", "x": 13, "y": 28, "fontSize": 20, "fontWeight": 700, "anchor": "start"},
+      "title": {"id": "panel-title", "text": "Field stability over learning", "x": 39, "y": 29, "fontSize": 18, "fontWeight": 400, "anchor": "start"},
+      "bbox": {"x": 0, "y": 0, "width": 443, "height": 498},
+      "plot": {
+        "id": "stability-plot",
+        "dataBbox": {"x": 80, "y": 61, "width": 347, "height": 280},
+        "axes": {
+          "xAxis": {"id": "x-axis", "line": {"x1": 80, "y1": 341, "x2": 427, "y2": 341}, "tickLength": 7, "stroke": "#4d4d4d", "strokeWidth": 1},
+          "yAxis": {"id": "y-axis", "line": {"x1": 80, "y1": 61, "x2": 80, "y2": 341}, "tickLength": 7, "stroke": "#4d4d4d", "strokeWidth": 1}
+        },
+        "x": {
+          "scale": "linear",
+          "domain": [0.45, 7.45],
+          "ticks": [
+            {"value": 1, "label": "1"},
+            {"value": 2, "label": "2"},
+            {"value": 3, "label": "3"},
+            {"value": 4, "label": "4"},
+            {"value": 5, "label": "5"},
+            {"value": 6, "label": "6"},
+            {"value": 7, "label": "7"}
+          ],
+          "label": {"id": "x-axis-title", "text": "Days from first session", "x": 253, "y": 392, "fontSize": 16, "fontWeight": 400, "anchor": "middle"}
+        },
+        "y": {
+          "scale": "linear",
+          "domain": [0, 1],
+          "ticks": [
+            {"value": 0, "label": "0"},
+            {"value": 0.5, "label": "0.5"},
+            {"value": 1, "label": "1.0"}
+          ],
+          "label": {
+            "id": "y-axis-title",
+            "text": "Within-cell spatial correlation",
+            "secondaryText": "(Pearson r)",
+            "x": 26,
+            "y": 201,
+            "fontSize": 16,
+            "fontWeight": 400,
+            "anchor": "middle",
+            "rotation": -90
+          }
+        }
+      },
+      "data": {
+        "series": [
+          {"day": 1, "correlation": 0.62, "label": "0.62", "n": "n=312", "sem": 0.040},
+          {"day": 2, "correlation": 0.65, "label": "0.65", "n": "290", "sem": 0.035},
+          {"day": 3, "correlation": 0.63, "label": "0.63", "n": "271", "sem": 0.034},
+          {"day": 4, "correlation": 0.62, "label": "0.62", "n": "257", "sem": 0.032},
+          {"day": 5, "correlation": 0.61, "label": "0.61", "n": "240", "sem": 0.032},
+          {"day": 6, "correlation": 0.62, "label": "0.62", "n": "224", "sem": 0.031},
+          {"day": 7, "correlation": 0.63, "label": "0.63", "n": "210", "sem": 0.033}
+        ]
+      },
+      "marks": [
+        {
+          "id": "stability-band",
+          "type": "uncertaintyBand",
+          "series": "data.series",
+          "x": "day",
+          "y": "correlation",
+          "error": "sem",
+          "fill": "#8d5fb1",
+          "opacity": 0.16,
+          "provenance": {"confidence": "medium", "note": "Band width estimated from source; exact uncertainty statistic not visible."}
+        },
+        {
+          "id": "stability-line",
+          "type": "lineSeries",
+          "series": "data.series",
+          "x": "day",
+          "y": "correlation",
+          "stroke": "#4b0f82",
+          "strokeWidth": 2,
+          "fill": "none"
+        },
+        {
+          "id": "stability-errorbars",
+          "type": "errorBars",
+          "series": "data.series",
+          "x": "day",
+          "y": "correlation",
+          "error": "sem",
+          "stroke": "#4b0f82",
+          "strokeWidth": 1.4,
+          "capWidth": 5
+        },
+        {
+          "id": "stability-points",
+          "type": "scatter",
+          "series": "data.series",
+          "x": "day",
+          "y": "correlation",
+          "radius": 4,
+          "fill": "#4b0f82",
+          "stroke": "#4b0f82",
+          "strokeWidth": 1
+        }
+      ],
+      "annotations": [
+        {"id": "value-labels", "type": "pointLabels", "series": "data.series", "field": "label", "dy": -26, "fontSize": 14, "fill": "#111111", "anchor": "middle"},
+        {"id": "sample-size-labels", "type": "baselineLabels", "series": "data.series", "field": "n", "y": 327, "fontSize": 13, "fill": "#111111", "anchor": "middle"}
+      ],
+      "provenance": [
+        {"target": "plot.dataBbox", "confidence": "high", "note": "Axis bounds measured from source crop by visual inspection."},
+        {"target": "data.series.correlation", "confidence": "high", "note": "Correlation values are printed above each marker."},
+        {"target": "data.series.sem", "confidence": "low", "note": "Error values estimated visually from the vertical bars and translucent band."}
+      ]
+    }
+  ],
+  "rendering": {
+    "renderer": "svg",
+    "layers": ["axes", "uncertaintyBand", "lineSeries", "errorBars", "scatter", "text"],
+    "styleTokens": {
+      "purple": "#4b0f82",
+      "axis": "#4d4d4d",
+      "text": "#111111"
+    }
+  },
+  "validation": {
+    "expectedPanelCount": 1,
+    "expectedPointCount": 7,
+    "expectedXTicks": 7,
+    "expectedYTicks": 3,
+    "candidateMustNotUseSourceRaster": true
+  },
+  "confidence": [
+    {"target": "overall", "confidence": "first-pass", "note": "Editable reconstruction intended for visual inspection; typography and exact uncertainty band may need calibration."}
+  ]
+}

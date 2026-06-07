@@ -1,0 +1,12 @@
+Done. I created only:
+
+- [reference-02-decision-dynamics-F.json](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-02-decision-dynamics-F-make-figure-batch/reference-02-decision-dynamics-F.json)
+- [reference-02-decision-dynamics-F.html](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-02-decision-dynamics-F-make-figure-batch/reference-02-decision-dynamics-F.html)
+
+The JSON is semantic/editable, with axes, ticks, histogram-step series, median event lines, legend, annotations, provenance, and validation notes. The HTML renders generated SVG from the JSON and includes the source raster only in a clearly labeled collapsed QA reference view.
+
+Verified:
+- JSON parses successfully with `node`.
+- Output directory contains only the requested two files.
+- Reuse search found no `drawImage`, no `<image>`, no `background-image`, and no source raster background use. The only source raster references are the JSON QA provenance path and the labeled QA `<img>`.
+- I did not modify docs, skills, plugins, source assets, or other output directories. There are unrelated pre-existing worktree changes in those areas, but I left them untouched.

@@ -1,0 +1,627 @@
+{
+  "failed": [],
+  "ok": 62,
+  "results": [
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-01-place-code-opto-A-make-figure-batch",
+      "panel_id": "reference-01-place-code-opto-A",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-01-place-code-opto-B-make-figure-batch",
+      "panel_id": "reference-01-place-code-opto-B",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-01-place-code-opto-C-make-figure-batch",
+      "panel_id": "reference-01-place-code-opto-C",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-01-place-code-opto-D-make-figure-batch",
+      "panel_id": "reference-01-place-code-opto-D",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-01-place-code-opto-E-make-figure-batch",
+      "panel_id": "reference-01-place-code-opto-E",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-01-place-code-opto-F-make-figure-batch",
+      "panel_id": "reference-01-place-code-opto-F",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-02-decision-dynamics-A-make-figure-batch",
+      "panel_id": "reference-02-decision-dynamics-A",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-02-decision-dynamics-B-make-figure-batch",
+      "panel_id": "reference-02-decision-dynamics-B",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-02-decision-dynamics-C-make-figure-batch",
+      "panel_id": "reference-02-decision-dynamics-C",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-02-decision-dynamics-D-make-figure-batch",
+      "panel_id": "reference-02-decision-dynamics-D",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-02-decision-dynamics-E-make-figure-batch",
+      "panel_id": "reference-02-decision-dynamics-E",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-02-decision-dynamics-F-make-figure-batch",
+      "panel_id": "reference-02-decision-dynamics-F",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-02-decision-dynamics-G-make-figure-batch",
+      "panel_id": "reference-02-decision-dynamics-G",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-02-decision-dynamics-H-make-figure-batch",
+      "panel_id": "reference-02-decision-dynamics-H",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-03-learning-remapping-A-make-figure-batch",
+      "panel_id": "reference-03-learning-remapping-A",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-03-learning-remapping-B-make-figure-batch",
+      "panel_id": "reference-03-learning-remapping-B",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-03-learning-remapping-C-make-figure-batch",
+      "panel_id": "reference-03-learning-remapping-C",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-03-learning-remapping-D-make-figure-batch",
+      "panel_id": "reference-03-learning-remapping-D",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-03-learning-remapping-E-make-figure-batch",
+      "panel_id": "reference-03-learning-remapping-E",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-03-learning-remapping-F-make-figure-batch",
+      "panel_id": "reference-03-learning-remapping-F",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-03-learning-remapping-G-make-figure-batch",
+      "panel_id": "reference-03-learning-remapping-G",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-04-motor-manifold-A-make-figure-batch",
+      "panel_id": "reference-04-motor-manifold-A",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-04-motor-manifold-B-make-figure-batch",
+      "panel_id": "reference-04-motor-manifold-B",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-04-motor-manifold-C-make-figure-batch",
+      "panel_id": "reference-04-motor-manifold-C",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-04-motor-manifold-D-make-figure-batch",
+      "panel_id": "reference-04-motor-manifold-D",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-04-motor-manifold-E-make-figure-batch",
+      "panel_id": "reference-04-motor-manifold-E",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-04-motor-manifold-F-make-figure-batch",
+      "panel_id": "reference-04-motor-manifold-F",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-04-motor-manifold-G-make-figure-batch",
+      "panel_id": "reference-04-motor-manifold-G",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-04-motor-manifold-H-make-figure-batch",
+      "panel_id": "reference-04-motor-manifold-H",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-04-motor-manifold-I-make-figure-batch",
+      "panel_id": "reference-04-motor-manifold-I",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-05-grid-remapping-A-make-figure-batch",
+      "panel_id": "reference-05-grid-remapping-A",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-05-grid-remapping-B-make-figure-batch",
+      "panel_id": "reference-05-grid-remapping-B",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-05-grid-remapping-C-make-figure-batch",
+      "panel_id": "reference-05-grid-remapping-C",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-05-grid-remapping-D-make-figure-batch",
+      "panel_id": "reference-05-grid-remapping-D",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-05-grid-remapping-E-make-figure-batch",
+      "panel_id": "reference-05-grid-remapping-E",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-05-grid-remapping-F-make-figure-batch",
+      "panel_id": "reference-05-grid-remapping-F",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-06-replay-stimulation-A-make-figure-batch",
+      "panel_id": "reference-06-replay-stimulation-A",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-06-replay-stimulation-B-make-figure-batch",
+      "panel_id": "reference-06-replay-stimulation-B",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-06-replay-stimulation-C-make-figure-batch",
+      "panel_id": "reference-06-replay-stimulation-C",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-06-replay-stimulation-D-make-figure-batch",
+      "panel_id": "reference-06-replay-stimulation-D",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-06-replay-stimulation-E-make-figure-batch",
+      "panel_id": "reference-06-replay-stimulation-E",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-06-replay-stimulation-F-make-figure-batch",
+      "panel_id": "reference-06-replay-stimulation-F",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-06-replay-stimulation-G-make-figure-batch",
+      "panel_id": "reference-06-replay-stimulation-G",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-06-replay-stimulation-H-make-figure-batch",
+      "panel_id": "reference-06-replay-stimulation-H",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-07-cross-region-small-multiples-A-make-figure-batch",
+      "panel_id": "reference-07-cross-region-small-multiples-A",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-07-cross-region-small-multiples-B-make-figure-batch",
+      "panel_id": "reference-07-cross-region-small-multiples-B",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-07-cross-region-small-multiples-C-make-figure-batch",
+      "panel_id": "reference-07-cross-region-small-multiples-C",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-07-cross-region-small-multiples-D-make-figure-batch",
+      "panel_id": "reference-07-cross-region-small-multiples-D",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-07-cross-region-small-multiples-E-make-figure-batch",
+      "panel_id": "reference-07-cross-region-small-multiples-E",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-07-cross-region-small-multiples-F-make-figure-batch",
+      "panel_id": "reference-07-cross-region-small-multiples-F",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-07-cross-region-small-multiples-G-make-figure-batch",
+      "panel_id": "reference-07-cross-region-small-multiples-G",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-07-cross-region-small-multiples-H-make-figure-batch",
+      "panel_id": "reference-07-cross-region-small-multiples-H",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-07-cross-region-small-multiples-I-make-figure-batch",
+      "panel_id": "reference-07-cross-region-small-multiples-I",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-07-cross-region-small-multiples-J-make-figure-batch",
+      "panel_id": "reference-07-cross-region-small-multiples-J",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch",
+      "panel_id": "reference-08-neuropixels-central-heatmap-A",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-08-neuropixels-central-heatmap-B-make-figure-batch",
+      "panel_id": "reference-08-neuropixels-central-heatmap-B",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-08-neuropixels-central-heatmap-C-make-figure-batch",
+      "panel_id": "reference-08-neuropixels-central-heatmap-C",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-08-neuropixels-central-heatmap-D-make-figure-batch",
+      "panel_id": "reference-08-neuropixels-central-heatmap-D",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-08-neuropixels-central-heatmap-E-make-figure-batch",
+      "panel_id": "reference-08-neuropixels-central-heatmap-E",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-08-neuropixels-central-heatmap-F-make-figure-batch",
+      "panel_id": "reference-08-neuropixels-central-heatmap-F",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-08-neuropixels-central-heatmap-G-make-figure-batch",
+      "panel_id": "reference-08-neuropixels-central-heatmap-G",
+      "source_candidate_hits": []
+    },
+    {
+      "html_exists": true,
+      "html_forbidden_hits": [],
+      "json_exists": true,
+      "json_valid": true,
+      "ok": true,
+      "outdir": "outputs/reference-08-neuropixels-central-heatmap-H-make-figure-batch",
+      "panel_id": "reference-08-neuropixels-central-heatmap-H",
+      "source_candidate_hits": []
+    }
+  ],
+  "total": 62
+}

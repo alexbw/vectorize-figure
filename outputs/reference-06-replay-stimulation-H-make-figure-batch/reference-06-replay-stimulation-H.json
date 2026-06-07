@@ -1,0 +1,214 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-06-replay-stimulation-H",
+  "source": {
+    "path": "../../assets/reference/reference-06-replay-stimulation-H-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "nativeSize": {"width": 404, "height": 524},
+    "notes": "Single cropped horizontal model-comparison coefficient plot reconstructed by visual inspection."
+  },
+  "canvas": {"width": 404, "height": 524, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial Narrow, Helvetica Neue, Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Roboto Condensed", "Arial", "Helvetica"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.02,
+      "notes": "First-pass typography: source title and axis text resemble a condensed sans face. Text boxes are visually estimated."
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-h",
+      "type": "horizontalIntervalComparison",
+      "bbox": {"x": 0, "y": 0, "width": 404, "height": 524},
+      "label": {
+        "id": "panel-label",
+        "text": "H",
+        "x": 34,
+        "y": 7,
+        "fontSize": 22,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 34, "y": 7, "width": 14, "height": 22}
+      },
+      "title": {
+        "id": "panel-title",
+        "text": "Model comparison",
+        "x": 61,
+        "y": 8,
+        "fontSize": 20,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 61, "y": 7, "width": 162, "height": 24}
+      },
+      "coordinateSystems": [
+        {
+          "id": "panel-h.xy",
+          "type": "cartesianCategorical",
+          "plotBbox": {"x": 94, "y": 72, "width": 271, "height": 313},
+          "x": {
+            "domain": [-100, 100],
+            "ticks": [
+              {"value": -100, "label": "-100"},
+              {"value": -50, "label": "-50"},
+              {"value": 0, "label": "0"},
+              {"value": 50, "label": "50"},
+              {"value": 100, "label": "100"}
+            ],
+            "label": {
+              "id": "x-axis-title",
+              "text": "\u0394 LPPD (vs. best model)",
+              "x": 230,
+              "y": 438,
+              "fontSize": 19,
+              "fontWeight": 400,
+              "anchor": "middle",
+              "sourceBox": {"x": 149, "y": 428, "width": 183, "height": 22}
+            }
+          },
+          "y": {
+            "categories": [
+              {"id": "sequential-sweeping", "labelLines": ["Sequential", "(sweeping)"], "y": 125},
+              {"id": "fragmented-sequential", "labelLines": ["Fragmented", "(sequential)"], "y": 198},
+              {"id": "iid", "labelLines": ["IID"], "y": 270},
+              {"id": "stationary-rate", "labelLines": ["Stationary", "(rate)"], "y": 335}
+            ]
+          }
+        }
+      ],
+      "layoutObjects": [
+        {
+          "id": "x-axis",
+          "type": "axis",
+          "orientation": "bottom",
+          "line": {"x1": 94, "y1": 385, "x2": 365, "y2": 385},
+          "tickLength": 6,
+          "stroke": "#111111",
+          "strokeWidth": 1.4
+        },
+        {
+          "id": "y-axis",
+          "type": "axis",
+          "orientation": "left",
+          "line": {"x1": 118, "y1": 72, "x2": 118, "y2": 385},
+          "stroke": "#111111",
+          "strokeWidth": 1.2,
+          "note": "Left spine is visually offset from the leftmost x tick."
+        },
+        {
+          "id": "zero-line",
+          "type": "referenceLine",
+          "usesTransform": "panel-h.xy",
+          "axis": "x",
+          "value": 0,
+          "y1": 72,
+          "y2": 385,
+          "stroke": "#777777",
+          "strokeWidth": 1.2,
+          "dasharray": "5 5",
+          "opacity": 0.75
+        },
+        {
+          "id": "bottom-explanatory-rule",
+          "type": "ruleWithLabel",
+          "x1": 98,
+          "x2": 370,
+          "y": 458,
+          "stroke": "#111111",
+          "strokeWidth": 1.3,
+          "label": {
+            "text": "Positive \u0394 LPPD favors model",
+            "x": 235,
+            "y": 481,
+            "fontSize": 17,
+            "fontWeight": 400,
+            "anchor": "middle"
+          }
+        }
+      ],
+      "data": {
+        "series": [
+          {
+            "id": "pre-stim",
+            "label": "Pre-stim (LPPD)",
+            "color": "#006b6e",
+            "marker": "square",
+            "markerSize": 11,
+            "points": [
+              {"category": "sequential-sweeping", "estimate": 26, "ci": [8, 45]},
+              {"category": "fragmented-sequential", "estimate": -16, "ci": [-34, 2]},
+              {"category": "iid", "estimate": -45, "ci": [-61, -29]},
+              {"category": "stationary-rate", "estimate": -58, "ci": [-74, -42]}
+            ]
+          },
+          {
+            "id": "stim",
+            "label": "Stim  (LPPD)",
+            "color": "#ff5b00",
+            "marker": "square",
+            "markerSize": 11,
+            "points": [
+              {"category": "sequential-sweeping", "estimate": 66, "ci": [50, 82]},
+              {"category": "fragmented-sequential", "estimate": -25, "ci": [-41, -9]},
+              {"category": "iid", "estimate": -35, "ci": [-50, -20]},
+              {"category": "stationary-rate", "estimate": -52, "ci": [-68, -36]}
+            ]
+          }
+        ]
+      },
+      "marks": [
+        {"id": "pre-stim-intervals", "type": "horizontalIntervals", "series": "pre-stim", "usesTransform": "panel-h.xy", "offsetY": 0, "capHeight": 6, "strokeWidth": 1.1},
+        {"id": "stim-intervals", "type": "horizontalIntervals", "series": "stim", "usesTransform": "panel-h.xy", "offsetY": -18, "capHeight": 6, "strokeWidth": 1.1}
+      ],
+      "annotations": [
+        {
+          "id": "legend",
+          "type": "legend",
+          "x": 245,
+          "y": 31,
+          "itemGap": 28,
+          "markerSize": 13,
+          "fontSize": 16,
+          "items": [
+            {"series": "pre-stim", "label": "Pre-stim  (LPPD)"},
+            {"series": "stim", "label": "Stim  (LPPD)"}
+          ]
+        },
+        {
+          "id": "y-category-labels",
+          "type": "categoryLabels",
+          "x": 104,
+          "anchor": "end",
+          "fontSize": 16,
+          "lineHeight": 18
+        }
+      ],
+      "provenance": [
+        {"target": "plotBbox", "confidence": "medium", "note": "X-axis endpoints and zero reference line estimated from visible ticks and dashed line."},
+        {"target": "data.series.points", "confidence": "medium", "note": "Estimates and intervals are approximate values inferred from pixel positions against the -100 to 100 x-axis."},
+        {"target": "text", "confidence": "medium", "note": "Labels are manually transcribed from the source crop; font metrics are first-pass approximations."}
+      ]
+    }
+  ],
+  "validation": {
+    "expected": {
+      "canvasSize": [404, 524],
+      "series": 2,
+      "categories": 4,
+      "xTicks": 5,
+      "horizontalIntervals": 8,
+      "legendItems": 2
+    },
+    "constraints": [
+      "All interval marks use panel-h.xy and share the x-domain transform.",
+      "Zero reference line is generated as SVG from a semantic x value, not as an image layer.",
+      "Source raster may appear only in the QA reference image view."
+    ]
+  },
+  "confidence": [
+    {"target": "overall", "confidence": "medium", "note": "Independent first-pass reconstruction for visual inspection; intended to be editable rather than pixel-exact."}
+  ]
+}

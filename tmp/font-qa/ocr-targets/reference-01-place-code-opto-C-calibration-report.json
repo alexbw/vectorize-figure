@@ -1,0 +1,154 @@
+[
+  {
+    "id": "ocr-01",
+    "text": "C Event-aligned responses to light onset",
+    "family": "Source Sans 3",
+    "size": 14.75,
+    "weight": 600,
+    "lineHeight": 1,
+    "scaleX": 0.73,
+    "naturalWidth": 179.55,
+    "x": -5,
+    "y": 43.6,
+    "score": 1.02101,
+    "crop": {
+      "x": 0,
+      "y": 11,
+      "width": 325,
+      "height": 32
+    }
+  },
+  {
+    "id": "ocr-02",
+    "text": "532 nm light ON",
+    "family": "Arimo",
+    "size": 14.1,
+    "weight": 600,
+    "lineHeight": 1,
+    "scaleX": 1.03,
+    "naturalWidth": 99.88,
+    "x": 265,
+    "y": 62.95,
+    "score": 0.63246,
+    "crop": {
+      "x": 207,
+      "y": 46,
+      "width": 111,
+      "height": 31
+    }
+  },
+  {
+    "id": "ocr-03",
+    "text": "Optogenetic Sy",
+    "family": "Helvetica Neue",
+    "size": 17.28,
+    "weight": 500,
+    "lineHeight": 1,
+    "scaleX": 1.25,
+    "naturalWidth": 123.57,
+    "x": 5.25,
+    "y": 194.5,
+    "score": 1.383,
+    "crop": {
+      "x": 3,
+      "y": 179,
+      "width": 495,
+      "height": 23
+    }
+  },
+  {
+    "id": "ocr-04",
+    "text": "Time from light onset (s)",
+    "family": "Helvetica Neue",
+    "size": 9.57,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1.25,
+    "naturalWidth": 94.69,
+    "x": 283.25,
+    "y": 300.15,
+    "score": 1.41872,
+    "crop": {
+      "x": 207,
+      "y": 285,
+      "width": 164,
+      "height": 24
+    }
+  },
+  {
+    "id": "ocr-05",
+    "text": "130 i (no light)",
+    "family": "Source Sans 3",
+    "size": 17.34,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1.25,
+    "naturalWidth": 63.37,
+    "x": 56.75,
+    "y": 338.95,
+    "score": 1.40514,
+    "crop": {
+      "x": 52,
+      "y": 302,
+      "width": 428,
+      "height": 36
+    }
+  },
+  {
+    "id": "ocr-06",
+    "text": "og 20 Opto inhibition (ArchT)",
+    "family": "Source Sans 3",
+    "size": 17.99,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1.25,
+    "naturalWidth": 127.84,
+    "x": 9.5,
+    "y": 366.1,
+    "score": 0.73776,
+    "crop": {
+      "x": 3,
+      "y": 329,
+      "width": 511,
+      "height": 37
+    }
+  },
+  {
+    "id": "ocr-07",
+    "text": "Light ON",
+    "family": "Arial Narrow",
+    "size": 19.69,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 0.93,
+    "naturalWidth": 63.72,
+    "x": 315.75,
+    "y": 475.65,
+    "score": 0.93232,
+    "crop": {
+      "x": 283,
+      "y": 450,
+      "width": 67,
+      "height": 39
+    }
+  },
+  {
+    "id": "ocr-08",
+    "text": "Time from light onset (s)",
+    "family": "Helvetica Neue",
+    "size": 10.86,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1.25,
+    "naturalWidth": 107.46,
+    "x": 285.25,
+    "y": 504.95,
+    "score": 1.2735,
+    "crop": {
+      "x": 210,
+      "y": 477,
+      "width": 162,
+      "height": 26
+    }
+  }
+]

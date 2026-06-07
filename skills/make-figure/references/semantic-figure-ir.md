@@ -70,7 +70,8 @@ Renderers and validation scripts should enforce these when the source shows the
 corresponding objects:
 
 - Labeled ticks render one tick mark and one tick label with matching
-  `axis`/`value` metadata.
+  `axis`/`value` metadata. The tick mark stores the source-calibrated axis
+  coordinate separately from any label-only offset used for readability.
 - Axis titles anchor to an axis, tick-label band, or measured source anchor;
   they are not independent guessed text.
 - Event-aligned ticks, event lines, brackets, and annotations share a named
@@ -78,9 +79,29 @@ corresponding objects:
 - Grid lines belong to named grid planes and families; grid lines must not be
   confused with solid box edges.
 - Legends reference real series, marker classes, or mark groups.
-- Colorbars reference a color scale and own their ticks and title.
+- Colorbars reference a color scale and own their ticks and title. The IR must preserve tick side, tick mark direction, title anchor, and label anchor instead of leaving those to renderer defaults.
 - Table cell text, row rules, separators, and highlights remain separate
   objects when their visual styles differ.
+- Protected text nodes reserve layout space and must not overlap each other:
+  panel labels, titles, axis titles, tick labels, colorbar labels, legend
+  labels, table headers, table cells, phase labels, and region labels.
+- Protected text nodes must also avoid declared exclusion zones for plot boxes,
+  colorbars, orientation keys, legends, helper strips, and reserved regions
+  unless a source-faithful exception is recorded in provenance.
+- Adjacent small multiples own separate tick-label bands. A tick label at the
+  right edge of one plot must not collide with the left-edge tick label of the
+  next plot; use explicit gutters, label fitting, or source-calibrated anchors.
+- Plot frames own all visible boundary strokes. Raster-strip panels must encode
+  left/right/top/bottom rules separately when the source shows them, and tick
+  marks must state whether they point inward or outward.
+- Raster/event ticks and generated strip marks must identify an owner box and
+  either clip to that box or validate that every endpoint stays inside it.
+- Colored side strips and phase/region bands are semantic layout objects with
+  orientation, segment boundaries, colors, labels, and axis anchoring. Do not
+  add an x-axis or y-axis colored strip unless the source visibly contains it.
+- Polar angle labels anchor to a polar plot and store an `angle`,
+  `radialOffsetPx`, `anchor`, and optional source-calibrated label point. They
+  are not free-floating page text.
 - Annotations anchor to data coordinates, generated marks, or layout objects
   unless they are explicitly page-positioned.
 - Generated visuals never reuse the source raster as a generated layer.
@@ -99,4 +120,3 @@ Before writing the final JSON for a nontrivial panel, produce a short inventory:
 
 Do this before visual tuning. If a generated object looks wrong, first ask which
 relationship or transform is missing before changing pixels.
-

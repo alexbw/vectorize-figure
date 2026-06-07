@@ -1,0 +1,11 @@
+Generated the first-pass reconstruction:
+
+- [JSON spec](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.json)
+- [HTML renderer](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.html)
+
+Verification completed:
+- JSON parses with `python3 -m json.tool`.
+- Semantic spot checks passed for canvas size, plot bbox, row count, and heatmap mark type.
+- Output directory contains only the two requested files.
+- Source-reuse scan found the source path only in the JSON QA reference path and the QA `<img>` assignment. The one `drawImage` call draws a generated scratch canvas, not the source raster.
+- Browser verification could not run because the sandbox blocks local server binding and Safari automation is unavailable in this environment.

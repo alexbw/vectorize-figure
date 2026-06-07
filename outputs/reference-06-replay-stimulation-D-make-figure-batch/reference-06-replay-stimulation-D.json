@@ -1,0 +1,326 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-06-replay-stimulation-D",
+  "source": {
+    "path": "../../assets/reference/reference-06-replay-stimulation-D-reference.png",
+    "usage": "QA/reference view only; not used by generated candidate layers.",
+    "nativeSize": {
+      "width": 404,
+      "height": 500
+    },
+    "notes": "Single event-aligned line chart panel reconstructed from visual inspection of the raster."
+  },
+  "canvas": {
+    "width": 404,
+    "height": 500,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial Narrow, Helvetica Neue, Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial Narrow", "Helvetica Neue", "Arial", "Helvetica"],
+    "calibration": {
+      "fontStretch": "condensed",
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "First-pass visual match uses a condensed sans family to approximate the source's narrow labels."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "panel-d.xy",
+      "type": "cartesian2d",
+      "xDomain": [-500, 550],
+      "yDomain": [-1.5, 1.5],
+      "pixelBbox": {
+        "x": 83,
+        "y": 132,
+        "width": 306,
+        "height": 268
+      },
+      "eventAnchor": {
+        "xValue": 0,
+        "pixelX": 229
+      }
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-d",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 404,
+        "height": 500
+      },
+      "label": {
+        "id": "panel-d-label",
+        "text": "D",
+        "x": 35,
+        "y": 28,
+        "fontFamily": "Arial, Helvetica, sans-serif",
+        "fontSize": 24,
+        "fontWeight": 700,
+        "anchor": "middle",
+        "targetWidth": 13,
+        "sourceBox": {"x": 34, "y": 8, "width": 15, "height": 23},
+        "fit": "visual-first-pass"
+      },
+      "title": {
+        "id": "panel-d-title",
+        "text": "Stimulation-triggered\nperi-event average",
+        "x": 61,
+        "y": 28,
+        "fontFamily": "Arial Narrow, Helvetica Neue, Arial, sans-serif",
+        "fontSize": 19,
+        "fontWeight": 700,
+        "lineHeight": 1.03,
+        "anchor": "start",
+        "targetWidth": 177,
+        "sourceBox": {"x": 61, "y": 8, "width": 179, "height": 45},
+        "fit": "visual-first-pass"
+      },
+      "plot": {
+        "id": "panel-d-plot",
+        "usesTransform": "panel-d.xy",
+        "dataBbox": {
+          "x": 83,
+          "y": 132,
+          "width": 306,
+          "height": 268
+        },
+        "axes": {
+          "xAxis": {
+            "id": "panel-d-x-axis",
+            "line": {"x1": 83, "y1": 400, "x2": 389, "y2": 400},
+            "tickLength": 6,
+            "stroke": "#111111",
+            "strokeWidth": 1.2
+          },
+          "yAxis": {
+            "id": "panel-d-y-axis",
+            "line": {"x1": 83, "y1": 132, "x2": 83, "y2": 400},
+            "tickLength": 6,
+            "stroke": "#111111",
+            "strokeWidth": 1.2
+          }
+        },
+        "x": {
+          "scale": "linear",
+          "domain": [-500, 550],
+          "ticks": [
+            {"value": -500, "label": "-500"},
+            {"value": -250, "label": "-250"},
+            {"value": 0, "label": "0"},
+            {"value": 250, "label": "250"},
+            {"value": 500, "label": "500"}
+          ],
+          "label": {
+            "id": "panel-d-x-label",
+            "text": "Time from stim (ms)",
+            "x": 231,
+            "y": 457,
+            "fontSize": 17,
+            "fontWeight": 400,
+            "anchor": "middle",
+            "sourceBox": {"x": 161, "y": 440, "width": 139, "height": 22},
+            "targetWidth": 139,
+            "fit": "visual-first-pass"
+          }
+        },
+        "y": {
+          "scale": "linear",
+          "domain": [-1.5, 1.5],
+          "ticks": [
+            {"value": -1.5, "label": "-1.5"},
+            {"value": -1.0, "label": "-1.0"},
+            {"value": -0.5, "label": "-0.5"},
+            {"value": 0, "label": "0"},
+            {"value": 0.5, "label": "0.5"},
+            {"value": 1.0, "label": "1.0"},
+            {"value": 1.5, "label": "1.5"}
+          ],
+          "label": {
+            "id": "panel-d-y-label",
+            "text": "Sequence score (z)",
+            "x": 38,
+            "y": 268,
+            "rotation": -90,
+            "fontSize": 17,
+            "fontWeight": 400,
+            "anchor": "middle",
+            "sourceBox": {"x": 25, "y": 205, "width": 22, "height": 133},
+            "targetWidth": 133,
+            "fit": "visual-first-pass"
+          }
+        }
+      },
+      "legend": {
+        "id": "panel-d-legend",
+        "items": [
+          {
+            "series": "pre-stim",
+            "label": "Pre-stim (n=15 sessions)",
+            "x": 66,
+            "y": 79,
+            "swatch": {"x1": 66, "y1": 79, "x2": 85, "y2": 79}
+          },
+          {
+            "series": "stim",
+            "label": "Stim (n=15 sessions)",
+            "x": 66,
+            "y": 102,
+            "swatch": {"x1": 66, "y1": 102, "x2": 85, "y2": 102}
+          }
+        ],
+        "fontSize": 14,
+        "fontWeight": 400,
+        "sourceBox": {"x": 66, "y": 74, "width": 170, "height": 34}
+      },
+      "data": {
+        "series": [
+          {
+            "id": "pre-stim",
+            "label": "Pre-stim (n=15 sessions)",
+            "color": "#11787d",
+            "bandColor": "#91c9c6",
+            "points": [
+              [-500, -0.06], [-470, -0.05], [-440, -0.03], [-410, -0.08], [-380, -0.04], [-350, -0.01], [-325, -0.08], [-300, -0.20], [-275, -0.18], [-250, -0.13], [-225, -0.15], [-200, -0.12], [-175, -0.18], [-150, -0.16], [-125, -0.14], [-100, -0.16], [-75, -0.14], [-50, -0.13], [-25, -0.17], [0, -0.30], [25, -0.28], [50, -0.24], [75, -0.31], [100, -0.25], [125, -0.22], [150, -0.30], [175, -0.29], [200, -0.30], [225, -0.28], [250, -0.24], [275, -0.19], [300, -0.27], [325, -0.33], [350, -0.29], [375, -0.24], [400, -0.32], [425, -0.26], [450, -0.35], [475, -0.30], [500, -0.36], [525, -0.40], [550, -0.37]
+            ],
+            "sem": 0.055
+          },
+          {
+            "id": "stim",
+            "label": "Stim (n=15 sessions)",
+            "color": "#ff6b0a",
+            "bandColor": "#f6b178",
+            "points": [
+              [-500, -0.12], [-470, -0.11], [-440, -0.10], [-410, -0.09], [-380, -0.07], [-350, -0.06], [-325, -0.20], [-300, -0.24], [-275, -0.20], [-250, -0.15], [-225, -0.10], [-200, -0.12], [-175, -0.11], [-150, -0.08], [-125, -0.06], [-100, -0.08], [-75, -0.04], [-50, -0.04], [-25, 0.00], [0, 0.10], [25, 0.22], [50, 0.30], [75, 0.45], [100, 0.56], [125, 0.65], [150, 0.72], [175, 0.80], [200, 0.76], [225, 0.65], [250, 0.68], [275, 0.66], [300, 0.63], [325, 0.64], [350, 0.61], [375, 0.60], [400, 0.58], [425, 0.49], [450, 0.50], [475, 0.47], [500, 0.45], [525, 0.42], [550, 0.38]
+            ],
+            "sem": 0.065
+          }
+        ]
+      },
+      "marks": [
+        {
+          "id": "pre-stim-band",
+          "type": "uncertaintyBand",
+          "series": "pre-stim",
+          "usesTransform": "panel-d.xy",
+          "semField": "sem",
+          "fill": "#91c9c6",
+          "opacity": 0.55
+        },
+        {
+          "id": "pre-stim-line",
+          "type": "lineSeries",
+          "series": "pre-stim",
+          "usesTransform": "panel-d.xy",
+          "stroke": "#11787d",
+          "strokeWidth": 2.2,
+          "lineJoin": "round",
+          "lineCap": "round"
+        },
+        {
+          "id": "stim-band",
+          "type": "uncertaintyBand",
+          "series": "stim",
+          "usesTransform": "panel-d.xy",
+          "semField": "sem",
+          "fill": "#f6b178",
+          "opacity": 0.52
+        },
+        {
+          "id": "stim-line",
+          "type": "lineSeries",
+          "series": "stim",
+          "usesTransform": "panel-d.xy",
+          "stroke": "#ff6b0a",
+          "strokeWidth": 2.3,
+          "lineJoin": "round",
+          "lineCap": "round"
+        }
+      ],
+      "annotations": [
+        {
+          "id": "zero-horizontal-reference",
+          "type": "line",
+          "usesTransform": "panel-d.xy",
+          "x1Value": -500,
+          "x2Value": 550,
+          "y1Value": 0,
+          "y2Value": 0,
+          "stroke": "#111111",
+          "strokeWidth": 1,
+          "dasharray": "1 4",
+          "opacity": 0.9
+        },
+        {
+          "id": "stim-event-line",
+          "type": "line",
+          "usesTransform": "panel-d.xy",
+          "x1Value": 0,
+          "x2Value": 0,
+          "y1Value": -1.5,
+          "y2Value": 1.5,
+          "stroke": "#111111",
+          "strokeWidth": 1,
+          "dasharray": "6 8",
+          "opacity": 0.85,
+          "anchorTo": "panel-d.xy.eventAnchor"
+        },
+        {
+          "id": "p-value-bracket",
+          "type": "bracket",
+          "usesTransform": "panel-d.xy",
+          "x1Value": 135,
+          "x2Value": 465,
+          "yValue": -1.28,
+          "stroke": "#111111",
+          "strokeWidth": 2
+        },
+        {
+          "id": "p-value-label",
+          "type": "text",
+          "usesTransform": "panel-d.xy",
+          "text": "p < 0.001",
+          "xValue": 300,
+          "yValue": -1.13,
+          "fontSize": 14,
+          "fontStyle": "italic",
+          "anchor": "middle",
+          "anchorTo": "p-value-bracket"
+        }
+      ],
+      "provenance": [
+        {
+          "target": "panel-d.xy",
+          "confidence": "medium",
+          "note": "Plot box and data domains inferred from visible axes, tick labels, and event line."
+        },
+        {
+          "target": "series",
+          "confidence": "low-medium",
+          "note": "Line trajectories and uncertainty widths are visually approximated for editable first-pass reconstruction, not digitized measurements."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "expectedPanelCount": 1,
+    "expectedSeries": 2,
+    "expectedXAxisTicks": 5,
+    "expectedYAxisTicks": 7,
+    "sourceReusePolicy": "Source raster appears only in QA/reference img element; generated SVG does not call drawImage or use CSS background images."
+  },
+  "confidence": [
+    {
+      "target": "overall",
+      "confidence": "first-pass",
+      "note": "Semantic, editable reconstruction intended for visual inspection and iteration."
+    }
+  ]
+}

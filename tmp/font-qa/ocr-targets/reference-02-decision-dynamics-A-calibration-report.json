@@ -1,0 +1,192 @@
+[
+  {
+    "id": "ocr-01",
+    "text": "A Trial timeline",
+    "family": "Arial Narrow",
+    "size": 19.69,
+    "weight": 600,
+    "lineHeight": 1,
+    "scaleX": 1.005,
+    "naturalWidth": 114.87,
+    "x": 78,
+    "y": 31.65,
+    "score": 0.36385,
+    "crop": {
+      "x": 8,
+      "y": 6,
+      "width": 130,
+      "height": 39
+    }
+  },
+  {
+    "id": "ocr-02",
+    "text": "Fixate Stimulus Delay Go Outcome",
+    "family": "Arimo",
+    "size": 21.64,
+    "weight": 600,
+    "lineHeight": 1,
+    "scaleX": 1.13,
+    "naturalWidth": 325.77,
+    "x": 32.25,
+    "y": 93.9,
+    "score": 1.01131,
+    "crop": {
+      "x": 30,
+      "y": 66,
+      "width": 376,
+      "height": 39
+    }
+  },
+  {
+    "id": "ocr-03",
+    "text": "500ms 500 ms",
+    "family": "Helvetica Neue",
+    "size": 14.62,
+    "weight": 500,
+    "lineHeight": 1,
+    "scaleX": 1.25,
+    "naturalWidth": 97.52,
+    "x": 29.25,
+    "y": 112.55,
+    "score": 1.52003,
+    "crop": {
+      "x": 27,
+      "y": 97,
+      "width": 374,
+      "height": 20
+    }
+  },
+  {
+    "id": "ocr-04",
+    "text": "H H",
+    "family": "Helvetica Neue",
+    "size": 10.72,
+    "weight": 400,
+    "lineHeight": 1,
+    "scaleX": 1.13,
+    "naturalWidth": 18.46,
+    "x": 326,
+    "y": 242,
+    "score": 1.68873,
+    "crop": {
+      "x": 261,
+      "y": 229,
+      "width": 140,
+      "height": 18
+    }
+  },
+  {
+    "id": "ocr-05",
+    "text": "Time from stimulus onset (ms)",
+    "family": "Helvetica Neue",
+    "size": 13.79,
+    "weight": 500,
+    "lineHeight": 1,
+    "scaleX": 0.975,
+    "naturalWidth": 191.34,
+    "x": 120,
+    "y": 297.15,
+    "score": 0.39706,
+    "crop": {
+      "x": 116,
+      "y": 280,
+      "width": 193,
+      "height": 24
+    }
+  },
+  {
+    "id": "ocr-06",
+    "text": "Baseline Stim Delay Response Outcome",
+    "family": "Helvetica",
+    "size": 16.48,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1.225,
+    "naturalWidth": 297.07,
+    "x": 29.25,
+    "y": 334.5,
+    "score": 0.80344,
+    "crop": {
+      "x": 31,
+      "y": 319,
+      "width": 370,
+      "height": 23
+    }
+  },
+  {
+    "id": "ocr-07",
+    "text": "Cognitive Evidence Decision Feedback",
+    "family": "Helvetica Neue",
+    "size": 23.68,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1.005,
+    "naturalWidth": 383.12,
+    "x": 14.25,
+    "y": 379,
+    "score": 0.87137,
+    "crop": {
+      "x": 12,
+      "y": 347,
+      "width": 393,
+      "height": 40
+    }
+  },
+  {
+    "id": "ocr-08",
+    "text": "process encoding accumulation",
+    "family": "Arimo",
+    "size": 17.69,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1.05,
+    "naturalWidth": 222.03,
+    "x": 14.75,
+    "y": 389.65,
+    "score": 0.75985,
+    "crop": {
+      "x": 9,
+      "y": 367,
+      "width": 242,
+      "height": 34
+    }
+  },
+  {
+    "id": "ocr-09",
+    "text": "Saccade Reward",
+    "family": "Helvetica Neue",
+    "size": 13.07,
+    "weight": 400,
+    "lineHeight": 1,
+    "scaleX": 1.08,
+    "naturalWidth": 99.71,
+    "x": 339.25,
+    "y": 423.65,
+    "score": 0.76523,
+    "crop": {
+      "x": 282,
+      "y": 409,
+      "width": 118,
+      "height": 19
+    }
+  },
+  {
+    "id": "ocr-10",
+    "text": "Example Hold",
+    "family": "Source Sans 3",
+    "size": 19.36,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1,
+    "naturalWidth": 62.25,
+    "x": 14.25,
+    "y": 433,
+    "score": 0.74427,
+    "crop": {
+      "x": 11,
+      "y": 408,
+      "width": 218,
+      "height": 40
+    }
+  }
+]

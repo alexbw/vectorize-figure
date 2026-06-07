@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-04-motor-manifold-F reconstruction</title>
+  <style>
+    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #d0d0d0; }
+    h1 { margin: 0; font-size: 15px; font-weight: 700; }
+    .note { margin-top: 3px; font-size: 12px; color: #555555; }
+    .toggle { display: inline-flex; overflow: hidden; border: 1px solid #999999; border-radius: 4px; }
+    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
+    .toggle button.active { background: #111111; color: #ffffff; }
+    main { min-height: calc(100vh - 50px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
+    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
+    .surface, .reference-wrap { position: absolute; inset: 0; }
+    .heatmap-layer, svg { position: absolute; inset: 0; }
+    .reference-wrap { display: none; }
+    .reference-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .qa-label { position: absolute; left: 8px; bottom: 8px; padding: 3px 6px; border: 1px solid #777777; background: rgba(255,255,255,0.92); font-size: 11px; font-weight: 700; }
+    .show-reference .surface { display: none; }
+    .show-reference .reference-wrap { display: block; }
+    svg { overflow: visible; }
+    text { paint-order: stroke; stroke: #ffffff; stroke-width: 2px; stroke-linejoin: round; }
+    .panel-label, .figure-title, .matrix-title, .axis-title { stroke-width: 2.4px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-04-motor-manifold-F</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <div id="referenceWrap" class="reference-wrap">
+        <img id="reference" alt="QA reference source image">
+        <div class="qa-label">QA reference only: source raster</div>
+      </div>
+    </div>
+  </main>
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const SPEC_PATH = 'reference-04-motor-manifold-F.json';
+
+    function el(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function addText(parent, text, x, y, attrs = {}) {
+      const node = el('text', {
+        x, y,
+        fill: attrs.fill || '#111111',
+        'font-size': attrs.size || 13,
+        'font-weight': attrs.weight || 400,
+        'font-family': attrs.family || 'Arial, Helvetica, sans-serif',
+        'text-anchor': attrs.anchor || 'start',
+        'dominant-baseline': attrs.baseline || 'auto',
+        class: attrs.class || ''
+      });
+      if (attrs.rotate) node.setAttribute('transform', `rotate(${attrs.rotate} ${x} ${y})`);
+      node.textContent = text;
+      parent.appendChild(node);
+      return node;
+    }
+
+    function mulberry32(seed) {
+      return function random() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    function clamp(value, lo, hi) {
+      return Math.max(lo, Math.min(hi, value));
+    }
+
+    function blue(value) {
+      const v = clamp(value, 0, 1);
+      const stops = [
+        [0.00, [247, 251, 255]],
+        [0.18, [222, 235, 247]],
+        [0.36, [198, 219, 239]],
+        [0.56, [107, 174, 214]],
+        [0.76, [33, 113, 181]],
+        [1.00, [8, 48, 107]]
+      ];
+      for (let i = 0; i < stops.length - 1; i++) {
+        const a = stops[i];
+        const b = stops[i + 1];
+        if (v >= a[0] && v <= b[0]) {
+          const t = (v - a[0]) / (b[0] - a[0]);
+          const rgb = a[1].map((channel, j) => Math.round(channel + (b[1][j] - channel) * t));
+          return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+        }
+      }
+      return 'rgb(8, 48, 107)';
+    }
+
+    function matrixValues(panel) {
+      const size = 8;
+      const random = mulberry32(panel.seed);
+      const values = [];
+      for (let r = 0; r < size; r++) {
+        const row = [];
+        for (let c = 0; c < size; c++) {
+          const distance = Math.min(Math.abs(r - c), size - Math.abs(r - c));
+          let value = panel.offDiagonalStrength * Math.exp(-distance * 0.9) + random() * 0.045;
+          if (distance === 0) value = panel.diagonalStrength + (random() - 0.5) * 0.11;
+          if (distance === 1) value += 0.09 + random() * 0.04;
+          row.push(clamp(value, 0, 1));
+        }
+        values.push(row);
+      }
+      return values;
+    }
+
+    function renderHeatmaps(spec, canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const panel of spec.panels) {
+        const box = panel.plot.matrixBbox;
+        const values = matrixValues(panel);
+        const cellW = box.width / 8;
+        const cellH = box.height / 8;
+        for (let r = 0; r < 8; r++) {
+          for (let c = 0; c < 8; c++) {
+            ctx.fillStyle = blue(values[r][c]);
+            ctx.fillRect(box.x + c * cellW, box.y + r * cellH, Math.ceil(cellW) + 0.3, Math.ceil(cellH) + 0.3);
+          }
+        }
+      }
+    }
+
+    function renderLegend(svg, spec) {
+      const legend = spec.layoutObjects.find(item => item.id === 'series-legend');
+      for (const item of legend.items) {
+        svg.appendChild(el('line', {
+          x1: legend.bbox.x, y1: item.y, x2: legend.bbox.x + 22, y2: item.y,
+          stroke: item.color, 'stroke-width': spec.rendering.styles.legendStrokeWidth,
+          'data-legend-item': item.id
+        }));
+        addText(svg, item.label, legend.bbox.x + 36, item.y + 5, {size: 14});
+      }
+      addText(svg, legend.chanceText.text, legend.chanceText.anchor.x, legend.chanceText.anchor.y, {size: 14});
+    }
+
+    function renderMatrixAxes(svg, spec, panel, panelIndex) {
+      const outer = panel.plot.bbox;
+      const matrix = panel.plot.matrixBbox;
+      svg.appendChild(el('rect', {
+        x: outer.x, y: outer.y, width: outer.width, height: outer.height,
+        fill: 'none', stroke: spec.rendering.styles.matrixBorder, 'stroke-width': 1,
+        'data-panel': panel.id, 'data-role': 'matrix-frame'
+      }));
+      addText(svg, panel.title.text, outer.x + outer.width / 2, outer.y - 9, {size: 14, anchor: 'middle', class: 'matrix-title'});
+      const tickValues = [0, 90, 180, 270];
+      for (const value of tickValues) {
+        const center = value / 315 * 7 + 0.5;
+        const x = matrix.x + center * matrix.width / 8;
+        const y = matrix.y + center * matrix.height / 8;
+        if (panelIndex < 2) {
+          svg.appendChild(el('line', {x1: x, y1: outer.y + outer.height, x2: x, y2: outer.y + outer.height + 4, stroke: '#222222', 'stroke-width': 1, 'data-axis': 'predictedDirectionDegrees', 'data-value': value}));
+          addText(svg, String(value), x, outer.y + outer.height + 18, {size: 13, anchor: 'middle'});
+        }
+        if (panelIndex === 0) {
+          svg.appendChild(el('line', {x1: outer.x - 4, y1: y, x2: outer.x, y2: y, stroke: '#222222', 'stroke-width': 1, 'data-axis': 'trueDirectionDegrees', 'data-value': value}));
+          addText(svg, String(value), outer.x - 10, y + 5, {size: 13, anchor: 'end'});
+        }
+      }
+    }
+
+    function renderColorbar(svg, spec) {
+      const bar = spec.layoutObjects.find(item => item.id === 'probability-colorbar');
+      const defs = svg.querySelector('defs');
+      const gradient = el('linearGradient', {id: 'probabilityGradient', x1: '0%', y1: '100%', x2: '0%', y2: '0%'});
+      gradient.appendChild(el('stop', {offset: '0%', 'stop-color': blue(0)}));
+      gradient.appendChild(el('stop', {offset: '50%', 'stop-color': blue(0.5)}));
+      gradient.appendChild(el('stop', {offset: '100%', 'stop-color': blue(1)}));
+      defs.appendChild(gradient);
+      addText(svg, bar.title.text, bar.title.anchor.x, bar.title.anchor.y, {size: 13});
+      svg.appendChild(el('rect', {x: bar.bbox.x, y: bar.bbox.y, width: bar.bbox.width, height: bar.bbox.height, fill: 'url(#probabilityGradient)', stroke: '#777777', 'stroke-width': 0.6}));
+      for (const tick of bar.ticks) {
+        const y = bar.bbox.y + (1 - tick.value) * bar.bbox.height;
+        svg.appendChild(el('line', {x1: bar.bbox.x + bar.bbox.width, y1: y, x2: bar.bbox.x + bar.bbox.width + 4, y2: y, stroke: '#333333', 'stroke-width': 0.8, 'data-colorbar-tick': tick.value}));
+        addText(svg, tick.label, bar.bbox.x + bar.bbox.width + 9, y + 4, {size: 12});
+      }
+    }
+
+    function render(spec) {
+      document.getElementById('title').textContent = spec.id;
+      const frame = document.getElementById('frame');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      document.getElementById('reference').src = spec.source.path;
+
+      const surface = document.getElementById('surface');
+      surface.innerHTML = '';
+      const canvas = document.createElement('canvas');
+      canvas.className = 'heatmap-layer';
+      canvas.width = spec.canvas.width;
+      canvas.height = spec.canvas.height;
+      surface.appendChild(canvas);
+      renderHeatmaps(spec, canvas);
+
+      const svg = el('svg', {viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, width: spec.canvas.width, height: spec.canvas.height, role: 'img', 'aria-label': spec.id});
+      svg.style.backgroundColor = 'transparent';
+      svg.appendChild(el('defs'));
+      renderLegend(svg, spec);
+      addText(svg, 'F', 160, 32, {size: 22, weight: 700, class: 'panel-label'});
+      addText(svg, 'Crosss-validated confusion matrices', 192, 32, {size: 17, weight: 700, class: 'figure-title'});
+      addText(svg, '(movement epoch)', 459, 32, {size: 15, class: 'figure-title'});
+      spec.panels.forEach((panel, index) => renderMatrixAxes(svg, spec, panel, index));
+      addText(svg, 'True dir. (deg)', 174, 147, {size: 15, rotate: -90, anchor: 'middle', class: 'axis-title'});
+      addText(svg, 'Predicted dir. (deg)', 405, 258, {size: 16, anchor: 'middle', class: 'axis-title'});
+      renderColorbar(svg, spec);
+      surface.appendChild(svg);
+    }
+
+    async function boot() {
+      const response = await fetch(SPEC_PATH);
+      const spec = await response.json();
+      render(spec);
+      const frame = document.getElementById('frame');
+      const generatedButton = document.getElementById('generatedButton');
+      const referenceButton = document.getElementById('referenceButton');
+      generatedButton.addEventListener('click', () => {
+        frame.classList.remove('show-reference');
+        generatedButton.classList.add('active');
+        referenceButton.classList.remove('active');
+      });
+      referenceButton.addEventListener('click', () => {
+        frame.classList.add('show-reference');
+        referenceButton.classList.add('active');
+        generatedButton.classList.remove('active');
+      });
+    }
+
+    boot().catch(error => {
+      document.getElementById('surface').textContent = `Unable to load reconstruction JSON: ${error.message}`;
+      console.error(error);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,2629 @@
+Reading additional input from stdin...
+OpenAI Codex v0.137.0
+--------
+workdir: /Users/alex/Code/scientific-figure-reconstruction
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: low
+reasoning summaries: none
+session id: 019e9e76-2c80-7680-8b0b-149da5b2cfd7
+--------
+user
+$make-figure assets/reference/reference-05-grid-remapping-D-reference.png. Generate an independent first-pass reconstruction for visual inspection. Write outputs only to outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.json and outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.html. Use the make-figure skill contract and the repository command/skill code: generated visual layers must not reuse the source raster; the source may appear only as a clearly labeled QA/reference view. Keep the JSON semantic and editable. Verify JSON validity and search the output for accidental drawImage/background source reuse. Do not modify existing output directories, docs, skills, plugins, source assets, or unrelated files.
+codex
+I’ll use the `make-figure` skill and keep the reconstruction generated from semantic JSON, with the source raster only available as a labeled QA/reference view. I’m going to inspect the repo templates and the target image dimensions first.
+exec
+/bin/zsh -lc "sed -n '1,220p' skills/make-figure/references/semantic-figure-ir.md" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+# Semantic Figure IR
+
+Use this document with `reconstruction-contract.md`. The reconstruction output
+is a semantic figure intermediate representation, not a collection of detected
+bounding boxes.
+
+## Core Model
+
+A scientific figure reconstruction is a typed scene graph:
+
+```text
+source evidence
+  -> semantic figure objects
+  -> named coordinate systems and transforms
+  -> derived layout objects
+  -> renderable marks and text
+  -> validation constraints
+```
+
+Bounding boxes, OCR text, detected line segments, and color samples are source
+evidence. They help infer the graph, but they are not the graph itself.
+
+## Common Object Fields
+
+Any semantic object may use these fields:
+
+```json
+{
+  "id": "panel-a-x-tick-0",
+  "type": "axisTick",
+  "parent": "panel-a-x-axis",
+  "children": ["panel-a-x-tick-0-mark", "panel-a-x-tick-0-label"],
+  "usesTransform": "panel-a.xy",
+  "anchorTo": "panel-a-x-axis",
+  "derivesFrom": "panel-a.x.ticks[0]",
+  "sourceEvidence": ["bbox-17", "line-04"],
+  "provenance": {"confidence": "medium", "note": "Tick position measured from source."}
+}
+```
+
+Prefer stable ids and explicit relationships over free-floating pixel objects.
+When an object needs source-calibrated coordinates, keep those coordinates on
+the semantic object as measured anchors instead of detaching the rendered mark
+or text.
+
+## Top-Level IR Concepts
+
+- `sourceEvidence`: source bboxes, OCR snippets, measured line segments, color
+  samples, and notes. These are evidence records, not render instructions.
+- `coordinateSystems`: named transforms such as Cartesian data scales,
+  categorical scales, event anchors, color scales, image/matrix ranges, and
+  projected 3D scenes.
+- `layoutObjects`: axes, tick-label bands, legends, colorbars, tables, insets,
+  panel titles, scale bars, and other objects that reserve space or anchor text.
+- `data`: exact data, approximate data, or generation recipes.
+- `marks`: visual encodings derived from data or layout objects.
+- `annotations`: labels, arrows, brackets, callouts, and event labels anchored
+  to data points, marks, or layout objects.
+- `constraints`: relationship and layout invariants that must survive rendering.
+- `rendering`: renderer hints, layer order, and style tokens.
+- `validation`: renderer- or harness-readable checks and expected counts.
+- `provenance`: object-level confidence and unresolved inferences.
+
+Panel-specific schemas may organize these concepts differently, but they should
+preserve the same relationships.
+
+## Required Relationship Invariants
+
+Renderers and validation scripts should enforce these when the source shows the
+corresponding objects:
+
+- Labeled ticks render one tick mark and one tick label with matching
+  `axis`/`value` metadata.
+- Axis titles anchor to an axis, tick-label band, or measured source anchor;
+  they are not independent guessed text.
+- Event-aligned ticks, event lines, brackets, and annotations share a named
+  event anchor or explicit measured visual anchor.
+- Grid lines belong to named grid planes and families; grid lines must not be
+  confused with solid box edges.
+- Legends reference real series, marker classes, or mark groups.
+- Colorbars reference a color scale and own their ticks and title.
+- Table cell text, row rules, separators, and highlights remain separate
+  objects when their visual styles differ.
+- Annotations anchor to data coordinates, generated marks, or layout objects
+  unless they are explicitly page-positioned.
+- Generated visuals never reuse the source raster as a generated layer.
+
+## Relationship Inventory Step
+
+Before writing the final JSON for a nontrivial panel, produce a short inventory:
+
+- plot type and renderer strategy
+- coordinate systems and named anchors
+- layout objects and their children
+- data-driven marks and their series/group ownership
+- annotations and what each one anchors to
+- source-calibrated overrides and why the transform alone is insufficient
+- validation constraints that should be checked in the rendered DOM
+
+Do this before visual tuning. If a generated object looks wrong, first ask which
+relationship or transform is missing before changing pixels.
+
+
+exec
+/bin/zsh -lc "sed -n '1,220p' skills/make-figure/references/reconstruction-contract.md" in /Users/alex/Code/scientific-figure-reconstruction
+exec
+/bin/zsh -lc "sed -n '1,220p' skills/make-figure/assets/hybrid-renderer-template.html" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scientific figure reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #aaaaaa;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .surface,
+    .reference {
+      position: absolute;
+      inset: 0;
+    }
+
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+    }
+
+    .show-reference .surface {
+      display: none;
+    }
+
+    .show-reference .reference {
+      display: block;
+    }
+
+    svg,
+    canvas {
+      position: absolute;
+      inset: 0;
+    }
+
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">Scientific figure reconstruction</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="Reference source image">
+    </div>
+  </main>
+
+  <script id="fallback-spec" type="application/json">
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "example-panel",
+  "source": {
+    "path": "",
+    "usage": "QA-only; not used by generated candidate."
+  },
+  "canvas": {"width": 640, "height": 420, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Source Sans 3", "Roboto", "Noto Sans"]
+  },
+  "panels": [
+    {
+      "id": "panel-a",
+      "label": {"text": "A", "x": 18, "y": 28, "fontSize": 24, "fontWeight": 700},
+      "title": {"text": "Example configurable panel", "x": 58, "y": 30, "fontSize": 16, "fontWeight": 700},
+      "plot": {
+        "bbox": {"x": 80, "y": 70, "width": 470, "height": 270},
+        "x": {"domain": [0, 10], "ticks": [{"value": 0, "label": "0"}, {"value": 5, "label": "5"}, {"value": 10, "label": "10"}], "label": {"text": "Time (s)"}},
+        "y": {"domain": [0, 1], "ticks": [{"value": 0, "label": "0"}, {"value": 0.5, "label": "0.5"}, {"value": 1, "label": "1"}], "label": {"text": "Response"}}
+      },
+      "marks": [
+        {"id": "series-1", "type": "lineSeries", "points": [[0, 0.22], [2, 0.32], [4, 0.71], [6, 0.54], [8, 0.82], [10, 0.76]], "stroke": "#111111", "strokeWidth": 2.5},
+        {"id": "event", "type": "line", "x1": 315, "y1": 70, "x2": 315, "y2": 340, "stroke": "#008f96", "strokeWidth": 1.5, "dasharray": "4 4"},
+        {"id": "event-label", "type": "text", "text": "event", "x": 315, "y": 54, "fontSize": 13, "fill": "#008f96", "anchor": "middle"}
+      ]
+    }
+  ],
+  "confidence": [{"target": "example-panel", "confidence": "demo", "note": "Replace fallback spec with an adjacent JSON file."}]
+}
+  </script>
+
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function $(id) {
+      return document.getElementById(id);
+    }
+
+    function make(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function rng(seed) {
+      return function random() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function scale(domain, range, value) {
+      return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+    }
+
+    function pointScales(plot) {
+      const box = plot.bbox;
+      return {
+        x: value => scale(plot.x.domain, [box.x, box.x + box.width], value),
+        y: value => scale(plot.y.domain, [box.y + box.height, box.y], value)
+      };
+    }
+
+    function appendStylesheet(href) {
+      return new Promise(resolve => {
+        if (!href) return resolve();
+        const existing = document.querySelector(`link[data-font-import="${CSS.escape(href)}"]`);
+        if (existing) return resolve();
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = href;
+        link.dataset.fontImport = href;
+        link.onload = () => resolve();
+        link.onerror = () => {
+          console.warn(`Font stylesheet failed to load: ${href}`);
+          resolve();
+        };
+        document.head.appendChild(link);
+      });
+    }
+
+
+ succeeded in 0ms:
+# Reconstruction Contract
+
+Use this contract when converting a raster scientific figure into configurable HTML and JSON.
+
+Read `semantic-figure-ir.md` alongside this contract. The JSON may be
+panel-specific, but it must preserve semantic relationships between data,
+transforms, layout objects, marks, labels, and validation constraints.
+
+## JSON Shape
+
+Minimum top-level fields:
+
+```json
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "figure-id",
+  "source": {
+    "path": "./source.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "What was inferred visually."
+  },
+  "canvas": {
+    "width": 800,
+    "height": 600,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [
+      "https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&display=swap"
+    ],
+    "fontFaces": [
+      {"family": "FigureSans", "weight": 400, "src": "./fonts/FigureSans-Regular.woff2"},
+      {"family": "FigureSans", "weight": 700, "src": "./fonts/FigureSans-Bold.woff2"}
+    ],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Source Sans 3", "Roboto", "Noto Sans"],
+    "calibration": {
+      "fontStretch": "normal",
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Use measured source text boxes to tune font family, stretch, size, and line height."
+    }
+  },
+  "panels": [],
+  "confidence": []
+}
+```
+
+`fontImports` is for lightweight browser-based experimentation with external
+CSS font providers such as Google Fonts. `fontFaces` is for reproducible local
+or adjacent font files when a typeface has been selected. Do not introduce a
+build system only to test fonts; use browser-native font loading and SVG text
+measurement first.
+
+## Panel Shape
+
+Represent each subpanel explicitly. For a single cropped panel, use one item in `panels`.
+
+```json
+{
+  "id": "panel-a",
+  "label": {"text": "A", "x": 16, "y": 20, "fontSize": 24, "fontWeight": 700},
+  "title": {"text": "Panel title", "x": 56, "y": 24, "fontSize": 16, "fontWeight": 700},
+  "bbox": {"x": 0, "y": 0, "width": 400, "height": 300},
+  "plot": {
+    "dataBbox": {"x": 64, "y": 48, "width": 300, "height": 210},
+    "axes": {
+      "xAxis": {"id": "panel-a-x-axis", "line": {"x1": 64, "y1": 258, "x2": 364, "y2": 258}, "tickLength": 6},
+      "yAxis": {"id": "panel-a-y-axis", "line": {"x1": 64, "y1": 48, "x2": 64, "y2": 258}, "tickLength": 6}
+    },
+    "x": {
+      "scale": "linear",
+      "domain": [0, 10],
+      "ticks": [{"value": 0, "label": "0"}, {"value": 5, "label": "5"}, {"value": 10, "label": "10"}],
+      "label": {"text": "Time (s)"}
+    },
+    "y": {
+      "scale": "linear",
+      "domain": [0, 1],
+      "ticks": [{"value": 0, "label": "0"}, {"value": 0.5, "label": "0.5"}, {"value": 1, "label": "1"}],
+      "label": {"text": "Response"}
+    }
+  },
+  "marks": [],
+  "annotations": [],
+  "provenance": []
+}
+```
+
+## Mark Types
+
+Use semantic mark objects. Add fields as needed, but keep the meaning explicit.
+
+- `lineSeries`: data points plus stroke, width, optional uncertainty band.
+- `scatter`: points, marker shape, size, fill, stroke, opacity.
+- `bar`: categorical or numeric bars with baseline, fill, stroke.
+- `heatmap`: matrix, color scale, bounds, interpolation flag.
+- `raster`: event times by row or a generation recipe with seed and density.
+- `violin`: category, outline path or generated KDE recipe, median/quantile marks.
+- `path`: editable SVG path data for contours, arrows, outlines, or schematic curves.
+- `rect`, `circle`, `ellipse`, `text`, `bracket`, `arrow`: annotations and schematics.
+- `imageRecipe`: generated texture or synthetic field; never point this at the source raster.
+
+## Coordinate Systems
+
+Define named transforms before rendering marks:
+
+- `plot.dataBbox` maps data to pixels.
+- For charts where the visual data rectangle is offset from axes, split
+  `dataBbox` from `axisBbox` or explicit axis anchors such as `yAxisX` and
+  `xAxisY`. Do not force source axis offsets into the data transform.
+- `x.domain` and `y.domain` map quantitative axes.
+- `categories` map categorical positions.
+- `eventAnchor` maps event-aligned plots.
+- `colorScale.domain` maps heatmaps and colorbars.
+
+Avoid mixing hard-coded pixel marks with data-space marks unless the mark is truly an annotation. Ticks, event lines, and data marks should share the same transform.
+
+### 3D Scientific Plots
+
+Recognize 3D plots from visual cues such as three nonparallel labeled axes,
+isometric or perspective box frames, oblique grid planes, tick labels attached
+to multiple axis directions, and data paths or markers that overlap within a
+projected volume. Do not require the user to identify a panel as 3D.
+
+For static publication-style 3D plots made of axes, grid lines, trajectories,
+markers, and labels, prefer semantic 3D data rendered into SVG through an
+explicit projection function. Reserve WebGL or Three.js for genuinely complex
+surfaces, dense point clouds, lighting, meshes, or interactive rotation.
+
+Represent 3D scenes with explicit camera or projection metadata:
+
+```json
+{
+  "scene": {
+    "projection": {
+      "type": "orthographicBasis",
+      "corner": {"x": 58, "y": 327},
+      "domainCorner": {"pc1": -2, "pc2": -2, "pc3": -2},
+      "basis": {
+        "pc1": {"x": 258, "y": 30},
+        "pc2": {"x": 145, "y": 90},
+        "pc3": {"x": 0, "y": -184}
+      }
+    },
+    "domains": {"pc1": [-2, 2], "pc2": [-2, 2], "pc3": [-2, 2]},
+    "trajectories": [{"points": [[-1.5, -1.6, -0.3], [0.7, -1.1, 1.8]]}]
+  }
+}
+```
+
+`fontImports` is for lightweight browser-based experimentation with external
+CSS font providers such as Google Fonts. `fontFaces` is for reproducible local
+or adjacent font files when a typeface has been selected. Do not introduce a
+build system only to test fonts; use browser-native font loading and SVG text
+measurement first.
+
+Axes, grid planes, trajectories, markers, and annotations must use the same
+3D-to-2D projection. Depth-sort generated marks when overlap matters: back grid
+and box edges first, faint trial clouds, mean trajectories, timepoint markers,
+then text labels. Labels should anchor to projected 3D points or axis objects
+and then participate in the normal text-collision pass.
+
+When using source-calibrated projected grid segments, avoid segments that
+duplicate solid box edges or accidentally close into polygons. Grid lines should
+read as independent faint plane guides unless the source explicitly shows a
+closed projected face.
+
+Prefer named 3D grid planes over a flat list of projected line segments. For
+example, encode separate `floor`, `backWall`, and `sideWall` grid groups so each
+axis pair has its own Cartesian grid. Inventory the source grid before tuning:
+for every plane, count visible interior guides separately from boundary-aligned
+guides that are merged with or hidden under box edges. Encode grid lines as
+per-family values, such as independent `pc1`, `pc2`, and `pc3` guide families,
+instead of one shared plane-level value list. Each family should state whether
+domain-boundary values are included, and generated SVG lines should expose
+stable plane/family attributes so count validation can catch drift. A 3D
+state-space panel with PC1, PC2, and PC3 axes should not collapse into one wall
+plus a triangular base.
+
+If the source uses faint face shading, encode plane fills separately from grid
+lines and generate the fill polygon from the same 3D projection. Do not bake the
+shading into arbitrary background shapes. Tick labels in 3D plots are layout
+text: allow source-calibrated text positions or offsets from projected ticks so
+labels do not collide with each other, axis titles, or spines.
+
+3D tick labels should be placed by semantic layout rules, not by one-shot
+coordinates alone. Treat axis spines and tick marks as protected geometry with
+padded hit zones. Treat faint grid lines and trajectory clouds as non-protected
+unless the source clearly reserves label space around them. Tick labels may use
+source-calibrated initial positions, but renderers should measure the final text
+box and apply a constrained outward nudge if it intersects protected axis
+geometry:
+
+```json
+{
+  "axis": {
+    "id": "pc1",
+    "tickLabelPlacement": {
+      "avoid": ["axis-spine"],
+      "minGap": 5,
+      "nudge": {"x": 8, "y": 7},
+      "maxSteps": 6
+    }
+  }
+}
+```
+
+3D axes with visible tick labels should also render visible tick marks unless
+the source suppresses them. Store tick geometry as a projected tick anchor, a
+short `markVector`, and a label offset or outward normal. The label should be
+placed from the tick mark first; collision correction is a secondary adjustment,
+not the primary placement mechanism.
+
+When a source-fitted frame or projection still does not reproduce the source's
+tick text positions, keep the numeric tick `value` semantic but add separate
+source-calibrated `markAnchor` and/or `labelAnchor` fields. Do not force tick
+labels through one shared offset vector if the source clearly uses
+
+exec
+/bin/zsh -lc 'file assets/reference/reference-05-grid-remapping-D-reference.png && identify assets/reference/reference-05-grid-remapping-D-reference.png 2>/dev/null || sips -g pixelWidth -g pixelHeight assets/reference/reference-05-grid-remapping-D-reference.png' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+assets/reference/reference-05-grid-remapping-D-reference.png: PNG image data, 486 x 524, 8-bit/color RGB, non-interlaced
+assets/reference/reference-05-grid-remapping-D-reference.png PNG 486x524 486x524+0+0 8-bit sRGB 212899B 0.000u 0:00.000
+
+codex
+The source crop is 486 x 524 px. I’m going to create a compact custom hybrid renderer for this panel: SVG axes/text/violins plus deterministic generated scatter points from JSON recipes, so the output stays editable without embedding the source image in the candidate.
+exec
+/bin/zsh -lc 'find outputs -maxdepth 2 -type f | head -50' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+outputs/reference-03-learning-remapping-B-make-figure-batch/reference-03-learning-remapping-B.json
+outputs/reference-03-learning-remapping-B-make-figure-batch/reference-03-learning-remapping-B.html
+outputs/reference-02-decision-dynamics-H-make-figure-batch/reference-02-decision-dynamics-H.html
+outputs/reference-02-decision-dynamics-H-make-figure-batch/reference-02-decision-dynamics-H.json
+outputs/reference-04-motor-manifold-B-make-figure-batch/reference-04-motor-manifold-B.json
+outputs/reference-04-motor-manifold-B-make-figure-batch/reference-04-motor-manifold-B.html
+outputs/reference-03-learning-remapping-G-make-figure-batch/reference-03-learning-remapping-G.html
+outputs/reference-03-learning-remapping-G-make-figure-batch/reference-03-learning-remapping-G.json
+outputs/reference-04-motor-manifold-G-make-figure-batch/reference-04-motor-manifold-G.html
+outputs/reference-04-motor-manifold-G-make-figure-batch/reference-04-motor-manifold-G.json
+outputs/reference-03-learning-remapping-C-make-figure-batch/reference-03-learning-remapping-C.json
+outputs/reference-03-learning-remapping-C-make-figure-batch/reference-03-learning-remapping-C.html
+outputs/.DS_Store
+outputs/reference-04-motor-manifold-C-make-figure-batch/reference-04-motor-manifold-C.json
+outputs/reference-04-motor-manifold-C-make-figure-batch/reference-04-motor-manifold-C.html
+outputs/reference-03-learning-remapping-F-make-figure-batch/reference-03-learning-remapping-F.html
+outputs/reference-03-learning-remapping-F-make-figure-batch/reference-03-learning-remapping-F.json
+outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html
+outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json
+outputs/reference-01-place-code-opto-B-make-figure/reference-01-place-code-opto-B.html
+outputs/reference-01-place-code-opto-B-make-figure/reference-01-place-code-opto-B.json
+outputs/reference-01-place-code-opto-A-make-figure/reference-01-place-code-opto-A.json
+outputs/reference-01-place-code-opto-A-make-figure/reference-01-place-code-opto-A.html
+outputs/reference-03-learning-remapping-E-make-figure-batch/reference-03-learning-remapping-E.json
+outputs/reference-03-learning-remapping-E-make-figure-batch/reference-03-learning-remapping-E.html
+outputs/reference-04-motor-manifold-E-make-figure-batch/reference-04-motor-manifold-E.json
+outputs/reference-04-motor-manifold-E-make-figure-batch/reference-04-motor-manifold-E.html
+outputs/reference-03-learning-remapping-A-make-figure-batch/reference-03-learning-remapping-A.html
+outputs/reference-03-learning-remapping-A-make-figure-batch/reference-03-learning-remapping-A.json
+outputs/reference-04-motor-manifold-A-make-figure-batch/reference-04-motor-manifold-A.html
+outputs/reference-04-motor-manifold-A-make-figure-batch/reference-04-motor-manifold-A.json
+outputs/reference-03-learning-remapping-D-make-figure-batch/reference-03-learning-remapping-D.json
+outputs/reference-03-learning-remapping-D-make-figure-batch/reference-03-learning-remapping-D.html
+outputs/reference-05-grid-remapping-C-make-figure-test/reference-05-grid-remapping-C.html
+outputs/reference-05-grid-remapping-C-make-figure-test/reference-05-grid-remapping-C.json
+outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.json
+outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.html
+outputs/reference-01-place-code-opto-D-make-figure-batch/reference-01-place-code-opto-D.html
+outputs/reference-01-place-code-opto-D-make-figure-batch/reference-01-place-code-opto-D.json
+outputs/reference-02-decision-dynamics-G-make-figure-batch/reference-02-decision-dynamics-G.json
+outputs/reference-02-decision-dynamics-G-make-figure-batch/reference-02-decision-dynamics-G.html
+outputs/reference-01-place-code-opto-C-make-figure/reference-01-place-code-opto-C.html
+outputs/reference-01-place-code-opto-C-make-figure/reference-01-place-code-opto-C.json
+outputs/reference-02-decision-dynamics-B-make-figure/reference-02-decision-dynamics-B.html
+outputs/reference-02-decision-dynamics-B-make-figure/reference-02-decision-dynamics-B-current.png
+outputs/reference-02-decision-dynamics-B-make-figure/reference-02-decision-dynamics-B.json
+outputs/reference-01-place-code-opto-A-make-figure-batch/reference-01-place-code-opto-A.json
+outputs/reference-01-place-code-opto-A-make-figure-batch/reference-01-place-code-opto-A.html
+outputs/_regression-baselines/reference-02-decision-dynamics-B.png
+outputs/_regression-baselines/reference-02-decision-dynamics-A.png
+
+exec
+/bin/zsh -lc 'ls -la outputs 2>/dev/null || true' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+total 16
+drwxr-xr-x  49 alex  staff  1568 Jun  6 15:43 .
+drwxr-xr-x  15 alex  staff   480 Jun  6 05:13 ..
+-rw-r--r--@  1 alex  staff  6148 Jun  4 05:39 .DS_Store
+drwxr-xr-x   8 alex  staff   256 Jun  6 05:15 _regression-baselines
+drwxr-xr-x   4 alex  staff   128 Jun  5 05:51 reference-01-place-code-opto-A-make-figure
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:24 reference-01-place-code-opto-A-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  4 06:23 reference-01-place-code-opto-B-make-figure
+drwxr-xr-x   4 alex  staff   128 Jun  6 14:59 reference-01-place-code-opto-B-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  3 04:11 reference-01-place-code-opto-C-make-figure
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:22 reference-01-place-code-opto-C-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:24 reference-01-place-code-opto-D-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 14:26 reference-01-place-code-opto-D-make-figure-test
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:24 reference-01-place-code-opto-E-make-figure-batch
+drwxr-xr-x   2 alex  staff    64 Jun  6 14:45 reference-01-place-code-opto-E-make-figure-test
+drwxr-xr-x   4 alex  staff   128 Jun  5 07:51 reference-01-place-code-opto-F-make-figure
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:23 reference-01-place-code-opto-F-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  5 08:20 reference-02-decision-dynamics-A-make-figure
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:26 reference-02-decision-dynamics-A-make-figure-batch
+drwxr-xr-x   5 alex  staff   160 Jun  6 04:30 reference-02-decision-dynamics-B-make-figure
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:27 reference-02-decision-dynamics-B-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:27 reference-02-decision-dynamics-C-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:27 reference-02-decision-dynamics-D-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:29 reference-02-decision-dynamics-E-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:29 reference-02-decision-dynamics-F-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:30 reference-02-decision-dynamics-G-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:30 reference-02-decision-dynamics-H-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:31 reference-03-learning-remapping-A-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:32 reference-03-learning-remapping-B-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:33 reference-03-learning-remapping-C-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:33 reference-03-learning-remapping-D-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:34 reference-03-learning-remapping-E-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:36 reference-03-learning-remapping-F-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:35 reference-03-learning-remapping-G-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:36 reference-04-motor-manifold-A-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:37 reference-04-motor-manifold-B-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:38 reference-04-motor-manifold-C-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:39 reference-04-motor-manifold-D-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:39 reference-04-motor-manifold-E-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:39 reference-04-motor-manifold-F-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:41 reference-04-motor-manifold-G-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:42 reference-04-motor-manifold-H-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:42 reference-04-motor-manifold-I-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:43 reference-05-grid-remapping-A-make-figure-batch
+drwxr-xr-x   2 alex  staff    64 Jun  6 15:41 reference-05-grid-remapping-B-make-figure-batch
+drwxr-xr-x   2 alex  staff    64 Jun  6 15:42 reference-05-grid-remapping-C-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 14:30 reference-05-grid-remapping-C-make-figure-test
+drwxr-xr-x   2 alex  staff    64 Jun  6 15:43 reference-05-grid-remapping-D-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 14:41 reference-05-grid-remapping-D-make-figure-test
+drwxr-xr-x   2 alex  staff    64 Jun  6 15:43 reference-05-grid-remapping-E-make-figure-batch
+
+exec
+/bin/zsh -lc "sed -n '1,220p' outputs/reference-05-grid-remapping-D-make-figure-test/reference-05-grid-remapping-D.json" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-05-grid-remapping-D",
+  "source": {
+    "path": "../../assets/reference/reference-05-grid-remapping-D-reference.png",
+    "usage": "QA-only reference image; not used by generated candidate layers.",
+    "notes": "Single cropped panel D showing two categorical gridness score distributions as violins with dense jittered points, summary bars, y-axis, dashed zero line, and p-value bracket."
+  },
+  "canvas": {
+    "width": 486,
+    "height": 524,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 16,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Roboto", "Noto Sans"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "First-pass manual typography from source crop; title and labels resemble condensed bold publication sans but remain editable."
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-d",
+      "bbox": {"x": 0, "y": 0, "width": 486, "height": 524},
+      "label": {
+        "id": "panel-label",
+        "text": "D",
+        "x": 23,
+        "y": 54,
+        "fontSize": 29,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 23, "y": 31, "width": 20, "height": 28},
+        "fit": "manual"
+      },
+      "title": {
+        "id": "panel-title",
+        "text": "Gridness score distribution",
+        "x": 74,
+        "y": 59,
+        "fontSize": 23,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 75, "y": 40, "width": 258, "height": 25},
+        "fit": "manual"
+      },
+      "plot": {
+        "id": "gridness-violin-plot",
+        "dataBbox": {"x": 86, "y": 88, "width": 346, "height": 322},
+        "axisBbox": {"x": 86, "y": 88, "width": 346, "height": 322},
+        "x": {
+          "scale": "categorical",
+          "categories": [
+            {"id": "env-a", "label": "Environment A", "x": 169, "color": "#8a3f12", "n": 156},
+            {"id": "env-b", "label": "Environment B", "x": 340, "color": "#00747d", "n": 156}
+          ]
+        },
+        "y": {
+          "scale": "linear",
+          "domain": [-1.5, 1.5],
+          "ticks": [
+            {"value": -1.5, "label": "-1.5"},
+            {"value": -1.0, "label": "-1.0"},
+            {"value": -0.5, "label": "-0.5"},
+            {"value": 0, "label": "0"},
+            {"value": 0.5, "label": "0.5"},
+            {"value": 1.0, "label": "1.0"},
+            {"value": 1.5, "label": "1.5"}
+          ],
+          "label": {"text": "Gridness score", "x": 20, "y": 249, "rotation": -90}
+        }
+      },
+      "data": {
+        "distributions": [
+          {
+            "id": "env-a-dist",
+            "category": "env-a",
+            "seed": 4917,
+            "count": 156,
+            "recipe": "mixture-normal",
+            "components": [
+              {"weight": 0.68, "mean": 0.18, "sd": 0.25},
+              {"weight": 0.22, "mean": 0.48, "sd": 0.22},
+              {"weight": 0.10, "mean": -0.48, "sd": 0.35}
+            ],
+            "clip": [-1.25, 1.28],
+            "median": 0.28,
+            "iqr": [-0.04, 0.58],
+            "violin": {
+              "bandwidth": 0.16,
+              "maxHalfWidth": 48,
+              "sampleStep": 0.06,
+              "fill": "#b87743",
+              "stroke": "#8a3f12",
+              "fillOpacity": 0.46,
+              "strokeWidth": 1.8
+            }
+          },
+          {
+            "id": "env-b-dist",
+            "category": "env-b",
+            "seed": 6183,
+            "count": 156,
+            "recipe": "mixture-normal",
+            "components": [
+              {"weight": 0.66, "mean": 0.22, "sd": 0.24},
+              {"weight": 0.24, "mean": 0.43, "sd": 0.20},
+              {"weight": 0.10, "mean": -0.44, "sd": 0.34}
+            ],
+            "clip": [-1.20, 1.28],
+            "median": 0.31,
+            "iqr": [-0.01, 0.58],
+            "violin": {
+              "bandwidth": 0.16,
+              "maxHalfWidth": 48,
+              "sampleStep": 0.06,
+              "fill": "#3b9ba0",
+              "stroke": "#00747d",
+              "fillOpacity": 0.43,
+              "strokeWidth": 1.8
+            }
+          }
+        ]
+      },
+      "marks": [
+        {
+          "id": "zero-line",
+          "type": "line",
+          "usesTransform": "gridness-violin-plot.y",
+          "orientation": "horizontal",
+          "value": 0,
+          "x1": 86,
+          "x2": 432,
+          "stroke": "#111111",
+          "strokeWidth": 1.5,
+          "dasharray": "5 4"
+        },
+        {
+          "id": "env-a-violin",
+          "type": "violin",
+          "distribution": "env-a-dist",
+          "renderer": "svg",
+          "sourceEvidence": ["source violin silhouette approximated from density envelope"]
+        },
+        {
+          "id": "env-b-violin",
+          "type": "violin",
+          "distribution": "env-b-dist",
+          "renderer": "svg",
+          "sourceEvidence": ["source violin silhouette approximated from density envelope"]
+        },
+        {
+          "id": "env-a-scatter",
+          "type": "scatter",
+          "distribution": "env-a-dist",
+          "renderer": "canvas",
+          "jitterHalfWidth": 46,
+          "radius": 2.05,
+          "fill": "#a65d2b",
+          "opacity": 0.72
+        },
+        {
+          "id": "env-b-scatter",
+          "type": "scatter",
+          "distribution": "env-b-dist",
+          "renderer": "canvas",
+          "jitterHalfWidth": 46,
+          "radius": 2.05,
+          "fill": "#087f87",
+          "opacity": 0.70
+        },
+        {
+          "id": "summary-bars",
+          "type": "summaryOverlay",
+          "distributions": ["env-a-dist", "env-b-dist"],
+          "medianMarker": {"radius": 5.6, "fill": "#111111", "stroke": "#ffffff", "strokeWidth": 1.4},
+          "iqrLine": {"stroke": "#111111", "strokeWidth": 2.3},
+          "categoryBarHalfWidth": 19
+        }
+      ],
+      "annotations": [
+        {
+          "id": "p-value-bracket",
+          "type": "bracket",
+          "x1": 169,
+          "x2": 340,
+          "y": 104,
+          "tickHeight": 0,
+          "stroke": "#111111",
+          "strokeWidth": 1.4,
+          "label": {
+            "text": "p = 3.1 x 10^-5",
+            "x": 254,
+            "y": 98,
+            "fontSize": 15,
+            "fontStyle": "italic",
+            "anchor": "middle",
+            "superscript": {"text": "-5", "start": 13}
+          }
+        },
+        {
+          "id": "x-label-env-a",
+          "type": "categoryLabel",
+          "category": "env-a",
+          "text": "Environment A",
+          "x": 169,
+          "y": 438,
+          "fontSize": 18,
+          "fontWeight": 400,
+          "fill": "#8a3f12",
+          "anchor": "middle"
+        },
+        {
+          "id": "x-sublabel-env-a",
+
+exec
+/bin/zsh -lc "sed -n '1,180p' outputs/reference-05-grid-remapping-D-make-figure-test/reference-05-grid-remapping-D.html" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-05-grid-remapping-D reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+    h1 { margin: 0; font-size: 16px; font-weight: 700; }
+    .note { margin-top: 3px; font-size: 12px; color: #555555; }
+    .toggle { display: inline-flex; border: 1px solid #aaaaaa; border-radius: 4px; overflow: hidden; }
+    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
+    .toggle button.active { background: #111111; color: #ffffff; }
+    main { min-height: calc(100vh - 48px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
+    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
+    .surface, .reference { position: absolute; inset: 0; }
+    .reference { display: none; width: 100%; height: 100%; object-fit: contain; background: #ffffff; }
+    .show-reference .surface { display: none; }
+    .show-reference .reference { display: block; }
+    svg, canvas { position: absolute; inset: 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-05-grid-remapping-D</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA reference source image">
+    </div>
+  </main>
+  <script>
+    const SVG_NS = "http://www.w3.org/2000/svg";
+    const JSON_PATH = "reference-05-grid-remapping-D.json";
+
+    function $(id) { return document.getElementById(id); }
+    function make(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+    function mulberry32(seed) {
+      return function() {
+        seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+        let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+    function normal(rand) {
+      const u = Math.max(rand(), 1e-9);
+      const v = Math.max(rand(), 1e-9);
+      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+    function yScale(plot, value) {
+      const box = plot.dataBbox;
+      const [min, max] = plot.y.domain;
+      return box.y + box.height - ((value - min) / (max - min)) * box.height;
+    }
+    function distFor(panel, id) {
+      return panel.data.distributions.find((dist) => dist.id === id);
+    }
+    function catFor(panel, id) {
+      return panel.plot.x.categories.find((cat) => cat.id === id);
+    }
+    function generateValues(dist) {
+      const rand = mulberry32(dist.seed);
+      const cumulative = [];
+      let acc = 0;
+      for (const comp of dist.components) {
+        acc += comp.weight;
+        cumulative.push({limit: acc, comp});
+      }
+      const values = [];
+      for (let i = 0; i < dist.count; i++) {
+        const pick = rand();
+        const chosen = cumulative.find((entry) => pick <= entry.limit).comp;
+        values.push(clamp(chosen.mean + chosen.sd * normal(rand), dist.clip[0], dist.clip[1]));
+      }
+      return values;
+    }
+    function densityAt(dist, y) {
+      return dist.components.reduce((sum, comp) => {
+        const z = (y - comp.mean) / comp.sd;
+        return sum + comp.weight * Math.exp(-0.5 * z * z) / comp.sd;
+      }, 0);
+    }
+    function violinPath(panel, plot, dist) {
+      const category = catFor(panel, dist.category);
+      const ys = [];
+      for (let y = plot.y.domain[0]; y <= plot.y.domain[1] + 1e-6; y += dist.violin.sampleStep) ys.push(y);
+      const maxDensity = Math.max(...ys.map((y) => densityAt(dist, y)));
+      const right = ys.map((y) => [category.x + densityAt(dist, y) / maxDensity * dist.violin.maxHalfWidth, yScale(plot, y)]);
+      const left = ys.slice().reverse().map((y) => [category.x - densityAt(dist, y) / maxDensity * dist.violin.maxHalfWidth, yScale(plot, y)]);
+      return right.concat(left).map((pt, i) => `${i ? "L" : "M"} ${pt[0].toFixed(2)} ${pt[1].toFixed(2)}`).join(" ") + " Z";
+    }
+    function text(svg, obj) {
+      const node = make("text", {
+        x: obj.x, y: obj.y, fill: obj.fill || "#111111", "font-size": obj.fontSize,
+        "font-weight": obj.fontWeight || 400, "font-style": obj.fontStyle || "normal",
+        "text-anchor": obj.anchor || "start", "dominant-baseline": obj.baseline || "alphabetic",
+        transform: obj.rotation ? `rotate(${obj.rotation} ${obj.x} ${obj.y})` : null
+      });
+      node.textContent = obj.text;
+      svg.appendChild(node);
+      return node;
+    }
+    function render(spec) {
+      $("title").textContent = spec.id;
+      const frame = $("frame");
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      $("reference").src = spec.source.path;
+      const surface = $("surface");
+      surface.innerHTML = "";
+      const canvas = document.createElement("canvas");
+      canvas.width = spec.canvas.width;
+      canvas.height = spec.canvas.height;
+      surface.appendChild(canvas);
+      const ctx = canvas.getContext("2d");
+      const svg = make("svg", {width: spec.canvas.width, height: spec.canvas.height, viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`});
+      svg.style.fontFamily = spec.typography.fontFamily;
+      surface.appendChild(svg);
+      const panel = spec.panels[0];
+      const plot = panel.plot;
+
+      text(svg, panel.label);
+      text(svg, panel.title);
+
+      const yAxis = make("line", {x1: plot.axisBbox.x, y1: plot.axisBbox.y, x2: plot.axisBbox.x, y2: plot.axisBbox.y + plot.axisBbox.height, stroke: "#111111", "stroke-width": 1.4});
+      svg.appendChild(yAxis);
+      for (const tick of plot.y.ticks) {
+        const y = yScale(plot, tick.value);
+        svg.appendChild(make("line", {x1: plot.axisBbox.x - 6, y1: y, x2: plot.axisBbox.x, y2: y, stroke: "#111111", "stroke-width": 1.2, "data-axis": "y", "data-value": tick.value}));
+        text(svg, {text: tick.label, x: plot.axisBbox.x - 14, y: y + 5, fontSize: 18, anchor: "end"});
+      }
+      text(svg, {...plot.y.label, fontSize: 20, anchor: "middle"});
+
+      const zero = panel.marks.find((m) => m.id === "zero-line");
+      svg.appendChild(make("line", {x1: zero.x1, y1: yScale(plot, zero.value), x2: zero.x2, y2: yScale(plot, zero.value), stroke: zero.stroke, "stroke-width": zero.strokeWidth, "stroke-dasharray": zero.dasharray}));
+
+      for (const mark of panel.marks.filter((m) => m.type === "violin")) {
+        const dist = distFor(panel, mark.distribution);
+        svg.appendChild(make("path", {d: violinPath(panel, plot, dist), fill: dist.violin.fill, "fill-opacity": dist.violin.fillOpacity, stroke: dist.violin.stroke, "stroke-width": dist.violin.strokeWidth, "data-mark-id": mark.id}));
+      }
+
+      for (const mark of panel.marks.filter((m) => m.type === "scatter")) {
+        const dist = distFor(panel, mark.distribution);
+        const category = catFor(panel, dist.category);
+        const rand = mulberry32(dist.seed + 99);
+        ctx.fillStyle = mark.fill;
+        ctx.globalAlpha = mark.opacity;
+        for (const value of generateValues(dist)) {
+          const x = category.x + (rand() * 2 - 1) * mark.jitterHalfWidth * Math.pow(rand(), 0.55);
+          const y = yScale(plot, value);
+
+exec
+/bin/zsh -lc "sed -n '220,520p' outputs/reference-05-grid-remapping-D-make-figure-test/reference-05-grid-remapping-D.json" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+          "id": "x-sublabel-env-a",
+          "type": "categorySubLabel",
+          "category": "env-a",
+          "text": "(n = 156 cells)",
+          "x": 169,
+          "y": 462,
+          "fontSize": 16,
+          "fontStyle": "italic",
+          "fill": "#111111",
+          "anchor": "middle"
+        },
+        {
+          "id": "x-label-env-b",
+          "type": "categoryLabel",
+          "category": "env-b",
+          "text": "Environment B",
+          "x": 340,
+          "y": 438,
+          "fontSize": 18,
+          "fontWeight": 400,
+          "fill": "#00747d",
+          "anchor": "middle"
+        },
+        {
+          "id": "x-sublabel-env-b",
+          "type": "categorySubLabel",
+          "category": "env-b",
+          "text": "(n = 156 cells)",
+          "x": 340,
+          "y": 462,
+          "fontSize": 16,
+          "fontStyle": "italic",
+          "fill": "#111111",
+          "anchor": "middle"
+        }
+      ],
+      "provenance": [
+        {"target": "plot.dataBbox", "confidence": "high", "note": "Axis extents manually read from the source crop."},
+        {"target": "distribution shapes", "confidence": "medium", "note": "Underlying cells are generated from semantic recipes to match density and range; exact source data are not available."},
+        {"target": "typography", "confidence": "medium", "note": "Manual first-pass sizing without automated font calibration."}
+      ]
+    }
+  ],
+  "constraints": [
+    {"id": "axis-ticks-linked", "description": "All y tick marks and labels derive from plot.y.ticks and share the same y transform."},
+    {"id": "category-colors-linked", "description": "Violin, scatter, and category label colors are linked through category/distribution ids."},
+    {"id": "source-raster-qa-only", "description": "The source raster can only be displayed in the labeled reference view, never in generated SVG/canvas layers."}
+  ],
+  "validation": {
+    "expectedCanvas": {"width": 486, "height": 524},
+    "expectedCategories": 2,
+    "expectedYTicks": 7,
+    "expectedGeneratedScatterPoints": 312
+  },
+  "confidence": [
+    {"target": "overall first pass", "confidence": "medium", "note": "Editable reconstruction intended for visual inspection, not a pixel-optimized final."}
+  ]
+}
+
+exec
+/bin/zsh -lc "sed -n '180,420p' outputs/reference-05-grid-remapping-D-make-figure-test/reference-05-grid-remapping-D.html" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+          const y = yScale(plot, value);
+          ctx.beginPath();
+          ctx.arc(x, y, mark.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      const summary = panel.marks.find((m) => m.type === "summaryOverlay");
+      for (const distId of summary.distributions) {
+        const dist = distFor(panel, distId);
+        const category = catFor(panel, dist.category);
+        svg.appendChild(make("line", {x1: category.x, y1: yScale(plot, dist.iqr[0]), x2: category.x, y2: yScale(plot, dist.iqr[1]), stroke: summary.iqrLine.stroke, "stroke-width": summary.iqrLine.strokeWidth}));
+        svg.appendChild(make("line", {x1: category.x - summary.categoryBarHalfWidth, y1: yScale(plot, 0), x2: category.x + summary.categoryBarHalfWidth, y2: yScale(plot, 0), stroke: "#111111", "stroke-width": 1.2}));
+        svg.appendChild(make("circle", {cx: category.x, cy: yScale(plot, dist.median), r: summary.medianMarker.radius, fill: summary.medianMarker.fill, stroke: summary.medianMarker.stroke, "stroke-width": summary.medianMarker.strokeWidth}));
+      }
+
+      const bracket = panel.annotations.find((a) => a.type === "bracket");
+      svg.appendChild(make("line", {x1: bracket.x1, y1: bracket.y, x2: bracket.x2, y2: bracket.y, stroke: bracket.stroke, "stroke-width": bracket.strokeWidth}));
+      const p = make("text", {x: bracket.label.x, y: bracket.label.y, "font-size": bracket.label.fontSize, "font-style": "italic", "text-anchor": "middle", fill: "#111111"});
+      p.append("p = 3.1 x 10");
+      const sup = make("tspan", {"baseline-shift": "super", "font-size": 10});
+      sup.textContent = "-5";
+      p.appendChild(sup);
+      svg.appendChild(p);
+
+      for (const ann of panel.annotations.filter((a) => a.type !== "bracket")) text(svg, ann);
+    }
+    async function init() {
+      const response = await fetch(JSON_PATH);
+      render(await response.json());
+      $("generatedButton").addEventListener("click", () => {
+        $("frame").classList.remove("show-reference");
+        $("generatedButton").classList.add("active");
+        $("referenceButton").classList.remove("active");
+      });
+      $("referenceButton").addEventListener("click", () => {
+        $("frame").classList.add("show-reference");
+        $("referenceButton").classList.add("active");
+        $("generatedButton").classList.remove("active");
+      });
+    }
+    init();
+  </script>
+</body>
+</html>
+
+codex
+I found an empty target batch directory, so I’ll only add the requested JSON and HTML there. The spec will record that the violin shapes and cell points are approximate generated distributions rather than recovered raw measurements.
+apply patch
+patch: completed
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.html
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.json
+diff --git a/outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.html b/outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..63191d09341b092fad0f7e55055cbaec299cff5d
+--- /dev/null
++++ b/outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.html
+@@ -0,0 +1,231 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-05-grid-remapping-D reconstruction</title>
++  <style>
++    html, body {
++      margin: 0;
++      background: #eeeeee;
++      color: #111111;
++      font-family: Arial, Helvetica, sans-serif;
++    }
++    header {
++      display: flex;
++      align-items: center;
++      justify-content: space-between;
++      gap: 16px;
++      padding: 10px 14px;
++      background: #ffffff;
++      border-bottom: 1px solid #cfcfcf;
++    }
++    h1 { margin: 0; font-size: 16px; font-weight: 700; }
++    .note { margin-top: 3px; font-size: 12px; color: #555555; }
++    .toggle { display: inline-flex; border: 1px solid #aaaaaa; border-radius: 4px; overflow: hidden; }
++    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
++    .toggle button.active { background: #111111; color: #ffffff; }
++    main { min-height: calc(100vh - 48px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
++    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
++    .surface, .reference { position: absolute; inset: 0; }
++    .reference { display: none; width: 100%; height: 100%; object-fit: contain; background: #ffffff; }
++    .show-reference .surface { display: none; }
++    .show-reference .reference { display: block; }
++    svg, canvas { position: absolute; inset: 0; }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1 id="title">reference-05-grid-remapping-D</h1>
++      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">Reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <img id="reference" class="reference" alt="QA reference source image">
++    </div>
++  </main>
++  <script>
++    const SVG_NS = "http://www.w3.org/2000/svg";
++    const JSON_PATH = "reference-05-grid-remapping-D.json";
++
++    function $(id) { return document.getElementById(id); }
++    function make(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
++      for (const [key, value] of Object.entries(attrs)) {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      }
++      return node;
++    }
++    function mulberry32(seed) {
++      return function random() {
++        seed |= 0; seed = seed + 0x6D2B79F5 | 0;
++        let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
++        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
++        return ((t ^ t >>> 14) >>> 0) / 4294967296;
++      };
++    }
++    function normal(rand) {
++      const u = Math.max(rand(), 1e-9);
++      const v = Math.max(rand(), 1e-9);
++      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
++    }
++    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
++    function yScale(plot, value) {
++      const box = plot.dataBbox;
++      const [min, max] = plot.y.domain;
++      return box.y + box.height - ((value - min) / (max - min)) * box.height;
++    }
++    function distFor(panel, id) {
++      return panel.data.distributions.find((dist) => dist.id === id);
++    }
++    function catFor(panel, id) {
++      return panel.plot.x.categories.find((cat) => cat.id === id);
++    }
++    function generateValues(dist) {
++      const rand = mulberry32(dist.seed);
++      const cumulative = [];
++      let acc = 0;
++      for (const comp of dist.components) {
++        acc += comp.weight;
++        cumulative.push({limit: acc, comp});
++      }
++      const values = [];
++      for (let i = 0; i < dist.count; i++) {
++        const pick = rand();
++        const chosen = cumulative.find((entry) => pick <= entry.limit).comp;
++        values.push(clamp(chosen.mean + chosen.sd * normal(rand), dist.clip[0], dist.clip[1]));
++      }
++      return values;
++    }
++    function densityAt(dist, y) {
++      return dist.components.reduce((sum, comp) => {
++        const z = (y - comp.mean) / comp.sd;
++        return sum + comp.weight * Math.exp(-0.5 * z * z) / comp.sd;
++      }, 0);
++    }
++    function violinPath(panel, plot, dist) {
++      const category = catFor(panel, dist.category);
++      const ys = [];
++      for (let y = plot.y.domain[0]; y <= plot.y.domain[1] + 1e-6; y += dist.violin.sampleStep) ys.push(y);
++      const maxDensity = Math.max(...ys.map((y) => densityAt(dist, y)));
++      const right = ys.map((y) => [category.x + densityAt(dist, y) / maxDensity * dist.violin.maxHalfWidth, yScale(plot, y)]);
++      const left = ys.slice().reverse().map((y) => [category.x - densityAt(dist, y) / maxDensity * dist.violin.maxHalfWidth, yScale(plot, y)]);
++      return right.concat(left).map((pt, i) => `${i ? "L" : "M"} ${pt[0].toFixed(2)} ${pt[1].toFixed(2)}`).join(" ") + " Z";
++    }
++    function addText(svg, obj) {
++      const node = make("text", {
++        x: obj.x,
++        y: obj.y,
++        fill: obj.fill || "#111111",
++        "font-size": obj.fontSize,
++        "font-weight": obj.fontWeight || 400,
++        "font-style": obj.fontStyle || "normal",
++        "text-anchor": obj.anchor || "start",
++        "dominant-baseline": obj.baseline || "alphabetic",
++        transform: obj.rotation ? `rotate(${obj.rotation} ${obj.x} ${obj.y})` : null,
++        "data-text-id": obj.id
++      });
++      node.textContent = obj.text;
++      svg.appendChild(node);
++      return node;
++    }
++    function render(spec) {
++      $("title").textContent = spec.id;
++      const frame = $("frame");
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      $("reference").src = spec.source.path;
++
++      const surface = $("surface");
++      surface.innerHTML = "";
++      const canvas = document.createElement("canvas");
++      canvas.width = spec.canvas.width;
++      canvas.height = spec.canvas.height;
++      surface.appendChild(canvas);
++      const ctx = canvas.getContext("2d");
++      const svg = make("svg", {width: spec.canvas.width, height: spec.canvas.height, viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`});
++      svg.style.fontFamily = spec.typography.fontFamily;
++      surface.appendChild(svg);
++
++      const panel = spec.panels[0];
++      const plot = panel.plot;
++      addText(svg, panel.label);
++      addText(svg, panel.title);
++
++      svg.appendChild(make("line", {x1: plot.axisBbox.x, y1: plot.axisBbox.y, x2: plot.axisBbox.x, y2: plot.axisBbox.y + plot.axisBbox.height, stroke: "#111111", "stroke-width": 1.4, "data-axis": "y"}));
++      for (const tick of plot.y.ticks) {
++        const y = yScale(plot, tick.value);
++        svg.appendChild(make("line", {x1: plot.axisBbox.x - 6, y1: y, x2: plot.axisBbox.x, y2: y, stroke: "#111111", "stroke-width": 1.2, "data-axis": "y", "data-value": tick.value}));
++        addText(svg, {id: `y-tick-${tick.label}`, text: tick.label, x: plot.axisBbox.x - 14, y: y + 5, fontSize: 18, anchor: "end"});
++      }
++      addText(svg, {...plot.y.label, id: "y-axis-label", fontSize: 20, anchor: "middle"});
++
++      const zero = panel.marks.find((m) => m.id === "zero-line");
++      svg.appendChild(make("line", {x1: zero.x1, y1: yScale(plot, zero.value), x2: zero.x2, y2: yScale(plot, zero.value), stroke: zero.stroke, "stroke-width": zero.strokeWidth, "stroke-dasharray": zero.dasharray, "data-mark-id": zero.id}));
++
++      for (const mark of panel.marks.filter((m) => m.type === "violin")) {
++        const dist = distFor(panel, mark.distribution);
++        svg.appendChild(make("path", {d: violinPath(panel, plot, dist), fill: dist.violin.fill, "fill-opacity": dist.violin.fillOpacity, stroke: dist.violin.stroke, "stroke-width": dist.violin.strokeWidth, "data-mark-id": mark.id, "data-distribution": dist.id}));
++      }
++
++      for (const mark of panel.marks.filter((m) => m.type === "scatter")) {
++        const dist = distFor(panel, mark.distribution);
++        const category = catFor(panel, dist.category);
++        const rand = mulberry32(dist.seed + 99);
++        ctx.fillStyle = mark.fill;
++        ctx.globalAlpha = mark.opacity;
++        for (const value of generateValues(dist)) {
++          const x = category.x + (rand() * 2 - 1) * mark.jitterHalfWidth * Math.pow(rand(), 0.55);
++          const y = yScale(plot, value);
++          ctx.beginPath();
++          ctx.arc(x, y, mark.radius, 0, Math.PI * 2);
++          ctx.fill();
++        }
++        ctx.globalAlpha = 1;
++      }
++
++      const summary = panel.marks.find((m) => m.type === "summaryOverlay");
++      for (const distId of summary.distributions) {
++        const dist = distFor(panel, distId);
++        const category = catFor(panel, dist.category);
++        svg.appendChild(make("line", {x1: category.x, y1: yScale(plot, dist.iqr[0]), x2: category.x, y2: yScale(plot, dist.iqr[1]), stroke: summary.iqrLine.stroke, "stroke-width": summary.iqrLine.strokeWidth, "data-summary": dist.id}));
++        svg.appendChild(make("line", {x1: category.x - summary.categoryBarHalfWidth, y1: yScale(plot, 0), x2: category.x + summary.categoryBarHalfWidth, y2: yScale(plot, 0), stroke: "#111111", "stroke-width": 1.2, "data-summary-baseline": dist.id}));
++        svg.appendChild(make("circle", {cx: category.x, cy: yScale(plot, dist.median), r: summary.medianMarker.radius, fill: summary.medianMarker.fill, stroke: summary.medianMarker.stroke, "stroke-width": summary.medianMarker.strokeWidth, "data-median": dist.id}));
++      }
++
++      const bracket = panel.annotations.find((a) => a.type === "bracket");
++      svg.appendChild(make("line", {x1: bracket.x1, y1: bracket.y, x2: bracket.x2, y2: bracket.y, stroke: bracket.stroke, "stroke-width": bracket.strokeWidth, "data-annotation-id": bracket.id}));
++      const p = make("text", {x: bracket.label.x, y: bracket.label.y, "font-size": bracket.label.fontSize, "font-style": "italic", "text-anchor": "middle", fill: "#111111", "data-annotation-label": bracket.id});
++      p.append("p = 3.1 x 10");
++      const sup = make("tspan", {"baseline-shift": "super", "font-size": 10});
++      sup.textContent = "-5";
++      p.appendChild(sup);
++      svg.appendChild(p);
++
++      for (const ann of panel.annotations.filter((a) => a.type !== "bracket")) addText(svg, ann);
++    }
++    async function init() {
++      const response = await fetch(JSON_PATH);
++      render(await response.json());
++      $("generatedButton").addEventListener("click", () => {
++        $("frame").classList.remove("show-reference");
++        $("generatedButton").classList.add("active");
++        $("referenceButton").classList.remove("active");
++      });
++      $("referenceButton").addEventListener("click", () => {
++        $("frame").classList.add("show-reference");
++        $("referenceButton").classList.add("active");
++        $("generatedButton").classList.remove("active");
++      });
++    }
++    init();
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.json b/outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..a659004a04ed8be73eba6814b2f62d8e5e419b32
+--- /dev/null
++++ b/outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.json
+@@ -0,0 +1,221 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-05-grid-remapping-D",
++  "source": {
++    "path": "../../assets/reference/reference-05-grid-remapping-D-reference.png",
++    "usage": "QA-only reference image; not used by generated candidate layers.",
++    "notes": "Panel D is a two-category gridness score distribution with jittered cell dots, violin density envelopes, summary median/IQR marks, y-axis ticks, dashed zero line, and a p-value bracket."
++  },
++  "canvas": {
++    "width": 486,
++    "height": 524,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 16,
++    "color": "#111111",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Roboto", "Noto Sans"],
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "Manual first-pass sizing from source crop; title resembles bold publication sans."
++    }
++  },
++  "panels": [
++    {
++      "id": "panel-d",
++      "bbox": {"x": 0, "y": 0, "width": 486, "height": 524},
++      "label": {
++        "id": "panel-label",
++        "text": "D",
++        "x": 23,
++        "y": 55,
++        "fontSize": 29,
++        "fontWeight": 700,
++        "anchor": "start",
++        "sourceBox": {"x": 23, "y": 31, "width": 20, "height": 29},
++        "fit": "manual"
++      },
++      "title": {
++        "id": "panel-title",
++        "text": "Gridness score distribution",
++        "x": 74,
++        "y": 59,
++        "fontSize": 23,
++        "fontWeight": 700,
++        "anchor": "start",
++        "sourceBox": {"x": 75, "y": 40, "width": 258, "height": 25},
++        "fit": "manual"
++      },
++      "plot": {
++        "id": "gridness-violin-plot",
++        "dataBbox": {"x": 86, "y": 88, "width": 346, "height": 322},
++        "axisBbox": {"x": 86, "y": 88, "width": 346, "height": 322},
++        "x": {
++          "scale": "categorical",
++          "categories": [
++            {"id": "env-a", "label": "Environment A", "x": 169, "color": "#8a3f12", "n": 156},
++            {"id": "env-b", "label": "Environment B", "x": 340, "color": "#00747d", "n": 156}
++          ]
++        },
++        "y": {
++          "scale": "linear",
++          "domain": [-1.5, 1.5],
++          "ticks": [
++            {"value": -1.5, "label": "-1.5"},
++            {"value": -1.0, "label": "-1.0"},
++            {"value": -0.5, "label": "-0.5"},
++            {"value": 0, "label": "0"},
++            {"value": 0.5, "label": "0.5"},
++            {"value": 1.0, "label": "1.0"},
++            {"value": 1.5, "label": "1.5"}
++          ],
++          "label": {"text": "Gridness score", "x": 20, "y": 249, "rotation": -90}
++        }
++      },
++      "data": {
++        "distributions": [
++          {
++            "id": "env-a-dist",
++            "category": "env-a",
++            "seed": 5021,
++            "count": 156,
++            "recipe": "mixture-normal",
++            "components": [
++              {"weight": 0.66, "mean": 0.16, "sd": 0.25},
++              {"weight": 0.25, "mean": 0.45, "sd": 0.22},
++              {"weight": 0.09, "mean": -0.50, "sd": 0.36}
++            ],
++            "clip": [-1.24, 1.28],
++            "median": 0.28,
++            "iqr": [-0.04, 0.57],
++            "violin": {
++              "bandwidth": 0.16,
++              "maxHalfWidth": 49,
++              "sampleStep": 0.06,
++              "fill": "#b87743",
++              "stroke": "#8a3f12",
++              "fillOpacity": 0.46,
++              "strokeWidth": 1.8
++            }
++          },
++          {
++            "id": "env-b-dist",
++            "category": "env-b",
++            "seed": 6317,
++            "count": 156,
++            "recipe": "mixture-normal",
++            "components": [
++              {"weight": 0.65, "mean": 0.20, "sd": 0.24},
++              {"weight": 0.25, "mean": 0.43, "sd": 0.20},
++              {"weight": 0.10, "mean": -0.44, "sd": 0.34}
++            ],
++            "clip": [-1.20, 1.29],
++            "median": 0.31,
++            "iqr": [-0.01, 0.58],
++            "violin": {
++              "bandwidth": 0.16,
++              "maxHalfWidth": 48,
++              "sampleStep": 0.06,
++              "fill": "#3b9ba0",
++              "stroke": "#00747d",
++              "fillOpacity": 0.43,
++              "strokeWidth": 1.8
++            }
++          }
++        ]
++      },
++      "marks": [
++        {
++          "id": "zero-line",
++          "type": "line",
++          "usesTransform": "gridness-violin-plot.y",
++          "orientation": "horizontal",
++          "value": 0,
++          "x1": 86,
++          "x2": 432,
++          "stroke": "#111111",
++          "strokeWidth": 1.5,
++          "dasharray": "5 4"
++        },
++        {"id": "env-a-violin", "type": "violin", "distribution": "env-a-dist", "renderer": "svg"},
++        {"id": "env-b-violin", "type": "violin", "distribution": "env-b-dist", "renderer": "svg"},
++        {
++          "id": "env-a-scatter",
++          "type": "scatter",
++          "distribution": "env-a-dist",
++          "renderer": "canvas",
++          "jitterHalfWidth": 46,
++          "radius": 2.05,
++          "fill": "#a65d2b",
++          "opacity": 0.72
++        },
++        {
++          "id": "env-b-scatter",
++          "type": "scatter",
++          "distribution": "env-b-dist",
++          "renderer": "canvas",
++          "jitterHalfWidth": 46,
++          "radius": 2.05,
++          "fill": "#087f87",
++          "opacity": 0.70
++        },
++        {
++          "id": "summary-bars",
++          "type": "summaryOverlay",
++          "distributions": ["env-a-dist", "env-b-dist"],
++          "medianMarker": {"radius": 5.6, "fill": "#111111", "stroke": "#ffffff", "strokeWidth": 1.4},
++          "iqrLine": {"stroke": "#111111", "strokeWidth": 2.3},
++          "categoryBarHalfWidth": 19
++        }
++      ],
++      "annotations": [
++        {
++          "id": "p-value-bracket",
++          "type": "bracket",
++          "x1": 169,
++          "x2": 340,
++          "y": 104,
++          "tickHeight": 0,
++          "stroke": "#111111",
++          "strokeWidth": 1.4,
++          "label": {
++            "text": "p = 3.1 x 10^-5",
++            "x": 254,
++            "y": 98,
++            "fontSize": 15,
++            "fontStyle": "italic",
++            "anchor": "middle",
++            "superscript": {"text": "-5", "start": 13}
++          }
++        },
++        {"id": "x-label-env-a", "type": "categoryLabel", "category": "env-a", "text": "Environment A", "x": 169, "y": 438, "fontSize": 18, "fontWeight": 400, "fill": "#8a3f12", "anchor": "middle"},
++        {"id": "x-sublabel-env-a", "type": "categorySubLabel", "category": "env-a", "text": "(n = 156 cells)", "x": 169, "y": 462, "fontSize": 16, "fontStyle": "italic", "fill": "#111111", "anchor": "middle"},
++        {"id": "x-label-env-b", "type": "categoryLabel", "category": "env-b", "text": "Environment B", "x": 340, "y": 438, "fontSize": 18, "fontWeight": 400, "fill": "#00747d", "anchor": "middle"},
++        {"id": "x-sublabel-env-b", "type": "categorySubLabel", "category": "env-b", "text": "(n = 156 cells)", "x": 340, "y": 462, "fontSize": 16, "fontStyle": "italic", "fill": "#111111", "anchor": "middle"}
++      ],
++      "provenance": [
++        {"target": "plot.dataBbox", "confidence": "high", "note": "Axis extents manually read from the source crop."},
++        {"target": "distribution shapes", "confidence": "medium", "note": "Cell dots and density envelopes are generated from editable mixture recipes to match visible range and shape; raw cell values are unavailable."},
++        {"target": "typography", "confidence": "medium", "note": "Manual first-pass typography without automated font calibration."}
++      ]
++    }
++  ],
++  "constraints": [
++    {"id": "axis-ticks-linked", "description": "All y tick marks and labels derive from plot.y.ticks and share the same y transform."},
++    {"id": "category-colors-linked", "description": "Violin, scatter, and category label colors are linked through category/distribution ids."},
++    {"id": "source-raster-qa-only", "description": "The source raster can only be displayed in the labeled reference view, never in generated SVG/canvas layers."}
++  ],
++  "validation": {
++    "expectedCanvas": {"width": 486, "height": 524},
++    "expectedCategories": 2,
++    "expectedYTicks": 7,
++    "expectedGeneratedScatterPoints": 312
++  },
++  "confidence": [
++    {"target": "overall first pass", "confidence": "medium", "note": "Editable reconstruction intended for visual inspection, not pixel-optimized final output."}
++  ]
++}
+
+diff --git a/outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.html b/outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..63191d09341b092fad0f7e55055cbaec299cff5d
+--- /dev/null
++++ b/outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.html
+@@ -0,0 +1,231 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-05-grid-remapping-D reconstruction</title>
++  <style>
++    html, body {
++      margin: 0;
++      background: #eeeeee;
++      color: #111111;
++      font-family: Arial, Helvetica, sans-serif;
++    }
++    header {
++      display: flex;
++      align-items: center;
++      justify-content: space-between;
++      gap: 16px;
++      padding: 10px 14px;
++      background: #ffffff;
++      border-bottom: 1px solid #cfcfcf;
++    }
++    h1 { margin: 0; font-size: 16px; font-weight: 700; }
++    .note { margin-top: 3px; font-size: 12px; color: #555555; }
++    .toggle { display: inline-flex; border: 1px solid #aaaaaa; border-radius: 4px; overflow: hidden; }
++    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
++    .toggle button.active { background: #111111; color: #ffffff; }
++    main { min-height: calc(100vh - 48px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
++    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
++    .surface, .reference { position: absolute; inset: 0; }
++    .reference { display: none; width: 100%; height: 100%; object-fit: contain; background: #ffffff; }
++    .show-reference .surface { display: none; }
++    .show-reference .reference { display: block; }
++    svg, canvas { position: absolute; inset: 0; }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1 id="title">reference-05-grid-remapping-D</h1>
++      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">Reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <img id="reference" class="reference" alt="QA reference source image">
++    </div>
++  </main>
++  <script>
++    const SVG_NS = "http://www.w3.org/2000/svg";
++    const JSON_PATH = "reference-05-grid-remapping-D.json";
++
++    function $(id) { return document.getElementById(id); }
++    function make(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
++      for (const [key, value] of Object.entries(attrs)) {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      }
++      return node;
++    }
++    function mulberry32(seed) {
++      return function random() {
++        seed |= 0; seed = seed + 0x6D2B79F5 | 0;
++        let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
++        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
++        return ((t ^ t >>> 14) >>> 0) / 4294967296;
++      };
++    }
++    function normal(rand) {
++      const u = Math.max(rand(), 1e-9);
++      const v = Math.max(rand(), 1e-9);
++      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
++    }
++    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
++    function yScale(plot, value) {
++      const box = plot.dataBbox;
++      const [min, max] = plot.y.domain;
++      return box.y + box.height - ((value - min) / (max - min)) * box.height;
++    }
++    function distFor(panel, id) {
++      return panel.data.distributions.find((dist) => dist.id === id);
++    }
++    function catFor(panel, id) {
++      return panel.plot.x.categories.find((cat) => cat.id === id);
++    }
++    function generateValues(dist) {
++      const rand = mulberry32(dist.seed);
++      const cumulative = [];
++      let acc = 0;
++      for (const comp of dist.components) {
++        acc += comp.weight;
++        cumulative.push({limit: acc, comp});
++      }
++      const values = [];
++      for (let i = 0; i < dist.count; i++) {
++        const pick = rand();
++        const chosen = cumulative.find((entry) => pick <= entry.limit).comp;
++        values.push(clamp(chosen.mean + chosen.sd * normal(rand), dist.clip[0], dist.clip[1]));
++      }
++      return values;
++    }
++    function densityAt(dist, y) {
++      return dist.components.reduce((sum, comp) => {
++        const z = (y - comp.mean) / comp.sd;
++        return sum + comp.weight * Math.exp(-0.5 * z * z) / comp.sd;
++      }, 0);
++    }
++    function violinPath(panel, plot, dist) {
++      const category = catFor(panel, dist.category);
++      const ys = [];
++      for (let y = plot.y.domain[0]; y <= plot.y.domain[1] + 1e-6; y += dist.violin.sampleStep) ys.push(y);
++      const maxDensity = Math.max(...ys.map((y) => densityAt(dist, y)));
++      const right = ys.map((y) => [category.x + densityAt(dist, y) / maxDensity * dist.violin.maxHalfWidth, yScale(plot, y)]);
++      const left = ys.slice().reverse().map((y) => [category.x - densityAt(dist, y) / maxDensity * dist.violin.maxHalfWidth, yScale(plot, y)]);
++      return right.concat(left).map((pt, i) => `${i ? "L" : "M"} ${pt[0].toFixed(2)} ${pt[1].toFixed(2)}`).join(" ") + " Z";
++    }
++    function addText(svg, obj) {
++      const node = make("text", {
++        x: obj.x,
++        y: obj.y,
++        fill: obj.fill || "#111111",
++        "font-size": obj.fontSize,
++        "font-weight": obj.fontWeight || 400,
++        "font-style": obj.fontStyle || "normal",
++        "text-anchor": obj.anchor || "start",
++        "dominant-baseline": obj.baseline || "alphabetic",
++        transform: obj.rotation ? `rotate(${obj.rotation} ${obj.x} ${obj.y})` : null,
++        "data-text-id": obj.id
++      });
++      node.textContent = obj.text;
++      svg.appendChild(node);
++      return node;
++    }
++    function render(spec) {
++      $("title").textContent = spec.id;
++      const frame = $("frame");
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      $("reference").src = spec.source.path;
++
++      const surface = $("surface");
++      surface.innerHTML = "";
++      const canvas = document.createElement("canvas");
++      canvas.width = spec.canvas.width;
++      canvas.height = spec.canvas.height;
++      surface.appendChild(canvas);
++      const ctx = canvas.getContext("2d");
++      const svg = make("svg", {width: spec.canvas.width, height: spec.canvas.height, viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`});
++      svg.style.fontFamily = spec.typography.fontFamily;
++      surface.appendChild(svg);
++
++      const panel = spec.panels[0];
++      const plot = panel.plot;
++      addText(svg, panel.label);
++      addText(svg, panel.title);
++
++      svg.appendChild(make("line", {x1: plot.axisBbox.x, y1: plot.axisBbox.y, x2: plot.axisBbox.x, y2: plot.axisBbox.y + plot.axisBbox.height, stroke: "#111111", "stroke-width": 1.4, "data-axis": "y"}));
++      for (const tick of plot.y.ticks) {
++        const y = yScale(plot, tick.value);
++        svg.appendChild(make("line", {x1: plot.axisBbox.x - 6, y1: y, x2: plot.axisBbox.x, y2: y, stroke: "#111111", "stroke-width": 1.2, "data-axis": "y", "data-value": tick.value}));
++        addText(svg, {id: `y-tick-${tick.label}`, text: tick.label, x: plot.axisBbox.x - 14, y: y + 5, fontSize: 18, anchor: "end"});
++      }
++      addText(svg, {...plot.y.label, id: "y-axis-label", fontSize: 20, anchor: "middle"});
++
++      const zero = panel.marks.find((m) => m.id === "zero-line");
++      svg.appendChild(make("line", {x1: zero.x1, y1: yScale(plot, zero.value), x2: zero.x2, y2: yScale(plot, zero.value), stroke: zero.stroke, "stroke-width": zero.strokeWidth, "stroke-dasharray": zero.dasharray, "data-mark-id": zero.id}));
++
++      for (const mark of panel.marks.filter((m) => m.type === "violin")) {
++        const dist = distFor(panel, mark.distribution);
++        svg.appendChild(make("path", {d: violinPath(panel, plot, dist), fill: dist.violin.fill, "fill-opacity": dist.violin.fillOpacity, stroke: dist.violin.stroke, "stroke-width": dist.violin.strokeWidth, "data-mark-id": mark.id, "data-distribution": dist.id}));
++      }
++
++      for (const mark of panel.marks.filter((m) => m.type === "scatter")) {
++        const dist = distFor(panel, mark.distribution);
++        const category = catFor(panel, dist.category);
++        const rand = mulberry32(dist.seed + 99);
++        ctx.fillStyle = mark.fill;
++        ctx.globalAlpha = mark.opacity;
++        for (const value of generateValues(dist)) {
++          const x = category.x + (rand() * 2 - 1) * mark.jitterHalfWidth * Math.pow(rand(), 0.55);
++          const y = yScale(plot, value);
++          ctx.beginPath();
++          ctx.arc(x, y, mark.radius, 0, Math.PI * 2);
++          ctx.fill();
++        }
++        ctx.globalAlpha = 1;
++      }
++
++      const summary = panel.marks.find((m) => m.type === "summaryOverlay");
++      for (const distId of summary.distributions) {
++        const dist = distFor(panel, distId);
++        const category = catFor(panel, dist.category);
++        svg.appendChild(make("line", {x1: category.x, y1: yScale(plot, dist.iqr[0]), x2: category.x, y2: yScale(plot, dist.iqr[1]), stroke: summary.iqrLine.stroke, "stroke-width": summary.iqrLine.strokeWidth, "data-summary": dist.id}));
++        svg.appendChild(make("line", {x1: category.x - summary.categoryBarHalfWidth, y1: yScale(plot, 0), x2: category.x + summary.categoryBarHalfWidth, y2: yScale(plot, 0), stroke: "#111111", "stroke-width": 1.2, "data-summary-baseline": dist.id}));
++        svg.appendChild(make("circle", {cx: category.x, cy: yScale(plot, dist.median), r: summary.medianMarker.radius, fill: summary.medianMarker.fill, stroke: summary.medianMarker.stroke, "stroke-width": summary.medianMarker.strokeWidth, "data-median": dist.id}));
++      }
++
++      const bracket = panel.annotations.find((a) => a.type === "bracket");
++      svg.appendChild(make("line", {x1: bracket.x1, y1: bracket.y, x2: bracket.x2, y2: bracket.y, stroke: bracket.stroke, "stroke-width": bracket.strokeWidth, "data-annotation-id": bracket.id}));
++      const p = make("text", {x: bracket.label.x, y: bracket.label.y, "font-size": bracket.label.fontSize, "font-style": "italic", "text-anchor": "middle", fill: "#111111", "data-annotation-label": bracket.id});
++      p.append("p = 3.1 x 10");
++      const sup = make("tspan", {"baseline-shift": "super", "font-size": 10});
++      sup.textContent = "-5";
++      p.appendChild(sup);
++      svg.appendChild(p);
++
++      for (const ann of panel.annotations.filter((a) => a.type !== "bracket")) addText(svg, ann);
++    }
++    async function init() {
++      const response = await fetch(JSON_PATH);
++      render(await response.json());
++      $("generatedButton").addEventListener("click", () => {
++        $("frame").classList.remove("show-reference");
++        $("generatedButton").classList.add("active");
++        $("referenceButton").classList.remove("active");
++      });
++      $("referenceButton").addEventListener("click", () => {
++        $("frame").classList.add("show-reference");
++        $("referenceButton").classList.add("active");
++        $("generatedButton").classList.remove("active");
++      });
++    }
++    init();
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.json b/outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..a659004a04ed8be73eba6814b2f62d8e5e419b32
+--- /dev/null
++++ b/outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.json
+@@ -0,0 +1,221 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-05-grid-remapping-D",
++  "source": {
++    "path": "../../assets/reference/reference-05-grid-remapping-D-reference.png",
++    "usage": "QA-only reference image; not used by generated candidate layers.",
++    "notes": "Panel D is a two-category gridness score distribution with jittered cell dots, violin density envelopes, summary median/IQR marks, y-axis ticks, dashed zero line, and a p-value bracket."
++  },
++  "canvas": {
++    "width": 486,
++    "height": 524,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 16,
++    "color": "#111111",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Roboto", "Noto Sans"],
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "Manual first-pass sizing from source crop; title resembles bold publication sans."
++    }
++  },
++  "panels": [
++    {
++      "id": "panel-d",
++      "bbox": {"x": 0, "y": 0, "width": 486, "height": 524},
++      "label": {
++        "id": "panel-label",
++        "text": "D",
++        "x": 23,
++        "y": 55,
++        "fontSize": 29,
++        "fontWeight": 700,
++        "anchor": "start",
++        "sourceBox": {"x": 23, "y": 31, "width": 20, "height": 29},
++        "fit": "manual"
++      },
++      "title": {
++        "id": "panel-title",
++        "text": "Gridness score distribution",
++        "x": 74,
++        "y": 59,
++        "fontSize": 23,
++        "fontWeight": 700,
++        "anchor": "start",
++        "sourceBox": {"x": 75, "y": 40, "width": 258, "height": 25},
++        "fit": "manual"
++      },
++      "plot": {
++        "id": "gridness-violin-plot",
++        "dataBbox": {"x": 86, "y": 88, "width": 346, "height": 322},
++        "axisBbox": {"x": 86, "y": 88, "width": 346, "height": 322},
++        "x": {
++          "scale": "categorical",
++          "categories": [
++            {"id": "env-a", "label": "Environment A", "x": 169, "color": "#8a3f12", "n": 156},
++            {"id": "env-b", "label": "Environment B", "x": 340, "color": "#00747d", "n": 156}
++          ]
++        },
++        "y": {
++          "scale": "linear",
++          "domain": [-1.5, 1.5],
++          "ticks": [
++            {"value": -1.5, "label": "-1.5"},
++            {"value": -1.0, "label": "-1.0"},
++            {"value": -0.5, "label": "-0.5"},
++            {"value": 0, "label": "0"},
++            {"value": 0.5, "label": "0.5"},
++            {"value": 1.0, "label": "1.0"},
++            {"value": 1.5, "label": "1.5"}
++          ],
++          "label": {"text": "Gridness score", "x": 20, "y": 249, "rotation": -90}
++        }
++      },
++      "data": {
++        "distributions": [
++          {
++            "id": "env-a-dist",
++            "category": "env-a",
++            "seed": 5021,
++            "count": 156,
++            "recipe": "mixture-normal",
++            "components": [
++              {"weight": 0.66, "mean": 0.16, "sd": 0.25},
++              {"weight": 0.25, "mean": 0.45, "sd": 0.22},
++              {"weight": 0.09, "mean": -0.50, "sd": 0.36}
++            ],
++            "clip": [-1.24, 1.28],
++            "median": 0.28,
++            "iqr": [-0.04, 0.57],
++            "violin": {
++              "bandwidth": 0.16,
++              "maxHalfWidth": 49,
++              "sampleStep": 0.06,
++              "fill": "#b87743",
++              "stroke": "#8a3f12",
++              "fillOpacity": 0.46,
++              "strokeWidth": 1.8
++            }
++          },
++          {
++            "id": "env-b-dist",
++            "category": "env-b",
++            "seed": 6317,
++            "count": 156,
++            "recipe": "mixture-normal",
++            "components": [
++              {"weight": 0.65, "mean": 0.20, "sd": 0.24},
++              {"weight": 0.25, "mean": 0.43, "sd": 0.20},
++              {"weight": 0.10, "mean": -0.44, "sd": 0.34}
++            ],
++            "clip": [-1.20, 1.29],
++            "median": 0.31,
++            "iqr": [-0.01, 0.58],
++            "violin": {
++              "bandwidth": 0.16,
++              "maxHalfWidth": 48,
++              "sampleStep": 0.06,
++              "fill": "#3b9ba0",
++              "stroke": "#00747d",
++              "fillOpacity": 0.43,
++              "strokeWidth": 1.8
++            }
++          }
++        ]
++      },
++      "marks": [
++        {
++          "id": "zero-line",
++          "type": "line",
++          "usesTransform": "gridness-violin-plot.y",
++          "orientation": "horizontal",
++          "value": 0,
++          "x1": 86,
++          "x2": 432,
++          "stroke": "#111111",
++          "strokeWidth": 1.5,
++          "dasharray": "5 4"
++        },
++        {"id": "env-a-violin", "type": "violin", "distribution": "env-a-dist", "renderer": "svg"},
++        {"id": "env-b-violin", "type": "violin", "distribution": "env-b-dist", "renderer": "svg"},
++        {
++          "id": "env-a-scatter",
++          "type": "scatter",
++          "distribution": "env-a-dist",
++          "renderer": "canvas",
++          "jitterHalfWidth": 46,
++          "radius": 2.05,
++          "fill": "#a65d2b",
++          "opacity": 0.72
++        },
++        {
++          "id": "env-b-scatter",
++          "type": "scatter",
++          "distribution": "env-b-dist",
++          "renderer": "canvas",
++          "jitterHalfWidth": 46,
++          "radius": 2.05,
++          "fill": "#087f87",
++          "opacity": 0.70
++        },
++        {
++          "id": "summary-bars",
++          "type": "summaryOverlay",
++          "distributions": ["env-a-dist", "env-b-dist"],
++          "medianMarker": {"radius": 5.6, "fill": "#111111", "stroke": "#ffffff", "strokeWidth": 1.4},
++          "iqrLine": {"stroke": "#111111", "strokeWidth": 2.3},
++          "categoryBarHalfWidth": 19
++        }
++      ],
++      "annotations": [
++        {
++          "id": "p-value-bracket",
++          "type": "bracket",
++          "x1": 169,
++          "x2": 340,
++          "y": 104,
++          "tickHeight": 0,
++          "stroke": "#111111",
++          "strokeWidth": 1.4,
++          "label": {
++            "text": "p = 3.1 x 10^-5",
++            "x": 254,
++            "y": 98,
++            "fontSize": 15,
++            "fontStyle": "italic",
++            "anchor": "middle",
++            "superscript": {"text": "-5", "start": 13}
++          }
++        },
++        {"id": "x-label-env-a", "type": "categoryLabel", "category": "env-a", "text": "Environment A", "x": 169, "y": 438, "fontSize": 18, "fontWeight": 400, "fill": "#8a3f12", "anchor": "middle"},
++        {"id": "x-sublabel-env-a", "type": "categorySubLabel", "category": "env-a", "text": "(n = 156 cells)", "x": 169, "y": 462, "fontSize": 16, "fontStyle": "italic", "fill": "#111111", "anchor": "middle"},
++        {"id": "x-label-env-b", "type": "categoryLabel", "category": "env-b", "text": "Environment B", "x": 340, "y": 438, "fontSize": 18, "fontWeight": 400, "fill": "#00747d", "anchor": "middle"},
++        {"id": "x-sublabel-env-b", "type": "categorySubLabel", "category": "env-b", "text": "(n = 156 cells)", "x": 340, "y": 462, "fontSize": 16, "fontStyle": "italic", "fill": "#111111", "anchor": "middle"}
++      ],
++      "provenance": [
++        {"target": "plot.dataBbox", "confidence": "high", "note": "Axis extents manually read from the source crop."},
++        {"target": "distribution shapes", "confidence": "medium", "note": "Cell dots and density envelopes are generated from editable mixture recipes to match visible range and shape; raw cell values are unavailable."},
++        {"target": "typography", "confidence": "medium", "note": "Manual first-pass typography without automated font calibration."}
++      ]
++    }
++  ],
++  "constraints": [
++    {"id": "axis-ticks-linked", "description": "All y tick marks and labels derive from plot.y.ticks and share the same y transform."},
++    {"id": "category-colors-linked", "description": "Violin, scatter, and category label colors are linked through category/distribution ids."},
++    {"id": "source-raster-qa-only", "description": "The source raster can only be displayed in the labeled reference view, never in generated SVG/canvas layers."}
++  ],
++  "validation": {
++    "expectedCanvas": {"width": 486, "height": 524},
++    "expectedCategories": 2,
++    "expectedYTicks": 7,
++    "expectedGeneratedScatterPoints": 312
++  },
++  "confidence": [
++    {"target": "overall first pass", "confidence": "medium", "note": "Editable reconstruction intended for visual inspection, not pixel-optimized final output."}
++  ]
++}
+
+codex
+The two requested files are in place. I’m running the contract checks now: JSON parse, filename/path search for forbidden source reuse patterns, and a quick scan that only the QA image element references the source raster.
+exec
+/bin/zsh -lc 'jq empty outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.json' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+exec
+/bin/zsh -lc "rg -n \"drawImage|background(?:-image)?\\s*:|reference-05-grid-remapping-D-reference\\.png|assets/reference|url\\(\" outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.json outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.html" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.json:5:    "path": "../../assets/reference/reference-05-grid-remapping-D-reference.png",
+outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.html:10:      background: #eeeeee;
+outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.html:20:      background: #ffffff;
+outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.html:26:    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
+outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.html:27:    .toggle button.active { background: #111111; color: #ffffff; }
+outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.html:29:    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
+outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.html:31:    .reference { display: none; width: 100%; height: 100%; object-fit: contain; background: #ffffff; }
+
+exec
+/bin/zsh -lc 'find outputs/reference-05-grid-remapping-D-make-figure-batch -maxdepth 1 -type f -print' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.html
+outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.json
+
+diff --git a/outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.html b/outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..63191d09341b092fad0f7e55055cbaec299cff5d
+--- /dev/null
++++ b/outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.html
+@@ -0,0 +1,231 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-05-grid-remapping-D reconstruction</title>
++  <style>
++    html, body {
++      margin: 0;
++      background: #eeeeee;
++      color: #111111;
++      font-family: Arial, Helvetica, sans-serif;
++    }
++    header {
++      display: flex;
++      align-items: center;
++      justify-content: space-between;
++      gap: 16px;
++      padding: 10px 14px;
++      background: #ffffff;
++      border-bottom: 1px solid #cfcfcf;
++    }
++    h1 { margin: 0; font-size: 16px; font-weight: 700; }
++    .note { margin-top: 3px; font-size: 12px; color: #555555; }
++    .toggle { display: inline-flex; border: 1px solid #aaaaaa; border-radius: 4px; overflow: hidden; }
++    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
++    .toggle button.active { background: #111111; color: #ffffff; }
++    main { min-height: calc(100vh - 48px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
++    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
++    .surface, .reference { position: absolute; inset: 0; }
++    .reference { display: none; width: 100%; height: 100%; object-fit: contain; background: #ffffff; }
++    .show-reference .surface { display: none; }
++    .show-reference .reference { display: block; }
++    svg, canvas { position: absolute; inset: 0; }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1 id="title">reference-05-grid-remapping-D</h1>
++      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">Reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <img id="reference" class="reference" alt="QA reference source image">
++    </div>
++  </main>
++  <script>
++    const SVG_NS = "http://www.w3.org/2000/svg";
++    const JSON_PATH = "reference-05-grid-remapping-D.json";
++
++    function $(id) { return document.getElementById(id); }
++    function make(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
++      for (const [key, value] of Object.entries(attrs)) {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      }
++      return node;
++    }
++    function mulberry32(seed) {
++      return function random() {
++        seed |= 0; seed = seed + 0x6D2B79F5 | 0;
++        let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
++        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
++        return ((t ^ t >>> 14) >>> 0) / 4294967296;
++      };
++    }
++    function normal(rand) {
++      const u = Math.max(rand(), 1e-9);
++      const v = Math.max(rand(), 1e-9);
++      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
++    }
++    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
++    function yScale(plot, value) {
++      const box = plot.dataBbox;
++      const [min, max] = plot.y.domain;
++      return box.y + box.height - ((value - min) / (max - min)) * box.height;
++    }
++    function distFor(panel, id) {
++      return panel.data.distributions.find((dist) => dist.id === id);
++    }
++    function catFor(panel, id) {
++      return panel.plot.x.categories.find((cat) => cat.id === id);
++    }
++    function generateValues(dist) {
++      const rand = mulberry32(dist.seed);
++      const cumulative = [];
++      let acc = 0;
++      for (const comp of dist.components) {
++        acc += comp.weight;
++        cumulative.push({limit: acc, comp});
++      }
++      const values = [];
++      for (let i = 0; i < dist.count; i++) {
++        const pick = rand();
++        const chosen = cumulative.find((entry) => pick <= entry.limit).comp;
++        values.push(clamp(chosen.mean + chosen.sd * normal(rand), dist.clip[0], dist.clip[1]));
++      }
++      return values;
++    }
++    function densityAt(dist, y) {
++      return dist.components.reduce((sum, comp) => {
++        const z = (y - comp.mean) / comp.sd;
++        return sum + comp.weight * Math.exp(-0.5 * z * z) / comp.sd;
++      }, 0);
++    }
++    function violinPath(panel, plot, dist) {
++      const category = catFor(panel, dist.category);
++      const ys = [];
++      for (let y = plot.y.domain[0]; y <= plot.y.domain[1] + 1e-6; y += dist.violin.sampleStep) ys.push(y);
++      const maxDensity = Math.max(...ys.map((y) => densityAt(dist, y)));
++      const right = ys.map((y) => [category.x + densityAt(dist, y) / maxDensity * dist.violin.maxHalfWidth, yScale(plot, y)]);
++      const left = ys.slice().reverse().map((y) => [category.x - densityAt(dist, y) / maxDensity * dist.violin.maxHalfWidth, yScale(plot, y)]);
++      return right.concat(left).map((pt, i) => `${i ? "L" : "M"} ${pt[0].toFixed(2)} ${pt[1].toFixed(2)}`).join(" ") + " Z";
++    }
++    function addText(svg, obj) {
++      const node = make("text", {
++        x: obj.x,
++        y: obj.y,
++        fill: obj.fill || "#111111",
++        "font-size": obj.fontSize,
++        "font-weight": obj.fontWeight || 400,
++        "font-style": obj.fontStyle || "normal",
++        "text-anchor": obj.anchor || "start",
++        "dominant-baseline": obj.baseline || "alphabetic",
++        transform: obj.rotation ? `rotate(${obj.rotation} ${obj.x} ${obj.y})` : null,
++        "data-text-id": obj.id
++      });
++      node.textContent = obj.text;
++      svg.appendChild(node);
++      return node;
++    }
++    function render(spec) {
++      $("title").textContent = spec.id;
++      const frame = $("frame");
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      $("reference").src = spec.source.path;
++
++      const surface = $("surface");
++      surface.innerHTML = "";
++      const canvas = document.createElement("canvas");
++      canvas.width = spec.canvas.width;
++      canvas.height = spec.canvas.height;
++      surface.appendChild(canvas);
++      const ctx = canvas.getContext("2d");
++      const svg = make("svg", {width: spec.canvas.width, height: spec.canvas.height, viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`});
++      svg.style.fontFamily = spec.typography.fontFamily;
++      surface.appendChild(svg);
++
++      const panel = spec.panels[0];
++      const plot = panel.plot;
++      addText(svg, panel.label);
++      addText(svg, panel.title);
++
++      svg.appendChild(make("line", {x1: plot.axisBbox.x, y1: plot.axisBbox.y, x2: plot.axisBbox.x, y2: plot.axisBbox.y + plot.axisBbox.height, stroke: "#111111", "stroke-width": 1.4, "data-axis": "y"}));
++      for (const tick of plot.y.ticks) {
++        const y = yScale(plot, tick.value);
++        svg.appendChild(make("line", {x1: plot.axisBbox.x - 6, y1: y, x2: plot.axisBbox.x, y2: y, stroke: "#111111", "stroke-width": 1.2, "data-axis": "y", "data-value": tick.value}));
++        addText(svg, {id: `y-tick-${tick.label}`, text: tick.label, x: plot.axisBbox.x - 14, y: y + 5, fontSize: 18, anchor: "end"});
++      }
++      addText(svg, {...plot.y.label, id: "y-axis-label", fontSize: 20, anchor: "middle"});
++
++      const zero = panel.marks.find((m) => m.id === "zero-line");
++      svg.appendChild(make("line", {x1: zero.x1, y1: yScale(plot, zero.value), x2: zero.x2, y2: yScale(plot, zero.value), stroke: zero.stroke, "stroke-width": zero.strokeWidth, "stroke-dasharray": zero.dasharray, "data-mark-id": zero.id}));
++
++      for (const mark of panel.marks.filter((m) => m.type === "violin")) {
++        const dist = distFor(panel, mark.distribution);
++        svg.appendChild(make("path", {d: violinPath(panel, plot, dist), fill: dist.violin.fill, "fill-opacity": dist.violin.fillOpacity, stroke: dist.violin.stroke, "stroke-width": dist.violin.strokeWidth, "data-mark-id": mark.id, "data-distribution": dist.id}));
++      }
++
++      for (const mark of panel.marks.filter((m) => m.type === "scatter")) {
++        const dist = distFor(panel, mark.distribution);
++        const category = catFor(panel, dist.category);
++        const rand = mulberry32(dist.seed + 99);
++        ctx.fillStyle = mark.fill;
++        ctx.globalAlpha = mark.opacity;
++        for (const value of generateValues(dist)) {
++          const x = category.x + (rand() * 2 - 1) * mark.jitterHalfWidth * Math.pow(rand(), 0.55);
++          const y = yScale(plot, value);
++          ctx.beginPath();
++          ctx.arc(x, y, mark.radius, 0, Math.PI * 2);
++          ctx.fill();
++        }
++        ctx.globalAlpha = 1;
++      }
++
++      const summary = panel.marks.find((m) => m.type === "summaryOverlay");
++      for (const distId of summary.distributions) {
++        const dist = distFor(panel, distId);
++        const category = catFor(panel, dist.category);
++        svg.appendChild(make("line", {x1: category.x, y1: yScale(plot, dist.iqr[0]), x2: category.x, y2: yScale(plot, dist.iqr[1]), stroke: summary.iqrLine.stroke, "stroke-width": summary.iqrLine.strokeWidth, "data-summary": dist.id}));
++        svg.appendChild(make("line", {x1: category.x - summary.categoryBarHalfWidth, y1: yScale(plot, 0), x2: category.x + summary.categoryBarHalfWidth, y2: yScale(plot, 0), stroke: "#111111", "stroke-width": 1.2, "data-summary-baseline": dist.id}));
++        svg.appendChild(make("circle", {cx: category.x, cy: yScale(plot, dist.median), r: summary.medianMarker.radius, fill: summary.medianMarker.fill, stroke: summary.medianMarker.stroke, "stroke-width": summary.medianMarker.strokeWidth, "data-median": dist.id}));
++      }
++
++      const bracket = panel.annotations.find((a) => a.type === "bracket");
++      svg.appendChild(make("line", {x1: bracket.x1, y1: bracket.y, x2: bracket.x2, y2: bracket.y, stroke: bracket.stroke, "stroke-width": bracket.strokeWidth, "data-annotation-id": bracket.id}));
++      const p = make("text", {x: bracket.label.x, y: bracket.label.y, "font-size": bracket.label.fontSize, "font-style": "italic", "text-anchor": "middle", fill: "#111111", "data-annotation-label": bracket.id});
++      p.append("p = 3.1 x 10");
++      const sup = make("tspan", {"baseline-shift": "super", "font-size": 10});
++      sup.textContent = "-5";
++      p.appendChild(sup);
++      svg.appendChild(p);
++
++      for (const ann of panel.annotations.filter((a) => a.type !== "bracket")) addText(svg, ann);
++    }
++    async function init() {
++      const response = await fetch(JSON_PATH);
++      render(await response.json());
++      $("generatedButton").addEventListener("click", () => {
++        $("frame").classList.remove("show-reference");
++        $("generatedButton").classList.add("active");
++        $("referenceButton").classList.remove("active");
++      });
++      $("referenceButton").addEventListener("click", () => {
++        $("frame").classList.add("show-reference");
++        $("referenceButton").classList.add("active");
++        $("generatedButton").classList.remove("active");
++      });
++    }
++    init();
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.json b/outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..a659004a04ed8be73eba6814b2f62d8e5e419b32
+--- /dev/null
++++ b/outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.json
+@@ -0,0 +1,221 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-05-grid-remapping-D",
++  "source": {
++    "path": "../../assets/reference/reference-05-grid-remapping-D-reference.png",
++    "usage": "QA-only reference image; not used by generated candidate layers.",
++    "notes": "Panel D is a two-category gridness score distribution with jittered cell dots, violin density envelopes, summary median/IQR marks, y-axis ticks, dashed zero line, and a p-value bracket."
++  },
++  "canvas": {
++    "width": 486,
++    "height": 524,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 16,
++    "color": "#111111",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Roboto", "Noto Sans"],
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "Manual first-pass sizing from source crop; title resembles bold publication sans."
++    }
++  },
++  "panels": [
++    {
++      "id": "panel-d",
++      "bbox": {"x": 0, "y": 0, "width": 486, "height": 524},
++      "label": {
++        "id": "panel-label",
++        "text": "D",
++        "x": 23,
++        "y": 55,
++        "fontSize": 29,
++        "fontWeight": 700,
++        "anchor": "start",
++        "sourceBox": {"x": 23, "y": 31, "width": 20, "height": 29},
++        "fit": "manual"
++      },
++      "title": {
++        "id": "panel-title",
++        "text": "Gridness score distribution",
++        "x": 74,
++        "y": 59,
++        "fontSize": 23,
++        "fontWeight": 700,
++        "anchor": "start",
++        "sourceBox": {"x": 75, "y": 40, "width": 258, "height": 25},
++        "fit": "manual"
++      },
++      "plot": {
++        "id": "gridness-violin-plot",
++        "dataBbox": {"x": 86, "y": 88, "width": 346, "height": 322},
++        "axisBbox": {"x": 86, "y": 88, "width": 346, "height": 322},
++        "x": {
++          "scale": "categorical",
++          "categories": [
++            {"id": "env-a", "label": "Environment A", "x": 169, "color": "#8a3f12", "n": 156},
++            {"id": "env-b", "label": "Environment B", "x": 340, "color": "#00747d", "n": 156}
++          ]
++        },
++        "y": {
++          "scale": "linear",
++          "domain": [-1.5, 1.5],
++          "ticks": [
++            {"value": -1.5, "label": "-1.5"},
++            {"value": -1.0, "label": "-1.0"},
++            {"value": -0.5, "label": "-0.5"},
++            {"value": 0, "label": "0"},
++            {"value": 0.5, "label": "0.5"},
++            {"value": 1.0, "label": "1.0"},
++            {"value": 1.5, "label": "1.5"}
++          ],
++          "label": {"text": "Gridness score", "x": 20, "y": 249, "rotation": -90}
++        }
++      },
++      "data": {
++        "distributions": [
++          {
++            "id": "env-a-dist",
++            "category": "env-a",
++            "seed": 5021,
++            "count": 156,
++            "recipe": "mixture-normal",
++            "components": [
++              {"weight": 0.66, "mean": 0.16, "sd": 0.25},
++              {"weight": 0.25, "mean": 0.45, "sd": 0.22},
++              {"weight": 0.09, "mean": -0.50, "sd": 0.36}
++            ],
++            "clip": [-1.24, 1.28],
++            "median": 0.28,
++            "iqr": [-0.04, 0.57],
++            "violin": {
++              "bandwidth": 0.16,
++              "maxHalfWidth": 49,
++              "sampleStep": 0.06,
++              "fill": "#b87743",
++              "stroke": "#8a3f12",
++              "fillOpacity": 0.46,
++              "strokeWidth": 1.8
++            }
++          },
++          {
++            "id": "env-b-dist",
++            "category": "env-b",
++            "seed": 6317,
++            "count": 156,
++            "recipe": "mixture-normal",
++            "components": [
++              {"weight": 0.65, "mean": 0.20, "sd": 0.24},
++              {"weight": 0.25, "mean": 0.43, "sd": 0.20},
++              {"weight": 0.10, "mean": -0.44, "sd": 0.34}
++            ],
++            "clip": [-1.20, 1.29],
++            "median": 0.31,
++            "iqr": [-0.01, 0.58],
++            "violin": {
++              "bandwidth": 0.16,
++              "maxHalfWidth": 48,
++              "sampleStep": 0.06,
++              "fill": "#3b9ba0",
++              "stroke": "#00747d",
++              "fillOpacity": 0.43,
++              "strokeWidth": 1.8
++            }
++          }
++        ]
++      },
++      "marks": [
++        {
++          "id": "zero-line",
++          "type": "line",
++          "usesTransform": "gridness-violin-plot.y",
++          "orientation": "horizontal",
++          "value": 0,
++          "x1": 86,
++          "x2": 432,
++          "stroke": "#111111",
++          "strokeWidth": 1.5,
++          "dasharray": "5 4"
++        },
++        {"id": "env-a-violin", "type": "violin", "distribution": "env-a-dist", "renderer": "svg"},
++        {"id": "env-b-violin", "type": "violin", "distribution": "env-b-dist", "renderer": "svg"},
++        {
++          "id": "env-a-scatter",
++          "type": "scatter",
++          "distribution": "env-a-dist",
++          "renderer": "canvas",
++          "jitterHalfWidth": 46,
++          "radius": 2.05,
++          "fill": "#a65d2b",
++          "opacity": 0.72
++        },
++        {
++          "id": "env-b-scatter",
++          "type": "scatter",
++          "distribution": "env-b-dist",
++          "renderer": "canvas",
++          "jitterHalfWidth": 46,
++          "radius": 2.05,
++          "fill": "#087f87",
++          "opacity": 0.70
++        },
++        {
++          "id": "summary-bars",
++          "type": "summaryOverlay",
++          "distributions": ["env-a-dist", "env-b-dist"],
++          "medianMarker": {"radius": 5.6, "fill": "#111111", "stroke": "#ffffff", "strokeWidth": 1.4},
++          "iqrLine": {"stroke": "#111111", "strokeWidth": 2.3},
++          "categoryBarHalfWidth": 19
++        }
++      ],
++      "annotations": [
++        {
++          "id": "p-value-bracket",
++          "type": "bracket",
++          "x1": 169,
++          "x2": 340,
++          "y": 104,
++          "tickHeight": 0,
++          "stroke": "#111111",
++          "strokeWidth": 1.4,
++          "label": {
++            "text": "p = 3.1 x 10^-5",
++            "x": 254,
++            "y": 98,
++            "fontSize": 15,
++            "fontStyle": "italic",
++            "anchor": "middle",
++            "superscript": {"text": "-5", "start": 13}
++          }
++        },
++        {"id": "x-label-env-a", "type": "categoryLabel", "category": "env-a", "text": "Environment A", "x": 169, "y": 438, "fontSize": 18, "fontWeight": 400, "fill": "#8a3f12", "anchor": "middle"},
++        {"id": "x-sublabel-env-a", "type": "categorySubLabel", "category": "env-a", "text": "(n = 156 cells)", "x": 169, "y": 462, "fontSize": 16, "fontStyle": "italic", "fill": "#111111", "anchor": "middle"},
++        {"id": "x-label-env-b", "type": "categoryLabel", "category": "env-b", "text": "Environment B", "x": 340, "y": 438, "fontSize": 18, "fontWeight": 400, "fill": "#00747d", "anchor": "middle"},
++        {"id": "x-sublabel-env-b", "type": "categorySubLabel", "category": "env-b", "text": "(n = 156 cells)", "x": 340, "y": 462, "fontSize": 16, "fontStyle": "italic", "fill": "#111111", "anchor": "middle"}
++      ],
++      "provenance": [
++        {"target": "plot.dataBbox", "confidence": "high", "note": "Axis extents manually read from the source crop."},
++        {"target": "distribution shapes", "confidence": "medium", "note": "Cell dots and density envelopes are generated from editable mixture recipes to match visible range and shape; raw cell values are unavailable."},
++        {"target": "typography", "confidence": "medium", "note": "Manual first-pass typography without automated font calibration."}
++      ]
++    }
++  ],
++  "constraints": [
++    {"id": "axis-ticks-linked", "description": "All y tick marks and labels derive from plot.y.ticks and share the same y transform."},
++    {"id": "category-colors-linked", "description": "Violin, scatter, and category label colors are linked through category/distribution ids."},
++    {"id": "source-raster-qa-only", "description": "The source raster can only be displayed in the labeled reference view, never in generated SVG/canvas layers."}
++  ],
++  "validation": {
++    "expectedCanvas": {"width": 486, "height": 524},
++    "expectedCategories": 2,
++    "expectedYTicks": 7,
++    "expectedGeneratedScatterPoints": 312
++  },
++  "confidence": [
++    {"target": "overall first pass", "confidence": "medium", "note": "Editable reconstruction intended for visual inspection, not pixel-optimized final output."}
++  ]
++}
+

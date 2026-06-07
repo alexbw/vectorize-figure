@@ -1,0 +1,135 @@
+[
+  {
+    "id": "ocr-01",
+    "text": "B Neural state-space trajectories",
+    "family": "Arial Narrow",
+    "size": 19.25,
+    "weight": 600,
+    "lineHeight": 1,
+    "scaleX": 1,
+    "naturalWidth": 245.64,
+    "x": 9,
+    "y": 31.7,
+    "score": 0.58307,
+    "crop": {
+      "x": 5,
+      "y": 9,
+      "width": 251,
+      "height": 31
+    }
+  },
+  {
+    "id": "ocr-02",
+    "text": "(population activity)",
+    "family": "Arimo",
+    "size": 17.9,
+    "weight": 600,
+    "lineHeight": 1,
+    "scaleX": 0.955,
+    "naturalWidth": 155.64,
+    "x": 107,
+    "y": 51.85,
+    "score": 0.37887,
+    "crop": {
+      "x": 30,
+      "y": 34,
+      "width": 154,
+      "height": 27
+    }
+  },
+  {
+    "id": "ocr-03",
+    "text": "Right choice © Time points",
+    "family": "Arial Narrow",
+    "size": 19.29,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 0.78,
+    "naturalWidth": 188.92,
+    "x": 250.75,
+    "y": 93.15,
+    "score": 0.73092,
+    "crop": {
+      "x": 168,
+      "y": 66,
+      "width": 159,
+      "height": 39
+    }
+  },
+  {
+    "id": "ocr-04",
+    "text": "Stim x",
+    "family": "Helvetica Neue",
+    "size": 26.9,
+    "weight": 400,
+    "lineHeight": 1,
+    "scaleX": 1.25,
+    "naturalWidth": 76.23,
+    "x": 117.25,
+    "y": 233.7,
+    "score": 1.09919,
+    "crop": {
+      "x": 67,
+      "y": 202,
+      "width": 112,
+      "height": 31
+    }
+  },
+  {
+    "id": "ocr-05",
+    "text": "(2504 Om Lg",
+    "family": "Helvetica Neue",
+    "size": 26.44,
+    "weight": 500,
+    "lineHeight": 1,
+    "scaleX": 1,
+    "naturalWidth": 154.81,
+    "x": 86.25,
+    "y": 257.75,
+    "score": 0.91561,
+    "crop": {
+      "x": 4,
+      "y": 218,
+      "width": 163,
+      "height": 42
+    }
+  },
+  {
+    "id": "ocr-06",
+    "text": "SA",
+    "family": "Helvetica",
+    "size": 35.36,
+    "weight": 400,
+    "lineHeight": 1,
+    "scaleX": 1.25,
+    "naturalWidth": 47.17,
+    "x": 206.75,
+    "y": 291.25,
+    "score": 1.04196,
+    "crop": {
+      "x": 173,
+      "y": 257,
+      "width": 71,
+      "height": 38
+    }
+  },
+  {
+    "id": "ocr-07",
+    "text": "(12%) PCL",
+    "family": "Arimo",
+    "size": 20.69,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1.05,
+    "naturalWidth": 94.82,
+    "x": 59.25,
+    "y": 433.35,
+    "score": 1.32665,
+    "crop": {
+      "x": 61,
+      "y": 413,
+      "width": 233,
+      "height": 27
+    }
+  }
+]

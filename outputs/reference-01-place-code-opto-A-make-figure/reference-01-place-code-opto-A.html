@@ -142,35 +142,72 @@
       return node;
     }
 
-    function textNode(spec, defaults = {}) {
+    function textNode(rawSpec, defaults = {}) {
+      const spec = calibratedText(rawSpec);
       const calibration = defaults.calibration || {};
+      const fontSize = spec.fontSize || defaults.defaultSize || 14;
+      const x = spec.overlayX !== undefined ? spec.overlayX : spec.x;
+      const y = spec.overlayY !== undefined ? spec.overlayY : spec.y;
       const node = svgNode('text', {
-        x: spec.x,
-        y: spec.y,
+        x,
+        y,
         fill: spec.fill || spec.color || defaults.color || '#111111',
-        'font-size': spec.fontSize || defaults.defaultSize || 14,
+        'font-size': fontSize,
         'font-weight': spec.fontWeight || 400,
         'font-family': spec.fontFamily || defaults.fontFamily || 'Arial, Helvetica, sans-serif',
         'font-stretch': spec.fontStretch || undefined,
         'letter-spacing': spec.letterSpacing ?? calibration.letterSpacing,
         'text-anchor': spec.anchor || 'start',
         'dominant-baseline': spec.baseline || 'alphabetic',
-        'textLength': spec.fit === 'scaleX' ? spec.targetWidth : undefined,
-        'lengthAdjust': spec.fit === 'scaleX' ? 'spacingAndGlyphs' : undefined,
-        transform: spec.rotation ? `rotate(${spec.rotation} ${spec.x} ${spec.y})` : undefined,
-        'data-role': spec.role || 'text'
+        transform: spec.rotation ? `rotate(${spec.rotation} ${x} ${y})` : undefined,
+        'data-role': spec.role || 'text',
+        'data-text-id': spec.id,
+        'data-fit': spec.fit,
+        'data-target-width': spec.targetWidth,
+        'data-min-scale': spec.minScale,
+        'data-max-scale': spec.maxScale
       });
 
       const lines = String(spec.text || '').split('\n');
       lines.forEach((lineText, index) => {
         const tspan = svgNode('tspan', {
-          x: spec.x,
-          dy: index === 0 ? 0 : (spec.lineHeight || calibration.lineHeight || 1.08) * (spec.fontSize || defaults.defaultSize || 14)
+          x,
+          dy: index === 0 ? 0 : (spec.lineHeight || calibration.lineHeight || 1.08) * fontSize
         });
         tspan.textContent = lineText;
         node.appendChild(tspan);
       });
       return node;
+    }
+
+    let activeTextCalibration = {};
+
+    function calibratedText(spec = {}) {
+      if (!spec.id || !activeTextCalibration[spec.id]) return spec;
+      return {...spec, ...activeTextCalibration[spec.id]};
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function applyTextFits(svg) {
+      for (const node of svg.querySelectorAll('text[data-fit="scaleX"]')) {
+        const targetWidth = Number(node.dataset.targetWidth || 0);
+        if (!targetWidth) continue;
+        const box = node.getBBox();
+        if (!box.width) continue;
+        const scale = clamp(
+          targetWidth / box.width,
+          Number(node.dataset.minScale || 0.4),
+          Number(node.dataset.maxScale || 1.45)
+        );
+        const x = Number(node.getAttribute('x') || 0);
+        const y = Number(node.getAttribute('y') || 0);
+        const existing = node.getAttribute('transform') || '';
+        const fitTransform = `translate(${x} ${y}) scale(${scale} 1) translate(${-x} ${-y})`;
+        node.setAttribute('transform', [existing, fitTransform].filter(Boolean).join(' '));
+      }
     }
 
     function dataBox(item) {
@@ -387,7 +424,8 @@
         const box = dataBox(heatmap);
         const axes = axesFor(heatmap);
         renderDataBorder(svg, box, axes.dataBorder);
-        svg.appendChild(textNode(heatmap.title, defaults));
+        const prefix = heatmap.id.startsWith('control') ? 'control' : 'opto';
+        svg.appendChild(textNode({...heatmap.title, id: `${prefix}-title`}, defaults));
 
         if (axes.yAxisX !== null && axes.yAxisX !== undefined) {
           line(svg, {x1: axes.yAxisX, y1: box.y, x2: axes.yAxisX, y2: box.y + box.height, role: 'y-axis'});
@@ -399,10 +437,10 @@
         for (const tick of panel.xAxis.ticks) {
           const x = xScaleForHeatmap(panel, heatmap, tick.value);
           line(svg, {x1: x, y1: axes.xAxisY, x2: x, y2: axes.xAxisY + axes.xTickLength, role: 'x-tick'});
-          svg.appendChild(textNode({text: tick.label, x, y: axes.xAxisY + 22, fontSize: 16, anchor: 'middle'}, defaults));
+          svg.appendChild(textNode({id: `${prefix}-x-tick-${tick.label}`, text: tick.label, x, y: axes.xAxisY + 22, fontSize: 16, anchor: 'middle'}, defaults));
         }
 
-        svg.appendChild(textNode(heatmap.xLabel, defaults));
+        svg.appendChild(textNode({...heatmap.xLabel, id: `${prefix}-x-label`}, defaults));
       }
 
       const leftHeatmap = panel.heatmaps[0];
@@ -411,15 +449,15 @@
       for (const tick of panel.yAxis.ticks) {
         const y = yScaleForPanel(panel, leftHeatmap, tick.value);
         line(svg, {x1: leftAxes.yAxisX - leftAxes.yTickLength, y1: y, x2: leftAxes.yAxisX, y2: y, role: 'y-tick'});
-        svg.appendChild(textNode({text: tick.label, x: leftAxes.yAxisX - leftAxes.yTickLength - 4, y: y + 5, fontSize: 16, anchor: 'end'}, defaults));
+        svg.appendChild(textNode({id: `y-tick-${tick.label}`, text: tick.label, x: leftAxes.yAxisX - leftAxes.yTickLength - 4, y: y + 5, fontSize: 16, anchor: 'end'}, defaults));
       }
-      svg.appendChild(textNode(panel.yAxis.label, defaults));
+      svg.appendChild(textNode({...panel.yAxis.label, id: 'y-label'}, defaults));
     }
 
     function renderColorbarAxes(svg, panel, defaults) {
       const colorbar = panel.colorbar;
       const box = colorbar.bbox;
-      svg.appendChild(textNode(anchoredLabel(colorbar.label, box), defaults));
+      svg.appendChild(textNode({...anchoredLabel(colorbar.label, box), id: 'colorbar-label'}, defaults));
       rect(svg, {
         x: box.x,
         y: box.y,
@@ -433,7 +471,8 @@
       for (const tick of colorbar.ticks) {
         const y = scale(colorbar.domain, [box.y + box.height, box.y], tick.value);
         line(svg, {x1: box.x + box.width, y1: y, x2: box.x + box.width + 6, y2: y, role: 'colorbar-tick'});
-        svg.appendChild(textNode({text: tick.label, x: box.x + box.width + 10, y: y + 5, fontSize: 15, anchor: 'start'}, defaults));
+        const tickId = String(tick.label).startsWith('-') ? `colorbar-tick-minus-${String(tick.label).slice(1)}` : `colorbar-tick-${tick.label}`;
+        svg.appendChild(textNode({id: tickId, text: tick.label, x: box.x + box.width + 10, y: y + 5, fontSize: 15, anchor: 'start'}, defaults));
       }
     }
 
@@ -443,6 +482,7 @@
       const reference = byId('reference');
       const defaults = spec.typography || {};
       const canvasSpec = spec.canvas;
+      activeTextCalibration = Object.assign({}, ...(spec.panels || []).map(panel => panel.textCalibration || {}));
 
       byId('title').textContent = spec.id;
       document.title = `${spec.id} reconstruction`;
@@ -476,11 +516,14 @@
 
         const group = svgNode('g', {'data-panel-id': panel.id, 'data-role': panel.type});
         svg.appendChild(group);
-        group.appendChild(textNode(panel.label, defaults));
-        group.appendChild(textNode(panel.title, defaults));
+        group.appendChild(textNode({...panel.label, id: 'panel-label'}, defaults));
+        group.appendChild(textNode({...panel.title, id: 'panel-title'}, defaults));
         renderHeatmapAxes(group, panel, defaults);
         renderColorbarAxes(group, panel, defaults);
       }
+
+      const afterFonts = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+      afterFonts.then(() => applyTextFits(svg));
     }
 
     byId('generatedButton').onclick = () => {

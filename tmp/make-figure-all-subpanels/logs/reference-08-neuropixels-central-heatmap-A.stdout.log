@@ -1,0 +1,2872 @@
+Reading additional input from stdin...
+OpenAI Codex v0.137.0
+--------
+workdir: /Users/alex/Code/scientific-figure-reconstruction
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: low
+reasoning summaries: none
+session id: 019e9e83-4efd-7510-a5cc-829019a0daed
+--------
+user
+$make-figure assets/reference/reference-08-neuropixels-central-heatmap-A-reference.png. Generate an independent first-pass reconstruction for visual inspection. Write outputs only to outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.json and outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.html. Use the make-figure skill contract and the repository command/skill code: generated visual layers must not reuse the source raster; the source may appear only as a clearly labeled QA/reference view. Keep the JSON semantic and editable. Verify JSON validity and search the output for accidental drawImage/background source reuse. Do not modify existing output directories, docs, skills, plugins, source assets, or unrelated files.
+codex
+I’m using the `make-figure` skill as requested. I’ll inspect the reference image and repo renderer patterns first, then write only the two requested output files and run the contract checks.
+exec
+/bin/zsh -lc "sed -n '1,220p' skills/make-figure/SKILL.md" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+---
+name: make-figure
+description: Reconstruct raster images of scientific figures into editable, configurable HTML plus a semantic JSON specification. Use when the user invokes $make-figure, asks to recreate a paper figure from a PNG/JPEG/screenshot, wants a no-source-image HTML reconstruction, or needs chart panels converted into editable axes, marks, annotations, legends, styles, and data recipes.
+---
+
+# Make Figure
+
+## Objective
+
+Convert a raster scientific figure or cropped panel into two deliverables:
+
+- `figure-id.json`: semantic, editable figure specification.
+- `figure-id.html`: generated reconstruction rendered from the JSON spec.
+
+The generated candidate must not reuse the source raster as a visual layer. The source image may appear only in clearly labeled QA/reference views.
+
+## Workflow
+
+1. Inspect the source raster at native resolution. Determine whether the input is a single panel, multipanel figure, chart, schematic, heatmap, raster plot, microscopy image, or mixed figure.
+2. Create or infer a panel inventory with pixel dimensions, plot boxes, axes, labels, legends, colorbars, annotations, and visible mark types.
+3. Create a semantic relationship inventory: coordinate systems, layout objects, derived marks/text, source-calibrated anchors, and validation constraints.
+4. Choose renderers by layer: SVG/DOM for axes, labels, legends, paths, brackets, and annotations; canvas for heatmaps, rasters, dense dots, generated textures, and pixel-native fields.
+5. Write the JSON spec first. Include dimensions, scales, domains, ticks, text, marks, renderer hints, style tokens, provenance, and confidence notes.
+6. Build the HTML so every visible element is generated from the JSON. Keep stable IDs/classes/data attributes for programmatic edits.
+7. Calibrate typography when text mismatch is visually material. Measure representative source text boxes, try likely sans-serif families through browser-rendered text, and store the winning local fields (`fontFamily`, `fontSize`, `fontWeight`, `lineHeight`, `targetWidth`, `fit`, `sourceBox`, and calibration notes) on the text objects.
+8. Include an optional QA toggle that shows the source image separately from the generated candidate. Label it clearly as reference-only.
+9. Verify in a browser at source dimensions. Compare alignment, plot grammar, text hierarchy, mark density, axes, tick positions, and annotations. Iterate until the reconstruction is plausibly editable and visually close.
+
+Read `references/semantic-figure-ir.md` and `references/reconstruction-contract.md` when implementing a nontrivial panel or when deciding schema fields.
+
+Use `assets/hybrid-renderer-template.html` as a starting point for new outputs when no better project-local renderer exists.
+
+Use `scripts/font-calibration/` when typography is the main source of visual drift. The calibration harness may use the source raster for scoring and overlay QA, but the generated candidate still must not render the source raster as a figure layer. Treat the report as evidence of improvement over the starting text render; final acceptance is a results-only visual overlay of original text and attempted text, not a zero-pixel-diff target.
+
+## Output Contract
+
+Place outputs next to the source image unless the user gives another destination. Use clear names such as:
+
+- `my-panel.json`
+- `my-panel.html`
+- optional `my-panel-visual-elements.json`
+- optional `my-panel-qa.png` or browser screenshot
+
+The HTML must load or embed the JSON spec and render from it. Prefer loading an adjacent `.json` file for configurability. It is acceptable to embed the initial spec in a `<script type="application/json">` fallback if the file also exists separately.
+
+## Non-Negotiables
+
+- Do not use the source PNG/JPEG/SVG as the generated visual layer.
+- Do not call `drawImage(sourceRaster)` or set the source raster as a CSS background in the generated candidate.
+- Do not flatten axes, ticks, labels, legends, or annotations into an image.
+- Do not invent misleading marks, such as rectangular error boxes for curve-following uncertainty bands.
+- Record uncertain inferences in `confidence` or `provenance` instead of pretending they are measured data.
+
+## Renderer Rules
+
+- Use SVG for axes, ticks, paths, contours, brackets, arrows, legends, and moderately sized editable marks.
+- Use DOM for text-heavy schematics or labels where direct editing matters.
+- Use canvas for heatmaps, matrix images, rasters, dense scatter fields, microscopy-like generated texture, and large point sets.
+- Use hybrid rendering for most scientific figures: canvas for dense generated fields, SVG/DOM for structure.
+
+## Quality Checklist
+
+Before finishing, verify:
+
+- Native canvas/page dimensions match the source crop.
+- Plot boxes, tick labels, event anchors, and annotations share the same coordinate transforms.
+- Visible axes have editable ticks and labels unless intentionally suppressed.
+- Related objects remain linked in the rendered DOM, such as tick mark/label pairs, legends to series, colorbars to color scales, and grid lines to grid planes.
+- Text has explicit alignment and does not overlap neighboring labels.
+- Important text has been visually checked against source text overlays. When calibrated, representative labels improve versus the baseline score and the calibrated fields are recorded in JSON.
+- The JSON can be edited to change labels, domains, colors, or data recipes without rewriting HTML.
+- Any QA reference layer is visually and semantically separate from the generated candidate.
+
+exec
+/bin/zsh -lc 'ls -l assets/reference/reference-08-neuropixels-central-heatmap-A-reference.png outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch 2>/dev/null || true' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+-rw-r--r--  1 alex  staff  96062 Jun  4 05:38 assets/reference/reference-08-neuropixels-central-heatmap-A-reference.png
+
+outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch:
+total 0
+
+exec
+/bin/zsh -lc "rg --files outputs | rg 'reference-08|make-figure-batch|\\.html"'$|'"\\.json"'$'"' | head -80" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+outputs/reference-05-grid-remapping-A-make-figure-batch/reference-05-grid-remapping-A.html
+outputs/reference-05-grid-remapping-A-make-figure-batch/reference-05-grid-remapping-A.json
+outputs/reference-02-decision-dynamics-A-make-figure-batch/reference-02-decision-dynamics-A.html
+outputs/reference-02-decision-dynamics-A-make-figure-batch/reference-02-decision-dynamics-A.json
+outputs/reference-01-place-code-opto-B-make-figure-batch/reference-01-place-code-opto-B.json
+outputs/reference-01-place-code-opto-B-make-figure-batch/reference-01-place-code-opto-B.html
+outputs/reference-07-cross-region-small-multiples-H-make-figure-batch/reference-07-cross-region-small-multiples-H.json
+outputs/reference-07-cross-region-small-multiples-H-make-figure-batch/reference-07-cross-region-small-multiples-H.html
+outputs/reference-02-decision-dynamics-A-make-figure/reference-02-decision-dynamics-A.html
+outputs/reference-02-decision-dynamics-A-make-figure/reference-02-decision-dynamics-A.json
+outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.json
+outputs/reference-05-grid-remapping-D-make-figure-batch/reference-05-grid-remapping-D.html
+outputs/reference-02-decision-dynamics-D-make-figure-batch/reference-02-decision-dynamics-D.json
+outputs/reference-02-decision-dynamics-D-make-figure-batch/reference-02-decision-dynamics-D.html
+outputs/reference-01-place-code-opto-D-make-figure-test/reference-01-place-code-opto-D.json
+outputs/reference-01-place-code-opto-D-make-figure-test/reference-01-place-code-opto-D.html
+outputs/reference-01-place-code-opto-C-make-figure-batch/reference-01-place-code-opto-C.json
+outputs/reference-01-place-code-opto-C-make-figure-batch/reference-01-place-code-opto-C.html
+outputs/reference-05-grid-remapping-E-make-figure-batch/reference-05-grid-remapping-E.json
+outputs/reference-05-grid-remapping-E-make-figure-batch/reference-05-grid-remapping-E.html
+outputs/reference-02-decision-dynamics-E-make-figure-batch/reference-02-decision-dynamics-E.json
+outputs/reference-02-decision-dynamics-E-make-figure-batch/reference-02-decision-dynamics-E.html
+outputs/reference-01-place-code-opto-F-make-figure-batch/reference-01-place-code-opto-F.html
+outputs/reference-01-place-code-opto-F-make-figure-batch/reference-01-place-code-opto-F.json
+outputs/reference-04-motor-manifold-I-make-figure-batch/reference-04-motor-manifold-I.html
+outputs/reference-04-motor-manifold-I-make-figure-batch/reference-04-motor-manifold-I.json
+outputs/reference-05-grid-remapping-C-make-figure-batch/reference-05-grid-remapping-C.json
+outputs/reference-05-grid-remapping-C-make-figure-batch/reference-05-grid-remapping-C.html
+outputs/reference-02-decision-dynamics-C-make-figure-batch/reference-02-decision-dynamics-C.json
+outputs/reference-02-decision-dynamics-C-make-figure-batch/reference-02-decision-dynamics-C.html
+outputs/reference-01-place-code-opto-F-make-figure/reference-01-place-code-opto-F.html
+outputs/reference-01-place-code-opto-F-make-figure/reference-01-place-code-opto-F.json
+outputs/reference-06-replay-stimulation-H-make-figure-batch/reference-06-replay-stimulation-H.json
+outputs/reference-06-replay-stimulation-H-make-figure-batch/reference-06-replay-stimulation-H.html
+outputs/reference-05-grid-remapping-F-make-figure-batch/reference-05-grid-remapping-F.html
+outputs/reference-05-grid-remapping-F-make-figure-batch/reference-05-grid-remapping-F.json
+outputs/reference-02-decision-dynamics-F-make-figure-batch/reference-02-decision-dynamics-F.html
+outputs/reference-02-decision-dynamics-F-make-figure-batch/reference-02-decision-dynamics-F.json
+outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.json
+outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.html
+outputs/reference-05-grid-remapping-D-make-figure-test/reference-05-grid-remapping-D.json
+outputs/reference-05-grid-remapping-D-make-figure-test/reference-05-grid-remapping-D.html
+outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.html
+outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.json
+outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.json
+outputs/reference-05-grid-remapping-B-make-figure-batch/reference-05-grid-remapping-B.html
+outputs/reference-02-decision-dynamics-B-make-figure-batch/reference-02-decision-dynamics-B.json
+outputs/reference-02-decision-dynamics-B-make-figure-batch/reference-02-decision-dynamics-B.html
+outputs/reference-01-place-code-opto-A-make-figure-batch/reference-01-place-code-opto-A.html
+outputs/reference-01-place-code-opto-A-make-figure-batch/reference-01-place-code-opto-A.json
+outputs/reference-01-place-code-opto-A-make-figure/reference-01-place-code-opto-A.html
+outputs/reference-01-place-code-opto-A-make-figure/reference-01-place-code-opto-A.json
+outputs/reference-02-decision-dynamics-B-make-figure/reference-02-decision-dynamics-B.json
+outputs/reference-02-decision-dynamics-B-make-figure/reference-02-decision-dynamics-B.html
+outputs/reference-06-replay-stimulation-D-make-figure-batch/reference-06-replay-stimulation-D.json
+outputs/reference-06-replay-stimulation-D-make-figure-batch/reference-06-replay-stimulation-D.html
+outputs/reference-06-replay-stimulation-B-make-figure-batch/reference-06-replay-stimulation-B.json
+outputs/reference-06-replay-stimulation-B-make-figure-batch/reference-06-replay-stimulation-B.html
+outputs/reference-01-place-code-opto-C-make-figure/reference-01-place-code-opto-C.json
+outputs/reference-01-place-code-opto-C-make-figure/reference-01-place-code-opto-C.html
+outputs/reference-03-learning-remapping-D-make-figure-batch/reference-03-learning-remapping-D.html
+outputs/reference-03-learning-remapping-D-make-figure-batch/reference-03-learning-remapping-D.json
+outputs/reference-07-cross-region-small-multiples-C-make-figure-batch/reference-07-cross-region-small-multiples-C.json
+outputs/reference-07-cross-region-small-multiples-C-make-figure-batch/reference-07-cross-region-small-multiples-C.html
+outputs/reference-03-learning-remapping-E-make-figure-batch/reference-03-learning-remapping-E.html
+outputs/reference-03-learning-remapping-E-make-figure-batch/reference-03-learning-remapping-E.json
+outputs/reference-07-cross-region-small-multiples-G-make-figure-batch/reference-07-cross-region-small-multiples-G.html
+outputs/reference-07-cross-region-small-multiples-G-make-figure-batch/reference-07-cross-region-small-multiples-G.json
+outputs/reference-01-place-code-opto-B-make-figure/reference-01-place-code-opto-B.json
+outputs/reference-01-place-code-opto-B-make-figure/reference-01-place-code-opto-B.html
+outputs/reference-04-motor-manifold-A-make-figure-batch/reference-04-motor-manifold-A.json
+outputs/reference-04-motor-manifold-A-make-figure-batch/reference-04-motor-manifold-A.html
+outputs/reference-02-decision-dynamics-G-make-figure-batch/reference-02-decision-dynamics-G.html
+outputs/reference-02-decision-dynamics-G-make-figure-batch/reference-02-decision-dynamics-G.json
+outputs/reference-06-replay-stimulation-E-make-figure-batch/reference-06-replay-stimulation-E.json
+outputs/reference-06-replay-stimulation-E-make-figure-batch/reference-06-replay-stimulation-E.html
+outputs/reference-06-replay-stimulation-A-make-figure-batch/reference-06-replay-stimulation-A.html
+outputs/reference-06-replay-stimulation-A-make-figure-batch/reference-06-replay-stimulation-A.json
+outputs/reference-03-learning-remapping-A-make-figure-batch/reference-03-learning-remapping-A.json
+outputs/reference-03-learning-remapping-A-make-figure-batch/reference-03-learning-remapping-A.html
+
+exec
+/bin/zsh -lc 'identify -verbose assets/reference/reference-08-neuropixels-central-heatmap-A-reference.png | head -80' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+Image:
+  Filename: assets/reference/reference-08-neuropixels-central-heatmap-A-reference.png
+  Permissions: rw-r--r--
+  Format: PNG (Portable Network Graphics)
+  Mime type: image/png
+  Class: DirectClass
+  Geometry: 391x263+0+0
+  Units: Undefined
+  Colorspace: sRGB
+  Type: TrueColor
+  Endianness: Undefined
+  Depth: 8-bit
+  Channels: 3.0
+  Channel depth:
+    Red: 8-bit
+    Green: 8-bit
+    Blue: 8-bit
+  Channel statistics:
+    Pixels: 102833
+    Red:
+      min: 0  (0)
+      max: 255 (1)
+      mean: 238.718 (0.93615)
+      median: 253 (0.992157)
+      standard deviation: 46.9877 (0.184266)
+      kurtosis: 14.3445
+      skewness: -3.87876
+      entropy: 0.462914
+    Green:
+      min: 0  (0)
+      max: 255 (1)
+      mean: 238.96 (0.937096)
+      median: 253 (0.992157)
+      standard deviation: 43.3565 (0.170026)
+      kurtosis: 14.4376
+      skewness: -3.77718
+      entropy: 0.467462
+    Blue:
+      min: 0  (0)
+      max: 255 (1)
+      mean: 236.756 (0.928454)
+      median: 253 (0.992157)
+      standard deviation: 48.4643 (0.190056)
+      kurtosis: 10.9745
+      skewness: -3.41453
+      entropy: 0.477469
+  Image statistics:
+    Overall:
+      min: 0  (0)
+      max: 255 (1)
+      mean: 238.145 (0.9339)
+      median: 253 (0.992157)
+      standard deviation: 46.2695 (0.181449)
+      kurtosis: 13.2522
+      skewness: -3.69016
+      entropy: 0.469282
+  Rendering intent: Perceptual
+  Gamma: 0.454545
+  Chromaticity:
+    red primary: (0.64,0.33,0.03)
+    green primary: (0.3,0.6,0.1)
+    blue primary: (0.15,0.06,0.79)
+    white point: (0.3127,0.329,0.3583)
+  Matte color: grey74
+  Background color: white
+  Border color: srgb(223,223,223)
+  Transparent color: black
+  Interlace: None
+  Intensity: Undefined
+  Compose: Over
+  Page geometry: 391x263+0+0
+  Dispose: Undefined
+  Iterations: 0
+  Compression: Zip
+  Orientation: Undefined
+  Properties:
+    date:create: 2026-06-04T09:38:12+00:00
+    date:modify: 2026-06-04T09:38:12+00:00
+    date:timestamp: 2026-06-06T19:57:55+00:00
+    png:IHDR.bit-depth-orig: 8
+
+codex
+The target output directory exists and is empty, so I can keep the work scoped to the two requested files. The crop is 391 by 263 px and appears to be a mixed schematic plus two-axis time-series panel, not a central heatmap despite the filename.
+codex
+I’ve got the panel inventory now: a top virtual-track schematic, a lower time plot with shaded vertical epochs, teal position trace, orange speed trace, dual y-axes, and clipped right-side label. I’m going to encode those as editable SVG objects and procedurally generated paths rather than pixel layers.
+exec
+/bin/zsh -lc "sed -n '1,220p' assets/hybrid-renderer-template.html" in /Users/alex/Code/scientific-figure-reconstruction
+ exited 1 in 0ms:
+sed: assets/hybrid-renderer-template.html: No such file or directory
+
+exec
+/bin/zsh -lc "sed -n '1,180p' outputs/reference-02-decision-dynamics-A-make-figure-batch/reference-02-decision-dynamics-A.html" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-02-decision-dynamics-A reconstruction</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #aaaaaa;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .surface,
+    .reference {
+      position: absolute;
+      inset: 0;
+    }
+
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+    }
+
+    .show-reference .surface {
+      display: none;
+    }
+
+    .show-reference .reference {
+      display: block;
+    }
+
+    svg {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-02-decision-dynamics-A</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">QA reference</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA reference source image">
+    </div>
+  </main>
+
+  <script>
+    const SPEC_URL = './reference-02-decision-dynamics-A.json';
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function byId(id) {
+      return document.getElementById(id);
+    }
+
+    function node(tag, attrs = {}) {
+      const item = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) item.setAttribute(key, value);
+      }
+      return item;
+    }
+
+    function addText(svg, spec, defaults = {}) {
+      const text = node('text', {
+        x: spec.x,
+        y: spec.y,
+        fill: spec.fill || defaults.color || '#111111',
+        'font-family': spec.fontFamily || defaults.fontFamily,
+        'font-size': spec.fontSize || defaults.defaultSize || 13,
+        'font-weight': spec.fontWeight || 400,
+        'text-anchor': spec.anchor || 'start',
+        'dominant-baseline': spec.baseline || 'alphabetic',
+        'letter-spacing': spec.letterSpacing ?? defaults.calibration?.letterSpacing ?? 0,
+        'data-id': spec.id,
+        'data-role': spec.role || 'text'
+      });
+      String(spec.text || '').split('\n').forEach((line, index) => {
+        const tspan = node('tspan', {
+          x: spec.x,
+          dy: index === 0 ? 0 : (spec.lineHeight || defaults.calibration?.lineHeight || 1.08) * (spec.fontSize || defaults.defaultSize || 13)
+        });
+        tspan.textContent = line;
+        text.appendChild(tspan);
+      });
+      svg.appendChild(text);
+      return text;
+    }
+
+    function addRichText(svg, x, y, runs, defaults, anchor = 'middle') {
+      const text = node('text', {
+        x,
+        y,
+        fill: '#111111',
+        'font-family': defaults.fontFamily,
+        'font-size': defaults.defaultSize,
+        'text-anchor': anchor,
+        'dominant-baseline': 'alphabetic'
+      });
+      let lineIndex = 0;
+      runs.forEach((run, index) => {
+        const parts = String(run.text).split('\n');
+        parts.forEach((part, partIndex) => {
+          const tspan = node('tspan', {
+
+exec
+/bin/zsh -lc "sed -n '1,220p' outputs/reference-02-decision-dynamics-A-make-figure-batch/reference-02-decision-dynamics-A.json" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-02-decision-dynamics-A",
+  "source": {
+    "path": "../../assets/reference/reference-02-decision-dynamics-A-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "First-pass reconstruction of a single trial-timeline schematic. Source was used for visual inspection only; generated layers are SVG text, lines, rectangles, circles, paths, and synthetic dot recipes."
+  },
+  "canvas": {
+    "width": 430,
+    "height": 514,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial Narrow, Helvetica Neue, Arial, sans-serif",
+    "defaultSize": 13,
+    "color": "#111111",
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Narrow sans-serif selected to approximate compact source labels; no source raster is used during rendering."
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-a",
+      "type": "trial_timeline_schematic",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 430,
+        "height": 514
+      },
+      "label": {
+        "id": "panel-label",
+        "text": "A",
+        "x": 13,
+        "y": 31,
+        "fontSize": 24,
+        "fontWeight": 700
+      },
+      "title": {
+        "id": "panel-title",
+        "text": "Trial timeline",
+        "x": 38,
+        "y": 30,
+        "fontSize": 18,
+        "fontWeight": 700
+      },
+      "coordinateSystems": [
+        {
+          "id": "trial-time",
+          "type": "eventAnchor",
+          "domain": [
+            -600,
+            1950
+          ],
+          "range": [
+            13,
+            411
+          ],
+          "events": [
+            {
+              "id": "fixation-onset",
+              "value": -500,
+              "x": 28
+            },
+            {
+              "id": "stimulus-onset",
+              "value": 0,
+              "x": 106
+            },
+            {
+              "id": "stimulus-offset",
+              "value": 200,
+              "x": 160
+            },
+            {
+              "id": "go-onset",
+              "value": 1200,
+              "x": 266
+            },
+            {
+              "id": "response-end",
+              "value": 1400,
+              "x": 329
+            },
+            {
+              "id": "outcome-end",
+              "value": 1900,
+              "x": 396
+            }
+          ]
+        }
+      ],
+      "timeline": {
+        "id": "trial-time-axis",
+        "usesTransform": "trial-time",
+        "line": {
+          "x1": 13,
+          "y1": 249,
+          "x2": 411,
+          "y2": 249
+        },
+        "strokeWidth": 2,
+        "tickLength": 7,
+        "guideStyle": {
+          "stroke": "#111111",
+          "strokeWidth": 1,
+          "dasharray": "4 3"
+        },
+        "ticks": [
+          {
+            "value": -500,
+            "label": "-500",
+            "x": 28
+          },
+          {
+            "value": 0,
+            "label": "0",
+            "x": 106
+          },
+          {
+            "value": 200,
+            "label": "200",
+            "x": 160
+          },
+          {
+            "value": 1200,
+            "label": "1,200",
+            "x": 266
+          },
+          {
+            "value": 1400,
+            "label": "1,400",
+            "x": 329
+          },
+          {
+            "value": 1900,
+            "label": "1,900",
+            "x": 396
+          }
+        ],
+        "guides": [
+          {
+            "event": "fixation-onset",
+            "x": 28,
+            "y1": 211,
+            "y2": 257
+          },
+          {
+            "event": "stimulus-onset",
+            "x": 106,
+            "y1": 211,
+            "y2": 257
+          },
+          {
+            "event": "stimulus-offset",
+            "x": 160,
+            "y1": 211,
+            "y2": 257
+          },
+          {
+            "event": "go-onset",
+            "x": 266,
+            "y1": 211,
+            "y2": 257
+          },
+          {
+            "event": "response-end",
+            "x": 329,
+            "y1": 211,
+            "y2": 257
+          },
+          {
+            "event": "outcome-end",
+            "x": 396,
+            "y1": 211,
+            "y2": 257
+          }
+        ],
+        "label": {
+          "text": "Time from stimulus onset (ms)",
+          "x": 215,
+          "y": 296,
+          "fontSize": 16,
+          "anchor": "middle"
+        }
+      },
+      "epochs": [
+        {
+          "id": "fixate",
+          "title": "Fixate\n500 ms",
+          "titleX": 51,
+          "titleY": 93,
+          "screen": {
+            "x": 16,
+            "y": 136,
+            "width": 72,
+            "height": 73
+          },
+          "screenType": "fixation"
+        },
+        {
+          "id": "stimulus",
+          "title": "Stimulus\n200 ms",
+          "titleX": 136,
+          "titleY": 93,
+          "screen": {
+            "x": 100,
+            "y": 136,
+            "width": 72,
+            "height": 73
+          },
+          "screenType": "stimulus",
+          "dotRecipe": {
+            "seed": 17,
+            "count": 34,
+            "blueCount": 7,
+            "redCount": 8
+
+codex
+The template path named in the skill isn’t present in this repo, so I’m following the established output pattern from existing reconstructions. Next I’m writing a self-contained renderer that loads the adjacent JSON, renders all candidate marks as SVG, and keeps the source PNG only behind a labeled QA toggle.
+apply patch
+patch: completed
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.html
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.json
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.html b/outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..96417cfd680a8c3b2403d8a2413261ed506294fa
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.html
+@@ -0,0 +1,365 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-08-neuropixels-central-heatmap-A reconstruction</title>
++  <style>
++    html, body {
++      margin: 0;
++      background: #eeeeee;
++      color: #111111;
++      font-family: Arial, Helvetica, sans-serif;
++    }
++    header {
++      display: flex;
++      align-items: center;
++      justify-content: space-between;
++      gap: 16px;
++      padding: 10px 14px;
++      background: #ffffff;
++      border-bottom: 1px solid #cccccc;
++    }
++    h1 {
++      margin: 0;
++      font-size: 16px;
++      font-weight: 700;
++    }
++    .note {
++      margin-top: 3px;
++      color: #555555;
++      font-size: 12px;
++    }
++    .toggle {
++      display: inline-flex;
++      overflow: hidden;
++      border: 1px solid #999999;
++      border-radius: 4px;
++      flex: 0 0 auto;
++    }
++    .toggle button {
++      border: 0;
++      padding: 5px 10px;
++      background: #ffffff;
++      color: #111111;
++      font: inherit;
++      font-size: 12px;
++      cursor: pointer;
++    }
++    .toggle button.active {
++      background: #111111;
++      color: #ffffff;
++    }
++    main {
++      min-height: calc(100vh - 48px);
++      display: grid;
++      place-items: center;
++      padding: 16px;
++      box-sizing: border-box;
++    }
++    .frame {
++      position: relative;
++      background: #ffffff;
++      border: 1px solid #d0d0d0;
++      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
++      overflow: hidden;
++    }
++    .surface, .reference {
++      position: absolute;
++      inset: 0;
++    }
++    .reference {
++      display: none;
++      width: 100%;
++      height: 100%;
++      object-fit: contain;
++      background: #ffffff;
++    }
++    .show-reference .surface {
++      display: none;
++    }
++    .show-reference .reference {
++      display: block;
++    }
++    svg {
++      position: absolute;
++      inset: 0;
++    }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1 id="title">reference-08-neuropixels-central-heatmap-A</h1>
++      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">QA reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <img id="reference" class="reference" alt="QA reference source image">
++    </div>
++  </main>
++  <script>
++    const SPEC_URL = './reference-08-neuropixels-central-heatmap-A.json';
++    const SVG_NS = 'http://www.w3.org/2000/svg';
++
++    function byId(id) {
++      return document.getElementById(id);
++    }
++
++    function node(tag, attrs = {}) {
++      const item = document.createElementNS(SVG_NS, tag);
++      for (const [key, value] of Object.entries(attrs)) {
++        if (value !== undefined && value !== null) item.setAttribute(key, value);
++      }
++      return item;
++    }
++
++    function addText(svg, spec, defaults = {}) {
++      const text = node('text', {
++        x: spec.x,
++        y: spec.y,
++        fill: spec.fill || defaults.color || '#111111',
++        'font-family': spec.fontFamily || defaults.fontFamily || 'Arial, Helvetica, sans-serif',
++        'font-size': spec.fontSize || defaults.defaultSize || 14,
++        'font-weight': spec.fontWeight || 400,
++        'text-anchor': spec.anchor || 'start',
++        'dominant-baseline': spec.baseline || 'alphabetic',
++        'letter-spacing': spec.letterSpacing ?? 0,
++        transform: spec.rotate ? `rotate(${spec.rotate} ${spec.x} ${spec.y})` : null,
++        'data-id': spec.id,
++        'data-role': spec.role || 'text'
++      });
++      text.textContent = spec.text || '';
++      svg.appendChild(text);
++      return text;
++    }
++
++    function makeScale(scale) {
++      const [d0, d1] = scale.domain;
++      const [r0, r1] = scale.range;
++      return value => r0 + ((value - d0) / (d1 - d0)) * (r1 - r0);
++    }
++
++    function lcg(seed) {
++      let state = seed >>> 0;
++      return () => {
++        state = (1664525 * state + 1013904223) >>> 0;
++        return state / 4294967296;
++      };
++    }
++
++    function interpolate(points, x) {
++      for (let i = 1; i < points.length; i += 1) {
++        const prev = points[i - 1];
++        const next = points[i];
++        if (x <= next[0]) {
++          const t = (x - prev[0]) / (next[0] - prev[0]);
++          return prev[1] + t * (next[1] - prev[1]);
++        }
++      }
++      return points[points.length - 1][1];
++    }
++
++    function sampledSeries(series) {
++      const rand = lcg(series.jitter?.seed || 1);
++      const [start] = series.points[0];
++      const [end] = series.points[series.points.length - 1];
++      const samples = [];
++      for (let x = start; x <= end; x += 1) {
++        let y = interpolate(series.points, x);
++        const jitter = series.jitter || {};
++        if (jitter.amplitude) {
++          const wave = Math.sin(x * jitter.frequency) * jitter.amplitude * 0.42;
++          const noise = (rand() - 0.5) * jitter.amplitude;
++          y += wave + noise;
++        }
++        if (jitter.spikeEvery && x > start && x % jitter.spikeEvery === 0) {
++          y += 4 + rand() * 8;
++        }
++        samples.push([x, y]);
++      }
++      return samples;
++    }
++
++    function pathFromSeries(series, xMap, yMap) {
++      return sampledSeries(series).map(([x, y], index) => {
++        const cmd = index === 0 ? 'M' : 'L';
++        return `${cmd}${xMap(x).toFixed(1)},${yMap(y).toFixed(1)}`;
++      }).join(' ');
++    }
++
++    function drawTrack(svg, track, defaults) {
++      svg.appendChild(node('line', {
++        x1: track.line.x1,
++        y1: track.line.y1,
++        x2: track.line.x2,
++        y2: track.line.y2,
++        stroke: track.stroke,
++        'stroke-width': track.strokeWidth,
++        'stroke-linecap': 'round',
++        'data-id': track.id
++      }));
++      const start = track.startMarker;
++      svg.appendChild(node('circle', {
++        cx: start.cx,
++        cy: start.cy,
++        r: start.r,
++        fill: start.fill,
++        stroke: start.stroke,
++        'stroke-width': 1
++      }));
++      const goal = track.goalMarker;
++      svg.appendChild(node('circle', {
++        cx: goal.cx,
++        cy: goal.cy,
++        r: goal.r,
++        fill: goal.fill,
++        stroke: goal.stroke,
++        'stroke-width': goal.strokeWidth
++      }));
++      track.ticks.forEach(tick => {
++        svg.appendChild(node('line', {
++          x1: tick.x,
++          y1: tick.y1,
++          x2: tick.x,
++          y2: tick.y2,
++          stroke: '#111111',
++          'stroke-width': 1.5,
++          'data-id': tick.id
++        }));
++        addText(svg, {id: `${tick.id}-label`, text: tick.label, x: tick.labelX, y: tick.labelY, anchor: 'middle', fontSize: 14}, defaults);
++      });
++      track.labels.forEach(label => addText(svg, label, defaults));
++    }
++
++    function drawAxes(svg, plot, scales, defaults) {
++      const box = plot.bbox;
++      const xMap = scales[plot.xScale.id];
++      svg.appendChild(node('line', {x1: box.x, y1: box.y + box.height, x2: box.x + box.width, y2: box.y + box.height, stroke: '#111111', 'stroke-width': 1.4}));
++      plot.yAxes.forEach(axis => {
++        const scaleSpec = plot.yScales.find(s => s.id === axis.scale);
++        const yMap = scales[axis.scale];
++        svg.appendChild(node('line', {x1: axis.axisX, y1: box.y, x2: axis.axisX, y2: box.y + box.height, stroke: scaleSpec.color, 'stroke-width': 1.4}));
++        axis.ticks.forEach(tick => {
++          const y = yMap(tick.value);
++          const outward = scaleSpec.side === 'left' ? -6 : 6;
++          svg.appendChild(node('line', {x1: axis.axisX, y1: y, x2: axis.axisX + outward, y2: y, stroke: scaleSpec.color, 'stroke-width': 1.2}));
++          addText(svg, {
++            id: `${axis.scale}-${tick.value}`,
++            text: tick.label,
++            x: axis.axisX + (scaleSpec.side === 'left' ? -14 : 14),
++            y: y + 5,
++            anchor: scaleSpec.side === 'left' ? 'end' : 'start',
++            fill: scaleSpec.color,
++            fontSize: 16
++          }, defaults);
++        });
++        addText(svg, axis.label, defaults);
++      });
++      plot.xAxis.ticks.forEach(tick => {
++        const x = xMap(tick.value);
++        svg.appendChild(node('line', {x1: x, y1: plot.xAxis.baseline, x2: x, y2: plot.xAxis.baseline + 6, stroke: '#111111', 'stroke-width': 1.2}));
++        addText(svg, {id: `time-${tick.value}`, text: tick.label, x, y: plot.xAxis.baseline + 25, anchor: 'middle', fontSize: 16}, defaults);
++      });
++      addText(svg, plot.xAxis.label, defaults);
++    }
++
++    function drawPlot(svg, plot, defaults) {
++      const box = plot.bbox;
++      const defs = node('defs');
++      const clip = node('clipPath', {id: `${plot.id}-clip`});
++      clip.appendChild(node('rect', {x: box.x, y: box.y, width: box.width, height: box.height}));
++      defs.appendChild(clip);
++      svg.appendChild(defs);
++
++      const scales = {[plot.xScale.id]: makeScale(plot.xScale)};
++      plot.yScales.forEach(scale => {
++        scales[scale.id] = makeScale(scale);
++      });
++
++      plot.shadedEpochs.forEach(epoch => {
++        svg.appendChild(node('rect', {
++          x: scales[plot.xScale.id](epoch.x0),
++          y: box.y,
++          width: scales[plot.xScale.id](epoch.x1) - scales[plot.xScale.id](epoch.x0),
++          height: box.height,
++          fill: epoch.fill,
++          'data-id': epoch.id
++        }));
++      });
++
++      const traces = node('g', {'clip-path': `url(#${plot.id}-clip)`, 'data-role': 'traces'});
++      plot.series.forEach(series => {
++        traces.appendChild(node('path', {
++          d: pathFromSeries(series, scales[plot.xScale.id], scales[series.scale]),
++          fill: 'none',
++          stroke: series.color,
++          'stroke-width': series.strokeWidth,
++          'stroke-linejoin': 'round',
++          'stroke-linecap': 'round',
++          'data-id': series.id
++        }));
++      });
++      svg.appendChild(traces);
++      drawAxes(svg, plot, scales, defaults);
++    }
++
++    function render(spec) {
++      byId('title').textContent = spec.id;
++      const frame = byId('frame');
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      const reference = byId('reference');
++      reference.src = spec.source.path;
++
++      const surface = byId('surface');
++      surface.innerHTML = '';
++      const svg = node('svg', {
++        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
++        width: spec.canvas.width,
++        height: spec.canvas.height,
++        role: 'img',
++        'aria-label': `${spec.id} generated reconstruction`
++      });
++      svg.appendChild(node('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
++
++      const panel = spec.panels[0];
++      addText(svg, panel.label, spec.typography);
++      addText(svg, panel.title, spec.typography);
++      drawTrack(svg, panel.track, spec.typography);
++      drawPlot(svg, panel.plot, spec.typography);
++      surface.appendChild(svg);
++    }
++
++    function setupToggle() {
++      const frame = byId('frame');
++      const generatedButton = byId('generatedButton');
++      const referenceButton = byId('referenceButton');
++      generatedButton.addEventListener('click', () => {
++        frame.classList.remove('show-reference');
++        generatedButton.classList.add('active');
++        referenceButton.classList.remove('active');
++      });
++      referenceButton.addEventListener('click', () => {
++        frame.classList.add('show-reference');
++        referenceButton.classList.add('active');
++        generatedButton.classList.remove('active');
++      });
++    }
++
++    setupToggle();
++    fetch(SPEC_URL)
++      .then(response => response.json())
++      .then(render)
++      .catch(error => {
++        byId('surface').textContent = `Failed to load reconstruction spec: ${error.message}`;
++      });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.json b/outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..e93b09397469c8ebf2023b5d4bac7863533170b8
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.json
+@@ -0,0 +1,170 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-08-neuropixels-central-heatmap-A",
++  "source": {
++    "path": "../../assets/reference/reference-08-neuropixels-central-heatmap-A-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "First-pass editable reconstruction from visual inspection. The generated candidate uses SVG primitives and semantic path points only; no source raster is drawn as a figure layer."
++  },
++  "canvas": {
++    "width": 391,
++    "height": 263,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 14,
++    "color": "#111111",
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "Arial approximates the source crop's compact sans-serif labels. Text boxes were placed by visual inspection at native dimensions."
++    }
++  },
++  "panels": [
++    {
++      "id": "panel-a",
++      "type": "behavior_virtual_track",
++      "bbox": {
++        "x": 0,
++        "y": 0,
++        "width": 391,
++        "height": 263
++      },
++      "label": {
++        "id": "panel-label",
++        "text": "A",
++        "x": -2,
++        "y": 8,
++        "fontSize": 16,
++        "fontWeight": 700,
++        "sourceBox": {"x": 0, "y": 0, "width": 9, "height": 10}
++      },
++      "title": {
++        "id": "panel-title",
++        "text": "Behavior (virtual track)",
++        "x": 20,
++        "y": 11,
++        "fontSize": 16,
++        "fontWeight": 700,
++        "sourceBox": {"x": 18, "y": 0, "width": 191, "height": 13}
++      },
++      "track": {
++        "id": "virtual-track-schematic",
++        "line": {"x1": 45, "y1": 58, "x2": 350, "y2": 58},
++        "stroke": "#111111",
++        "strokeWidth": 1.7,
++        "startMarker": {"type": "filledCircle", "cx": 45, "cy": 58, "r": 5, "fill": "#9a9a9a", "stroke": "#6d6d6d"},
++        "goalMarker": {"type": "circle", "cx": 350, "cy": 58, "r": 10, "fill": "#a8e2d6", "stroke": "#111111", "strokeWidth": 1.3},
++        "ticks": [
++          {"id": "track-tick-100", "x": 149, "y1": 58, "y2": 68, "label": "100", "labelX": 149, "labelY": 84},
++          {"id": "track-tick-200", "x": 251, "y1": 58, "y2": 68, "label": "200", "labelX": 251, "labelY": 84}
++        ],
++        "labels": [
++          {"id": "track-start-label", "text": "Start", "x": 48, "y": 41, "anchor": "middle", "fontSize": 16},
++          {"id": "track-goal-label", "text": "Goal", "x": 349, "y": 41, "anchor": "middle", "fontSize": 16},
++          {"id": "track-zero-label", "text": "0 cm", "x": 58, "y": 84, "anchor": "middle", "fontSize": 14},
++          {"id": "track-end-label", "text": "300 cm", "x": 346, "y": 84, "anchor": "middle", "fontSize": 14}
++        ]
++      },
++      "plot": {
++        "id": "behavior-time-series",
++        "bbox": {"x": 60, "y": 100, "width": 285, "height": 117},
++        "clip": true,
++        "xScale": {"id": "time-s", "domain": [0, 210], "range": [60, 345]},
++        "yScales": [
++          {"id": "position-cm", "side": "left", "domain": [0, 300], "range": [217, 100], "color": "#006c6c"},
++          {"id": "speed-cms", "side": "right", "domain": [0, 60], "range": [217, 100], "color": "#e68600"}
++        ],
++        "xAxis": {
++          "baseline": 217,
++          "ticks": [
++            {"value": 0, "label": "0"},
++            {"value": 50, "label": "50"},
++            {"value": 100, "label": "100"},
++            {"value": 150, "label": "150"},
++            {"value": 200, "label": "200"}
++          ],
++          "label": {"id": "x-axis-label", "text": "Time (s)", "x": 202, "y": 262, "anchor": "middle", "fontSize": 16}
++        },
++        "yAxes": [
++          {
++            "scale": "position-cm",
++            "axisX": 60,
++            "ticks": [
++              {"value": 0, "label": "0"},
++              {"value": 100, "label": "100"},
++              {"value": 200, "label": "200"},
++              {"value": 300, "label": "300"}
++            ],
++            "label": {"id": "position-axis-label", "text": "Position (cm)", "x": 6, "y": 159, "anchor": "middle", "fontSize": 16, "rotate": -90, "fill": "#006c6c"}
++          },
++          {
++            "scale": "speed-cms",
++            "axisX": 345,
++            "ticks": [
++              {"value": 0, "label": "0"},
++              {"value": 20, "label": "20"},
++              {"value": 40, "label": "40"},
++              {"value": 60, "label": "60"}
++            ],
++            "label": {"id": "speed-axis-label", "text": "Speed (cm/s)", "x": 389, "y": 159, "anchor": "middle", "fontSize": 16, "rotate": 90, "fill": "#e68600", "notes": "Right label is intentionally clipped by the source crop."}
++          }
++        ],
++        "shadedEpochs": [
++          {"id": "epoch-1", "x0": 18, "x1": 24, "fill": "#f1f1f1"},
++          {"id": "epoch-2", "x0": 37, "x1": 56, "fill": "#eeeeee"},
++          {"id": "epoch-3", "x0": 76, "x1": 96, "fill": "#eeeeee"},
++          {"id": "epoch-4", "x0": 116, "x1": 134, "fill": "#eeeeee"},
++          {"id": "epoch-5", "x0": 154, "x1": 173, "fill": "#eeeeee"},
++          {"id": "epoch-6", "x0": 183, "x1": 193, "fill": "#eeeeee"}
++        ],
++        "series": [
++          {
++            "id": "position-trace",
++            "scale": "position-cm",
++            "color": "#006c6c",
++            "strokeWidth": 2,
++            "smooth": "linear",
++            "jitter": {"seed": 802, "amplitude": 4.5, "frequency": 1.7},
++            "points": [
++              [0, 90], [8, 155], [25, 215], [38, 160], [55, 120], [70, 98],
++              [83, 112], [101, 160], [116, 205], [129, 266], [136, 242],
++              [149, 205], [160, 260], [169, 276], [180, 263], [190, 156],
++              [198, 166], [204, 142], [210, 112]
++            ]
++          },
++          {
++            "id": "speed-trace",
++            "scale": "speed-cms",
++            "color": "#e68600",
++            "strokeWidth": 1.3,
++            "smooth": "linear",
++            "jitter": {"seed": 211, "amplitude": 3.4, "frequency": 5.3, "spikeEvery": 13},
++            "points": [
++              [0, 8], [12, 13], [30, 12], [50, 10], [70, 9], [88, 11],
++              [105, 12], [126, 13], [142, 12], [158, 13], [172, 12],
++              [186, 11], [196, 9], [210, 10]
++            ]
++          }
++        ]
++      }
++    }
++  ],
++  "provenance": {
++    "createdBy": "make-figure first-pass reconstruction",
++    "sourceInspection": "Visual inspection of a 391x263 raster crop.",
++    "renderer": "Hybrid contract implemented as generated SVG marks and text.",
++    "uncertainties": [
++      "Underlying time-series values are visually estimated from the raster and should be treated as editable approximations.",
++      "Fine jagged trace texture is procedurally generated from seeded jitter for visual similarity.",
++      "The right y-axis title is partly outside the crop; its exact wording is inferred from visible orange speed units."
++    ]
++  },
++  "confidence": {
++    "layout": 0.86,
++    "text": 0.78,
++    "dataTraces": 0.58,
++    "style": 0.82
++  }
++}
+
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.html b/outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..96417cfd680a8c3b2403d8a2413261ed506294fa
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.html
+@@ -0,0 +1,365 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-08-neuropixels-central-heatmap-A reconstruction</title>
++  <style>
++    html, body {
++      margin: 0;
++      background: #eeeeee;
++      color: #111111;
++      font-family: Arial, Helvetica, sans-serif;
++    }
++    header {
++      display: flex;
++      align-items: center;
++      justify-content: space-between;
++      gap: 16px;
++      padding: 10px 14px;
++      background: #ffffff;
++      border-bottom: 1px solid #cccccc;
++    }
++    h1 {
++      margin: 0;
++      font-size: 16px;
++      font-weight: 700;
++    }
++    .note {
++      margin-top: 3px;
++      color: #555555;
++      font-size: 12px;
++    }
++    .toggle {
++      display: inline-flex;
++      overflow: hidden;
++      border: 1px solid #999999;
++      border-radius: 4px;
++      flex: 0 0 auto;
++    }
++    .toggle button {
++      border: 0;
++      padding: 5px 10px;
++      background: #ffffff;
++      color: #111111;
++      font: inherit;
++      font-size: 12px;
++      cursor: pointer;
++    }
++    .toggle button.active {
++      background: #111111;
++      color: #ffffff;
++    }
++    main {
++      min-height: calc(100vh - 48px);
++      display: grid;
++      place-items: center;
++      padding: 16px;
++      box-sizing: border-box;
++    }
++    .frame {
++      position: relative;
++      background: #ffffff;
++      border: 1px solid #d0d0d0;
++      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
++      overflow: hidden;
++    }
++    .surface, .reference {
++      position: absolute;
++      inset: 0;
++    }
++    .reference {
++      display: none;
++      width: 100%;
++      height: 100%;
++      object-fit: contain;
++      background: #ffffff;
++    }
++    .show-reference .surface {
++      display: none;
++    }
++    .show-reference .reference {
++      display: block;
++    }
++    svg {
++      position: absolute;
++      inset: 0;
++    }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1 id="title">reference-08-neuropixels-central-heatmap-A</h1>
++      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">QA reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <img id="reference" class="reference" alt="QA reference source image">
++    </div>
++  </main>
++  <script>
++    const SPEC_URL = './reference-08-neuropixels-central-heatmap-A.json';
++    const SVG_NS = 'http://www.w3.org/2000/svg';
++
++    function byId(id) {
++      return document.getElementById(id);
++    }
++
++    function node(tag, attrs = {}) {
++      const item = document.createElementNS(SVG_NS, tag);
++      for (const [key, value] of Object.entries(attrs)) {
++        if (value !== undefined && value !== null) item.setAttribute(key, value);
++      }
++      return item;
++    }
++
++    function addText(svg, spec, defaults = {}) {
++      const text = node('text', {
++        x: spec.x,
++        y: spec.y,
++        fill: spec.fill || defaults.color || '#111111',
++        'font-family': spec.fontFamily || defaults.fontFamily || 'Arial, Helvetica, sans-serif',
++        'font-size': spec.fontSize || defaults.defaultSize || 14,
++        'font-weight': spec.fontWeight || 400,
++        'text-anchor': spec.anchor || 'start',
++        'dominant-baseline': spec.baseline || 'alphabetic',
++        'letter-spacing': spec.letterSpacing ?? 0,
++        transform: spec.rotate ? `rotate(${spec.rotate} ${spec.x} ${spec.y})` : null,
++        'data-id': spec.id,
++        'data-role': spec.role || 'text'
++      });
++      text.textContent = spec.text || '';
++      svg.appendChild(text);
++      return text;
++    }
++
++    function makeScale(scale) {
++      const [d0, d1] = scale.domain;
++      const [r0, r1] = scale.range;
++      return value => r0 + ((value - d0) / (d1 - d0)) * (r1 - r0);
++    }
++
++    function lcg(seed) {
++      let state = seed >>> 0;
++      return () => {
++        state = (1664525 * state + 1013904223) >>> 0;
++        return state / 4294967296;
++      };
++    }
++
++    function interpolate(points, x) {
++      for (let i = 1; i < points.length; i += 1) {
++        const prev = points[i - 1];
++        const next = points[i];
++        if (x <= next[0]) {
++          const t = (x - prev[0]) / (next[0] - prev[0]);
++          return prev[1] + t * (next[1] - prev[1]);
++        }
++      }
++      return points[points.length - 1][1];
++    }
++
++    function sampledSeries(series) {
++      const rand = lcg(series.jitter?.seed || 1);
++      const [start] = series.points[0];
++      const [end] = series.points[series.points.length - 1];
++      const samples = [];
++      for (let x = start; x <= end; x += 1) {
++        let y = interpolate(series.points, x);
++        const jitter = series.jitter || {};
++        if (jitter.amplitude) {
++          const wave = Math.sin(x * jitter.frequency) * jitter.amplitude * 0.42;
++          const noise = (rand() - 0.5) * jitter.amplitude;
++          y += wave + noise;
++        }
++        if (jitter.spikeEvery && x > start && x % jitter.spikeEvery === 0) {
++          y += 4 + rand() * 8;
++        }
++        samples.push([x, y]);
++      }
++      return samples;
++    }
++
++    function pathFromSeries(series, xMap, yMap) {
++      return sampledSeries(series).map(([x, y], index) => {
++        const cmd = index === 0 ? 'M' : 'L';
++        return `${cmd}${xMap(x).toFixed(1)},${yMap(y).toFixed(1)}`;
++      }).join(' ');
++    }
++
++    function drawTrack(svg, track, defaults) {
++      svg.appendChild(node('line', {
++        x1: track.line.x1,
++        y1: track.line.y1,
++        x2: track.line.x2,
++        y2: track.line.y2,
++        stroke: track.stroke,
++        'stroke-width': track.strokeWidth,
++        'stroke-linecap': 'round',
++        'data-id': track.id
++      }));
++      const start = track.startMarker;
++      svg.appendChild(node('circle', {
++        cx: start.cx,
++        cy: start.cy,
++        r: start.r,
++        fill: start.fill,
++        stroke: start.stroke,
++        'stroke-width': 1
++      }));
++      const goal = track.goalMarker;
++      svg.appendChild(node('circle', {
++        cx: goal.cx,
++        cy: goal.cy,
++        r: goal.r,
++        fill: goal.fill,
++        stroke: goal.stroke,
++        'stroke-width': goal.strokeWidth
++      }));
++      track.ticks.forEach(tick => {
++        svg.appendChild(node('line', {
++          x1: tick.x,
++          y1: tick.y1,
++          x2: tick.x,
++          y2: tick.y2,
++          stroke: '#111111',
++          'stroke-width': 1.5,
++          'data-id': tick.id
++        }));
++        addText(svg, {id: `${tick.id}-label`, text: tick.label, x: tick.labelX, y: tick.labelY, anchor: 'middle', fontSize: 14}, defaults);
++      });
++      track.labels.forEach(label => addText(svg, label, defaults));
++    }
++
++    function drawAxes(svg, plot, scales, defaults) {
++      const box = plot.bbox;
++      const xMap = scales[plot.xScale.id];
++      svg.appendChild(node('line', {x1: box.x, y1: box.y + box.height, x2: box.x + box.width, y2: box.y + box.height, stroke: '#111111', 'stroke-width': 1.4}));
++      plot.yAxes.forEach(axis => {
++        const scaleSpec = plot.yScales.find(s => s.id === axis.scale);
++        const yMap = scales[axis.scale];
++        svg.appendChild(node('line', {x1: axis.axisX, y1: box.y, x2: axis.axisX, y2: box.y + box.height, stroke: scaleSpec.color, 'stroke-width': 1.4}));
++        axis.ticks.forEach(tick => {
++          const y = yMap(tick.value);
++          const outward = scaleSpec.side === 'left' ? -6 : 6;
++          svg.appendChild(node('line', {x1: axis.axisX, y1: y, x2: axis.axisX + outward, y2: y, stroke: scaleSpec.color, 'stroke-width': 1.2}));
++          addText(svg, {
++            id: `${axis.scale}-${tick.value}`,
++            text: tick.label,
++            x: axis.axisX + (scaleSpec.side === 'left' ? -14 : 14),
++            y: y + 5,
++            anchor: scaleSpec.side === 'left' ? 'end' : 'start',
++            fill: scaleSpec.color,
++            fontSize: 16
++          }, defaults);
++        });
++        addText(svg, axis.label, defaults);
++      });
++      plot.xAxis.ticks.forEach(tick => {
++        const x = xMap(tick.value);
++        svg.appendChild(node('line', {x1: x, y1: plot.xAxis.baseline, x2: x, y2: plot.xAxis.baseline + 6, stroke: '#111111', 'stroke-width': 1.2}));
++        addText(svg, {id: `time-${tick.value}`, text: tick.label, x, y: plot.xAxis.baseline + 25, anchor: 'middle', fontSize: 16}, defaults);
++      });
++      addText(svg, plot.xAxis.label, defaults);
++    }
++
++    function drawPlot(svg, plot, defaults) {
++      const box = plot.bbox;
++      const defs = node('defs');
++      const clip = node('clipPath', {id: `${plot.id}-clip`});
++      clip.appendChild(node('rect', {x: box.x, y: box.y, width: box.width, height: box.height}));
++      defs.appendChild(clip);
++      svg.appendChild(defs);
++
++      const scales = {[plot.xScale.id]: makeScale(plot.xScale)};
++      plot.yScales.forEach(scale => {
++        scales[scale.id] = makeScale(scale);
++      });
++
++      plot.shadedEpochs.forEach(epoch => {
++        svg.appendChild(node('rect', {
++          x: scales[plot.xScale.id](epoch.x0),
++          y: box.y,
++          width: scales[plot.xScale.id](epoch.x1) - scales[plot.xScale.id](epoch.x0),
++          height: box.height,
++          fill: epoch.fill,
++          'data-id': epoch.id
++        }));
++      });
++
++      const traces = node('g', {'clip-path': `url(#${plot.id}-clip)`, 'data-role': 'traces'});
++      plot.series.forEach(series => {
++        traces.appendChild(node('path', {
++          d: pathFromSeries(series, scales[plot.xScale.id], scales[series.scale]),
++          fill: 'none',
++          stroke: series.color,
++          'stroke-width': series.strokeWidth,
++          'stroke-linejoin': 'round',
++          'stroke-linecap': 'round',
++          'data-id': series.id
++        }));
++      });
++      svg.appendChild(traces);
++      drawAxes(svg, plot, scales, defaults);
++    }
++
++    function render(spec) {
++      byId('title').textContent = spec.id;
++      const frame = byId('frame');
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      const reference = byId('reference');
++      reference.src = spec.source.path;
++
++      const surface = byId('surface');
++      surface.innerHTML = '';
++      const svg = node('svg', {
++        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
++        width: spec.canvas.width,
++        height: spec.canvas.height,
++        role: 'img',
++        'aria-label': `${spec.id} generated reconstruction`
++      });
++      svg.appendChild(node('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
++
++      const panel = spec.panels[0];
++      addText(svg, panel.label, spec.typography);
++      addText(svg, panel.title, spec.typography);
++      drawTrack(svg, panel.track, spec.typography);
++      drawPlot(svg, panel.plot, spec.typography);
++      surface.appendChild(svg);
++    }
++
++    function setupToggle() {
++      const frame = byId('frame');
++      const generatedButton = byId('generatedButton');
++      const referenceButton = byId('referenceButton');
++      generatedButton.addEventListener('click', () => {
++        frame.classList.remove('show-reference');
++        generatedButton.classList.add('active');
++        referenceButton.classList.remove('active');
++      });
++      referenceButton.addEventListener('click', () => {
++        frame.classList.add('show-reference');
++        referenceButton.classList.add('active');
++        generatedButton.classList.remove('active');
++      });
++    }
++
++    setupToggle();
++    fetch(SPEC_URL)
++      .then(response => response.json())
++      .then(render)
++      .catch(error => {
++        byId('surface').textContent = `Failed to load reconstruction spec: ${error.message}`;
++      });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.json b/outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..e93b09397469c8ebf2023b5d4bac7863533170b8
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.json
+@@ -0,0 +1,170 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-08-neuropixels-central-heatmap-A",
++  "source": {
++    "path": "../../assets/reference/reference-08-neuropixels-central-heatmap-A-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "First-pass editable reconstruction from visual inspection. The generated candidate uses SVG primitives and semantic path points only; no source raster is drawn as a figure layer."
++  },
++  "canvas": {
++    "width": 391,
++    "height": 263,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 14,
++    "color": "#111111",
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "Arial approximates the source crop's compact sans-serif labels. Text boxes were placed by visual inspection at native dimensions."
++    }
++  },
++  "panels": [
++    {
++      "id": "panel-a",
++      "type": "behavior_virtual_track",
++      "bbox": {
++        "x": 0,
++        "y": 0,
++        "width": 391,
++        "height": 263
++      },
++      "label": {
++        "id": "panel-label",
++        "text": "A",
++        "x": -2,
++        "y": 8,
++        "fontSize": 16,
++        "fontWeight": 700,
++        "sourceBox": {"x": 0, "y": 0, "width": 9, "height": 10}
++      },
++      "title": {
++        "id": "panel-title",
++        "text": "Behavior (virtual track)",
++        "x": 20,
++        "y": 11,
++        "fontSize": 16,
++        "fontWeight": 700,
++        "sourceBox": {"x": 18, "y": 0, "width": 191, "height": 13}
++      },
++      "track": {
++        "id": "virtual-track-schematic",
++        "line": {"x1": 45, "y1": 58, "x2": 350, "y2": 58},
++        "stroke": "#111111",
++        "strokeWidth": 1.7,
++        "startMarker": {"type": "filledCircle", "cx": 45, "cy": 58, "r": 5, "fill": "#9a9a9a", "stroke": "#6d6d6d"},
++        "goalMarker": {"type": "circle", "cx": 350, "cy": 58, "r": 10, "fill": "#a8e2d6", "stroke": "#111111", "strokeWidth": 1.3},
++        "ticks": [
++          {"id": "track-tick-100", "x": 149, "y1": 58, "y2": 68, "label": "100", "labelX": 149, "labelY": 84},
++          {"id": "track-tick-200", "x": 251, "y1": 58, "y2": 68, "label": "200", "labelX": 251, "labelY": 84}
++        ],
++        "labels": [
++          {"id": "track-start-label", "text": "Start", "x": 48, "y": 41, "anchor": "middle", "fontSize": 16},
++          {"id": "track-goal-label", "text": "Goal", "x": 349, "y": 41, "anchor": "middle", "fontSize": 16},
++          {"id": "track-zero-label", "text": "0 cm", "x": 58, "y": 84, "anchor": "middle", "fontSize": 14},
++          {"id": "track-end-label", "text": "300 cm", "x": 346, "y": 84, "anchor": "middle", "fontSize": 14}
++        ]
++      },
++      "plot": {
++        "id": "behavior-time-series",
++        "bbox": {"x": 60, "y": 100, "width": 285, "height": 117},
++        "clip": true,
++        "xScale": {"id": "time-s", "domain": [0, 210], "range": [60, 345]},
++        "yScales": [
++          {"id": "position-cm", "side": "left", "domain": [0, 300], "range": [217, 100], "color": "#006c6c"},
++          {"id": "speed-cms", "side": "right", "domain": [0, 60], "range": [217, 100], "color": "#e68600"}
++        ],
++        "xAxis": {
++          "baseline": 217,
++          "ticks": [
++            {"value": 0, "label": "0"},
++            {"value": 50, "label": "50"},
++            {"value": 100, "label": "100"},
++            {"value": 150, "label": "150"},
++            {"value": 200, "label": "200"}
++          ],
++          "label": {"id": "x-axis-label", "text": "Time (s)", "x": 202, "y": 262, "anchor": "middle", "fontSize": 16}
++        },
++        "yAxes": [
++          {
++            "scale": "position-cm",
++            "axisX": 60,
++            "ticks": [
++              {"value": 0, "label": "0"},
++              {"value": 100, "label": "100"},
++              {"value": 200, "label": "200"},
++              {"value": 300, "label": "300"}
++            ],
++            "label": {"id": "position-axis-label", "text": "Position (cm)", "x": 6, "y": 159, "anchor": "middle", "fontSize": 16, "rotate": -90, "fill": "#006c6c"}
++          },
++          {
++            "scale": "speed-cms",
++            "axisX": 345,
++            "ticks": [
++              {"value": 0, "label": "0"},
++              {"value": 20, "label": "20"},
++              {"value": 40, "label": "40"},
++              {"value": 60, "label": "60"}
++            ],
++            "label": {"id": "speed-axis-label", "text": "Speed (cm/s)", "x": 389, "y": 159, "anchor": "middle", "fontSize": 16, "rotate": 90, "fill": "#e68600", "notes": "Right label is intentionally clipped by the source crop."}
++          }
++        ],
++        "shadedEpochs": [
++          {"id": "epoch-1", "x0": 18, "x1": 24, "fill": "#f1f1f1"},
++          {"id": "epoch-2", "x0": 37, "x1": 56, "fill": "#eeeeee"},
++          {"id": "epoch-3", "x0": 76, "x1": 96, "fill": "#eeeeee"},
++          {"id": "epoch-4", "x0": 116, "x1": 134, "fill": "#eeeeee"},
++          {"id": "epoch-5", "x0": 154, "x1": 173, "fill": "#eeeeee"},
++          {"id": "epoch-6", "x0": 183, "x1": 193, "fill": "#eeeeee"}
++        ],
++        "series": [
++          {
++            "id": "position-trace",
++            "scale": "position-cm",
++            "color": "#006c6c",
++            "strokeWidth": 2,
++            "smooth": "linear",
++            "jitter": {"seed": 802, "amplitude": 4.5, "frequency": 1.7},
++            "points": [
++              [0, 90], [8, 155], [25, 215], [38, 160], [55, 120], [70, 98],
++              [83, 112], [101, 160], [116, 205], [129, 266], [136, 242],
++              [149, 205], [160, 260], [169, 276], [180, 263], [190, 156],
++              [198, 166], [204, 142], [210, 112]
++            ]
++          },
++          {
++            "id": "speed-trace",
++            "scale": "speed-cms",
++            "color": "#e68600",
++            "strokeWidth": 1.3,
++            "smooth": "linear",
++            "jitter": {"seed": 211, "amplitude": 3.4, "frequency": 5.3, "spikeEvery": 13},
++            "points": [
++              [0, 8], [12, 13], [30, 12], [50, 10], [70, 9], [88, 11],
++              [105, 12], [126, 13], [142, 12], [158, 13], [172, 12],
++              [186, 11], [196, 9], [210, 10]
++            ]
++          }
++        ]
++      }
++    }
++  ],
++  "provenance": {
++    "createdBy": "make-figure first-pass reconstruction",
++    "sourceInspection": "Visual inspection of a 391x263 raster crop.",
++    "renderer": "Hybrid contract implemented as generated SVG marks and text.",
++    "uncertainties": [
++      "Underlying time-series values are visually estimated from the raster and should be treated as editable approximations.",
++      "Fine jagged trace texture is procedurally generated from seeded jitter for visual similarity.",
++      "The right y-axis title is partly outside the crop; its exact wording is inferred from visible orange speed units."
++    ]
++  },
++  "confidence": {
++    "layout": 0.86,
++    "text": 0.78,
++    "dataTraces": 0.58,
++    "style": 0.82
++  }
++}
+
+codex
+The two files are written. I’m running validation now: JSON parse, forbidden raster-reuse search, and a quick browser render path check so the HTML is useful for visual inspection.
+exec
+/bin/zsh -lc "rg -n \"drawImage|background(-image)?\\s*:|url\\(|reference-08-neuropixels-central-heatmap-A-reference|<img|source image\" outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.html outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.json" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.json:5:    "path": "../../assets/reference/reference-08-neuropixels-central-heatmap-A-reference.png",
+outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.html:10:      background: #eeeeee;
+outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.html:20:      background: #ffffff;
+outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.html:43:      background: #ffffff;
+outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.html:50:      background: #111111;
+outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.html:62:      background: #ffffff;
+outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.html:76:      background: #ffffff;
+outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.html:104:      <img id="reference" class="reference" alt="QA reference source image">
+outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.html:297:      const traces = node('g', {'clip-path': `url(#${plot.id}-clip)`, 'data-role': 'traces'});
+
+exec
+/bin/zsh -lc 'git status --short outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.json outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.html' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+?? outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.html
+?? outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.json
+
+exec
+/bin/zsh -lc 'python3 -m json.tool outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.json >/tmp/reference-08-json-valid.txt && cat /tmp/reference-08-json-valid.txt' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+{
+    "schema": "scientific_figure_reconstruction.v1",
+    "id": "reference-08-neuropixels-central-heatmap-A",
+    "source": {
+        "path": "../../assets/reference/reference-08-neuropixels-central-heatmap-A-reference.png",
+        "usage": "QA-only; not used by generated candidate.",
+        "notes": "First-pass editable reconstruction from visual inspection. The generated candidate uses SVG primitives and semantic path points only; no source raster is drawn as a figure layer."
+    },
+    "canvas": {
+        "width": 391,
+        "height": 263,
+        "background": "#ffffff"
+    },
+    "typography": {
+        "fontFamily": "Arial, Helvetica, sans-serif",
+        "defaultSize": 14,
+        "color": "#111111",
+        "calibration": {
+            "letterSpacing": 0,
+            "lineHeight": 1.08,
+            "notes": "Arial approximates the source crop's compact sans-serif labels. Text boxes were placed by visual inspection at native dimensions."
+        }
+    },
+    "panels": [
+        {
+            "id": "panel-a",
+            "type": "behavior_virtual_track",
+            "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 391,
+                "height": 263
+            },
+            "label": {
+                "id": "panel-label",
+                "text": "A",
+                "x": -2,
+                "y": 8,
+                "fontSize": 16,
+                "fontWeight": 700,
+                "sourceBox": {
+                    "x": 0,
+                    "y": 0,
+                    "width": 9,
+                    "height": 10
+                }
+            },
+            "title": {
+                "id": "panel-title",
+                "text": "Behavior (virtual track)",
+                "x": 20,
+                "y": 11,
+                "fontSize": 16,
+                "fontWeight": 700,
+                "sourceBox": {
+                    "x": 18,
+                    "y": 0,
+                    "width": 191,
+                    "height": 13
+                }
+            },
+            "track": {
+                "id": "virtual-track-schematic",
+                "line": {
+                    "x1": 45,
+                    "y1": 58,
+                    "x2": 350,
+                    "y2": 58
+                },
+                "stroke": "#111111",
+                "strokeWidth": 1.7,
+                "startMarker": {
+                    "type": "filledCircle",
+                    "cx": 45,
+                    "cy": 58,
+                    "r": 5,
+                    "fill": "#9a9a9a",
+                    "stroke": "#6d6d6d"
+                },
+                "goalMarker": {
+                    "type": "circle",
+                    "cx": 350,
+                    "cy": 58,
+                    "r": 10,
+                    "fill": "#a8e2d6",
+                    "stroke": "#111111",
+                    "strokeWidth": 1.3
+                },
+                "ticks": [
+                    {
+                        "id": "track-tick-100",
+                        "x": 149,
+                        "y1": 58,
+                        "y2": 68,
+                        "label": "100",
+                        "labelX": 149,
+                        "labelY": 84
+                    },
+                    {
+                        "id": "track-tick-200",
+                        "x": 251,
+                        "y1": 58,
+                        "y2": 68,
+                        "label": "200",
+                        "labelX": 251,
+                        "labelY": 84
+                    }
+                ],
+                "labels": [
+                    {
+                        "id": "track-start-label",
+                        "text": "Start",
+                        "x": 48,
+                        "y": 41,
+                        "anchor": "middle",
+                        "fontSize": 16
+                    },
+                    {
+                        "id": "track-goal-label",
+                        "text": "Goal",
+                        "x": 349,
+                        "y": 41,
+                        "anchor": "middle",
+                        "fontSize": 16
+                    },
+                    {
+                        "id": "track-zero-label",
+                        "text": "0 cm",
+                        "x": 58,
+                        "y": 84,
+                        "anchor": "middle",
+                        "fontSize": 14
+                    },
+                    {
+                        "id": "track-end-label",
+                        "text": "300 cm",
+                        "x": 346,
+                        "y": 84,
+                        "anchor": "middle",
+                        "fontSize": 14
+                    }
+                ]
+            },
+            "plot": {
+                "id": "behavior-time-series",
+                "bbox": {
+                    "x": 60,
+                    "y": 100,
+                    "width": 285,
+                    "height": 117
+                },
+                "clip": true,
+                "xScale": {
+                    "id": "time-s",
+                    "domain": [
+                        0,
+                        210
+                    ],
+                    "range": [
+                        60,
+                        345
+                    ]
+                },
+                "yScales": [
+                    {
+                        "id": "position-cm",
+                        "side": "left",
+                        "domain": [
+                            0,
+                            300
+                        ],
+                        "range": [
+                            217,
+                            100
+                        ],
+                        "color": "#006c6c"
+                    },
+                    {
+                        "id": "speed-cms",
+                        "side": "right",
+                        "domain": [
+                            0,
+                            60
+                        ],
+                        "range": [
+                            217,
+                            100
+                        ],
+                        "color": "#e68600"
+                    }
+                ],
+                "xAxis": {
+                    "baseline": 217,
+                    "ticks": [
+                        {
+                            "value": 0,
+                            "label": "0"
+                        },
+                        {
+                            "value": 50,
+                            "label": "50"
+                        },
+                        {
+                            "value": 100,
+                            "label": "100"
+                        },
+                        {
+                            "value": 150,
+                            "label": "150"
+                        },
+                        {
+                            "value": 200,
+                            "label": "200"
+                        }
+                    ],
+                    "label": {
+                        "id": "x-axis-label",
+                        "text": "Time (s)",
+                        "x": 202,
+                        "y": 262,
+                        "anchor": "middle",
+                        "fontSize": 16
+                    }
+                },
+                "yAxes": [
+                    {
+                        "scale": "position-cm",
+                        "axisX": 60,
+                        "ticks": [
+                            {
+                                "value": 0,
+                                "label": "0"
+                            },
+                            {
+                                "value": 100,
+                                "label": "100"
+                            },
+                            {
+                                "value": 200,
+                                "label": "200"
+                            },
+                            {
+                                "value": 300,
+                                "label": "300"
+                            }
+                        ],
+                        "label": {
+                            "id": "position-axis-label",
+                            "text": "Position (cm)",
+                            "x": 6,
+                            "y": 159,
+                            "anchor": "middle",
+                            "fontSize": 16,
+                            "rotate": -90,
+                            "fill": "#006c6c"
+                        }
+                    },
+                    {
+                        "scale": "speed-cms",
+                        "axisX": 345,
+                        "ticks": [
+                            {
+                                "value": 0,
+                                "label": "0"
+                            },
+                            {
+                                "value": 20,
+                                "label": "20"
+                            },
+                            {
+                                "value": 40,
+                                "label": "40"
+                            },
+                            {
+                                "value": 60,
+                                "label": "60"
+                            }
+                        ],
+                        "label": {
+                            "id": "speed-axis-label",
+                            "text": "Speed (cm/s)",
+                            "x": 389,
+                            "y": 159,
+                            "anchor": "middle",
+                            "fontSize": 16,
+                            "rotate": 90,
+                            "fill": "#e68600",
+                            "notes": "Right label is intentionally clipped by the source crop."
+                        }
+                    }
+                ],
+                "shadedEpochs": [
+                    {
+                        "id": "epoch-1",
+                        "x0": 18,
+                        "x1": 24,
+                        "fill": "#f1f1f1"
+                    },
+                    {
+                        "id": "epoch-2",
+                        "x0": 37,
+                        "x1": 56,
+                        "fill": "#eeeeee"
+                    },
+                    {
+                        "id": "epoch-3",
+                        "x0": 76,
+                        "x1": 96,
+                        "fill": "#eeeeee"
+                    },
+                    {
+                        "id": "epoch-4",
+                        "x0": 116,
+                        "x1": 134,
+                        "fill": "#eeeeee"
+                    },
+                    {
+                        "id": "epoch-5",
+                        "x0": 154,
+                        "x1": 173,
+                        "fill": "#eeeeee"
+                    },
+                    {
+                        "id": "epoch-6",
+                        "x0": 183,
+                        "x1": 193,
+                        "fill": "#eeeeee"
+                    }
+                ],
+                "series": [
+                    {
+                        "id": "position-trace",
+                        "scale": "position-cm",
+                        "color": "#006c6c",
+                        "strokeWidth": 2,
+                        "smooth": "linear",
+                        "jitter": {
+                            "seed": 802,
+                            "amplitude": 4.5,
+                            "frequency": 1.7
+                        },
+                        "points": [
+                            [
+                                0,
+                                90
+                            ],
+                            [
+                                8,
+                                155
+                            ],
+                            [
+                                25,
+                                215
+                            ],
+                            [
+                                38,
+                                160
+                            ],
+                            [
+                                55,
+                                120
+                            ],
+                            [
+                                70,
+                                98
+                            ],
+                            [
+                                83,
+                                112
+                            ],
+                            [
+                                101,
+                                160
+                            ],
+                            [
+                                116,
+                                205
+                            ],
+                            [
+                                129,
+                                266
+                            ],
+                            [
+                                136,
+                                242
+                            ],
+                            [
+                                149,
+                                205
+                            ],
+                            [
+                                160,
+                                260
+                            ],
+                            [
+                                169,
+                                276
+                            ],
+                            [
+                                180,
+                                263
+                            ],
+                            [
+                                190,
+                                156
+                            ],
+                            [
+                                198,
+                                166
+                            ],
+                            [
+                                204,
+                                142
+                            ],
+                            [
+                                210,
+                                112
+                            ]
+                        ]
+                    },
+                    {
+                        "id": "speed-trace",
+                        "scale": "speed-cms",
+                        "color": "#e68600",
+                        "strokeWidth": 1.3,
+                        "smooth": "linear",
+                        "jitter": {
+                            "seed": 211,
+                            "amplitude": 3.4,
+                            "frequency": 5.3,
+                            "spikeEvery": 13
+                        },
+                        "points": [
+                            [
+                                0,
+                                8
+                            ],
+                            [
+                                12,
+                                13
+                            ],
+                            [
+                                30,
+                                12
+                            ],
+                            [
+                                50,
+                                10
+                            ],
+                            [
+                                70,
+                                9
+                            ],
+                            [
+                                88,
+                                11
+                            ],
+                            [
+                                105,
+                                12
+                            ],
+                            [
+                                126,
+                                13
+                            ],
+                            [
+                                142,
+                                12
+                            ],
+                            [
+                                158,
+                                13
+                            ],
+                            [
+                                172,
+                                12
+                            ],
+                            [
+                                186,
+                                11
+                            ],
+                            [
+                                196,
+                                9
+                            ],
+                            [
+                                210,
+                                10
+                            ]
+                        ]
+                    }
+                ]
+            }
+        }
+    ],
+    "provenance": {
+        "createdBy": "make-figure first-pass reconstruction",
+        "sourceInspection": "Visual inspection of a 391x263 raster crop.",
+        "renderer": "Hybrid contract implemented as generated SVG marks and text.",
+        "uncertainties": [
+            "Underlying time-series values are visually estimated from the raster and should be treated as editable approximations.",
+            "Fine jagged trace texture is procedurally generated from seeded jitter for visual similarity.",
+            "The right y-axis title is partly outside the crop; its exact wording is inferred from visible orange speed units."
+        ]
+    },
+    "confidence": {
+        "layout": 0.86,
+        "text": 0.78,
+        "dataTraces": 0.58,
+        "style": 0.82
+    }
+}
+
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.html b/outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..96417cfd680a8c3b2403d8a2413261ed506294fa
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.html
+@@ -0,0 +1,365 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-08-neuropixels-central-heatmap-A reconstruction</title>
++  <style>
++    html, body {
++      margin: 0;
++      background: #eeeeee;
++      color: #111111;
++      font-family: Arial, Helvetica, sans-serif;
++    }
++    header {
++      display: flex;
++      align-items: center;
++      justify-content: space-between;
++      gap: 16px;
++      padding: 10px 14px;
++      background: #ffffff;
++      border-bottom: 1px solid #cccccc;
++    }
++    h1 {
++      margin: 0;
++      font-size: 16px;
++      font-weight: 700;
++    }
++    .note {
++      margin-top: 3px;
++      color: #555555;
++      font-size: 12px;
++    }
++    .toggle {
++      display: inline-flex;
++      overflow: hidden;
++      border: 1px solid #999999;
++      border-radius: 4px;
++      flex: 0 0 auto;
++    }
++    .toggle button {
++      border: 0;
++      padding: 5px 10px;
++      background: #ffffff;
++      color: #111111;
++      font: inherit;
++      font-size: 12px;
++      cursor: pointer;
++    }
++    .toggle button.active {
++      background: #111111;
++      color: #ffffff;
++    }
++    main {
++      min-height: calc(100vh - 48px);
++      display: grid;
++      place-items: center;
++      padding: 16px;
++      box-sizing: border-box;
++    }
++    .frame {
++      position: relative;
++      background: #ffffff;
++      border: 1px solid #d0d0d0;
++      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
++      overflow: hidden;
++    }
++    .surface, .reference {
++      position: absolute;
++      inset: 0;
++    }
++    .reference {
++      display: none;
++      width: 100%;
++      height: 100%;
++      object-fit: contain;
++      background: #ffffff;
++    }
++    .show-reference .surface {
++      display: none;
++    }
++    .show-reference .reference {
++      display: block;
++    }
++    svg {
++      position: absolute;
++      inset: 0;
++    }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1 id="title">reference-08-neuropixels-central-heatmap-A</h1>
++      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">QA reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <img id="reference" class="reference" alt="QA reference source image">
++    </div>
++  </main>
++  <script>
++    const SPEC_URL = './reference-08-neuropixels-central-heatmap-A.json';
++    const SVG_NS = 'http://www.w3.org/2000/svg';
++
++    function byId(id) {
++      return document.getElementById(id);
++    }
++
++    function node(tag, attrs = {}) {
++      const item = document.createElementNS(SVG_NS, tag);
++      for (const [key, value] of Object.entries(attrs)) {
++        if (value !== undefined && value !== null) item.setAttribute(key, value);
++      }
++      return item;
++    }
++
++    function addText(svg, spec, defaults = {}) {
++      const text = node('text', {
++        x: spec.x,
++        y: spec.y,
++        fill: spec.fill || defaults.color || '#111111',
++        'font-family': spec.fontFamily || defaults.fontFamily || 'Arial, Helvetica, sans-serif',
++        'font-size': spec.fontSize || defaults.defaultSize || 14,
++        'font-weight': spec.fontWeight || 400,
++        'text-anchor': spec.anchor || 'start',
++        'dominant-baseline': spec.baseline || 'alphabetic',
++        'letter-spacing': spec.letterSpacing ?? 0,
++        transform: spec.rotate ? `rotate(${spec.rotate} ${spec.x} ${spec.y})` : null,
++        'data-id': spec.id,
++        'data-role': spec.role || 'text'
++      });
++      text.textContent = spec.text || '';
++      svg.appendChild(text);
++      return text;
++    }
++
++    function makeScale(scale) {
++      const [d0, d1] = scale.domain;
++      const [r0, r1] = scale.range;
++      return value => r0 + ((value - d0) / (d1 - d0)) * (r1 - r0);
++    }
++
++    function lcg(seed) {
++      let state = seed >>> 0;
++      return () => {
++        state = (1664525 * state + 1013904223) >>> 0;
++        return state / 4294967296;
++      };
++    }
++
++    function interpolate(points, x) {
++      for (let i = 1; i < points.length; i += 1) {
++        const prev = points[i - 1];
++        const next = points[i];
++        if (x <= next[0]) {
++          const t = (x - prev[0]) / (next[0] - prev[0]);
++          return prev[1] + t * (next[1] - prev[1]);
++        }
++      }
++      return points[points.length - 1][1];
++    }
++
++    function sampledSeries(series) {
++      const rand = lcg(series.jitter?.seed || 1);
++      const [start] = series.points[0];
++      const [end] = series.points[series.points.length - 1];
++      const samples = [];
++      for (let x = start; x <= end; x += 1) {
++        let y = interpolate(series.points, x);
++        const jitter = series.jitter || {};
++        if (jitter.amplitude) {
++          const wave = Math.sin(x * jitter.frequency) * jitter.amplitude * 0.42;
++          const noise = (rand() - 0.5) * jitter.amplitude;
++          y += wave + noise;
++        }
++        if (jitter.spikeEvery && x > start && x % jitter.spikeEvery === 0) {
++          y += 4 + rand() * 8;
++        }
++        samples.push([x, y]);
++      }
++      return samples;
++    }
++
++    function pathFromSeries(series, xMap, yMap) {
++      return sampledSeries(series).map(([x, y], index) => {
++        const cmd = index === 0 ? 'M' : 'L';
++        return `${cmd}${xMap(x).toFixed(1)},${yMap(y).toFixed(1)}`;
++      }).join(' ');
++    }
++
++    function drawTrack(svg, track, defaults) {
++      svg.appendChild(node('line', {
++        x1: track.line.x1,
++        y1: track.line.y1,
++        x2: track.line.x2,
++        y2: track.line.y2,
++        stroke: track.stroke,
++        'stroke-width': track.strokeWidth,
++        'stroke-linecap': 'round',
++        'data-id': track.id
++      }));
++      const start = track.startMarker;
++      svg.appendChild(node('circle', {
++        cx: start.cx,
++        cy: start.cy,
++        r: start.r,
++        fill: start.fill,
++        stroke: start.stroke,
++        'stroke-width': 1
++      }));
++      const goal = track.goalMarker;
++      svg.appendChild(node('circle', {
++        cx: goal.cx,
++        cy: goal.cy,
++        r: goal.r,
++        fill: goal.fill,
++        stroke: goal.stroke,
++        'stroke-width': goal.strokeWidth
++      }));
++      track.ticks.forEach(tick => {
++        svg.appendChild(node('line', {
++          x1: tick.x,
++          y1: tick.y1,
++          x2: tick.x,
++          y2: tick.y2,
++          stroke: '#111111',
++          'stroke-width': 1.5,
++          'data-id': tick.id
++        }));
++        addText(svg, {id: `${tick.id}-label`, text: tick.label, x: tick.labelX, y: tick.labelY, anchor: 'middle', fontSize: 14}, defaults);
++      });
++      track.labels.forEach(label => addText(svg, label, defaults));
++    }
++
++    function drawAxes(svg, plot, scales, defaults) {
++      const box = plot.bbox;
++      const xMap = scales[plot.xScale.id];
++      svg.appendChild(node('line', {x1: box.x, y1: box.y + box.height, x2: box.x + box.width, y2: box.y + box.height, stroke: '#111111', 'stroke-width': 1.4}));
++      plot.yAxes.forEach(axis => {
++        const scaleSpec = plot.yScales.find(s => s.id === axis.scale);
++        const yMap = scales[axis.scale];
++        svg.appendChild(node('line', {x1: axis.axisX, y1: box.y, x2: axis.axisX, y2: box.y + box.height, stroke: scaleSpec.color, 'stroke-width': 1.4}));
++        axis.ticks.forEach(tick => {
++          const y = yMap(tick.value);
++          const outward = scaleSpec.side === 'left' ? -6 : 6;
++          svg.appendChild(node('line', {x1: axis.axisX, y1: y, x2: axis.axisX + outward, y2: y, stroke: scaleSpec.color, 'stroke-width': 1.2}));
++          addText(svg, {
++            id: `${axis.scale}-${tick.value}`,
++            text: tick.label,
++            x: axis.axisX + (scaleSpec.side === 'left' ? -14 : 14),
++            y: y + 5,
++            anchor: scaleSpec.side === 'left' ? 'end' : 'start',
++            fill: scaleSpec.color,
++            fontSize: 16
++          }, defaults);
++        });
++        addText(svg, axis.label, defaults);
++      });
++      plot.xAxis.ticks.forEach(tick => {
++        const x = xMap(tick.value);
++        svg.appendChild(node('line', {x1: x, y1: plot.xAxis.baseline, x2: x, y2: plot.xAxis.baseline + 6, stroke: '#111111', 'stroke-width': 1.2}));
++        addText(svg, {id: `time-${tick.value}`, text: tick.label, x, y: plot.xAxis.baseline + 25, anchor: 'middle', fontSize: 16}, defaults);
++      });
++      addText(svg, plot.xAxis.label, defaults);
++    }
++
++    function drawPlot(svg, plot, defaults) {
++      const box = plot.bbox;
++      const defs = node('defs');
++      const clip = node('clipPath', {id: `${plot.id}-clip`});
++      clip.appendChild(node('rect', {x: box.x, y: box.y, width: box.width, height: box.height}));
++      defs.appendChild(clip);
++      svg.appendChild(defs);
++
++      const scales = {[plot.xScale.id]: makeScale(plot.xScale)};
++      plot.yScales.forEach(scale => {
++        scales[scale.id] = makeScale(scale);
++      });
++
++      plot.shadedEpochs.forEach(epoch => {
++        svg.appendChild(node('rect', {
++          x: scales[plot.xScale.id](epoch.x0),
++          y: box.y,
++          width: scales[plot.xScale.id](epoch.x1) - scales[plot.xScale.id](epoch.x0),
++          height: box.height,
++          fill: epoch.fill,
++          'data-id': epoch.id
++        }));
++      });
++
++      const traces = node('g', {'clip-path': `url(#${plot.id}-clip)`, 'data-role': 'traces'});
++      plot.series.forEach(series => {
++        traces.appendChild(node('path', {
++          d: pathFromSeries(series, scales[plot.xScale.id], scales[series.scale]),
++          fill: 'none',
++          stroke: series.color,
++          'stroke-width': series.strokeWidth,
++          'stroke-linejoin': 'round',
++          'stroke-linecap': 'round',
++          'data-id': series.id
++        }));
++      });
++      svg.appendChild(traces);
++      drawAxes(svg, plot, scales, defaults);
++    }
++
++    function render(spec) {
++      byId('title').textContent = spec.id;
++      const frame = byId('frame');
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      const reference = byId('reference');
++      reference.src = spec.source.path;
++
++      const surface = byId('surface');
++      surface.innerHTML = '';
++      const svg = node('svg', {
++        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
++        width: spec.canvas.width,
++        height: spec.canvas.height,
++        role: 'img',
++        'aria-label': `${spec.id} generated reconstruction`
++      });
++      svg.appendChild(node('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
++
++      const panel = spec.panels[0];
++      addText(svg, panel.label, spec.typography);
++      addText(svg, panel.title, spec.typography);
++      drawTrack(svg, panel.track, spec.typography);
++      drawPlot(svg, panel.plot, spec.typography);
++      surface.appendChild(svg);
++    }
++
++    function setupToggle() {
++      const frame = byId('frame');
++      const generatedButton = byId('generatedButton');
++      const referenceButton = byId('referenceButton');
++      generatedButton.addEventListener('click', () => {
++        frame.classList.remove('show-reference');
++        generatedButton.classList.add('active');
++        referenceButton.classList.remove('active');
++      });
++      referenceButton.addEventListener('click', () => {
++        frame.classList.add('show-reference');
++        referenceButton.classList.add('active');
++        generatedButton.classList.remove('active');
++      });
++    }
++
++    setupToggle();
++    fetch(SPEC_URL)
++      .then(response => response.json())
++      .then(render)
++      .catch(error => {
++        byId('surface').textContent = `Failed to load reconstruction spec: ${error.message}`;
++      });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.json b/outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..e93b09397469c8ebf2023b5d4bac7863533170b8
+--- /dev/null
++++ b/outputs/reference-08-neuropixels-central-heatmap-A-make-figure-batch/reference-08-neuropixels-central-heatmap-A.json
+@@ -0,0 +1,170 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-08-neuropixels-central-heatmap-A",
++  "source": {
++    "path": "../../assets/reference/reference-08-neuropixels-central-heatmap-A-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "First-pass editable reconstruction from visual inspection. The generated candidate uses SVG primitives and semantic path points only; no source raster is drawn as a figure layer."
++  },
++  "canvas": {
++    "width": 391,
++    "height": 263,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 14,
++    "color": "#111111",
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "Arial approximates the source crop's compact sans-serif labels. Text boxes were placed by visual inspection at native dimensions."
++    }
++  },
++  "panels": [
++    {
++      "id": "panel-a",
++      "type": "behavior_virtual_track",
++      "bbox": {
++        "x": 0,
++        "y": 0,
++        "width": 391,
++        "height": 263
++      },
++      "label": {
++        "id": "panel-label",
++        "text": "A",
++        "x": -2,
++        "y": 8,
++        "fontSize": 16,
++        "fontWeight": 700,
++        "sourceBox": {"x": 0, "y": 0, "width": 9, "height": 10}
++      },
++      "title": {
++        "id": "panel-title",
++        "text": "Behavior (virtual track)",
++        "x": 20,
++        "y": 11,
++        "fontSize": 16,
++        "fontWeight": 700,
++        "sourceBox": {"x": 18, "y": 0, "width": 191, "height": 13}
++      },
++      "track": {
++        "id": "virtual-track-schematic",
++        "line": {"x1": 45, "y1": 58, "x2": 350, "y2": 58},
++        "stroke": "#111111",
++        "strokeWidth": 1.7,
++        "startMarker": {"type": "filledCircle", "cx": 45, "cy": 58, "r": 5, "fill": "#9a9a9a", "stroke": "#6d6d6d"},
++        "goalMarker": {"type": "circle", "cx": 350, "cy": 58, "r": 10, "fill": "#a8e2d6", "stroke": "#111111", "strokeWidth": 1.3},
++        "ticks": [
++          {"id": "track-tick-100", "x": 149, "y1": 58, "y2": 68, "label": "100", "labelX": 149, "labelY": 84},
++          {"id": "track-tick-200", "x": 251, "y1": 58, "y2": 68, "label": "200", "labelX": 251, "labelY": 84}
++        ],
++        "labels": [
++          {"id": "track-start-label", "text": "Start", "x": 48, "y": 41, "anchor": "middle", "fontSize": 16},
++          {"id": "track-goal-label", "text": "Goal", "x": 349, "y": 41, "anchor": "middle", "fontSize": 16},
++          {"id": "track-zero-label", "text": "0 cm", "x": 58, "y": 84, "anchor": "middle", "fontSize": 14},
++          {"id": "track-end-label", "text": "300 cm", "x": 346, "y": 84, "anchor": "middle", "fontSize": 14}
++        ]
++      },
++      "plot": {
++        "id": "behavior-time-series",
++        "bbox": {"x": 60, "y": 100, "width": 285, "height": 117},
++        "clip": true,
++        "xScale": {"id": "time-s", "domain": [0, 210], "range": [60, 345]},
++        "yScales": [
++          {"id": "position-cm", "side": "left", "domain": [0, 300], "range": [217, 100], "color": "#006c6c"},
++          {"id": "speed-cms", "side": "right", "domain": [0, 60], "range": [217, 100], "color": "#e68600"}
++        ],
++        "xAxis": {
++          "baseline": 217,
++          "ticks": [
++            {"value": 0, "label": "0"},
++            {"value": 50, "label": "50"},
++            {"value": 100, "label": "100"},
++            {"value": 150, "label": "150"},
++            {"value": 200, "label": "200"}
++          ],
++          "label": {"id": "x-axis-label", "text": "Time (s)", "x": 202, "y": 262, "anchor": "middle", "fontSize": 16}
++        },
++        "yAxes": [
++          {
++            "scale": "position-cm",
++            "axisX": 60,
++            "ticks": [
++              {"value": 0, "label": "0"},
++              {"value": 100, "label": "100"},
++              {"value": 200, "label": "200"},
++              {"value": 300, "label": "300"}
++            ],
++            "label": {"id": "position-axis-label", "text": "Position (cm)", "x": 6, "y": 159, "anchor": "middle", "fontSize": 16, "rotate": -90, "fill": "#006c6c"}
++          },
++          {
++            "scale": "speed-cms",
++            "axisX": 345,
++            "ticks": [
++              {"value": 0, "label": "0"},
++              {"value": 20, "label": "20"},
++              {"value": 40, "label": "40"},
++              {"value": 60, "label": "60"}
++            ],
++            "label": {"id": "speed-axis-label", "text": "Speed (cm/s)", "x": 389, "y": 159, "anchor": "middle", "fontSize": 16, "rotate": 90, "fill": "#e68600", "notes": "Right label is intentionally clipped by the source crop."}
++          }
++        ],
++        "shadedEpochs": [
++          {"id": "epoch-1", "x0": 18, "x1": 24, "fill": "#f1f1f1"},
++          {"id": "epoch-2", "x0": 37, "x1": 56, "fill": "#eeeeee"},
++          {"id": "epoch-3", "x0": 76, "x1": 96, "fill": "#eeeeee"},
++          {"id": "epoch-4", "x0": 116, "x1": 134, "fill": "#eeeeee"},
++          {"id": "epoch-5", "x0": 154, "x1": 173, "fill": "#eeeeee"},
++          {"id": "epoch-6", "x0": 183, "x1": 193, "fill": "#eeeeee"}
++        ],
++        "series": [
++          {
++            "id": "position-trace",
++            "scale": "position-cm",
++            "color": "#006c6c",
++            "strokeWidth": 2,
++            "smooth": "linear",
++            "jitter": {"seed": 802, "amplitude": 4.5, "frequency": 1.7},
++            "points": [
++              [0, 90], [8, 155], [25, 215], [38, 160], [55, 120], [70, 98],
++              [83, 112], [101, 160], [116, 205], [129, 266], [136, 242],
++              [149, 205], [160, 260], [169, 276], [180, 263], [190, 156],
++              [198, 166], [204, 142], [210, 112]
++            ]
++          },
++          {
++            "id": "speed-trace",
++            "scale": "speed-cms",
++            "color": "#e68600",
++            "strokeWidth": 1.3,
++            "smooth": "linear",
++            "jitter": {"seed": 211, "amplitude": 3.4, "frequency": 5.3, "spikeEvery": 13},
++            "points": [
++              [0, 8], [12, 13], [30, 12], [50, 10], [70, 9], [88, 11],
++              [105, 12], [126, 13], [142, 12], [158, 13], [172, 12],
++              [186, 11], [196, 9], [210, 10]
++            ]
++          }
++        ]
++      }
++    }
++  ],
++  "provenance": {
++    "createdBy": "make-figure first-pass reconstruction",
++    "sourceInspection": "Visual inspection of a 391x263 raster crop.",
++    "renderer": "Hybrid contract implemented as generated SVG marks and text.",
++    "uncertainties": [
++      "Underlying time-series values are visually estimated from the raster and should be treated as editable approximations.",
++      "Fine jagged trace texture is procedurally generated from seeded jitter for visual similarity.",
++      "The right y-axis title is partly outside the crop; its exact wording is inferred from visible orange speed units."
++    ]
++  },
++  "confidence": {
++    "layout": 0.86,
++    "text": 0.78,
++    "dataTraces": 0.58,
++    "style": 0.82
++  }
++}
+

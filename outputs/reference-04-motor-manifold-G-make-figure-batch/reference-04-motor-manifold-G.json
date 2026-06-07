@@ -1,0 +1,565 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-04-motor-manifold-G",
+  "source": {
+    "path": "../../assets/reference/reference-04-motor-manifold-G-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "First-pass reconstruction of a single semilog eigenvalue spectrum panel. Source was used for visual inspection only; generated candidate uses SVG axes, labels, dashed dimensionality guides, a line series, and editable scatter points."
+  },
+  "canvas": {
+    "width": 330,
+    "height": 363,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial Narrow, Helvetica Neue, Arial, sans-serif",
+    "defaultSize": 13,
+    "color": "#111111",
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Condensed sans-serif approximates the narrow source typography; no raster text is reused."
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-g",
+      "type": "semilog_eigenvalue_spectrum",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 330,
+        "height": 363
+      },
+      "label": {
+        "id": "panel-label",
+        "text": "G",
+        "x": 9,
+        "y": 43,
+        "fontSize": 20,
+        "fontWeight": 700,
+        "targetWidth": 12,
+        "sourceBox": {
+          "x": 8,
+          "y": 27,
+          "width": 13,
+          "height": 20
+        },
+        "fit": "visual"
+      },
+      "title": {
+        "id": "panel-title",
+        "text": "Eigenvalue spectrum",
+        "x": 38,
+        "y": 43,
+        "fontSize": 18,
+        "fontWeight": 700,
+        "targetWidth": 147,
+        "sourceBox": {
+          "x": 38,
+          "y": 31,
+          "width": 147,
+          "height": 17
+        },
+        "fit": "visual"
+      },
+      "plot": {
+        "id": "spectrum-plot",
+        "dataBbox": {
+          "x": 70,
+          "y": 70,
+          "width": 228,
+          "height": 190
+        },
+        "axes": {
+          "xAxis": {
+            "id": "x-axis",
+            "line": {
+              "x1": 70,
+              "y1": 260,
+              "x2": 304,
+              "y2": 260
+            },
+            "tickLength": 5
+          },
+          "yAxis": {
+            "id": "y-axis",
+            "line": {
+              "x1": 70,
+              "y1": 66,
+              "x2": 70,
+              "y2": 260
+            },
+            "tickLength": 5
+          }
+        },
+        "x": {
+          "id": "component-index",
+          "scale": "linear",
+          "domain": [
+            0,
+            51
+          ],
+          "ticks": [
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 10,
+              "label": "10"
+            },
+            {
+              "value": 20,
+              "label": "20"
+            },
+            {
+              "value": 30,
+              "label": "30"
+            },
+            {
+              "value": 40,
+              "label": "40"
+            },
+            {
+              "value": 50,
+              "label": "50"
+            }
+          ],
+          "label": {
+            "id": "x-axis-title",
+            "text": "Component # (i)",
+            "x": 187,
+            "y": 309,
+            "fontSize": 15,
+            "anchor": "middle"
+          }
+        },
+        "y": {
+          "id": "eigenvalue",
+          "scale": "log10",
+          "domain": [
+            0.001,
+            10
+          ],
+          "ticks": [
+            {
+              "value": 10,
+              "label": "10",
+              "exponent": "1"
+            },
+            {
+              "value": 1,
+              "label": "10",
+              "exponent": "0"
+            },
+            {
+              "value": 0.1,
+              "label": "10",
+              "exponent": "-1"
+            },
+            {
+              "value": 0.01,
+              "label": "10",
+              "exponent": "-2"
+            },
+            {
+              "value": 0.001,
+              "label": "10",
+              "exponent": "-3"
+            }
+          ],
+          "label": {
+            "id": "y-axis-title",
+            "text": "Eigenvalue (lambda_i)",
+            "x": 24,
+            "y": 163,
+            "fontSize": 15,
+            "rotation": -90,
+            "anchor": "middle"
+          }
+        }
+      },
+      "coordinateSystems": [
+        {
+          "id": "panel-g.xy",
+          "type": "cartesian",
+          "x": {
+            "scale": "linear",
+            "domain": [
+              0,
+              51
+            ],
+            "range": [
+              70,
+              298
+            ]
+          },
+          "y": {
+            "scale": "log10",
+            "domain": [
+              0.001,
+              10
+            ],
+            "range": [
+              260,
+              70
+            ]
+          }
+        }
+      ],
+      "data": {
+        "series": [
+          {
+            "id": "eigenvalue-spectrum",
+            "name": "Eigenvalue spectrum",
+            "points": [
+              [
+                1,
+                4.8
+              ],
+              [
+                2,
+                2.05
+              ],
+              [
+                3,
+                1.22
+              ],
+              [
+                4,
+                0.82
+              ],
+              [
+                5,
+                0.57
+              ],
+              [
+                6,
+                0.42
+              ],
+              [
+                7,
+                0.34
+              ],
+              [
+                8,
+                0.27
+              ],
+              [
+                9,
+                0.22
+              ],
+              [
+                10,
+                0.18
+              ],
+              [
+                11,
+                0.15
+              ],
+              [
+                12,
+                0.125
+              ],
+              [
+                13,
+                0.105
+              ],
+              [
+                14,
+                0.088
+              ],
+              [
+                15,
+                0.074
+              ],
+              [
+                16,
+                0.061
+              ],
+              [
+                17,
+                0.052
+              ],
+              [
+                18,
+                0.043
+              ],
+              [
+                19,
+                0.036
+              ],
+              [
+                20,
+                0.03
+              ],
+              [
+                21,
+                0.026
+              ],
+              [
+                22,
+                0.022
+              ],
+              [
+                23,
+                0.019
+              ],
+              [
+                24,
+                0.0165
+              ],
+              [
+                25,
+                0.0145
+              ],
+              [
+                26,
+                0.0126
+              ],
+              [
+                27,
+                0.0112
+              ],
+              [
+                28,
+                0.0102
+              ],
+              [
+                29,
+                0.0093
+              ],
+              [
+                30,
+                0.0084
+              ],
+              [
+                31,
+                0.0076
+              ],
+              [
+                32,
+                0.0069
+              ],
+              [
+                33,
+                0.0063
+              ],
+              [
+                34,
+                0.0058
+              ],
+              [
+                35,
+                0.0052
+              ],
+              [
+                36,
+                0.0048
+              ],
+              [
+                37,
+                0.0044
+              ],
+              [
+                38,
+                0.004
+              ],
+              [
+                39,
+                0.0037
+              ],
+              [
+                40,
+                0.0034
+              ],
+              [
+                41,
+                0.0032
+              ],
+              [
+                42,
+                0.003
+              ],
+              [
+                43,
+                0.0028
+              ],
+              [
+                44,
+                0.0026
+              ],
+              [
+                45,
+                0.00245
+              ],
+              [
+                46,
+                0.0023
+              ],
+              [
+                47,
+                0.00215
+              ],
+              [
+                48,
+                0.002
+              ],
+              [
+                49,
+                0.0019
+              ],
+              [
+                50,
+                0.00178
+              ],
+              [
+                51,
+                0.00165
+              ]
+            ],
+            "provenance": {
+              "confidence": "medium",
+              "note": "Values are visually inferred from the semilog source; intended as editable first-pass data, not extracted measurements."
+            }
+          }
+        ]
+      },
+      "marks": [
+        {
+          "id": "spectrum-line",
+          "type": "lineSeries",
+          "usesTransform": "panel-g.xy",
+          "series": "eigenvalue-spectrum",
+          "stroke": "#111111",
+          "strokeWidth": 1.1,
+          "fill": "none"
+        },
+        {
+          "id": "spectrum-points",
+          "type": "scatter",
+          "usesTransform": "panel-g.xy",
+          "series": "eigenvalue-spectrum",
+          "marker": {
+            "shape": "circle",
+            "radius": 2.5,
+            "fill": "#111111",
+            "stroke": "none"
+          }
+        }
+      ],
+      "annotations": [
+        {
+          "id": "ten-d-guide",
+          "type": "verticalGuide",
+          "usesTransform": "panel-g.xy",
+          "value": 13,
+          "y1Value": 2,
+          "y2Value": 0.001,
+          "stroke": "#8d36c0",
+          "strokeWidth": 1.1,
+          "dasharray": "6 5",
+          "label": {
+            "id": "ten-d-label",
+            "text": "10D (70% var)",
+            "xOffset": 0,
+            "y": 92,
+            "fontSize": 12,
+            "fill": "#8d36c0",
+            "anchor": "middle"
+          },
+          "anchorTo": "component-index"
+        },
+        {
+          "id": "twenty-d-guide",
+          "type": "verticalGuide",
+          "usesTransform": "panel-g.xy",
+          "value": 23,
+          "y1Value": 2,
+          "y2Value": 0.001,
+          "stroke": "#8d36c0",
+          "strokeWidth": 1.1,
+          "dasharray": "6 5",
+          "label": {
+            "id": "twenty-d-label",
+            "text": "20D (89% var)",
+            "xOffset": 0,
+            "y": 92,
+            "fontSize": 12,
+            "fill": "#8d36c0",
+            "anchor": "start"
+          },
+          "anchorTo": "component-index"
+        }
+      ],
+      "constraints": [
+        {
+          "id": "x-tick-pairs",
+          "type": "axisTickPairCount",
+          "axis": "x-axis",
+          "expected": 6
+        },
+        {
+          "id": "y-tick-pairs",
+          "type": "axisTickPairCount",
+          "axis": "y-axis",
+          "expected": 5
+        },
+        {
+          "id": "point-count",
+          "type": "markCount",
+          "mark": "spectrum-points",
+          "expected": 51
+        },
+        {
+          "id": "guide-count",
+          "type": "annotationCount",
+          "annotationType": "verticalGuide",
+          "expected": 2
+        }
+      ],
+      "provenance": [
+        {
+          "object": "plot.dataBbox",
+          "confidence": "medium",
+          "note": "Plot box and axes visually estimated from source crop."
+        },
+        {
+          "object": "annotation values",
+          "confidence": "medium",
+          "note": "Dashed guides placed at visually apparent 10D/20D style thresholds but adjusted to match source pixel anchors near components 13 and 23."
+        }
+      ]
+    }
+  ],
+  "rendering": {
+    "renderer": "svg",
+    "layerOrder": [
+      "background",
+      "axes",
+      "ticks",
+      "data-line",
+      "data-points",
+      "annotations",
+      "labels"
+    ],
+    "styleTokens": {
+      "axisStroke": "#111111",
+      "dataStroke": "#111111",
+      "annotationPurple": "#8d36c0"
+    }
+  },
+  "confidence": [
+    {
+      "aspect": "semantic grammar",
+      "level": "high",
+      "note": "Single semilog spectrum with clear axes, labels, markers, and two dimensionality guides."
+    },
+    {
+      "aspect": "numeric data",
+      "level": "medium",
+      "note": "Data are visually approximated from the raster for first-pass inspection."
+    }
+  ]
+}

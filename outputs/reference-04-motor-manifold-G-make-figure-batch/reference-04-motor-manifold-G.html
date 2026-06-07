@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-04-motor-manifold-G reconstruction</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #aaaaaa;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .surface,
+    .reference {
+      position: absolute;
+      inset: 0;
+    }
+
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+    }
+
+    .show-reference .surface {
+      display: none;
+    }
+
+    .show-reference .reference {
+      display: block;
+    }
+
+    svg {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-04-motor-manifold-G</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">QA reference</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA reference source image">
+    </div>
+  </main>
+
+  <script>
+    const SPEC_URL = './reference-04-motor-manifold-G.json';
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function byId(id) {
+      return document.getElementById(id);
+    }
+
+    function node(tag, attrs = {}) {
+      const item = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) item.setAttribute(key, value);
+      }
+      return item;
+    }
+
+    function addText(svg, spec, defaults = {}) {
+      const text = node('text', {
+        x: spec.x,
+        y: spec.y,
+        fill: spec.fill || defaults.color || '#111111',
+        'font-family': spec.fontFamily || defaults.fontFamily,
+        'font-size': spec.fontSize || defaults.defaultSize || 13,
+        'font-weight': spec.fontWeight || 400,
+        'text-anchor': spec.anchor || 'start',
+        'dominant-baseline': spec.baseline || 'alphabetic',
+        'letter-spacing': spec.letterSpacing ?? defaults.calibration?.letterSpacing ?? 0,
+        transform: spec.rotation ? `rotate(${spec.rotation} ${spec.x} ${spec.y})` : null,
+        'data-id': spec.id,
+        'data-role': spec.role || 'text'
+      });
+      text.textContent = spec.text || '';
+      svg.appendChild(text);
+      return text;
+    }
+
+    function addLogTickLabel(svg, x, y, tick, panel, defaults) {
+      const text = node('text', {
+        x,
+        y,
+        fill: '#111111',
+        'font-family': defaults.fontFamily,
+        'font-size': 14,
+        'text-anchor': 'end',
+        'dominant-baseline': 'middle',
+        'data-axis': panel.plot.axes.yAxis.id,
+        'data-value': tick.value,
+        'data-role': 'tick-label'
+      });
+      const base = node('tspan', {'font-size': 14});
+      base.textContent = tick.label;
+      const exp = node('tspan', {dy: -6, 'font-size': 9});
+      exp.textContent = tick.exponent;
+      text.append(base, exp);
+      svg.appendChild(text);
+    }
+
+    function xScale(panel, value) {
+      const scale = panel.coordinateSystems[0].x;
+      const [d0, d1] = scale.domain;
+      const [r0, r1] = scale.range;
+      return r0 + ((value - d0) / (d1 - d0)) * (r1 - r0);
+    }
+
+    function yScale(panel, value) {
+      const scale = panel.coordinateSystems[0].y;
+      const [d0, d1] = scale.domain.map(Math.log10);
+      const [r0, r1] = scale.range;
+      const t = (Math.log10(value) - d0) / (d1 - d0);
+      return r0 + t * (r1 - r0);
+    }
+
+    function renderAxes(svg, panel, defaults) {
+      const plot = panel.plot;
+      const xAxis = plot.axes.xAxis;
+      const yAxis = plot.axes.yAxis;
+      const axisStyle = {stroke: '#111111', 'stroke-width': 1, fill: 'none'};
+
+      svg.appendChild(node('line', {...xAxis.line, ...axisStyle, 'data-id': xAxis.id, 'data-role': 'axis'}));
+      svg.appendChild(node('line', {...yAxis.line, ...axisStyle, 'data-id': yAxis.id, 'data-role': 'axis'}));
+
+      plot.x.ticks.forEach((tick) => {
+        const x = xScale(panel, tick.value);
+        svg.appendChild(node('line', {
+          x1: x,
+          y1: xAxis.line.y1,
+          x2: x,
+          y2: xAxis.line.y1 + xAxis.tickLength,
+          ...axisStyle,
+          'data-axis': xAxis.id,
+          'data-value': tick.value,
+          'data-role': 'tick-mark'
+        }));
+        addText(svg, {
+          id: `x-tick-${tick.value}`,
+          role: 'tick-label',
+          text: tick.label,
+          x,
+          y: xAxis.line.y1 + 20,
+          fontSize: 14,
+          anchor: 'middle',
+          baseline: 'middle'
+        }, defaults).setAttribute('data-axis', xAxis.id);
+      });
+
+      plot.y.ticks.forEach((tick) => {
+        const y = yScale(panel, tick.value);
+        svg.appendChild(node('line', {
+          x1: yAxis.line.x1 - yAxis.tickLength,
+          y1: y,
+          x2: yAxis.line.x1,
+          y2: y,
+          ...axisStyle,
+          'data-axis': yAxis.id,
+          'data-value': tick.value,
+          'data-role': 'tick-mark'
+        }));
+        addLogTickLabel(svg, yAxis.line.x1 - 12, y, tick, panel, defaults);
+      });
+
+      addText(svg, plot.x.label, defaults);
+      addText(svg, plot.y.label, defaults);
+    }
+
+    function renderData(svg, panel) {
+      const series = panel.data.series.find((item) => item.id === 'eigenvalue-spectrum');
+      const points = series.points.map(([x, y]) => [xScale(panel, x), yScale(panel, y), x, y]);
+      const path = points.map((point, index) => `${index ? 'L' : 'M'} ${point[0].toFixed(2)} ${point[1].toFixed(2)}`).join(' ');
+
+      svg.appendChild(node('path', {
+        d: path,
+        fill: 'none',
+        stroke: '#111111',
+        'stroke-width': 1.1,
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round',
+        'data-id': 'spectrum-line',
+        'data-series': series.id,
+        'data-role': 'lineSeries'
+      }));
+
+      points.forEach(([cx, cy, x, y], index) => {
+        svg.appendChild(node('circle', {
+          cx,
+          cy,
+          r: 2.5,
+          fill: '#111111',
+          'data-id': `spectrum-point-${index + 1}`,
+          'data-series': series.id,
+          'data-x': x,
+          'data-y': y,
+          'data-role': 'scatter-point'
+        }));
+      });
+    }
+
+    function renderAnnotations(svg, panel, defaults) {
+      panel.annotations.forEach((annotation) => {
+        const x = xScale(panel, annotation.value);
+        const y1 = yScale(panel, annotation.y1Value);
+        const y2 = yScale(panel, annotation.y2Value);
+        svg.appendChild(node('line', {
+          x1: x,
+          y1,
+          x2: x,
+          y2,
+          stroke: annotation.stroke,
+          'stroke-width': annotation.strokeWidth,
+          'stroke-dasharray': annotation.dasharray,
+          'data-id': annotation.id,
+          'data-role': annotation.type,
+          'data-value': annotation.value
+        }));
+        addText(svg, {
+          ...annotation.label,
+          x: x + (annotation.label.xOffset || 0)
+        }, defaults);
+      });
+    }
+
+    function render(spec) {
+      const frame = byId('frame');
+      const surface = byId('surface');
+      const reference = byId('reference');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      reference.src = spec.source.path;
+      byId('title').textContent = spec.id;
+
+      const svg = node('svg', {
+        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
+        width: spec.canvas.width,
+        height: spec.canvas.height,
+        role: 'img',
+        'aria-label': `${spec.id} generated reconstruction`
+      });
+      svg.appendChild(node('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
+
+      const panel = spec.panels[0];
+      addText(svg, panel.label, spec.typography);
+      addText(svg, panel.title, spec.typography);
+      renderAxes(svg, panel, spec.typography);
+      renderData(svg, panel);
+      renderAnnotations(svg, panel, spec.typography);
+
+      surface.replaceChildren(svg);
+    }
+
+    function setMode(mode) {
+      const frame = byId('frame');
+      const generated = mode === 'generated';
+      frame.classList.toggle('show-reference', !generated);
+      byId('generatedButton').classList.toggle('active', generated);
+      byId('referenceButton').classList.toggle('active', !generated);
+    }
+
+    byId('generatedButton').addEventListener('click', () => setMode('generated'));
+    byId('referenceButton').addEventListener('click', () => setMode('reference'));
+
+    fetch(SPEC_URL)
+      .then((response) => response.json())
+      .then(render)
+      .catch((error) => {
+        byId('surface').textContent = `Failed to load reconstruction spec: ${error.message}`;
+      });
+  </script>
+</body>
+</html>

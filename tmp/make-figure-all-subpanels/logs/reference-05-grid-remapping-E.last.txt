@@ -1,0 +1,13 @@
+Created the independent first-pass reconstruction:
+
+- [reference-05-grid-remapping-E.json](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-05-grid-remapping-E-make-figure-batch/reference-05-grid-remapping-E.json)
+- [reference-05-grid-remapping-E.html](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-05-grid-remapping-E-make-figure-batch/reference-05-grid-remapping-E.html)
+
+Verification completed:
+- JSON validity passed with `python3 -m json.tool`.
+- Renderer script syntax passed with `node --check`.
+- Source reuse scan found the source PNG only in the JSON QA path and `reference.src = spec.source.path`.
+- No CSS source background reuse found.
+- The only `drawImage` call draws a generated offscreen heatmap canvas, not the source raster.
+
+I could not run a live browser render check because the sandbox blocked starting a local HTTP server with `PermissionError: [Errno 1] Operation not permitted`.

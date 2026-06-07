@@ -1,0 +1,3172 @@
+Reading additional input from stdin...
+OpenAI Codex v0.137.0
+--------
+workdir: /Users/alex/Code/scientific-figure-reconstruction
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: low
+reasoning summaries: none
+session id: 019e9ea2-5961-7451-83f4-056ecdae1fd8
+--------
+user
+$make-figure assets/reference/reference-04-motor-manifold-D-reference.png. Generate an independent first-pass reconstruction for visual inspection. Write outputs only to outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.json and outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.html. Use the make-figure skill contract and the repository command/skill code: generated visual layers must not reuse the source raster; the source may appear only as a clearly labeled QA/reference view. For this batch harness, do not include any `drawImage(...)` call in the generated HTML at all, even for offscreen or generated canvases; draw dense fields directly with canvas primitives, ImageData writes, SVG, or DOM. Keep the JSON semantic and editable. Verify JSON validity and search the output for any drawImage call or background source reuse. Do not modify existing output directories, docs, skills, plugins, source assets, or unrelated files.
+2026-06-06T20:31:43.707579Z ERROR codex_models_manager::manager: failed to renew cache TTL: EOF while parsing a value at line 1 column 0
+codex
+I’ll use the make-figure skill and keep the work confined to the two requested output files. First I’m reading the source dimensions and the local template/contract so the reconstruction follows the repo’s expected shape.
+exec
+/bin/zsh -lc "sed -n '1,220p' skills/make-figure/references/semantic-figure-ir.md" in /Users/alex/Code/scientific-figure-reconstruction
+exec
+/bin/zsh -lc "sed -n '1,220p' skills/make-figure/references/reconstruction-contract.md" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+# Semantic Figure IR
+
+Use this document with `reconstruction-contract.md`. The reconstruction output
+is a semantic figure intermediate representation, not a collection of detected
+bounding boxes.
+
+## Core Model
+
+A scientific figure reconstruction is a typed scene graph:
+
+```text
+source evidence
+  -> semantic figure objects
+  -> named coordinate systems and transforms
+  -> derived layout objects
+  -> renderable marks and text
+  -> validation constraints
+```
+
+Bounding boxes, OCR text, detected line segments, and color samples are source
+evidence. They help infer the graph, but they are not the graph itself.
+
+## Common Object Fields
+
+Any semantic object may use these fields:
+
+```json
+{
+  "id": "panel-a-x-tick-0",
+  "type": "axisTick",
+  "parent": "panel-a-x-axis",
+  "children": ["panel-a-x-tick-0-mark", "panel-a-x-tick-0-label"],
+  "usesTransform": "panel-a.xy",
+  "anchorTo": "panel-a-x-axis",
+  "derivesFrom": "panel-a.x.ticks[0]",
+  "sourceEvidence": ["bbox-17", "line-04"],
+  "provenance": {"confidence": "medium", "note": "Tick position measured from source."}
+}
+```
+
+Prefer stable ids and explicit relationships over free-floating pixel objects.
+When an object needs source-calibrated coordinates, keep those coordinates on
+the semantic object as measured anchors instead of detaching the rendered mark
+or text.
+
+## Top-Level IR Concepts
+
+- `sourceEvidence`: source bboxes, OCR snippets, measured line segments, color
+  samples, and notes. These are evidence records, not render instructions.
+- `coordinateSystems`: named transforms such as Cartesian data scales,
+  categorical scales, event anchors, color scales, image/matrix ranges, and
+  projected 3D scenes.
+- `layoutObjects`: axes, tick-label bands, legends, colorbars, tables, insets,
+  panel titles, scale bars, and other objects that reserve space or anchor text.
+- `data`: exact data, approximate data, or generation recipes.
+- `marks`: visual encodings derived from data or layout objects.
+- `annotations`: labels, arrows, brackets, callouts, and event labels anchored
+  to data points, marks, or layout objects.
+- `constraints`: relationship and layout invariants that must survive rendering.
+- `rendering`: renderer hints, layer order, and style tokens.
+- `validation`: renderer- or harness-readable checks and expected counts.
+- `provenance`: object-level confidence and unresolved inferences.
+
+Panel-specific schemas may organize these concepts differently, but they should
+preserve the same relationships.
+
+## Required Relationship Invariants
+
+Renderers and validation scripts should enforce these when the source shows the
+corresponding objects:
+
+- Labeled ticks render one tick mark and one tick label with matching
+  `axis`/`value` metadata.
+- Axis titles anchor to an axis, tick-label band, or measured source anchor;
+  they are not independent guessed text.
+- Event-aligned ticks, event lines, brackets, and annotations share a named
+  event anchor or explicit measured visual anchor.
+- Grid lines belong to named grid planes and families; grid lines must not be
+  confused with solid box edges.
+- Legends reference real series, marker classes, or mark groups.
+- Colorbars reference a color scale and own their ticks and title.
+- Table cell text, row rules, separators, and highlights remain separate
+  objects when their visual styles differ.
+- Annotations anchor to data coordinates, generated marks, or layout objects
+  unless they are explicitly page-positioned.
+- Generated visuals never reuse the source raster as a generated layer.
+
+## Relationship Inventory Step
+
+Before writing the final JSON for a nontrivial panel, produce a short inventory:
+
+- plot type and renderer strategy
+- coordinate systems and named anchors
+- layout objects and their children
+- data-driven marks and their series/group ownership
+- annotations and what each one anchors to
+- source-calibrated overrides and why the transform alone is insufficient
+- validation constraints that should be checked in the rendered DOM
+
+Do this before visual tuning. If a generated object looks wrong, first ask which
+relationship or transform is missing before changing pixels.
+
+
+ succeeded in 0ms:
+# Reconstruction Contract
+
+Use this contract when converting a raster scientific figure into configurable HTML and JSON.
+
+Read `semantic-figure-ir.md` alongside this contract. The JSON may be
+panel-specific, but it must preserve semantic relationships between data,
+transforms, layout objects, marks, labels, and validation constraints.
+
+## JSON Shape
+
+Minimum top-level fields:
+
+```json
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "figure-id",
+  "source": {
+    "path": "./source.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "What was inferred visually."
+  },
+  "canvas": {
+    "width": 800,
+    "height": 600,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [
+      "https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&display=swap"
+    ],
+    "fontFaces": [
+      {"family": "FigureSans", "weight": 400, "src": "./fonts/FigureSans-Regular.woff2"},
+      {"family": "FigureSans", "weight": 700, "src": "./fonts/FigureSans-Bold.woff2"}
+    ],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Source Sans 3", "Roboto", "Noto Sans"],
+    "calibration": {
+      "fontStretch": "normal",
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Use measured source text boxes to tune font family, stretch, size, and line height."
+    }
+  },
+  "panels": [],
+  "confidence": []
+}
+```
+
+`fontImports` is for lightweight browser-based experimentation with external
+CSS font providers such as Google Fonts. `fontFaces` is for reproducible local
+or adjacent font files when a typeface has been selected. Do not introduce a
+build system only to test fonts; use browser-native font loading and SVG text
+measurement first.
+
+## Panel Shape
+
+Represent each subpanel explicitly. For a single cropped panel, use one item in `panels`.
+
+```json
+{
+  "id": "panel-a",
+  "label": {"text": "A", "x": 16, "y": 20, "fontSize": 24, "fontWeight": 700},
+  "title": {"text": "Panel title", "x": 56, "y": 24, "fontSize": 16, "fontWeight": 700},
+  "bbox": {"x": 0, "y": 0, "width": 400, "height": 300},
+  "plot": {
+    "dataBbox": {"x": 64, "y": 48, "width": 300, "height": 210},
+    "axes": {
+      "xAxis": {"id": "panel-a-x-axis", "line": {"x1": 64, "y1": 258, "x2": 364, "y2": 258}, "tickLength": 6},
+      "yAxis": {"id": "panel-a-y-axis", "line": {"x1": 64, "y1": 48, "x2": 64, "y2": 258}, "tickLength": 6}
+    },
+    "x": {
+      "scale": "linear",
+      "domain": [0, 10],
+      "ticks": [{"value": 0, "label": "0"}, {"value": 5, "label": "5"}, {"value": 10, "label": "10"}],
+      "label": {"text": "Time (s)"}
+    },
+    "y": {
+      "scale": "linear",
+      "domain": [0, 1],
+      "ticks": [{"value": 0, "label": "0"}, {"value": 0.5, "label": "0.5"}, {"value": 1, "label": "1"}],
+      "label": {"text": "Response"}
+    }
+  },
+  "marks": [],
+  "annotations": [],
+  "provenance": []
+}
+```
+
+## Mark Types
+
+Use semantic mark objects. Add fields as needed, but keep the meaning explicit.
+
+- `lineSeries`: data points plus stroke, width, optional uncertainty band.
+- `scatter`: points, marker shape, size, fill, stroke, opacity.
+- `bar`: categorical or numeric bars with baseline, fill, stroke.
+- `heatmap`: matrix, color scale, bounds, interpolation flag.
+- `raster`: event times by row or a generation recipe with seed and density.
+- `violin`: category, outline path or generated KDE recipe, median/quantile marks.
+- `path`: editable SVG path data for contours, arrows, outlines, or schematic curves.
+- `rect`, `circle`, `ellipse`, `text`, `bracket`, `arrow`: annotations and schematics.
+- `imageRecipe`: generated texture or synthetic field; never point this at the source raster.
+
+## Coordinate Systems
+
+Define named transforms before rendering marks:
+
+- `plot.dataBbox` maps data to pixels.
+- For charts where the visual data rectangle is offset from axes, split
+  `dataBbox` from `axisBbox` or explicit axis anchors such as `yAxisX` and
+  `xAxisY`. Do not force source axis offsets into the data transform.
+- `x.domain` and `y.domain` map quantitative axes.
+- `categories` map categorical positions.
+- `eventAnchor` maps event-aligned plots.
+- `colorScale.domain` maps heatmaps and colorbars.
+
+Avoid mixing hard-coded pixel marks with data-space marks unless the mark is truly an annotation. Ticks, event lines, and data marks should share the same transform.
+
+### 3D Scientific Plots
+
+Recognize 3D plots from visual cues such as three nonparallel labeled axes,
+isometric or perspective box frames, oblique grid planes, tick labels attached
+to multiple axis directions, and data paths or markers that overlap within a
+projected volume. Do not require the user to identify a panel as 3D.
+
+For static publication-style 3D plots made of axes, grid lines, trajectories,
+markers, and labels, prefer semantic 3D data rendered into SVG through an
+explicit projection function. Reserve WebGL or Three.js for genuinely complex
+surfaces, dense point clouds, lighting, meshes, or interactive rotation.
+
+Represent 3D scenes with explicit camera or projection metadata:
+
+```json
+{
+  "scene": {
+    "projection": {
+      "type": "orthographicBasis",
+      "corner": {"x": 58, "y": 327},
+      "domainCorner": {"pc1": -2, "pc2": -2, "pc3": -2},
+      "basis": {
+        "pc1": {"x": 258, "y": 30},
+        "pc2": {"x": 145, "y": 90},
+        "pc3": {"x": 0, "y": -184}
+      }
+    },
+    "domains": {"pc1": [-2, 2], "pc2": [-2, 2], "pc3": [-2, 2]},
+    "trajectories": [{"points": [[-1.5, -1.6, -0.3], [0.7, -1.1, 1.8]]}]
+  }
+}
+```
+
+`fontImports` is for lightweight browser-based experimentation with external
+CSS font providers such as Google Fonts. `fontFaces` is for reproducible local
+or adjacent font files when a typeface has been selected. Do not introduce a
+build system only to test fonts; use browser-native font loading and SVG text
+measurement first.
+
+Axes, grid planes, trajectories, markers, and annotations must use the same
+3D-to-2D projection. Depth-sort generated marks when overlap matters: back grid
+and box edges first, faint trial clouds, mean trajectories, timepoint markers,
+then text labels. Labels should anchor to projected 3D points or axis objects
+and then participate in the normal text-collision pass.
+
+When using source-calibrated projected grid segments, avoid segments that
+duplicate solid box edges or accidentally close into polygons. Grid lines should
+read as independent faint plane guides unless the source explicitly shows a
+closed projected face.
+
+Prefer named 3D grid planes over a flat list of projected line segments. For
+example, encode separate `floor`, `backWall`, and `sideWall` grid groups so each
+axis pair has its own Cartesian grid. Inventory the source grid before tuning:
+for every plane, count visible interior guides separately from boundary-aligned
+guides that are merged with or hidden under box edges. Encode grid lines as
+per-family values, such as independent `pc1`, `pc2`, and `pc3` guide families,
+instead of one shared plane-level value list. Each family should state whether
+domain-boundary values are included, and generated SVG lines should expose
+stable plane/family attributes so count validation can catch drift. A 3D
+state-space panel with PC1, PC2, and PC3 axes should not collapse into one wall
+plus a triangular base.
+
+If the source uses faint face shading, encode plane fills separately from grid
+lines and generate the fill polygon from the same 3D projection. Do not bake the
+shading into arbitrary background shapes. Tick labels in 3D plots are layout
+text: allow source-calibrated text positions or offsets from projected ticks so
+labels do not collide with each other, axis titles, or spines.
+
+3D tick labels should be placed by semantic layout rules, not by one-shot
+coordinates alone. Treat axis spines and tick marks as protected geometry with
+padded hit zones. Treat faint grid lines and trajectory clouds as non-protected
+unless the source clearly reserves label space around them. Tick labels may use
+source-calibrated initial positions, but renderers should measure the final text
+box and apply a constrained outward nudge if it intersects protected axis
+geometry:
+
+```json
+{
+  "axis": {
+    "id": "pc1",
+    "tickLabelPlacement": {
+      "avoid": ["axis-spine"],
+      "minGap": 5,
+      "nudge": {"x": 8, "y": 7},
+      "maxSteps": 6
+    }
+  }
+}
+```
+
+3D axes with visible tick labels should also render visible tick marks unless
+the source suppresses them. Store tick geometry as a projected tick anchor, a
+short `markVector`, and a label offset or outward normal. The label should be
+placed from the tick mark first; collision correction is a secondary adjustment,
+not the primary placement mechanism.
+
+When a source-fitted frame or projection still does not reproduce the source's
+tick text positions, keep the numeric tick `value` semantic but add separate
+source-calibrated `markAnchor` and/or `labelAnchor` fields. Do not force tick
+labels through one shared offset vector if the source clearly uses
+
+exec
+/bin/zsh -lc "sed -n '1,240p' skills/make-figure/assets/hybrid-renderer-template.html" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scientific figure reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #aaaaaa;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .surface,
+    .reference {
+      position: absolute;
+      inset: 0;
+    }
+
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+    }
+
+    .show-reference .surface {
+      display: none;
+    }
+
+    .show-reference .reference {
+      display: block;
+    }
+
+    svg,
+    canvas {
+      position: absolute;
+      inset: 0;
+    }
+
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">Scientific figure reconstruction</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="Reference source image">
+    </div>
+  </main>
+
+  <script id="fallback-spec" type="application/json">
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "example-panel",
+  "source": {
+    "path": "",
+    "usage": "QA-only; not used by generated candidate."
+  },
+  "canvas": {"width": 640, "height": 420, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Source Sans 3", "Roboto", "Noto Sans"]
+  },
+  "panels": [
+    {
+      "id": "panel-a",
+      "label": {"text": "A", "x": 18, "y": 28, "fontSize": 24, "fontWeight": 700},
+      "title": {"text": "Example configurable panel", "x": 58, "y": 30, "fontSize": 16, "fontWeight": 700},
+      "plot": {
+        "bbox": {"x": 80, "y": 70, "width": 470, "height": 270},
+        "x": {"domain": [0, 10], "ticks": [{"value": 0, "label": "0"}, {"value": 5, "label": "5"}, {"value": 10, "label": "10"}], "label": {"text": "Time (s)"}},
+        "y": {"domain": [0, 1], "ticks": [{"value": 0, "label": "0"}, {"value": 0.5, "label": "0.5"}, {"value": 1, "label": "1"}], "label": {"text": "Response"}}
+      },
+      "marks": [
+        {"id": "series-1", "type": "lineSeries", "points": [[0, 0.22], [2, 0.32], [4, 0.71], [6, 0.54], [8, 0.82], [10, 0.76]], "stroke": "#111111", "strokeWidth": 2.5},
+        {"id": "event", "type": "line", "x1": 315, "y1": 70, "x2": 315, "y2": 340, "stroke": "#008f96", "strokeWidth": 1.5, "dasharray": "4 4"},
+        {"id": "event-label", "type": "text", "text": "event", "x": 315, "y": 54, "fontSize": 13, "fill": "#008f96", "anchor": "middle"}
+      ]
+    }
+  ],
+  "confidence": [{"target": "example-panel", "confidence": "demo", "note": "Replace fallback spec with an adjacent JSON file."}]
+}
+  </script>
+
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function $(id) {
+      return document.getElementById(id);
+    }
+
+    function make(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function rng(seed) {
+      return function random() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function scale(domain, range, value) {
+      return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+    }
+
+    function pointScales(plot) {
+      const box = plot.bbox;
+      return {
+        x: value => scale(plot.x.domain, [box.x, box.x + box.width], value),
+        y: value => scale(plot.y.domain, [box.y + box.height, box.y], value)
+      };
+    }
+
+    function appendStylesheet(href) {
+      return new Promise(resolve => {
+        if (!href) return resolve();
+        const existing = document.querySelector(`link[data-font-import="${CSS.escape(href)}"]`);
+        if (existing) return resolve();
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = href;
+        link.dataset.fontImport = href;
+        link.onload = () => resolve();
+        link.onerror = () => {
+          console.warn(`Font stylesheet failed to load: ${href}`);
+          resolve();
+        };
+        document.head.appendChild(link);
+      });
+    }
+
+    async function setupTypography(typography = {}) {
+      for (const href of typography.fontImports || []) {
+        await appendStylesheet(href);
+      }
+
+      if ('FontFace' in window) {
+        for (const face of typography.fontFaces || []) {
+          if (!face.family || !face.src) continue;
+          const descriptor = {
+            style: face.style || 'normal',
+            weight: String(face.weight || 400),
+            stretch: face.stretch || face.fontStretch || 'normal',
+            display: face.display || 'swap'
+          };
+          try {
+            const fontFace = new FontFace(face.family, `url(${face.src})`, descriptor);
+            document.fonts.add(fontFace);
+            await fontFace.load();
+          } catch (error) {
+            console.warn(`Font face failed to load: ${face.family}`, error);
+
+exec
+/bin/zsh -lc 'sips -g pixelWidth -g pixelHeight assets/reference/reference-04-motor-manifold-D-reference.png' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+/Users/alex/Code/scientific-figure-reconstruction/assets/reference/reference-04-motor-manifold-D-reference.png
+  pixelWidth: 382
+  pixelHeight: 296
+
+codex
+The source is 382 by 296 px. I’m going to encode a single heatmap panel with editable axes, cue/delay/move/hold labels, a zero-time event line, and a generated z-scored field drawn from deterministic recipes rather than the raster.
+codex
+I’m creating only the requested output directory and two files now. The HTML will load the adjacent JSON, render the heat field by writing ImageData pixels directly, and will include no reference image layer so the batch `drawImage` check stays clean.
+exec
+/bin/zsh -lc 'mkdir -p outputs/reference-04-motor-manifold-D-make-figure-batch' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+apply patch
+patch: completed
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.html
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.json
+diff --git a/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.html b/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.html
+index 4bf144a30dd6c85200487ebb606bd0a7aa531167..48bddeb0c7f4aa54fdf62640883aae13bbff6ef6
+--- a/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.html
++++ b/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.html
+@@ -11,369 +11,251 @@
+       color: #111111;
+       font-family: Arial, Helvetica, sans-serif;
+     }
+-    header {
+-      display: flex;
+-      align-items: center;
+-      justify-content: space-between;
+-      gap: 16px;
+-      padding: 10px 14px;
+-      background: #ffffff;
+-      border-bottom: 1px solid #cfcfcf;
+-    }
+-    h1 {
+-      margin: 0;
+-      font-size: 16px;
+-      font-weight: 700;
+-    }
+-    .note {
+-      margin-top: 3px;
+-      font-size: 12px;
+-      color: #555555;
+-    }
+-    .toggle {
+-      display: inline-flex;
+-      border: 1px solid #aaaaaa;
+-      border-radius: 4px;
+-      overflow: hidden;
+-      flex: 0 0 auto;
+-    }
+-    .toggle button {
+-      border: 0;
+-      padding: 5px 10px;
+-      background: #ffffff;
+-      color: #111111;
+-      font: inherit;
+-      font-size: 12px;
+-      cursor: pointer;
+-    }
+-    .toggle button.active {
+-      background: #111111;
+-      color: #ffffff;
+-    }
+     main {
+-      min-height: calc(100vh - 48px);
++      min-height: 100vh;
+       display: grid;
+       place-items: center;
+       padding: 16px;
+       box-sizing: border-box;
+     }
+-    .frame {
++    #frame {
+       position: relative;
++      width: 382px;
++      height: 296px;
+       background: #ffffff;
+-      border: 1px solid #d0d0d0;
+-      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+       overflow: hidden;
+     }
+-    .surface, .reference {
++    canvas, svg {
+       position: absolute;
+       inset: 0;
+     }
+-    .reference {
+-      display: none;
+-      width: 100%;
+-      height: 100%;
+-      object-fit: contain;
+-      background-color: #ffffff;
+-    }
+-    .show-reference .surface {
+-      display: none;
+-    }
+-    .show-reference .reference {
+-      display: block;
++    text {
++      dominant-baseline: alphabetic;
++      fill: #111111;
+     }
+-    canvas, svg {
+-      position: absolute;
+-      inset: 0;
+-    }
+   </style>
+ </head>
+ <body>
+-  <header>
+-    <div>
+-      <h1 id="title">reference-04-motor-manifold-D</h1>
+-      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+-    </div>
+-    <div class="toggle" aria-label="View mode">
+-      <button id="generatedButton" class="active" type="button">Generated</button>
+-      <button id="referenceButton" type="button">QA reference</button>
+-    </div>
+-  </header>
+   <main>
+-    <div id="frame" class="frame">
+-      <div id="surface" class="surface"></div>
+-      <img id="reference" class="reference" alt="QA reference source image">
+-    </div>
++    <div id="frame" aria-label="Generated reconstruction from semantic JSON"></div>
+   </main>
+   <script>
+-    const SPEC_URL = './reference-04-motor-manifold-D.json';
+     const SVG_NS = 'http://www.w3.org/2000/svg';
+ 
+-    function byId(id) {
+-      return document.getElementById(id);
+-    }
+-
+-    function node(tag, attrs = {}) {
+-      const item = document.createElementNS(SVG_NS, tag);
++    function makeSvg(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
+       for (const [key, value] of Object.entries(attrs)) {
+-        if (value !== undefined && value !== null) item.setAttribute(key, value);
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
+       }
+-      return item;
++      return node;
+     }
+ 
+-    function seeded(seed) {
+-      let state = seed >>> 0;
+-      return () => {
+-        state = (1664525 * state + 1013904223) >>> 0;
+-        return state / 4294967296;
++    function mulberry32(seed) {
++      return function random() {
++        let t = seed += 0x6D2B79F5;
++        t = Math.imul(t ^ (t >>> 15), t | 1);
++        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
++        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+       };
+     }
+ 
+-    function clamp(value, min, max) {
+-      return Math.max(min, Math.min(max, value));
++    function gaussian(x, center, width) {
++      const z = (x - center) / width;
++      return Math.exp(-0.5 * z * z);
+     }
+ 
+-    function lerp(a, b, t) {
+-      return a + (b - a) * t;
+-    }
+-
+     function scale(domain, range, value) {
+       return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+     }
+ 
+-    function mixColor(a, b, t) {
++    function colorForZ(z, colorScale) {
++      const clamped = Math.max(colorScale.domain[0], Math.min(colorScale.domain[2], z));
++      const neg = [25, 69, 216];
++      const mid = [243, 243, 243];
++      const pos = [215, 25, 28];
++      const t = clamped < 0 ? Math.abs(clamped / colorScale.domain[0]) : clamped / colorScale.domain[2];
++      const from = mid;
++      const to = clamped < 0 ? neg : pos;
++      const mix = Math.pow(t, 0.72);
+       return [
+-        Math.round(lerp(a[0], b[0], t)),
+-        Math.round(lerp(a[1], b[1], t)),
+-        Math.round(lerp(a[2], b[2], t))
++        Math.round(from[0] + (to[0] - from[0]) * mix),
++        Math.round(from[1] + (to[1] - from[1]) * mix),
++        Math.round(from[2] + (to[2] - from[2]) * mix)
+       ];
+     }
+ 
+-    function parseHex(hex) {
+-      const value = hex.replace('#', '');
+-      return [
+-        parseInt(value.slice(0, 2), 16),
+-        parseInt(value.slice(2, 4), 16),
+-        parseInt(value.slice(4, 6), 16)
+-      ];
++    function heatValue(time, row, recipe, randomValue) {
++      let z = (randomValue - 0.5) * 2 * recipe.backgroundNoise;
++      z += 0.18 * Math.sin(row * 0.41 + time * 13.0);
++      z += 0.12 * Math.sin(row * 0.13 - time * 21.0);
++      for (const f of recipe.features) {
++        if (f.kind === 'blueDelayBand') {
++          z += f.amplitude * gaussian(time, f.centerTime, f.width) * gaussian(row, f.rowCenter, f.rowWidth);
++        } else if (f.kind === 'redMoveRidge') {
++          const ridge = f.centerTime + (row - f.rowCenter) * f.slope;
++          z += f.amplitude * gaussian(time, ridge, f.width) * gaussian(row, f.rowCenter, f.rowWidth);
++        } else if (f.kind === 'bluePostMoveBand') {
++          z += f.amplitude * gaussian(time, f.centerTime, f.width) * gaussian(row, f.rowCenter, f.rowWidth);
++        } else if (f.kind === 'redHoldPatch') {
++          z += f.amplitude * gaussian(time, f.centerTime, f.width) * gaussian(row, f.rowCenter, f.rowWidth);
++        } else if (f.kind === 'earlyMixedStripes') {
++          z += f.amplitude * gaussian(time, f.centerTime, f.width) * Math.sin(row / f.rowPeriod * Math.PI * 2);
++        }
++      }
++      return z;
+     }
+ 
+-    function colorScaleFactory(system) {
+-      const stops = system.stops.map(stop => ({value: stop.value, rgb: parseHex(stop.color)})).sort((a, b) => a.value - b.value);
+-      return value => {
+-        const v = clamp(value, stops[0].value, stops[stops.length - 1].value);
+-        for (let i = 0; i < stops.length - 1; i += 1) {
+-          const left = stops[i];
+-          const right = stops[i + 1];
+-          if (v >= left.value && v <= right.value) {
+-            const t = (v - left.value) / (right.value - left.value);
+-            return mixColor(left.rgb, right.rgb, t);
+-          }
++    function renderHeatmap(ctx, panel, colorScale) {
++      const mark = panel.marks.find(item => item.type === 'heatmap');
++      const box = panel.plot.bbox;
++      const rows = mark.matrix.rows;
++      const cols = mark.matrix.cols;
++      const image = ctx.createImageData(cols, rows);
++      const random = mulberry32(mark.recipe.seed);
++      const rowOffsets = Array.from({length: rows}, () => (random() - 0.5) * 0.55);
++      const noise = Array.from({length: rows}, () => Array.from({length: cols}, () => random()));
++      for (let r = 0; r < rows; r++) {
++        for (let c = 0; c < cols; c++) {
++          const time = scale([0, cols - 1], panel.plot.x.domain, c);
++          const neuron = scale([0, rows - 1], panel.plot.y.domain, r);
++          const smoothedNoise = (
++            noise[r][c] +
++            noise[Math.max(0, r - 1)][c] +
++            noise[Math.min(rows - 1, r + 1)][c] +
++            noise[r][Math.max(0, c - 1)] +
++            noise[r][Math.min(cols - 1, c + 1)]
++          ) / 5;
++          const z = heatValue(time, neuron, mark.recipe, smoothedNoise) + rowOffsets[r];
++          const rgb = colorForZ(z, colorScale);
++          const i = (r * cols + c) * 4;
++          image.data[i] = rgb[0];
++          image.data[i + 1] = rgb[1];
++          image.data[i + 2] = rgb[2];
++          image.data[i + 3] = 230;
+         }
+-        return stops[stops.length - 1].rgb;
+-      };
++      }
++      const offscreen = document.createElement('canvas');
++      offscreen.width = cols;
++      offscreen.height = rows;
++      const offscreenContext = offscreen.getContext('2d');
++      offscreenContext.putImageData(image, 0, 0);
++      const sourceData = offscreenContext.getImageData(0, 0, cols, rows);
++      const scaled = ctx.createImageData(box.width, box.height);
++      for (let y = 0; y < box.height; y++) {
++        const sy = Math.min(rows - 1, Math.floor(y / box.height * rows));
++        for (let x = 0; x < box.width; x++) {
++          const sx = Math.min(cols - 1, Math.floor(x / box.width * cols));
++          const src = (sy * cols + sx) * 4;
++          const dst = (y * box.width + x) * 4;
++          scaled.data[dst] = sourceData.data[src];
++          scaled.data[dst + 1] = sourceData.data[src + 1];
++          scaled.data[dst + 2] = sourceData.data[src + 2];
++          scaled.data[dst + 3] = sourceData.data[src + 3];
++        }
++      }
++      ctx.putImageData(scaled, box.x, box.y);
+     }
+ 
+-    function addText(svg, spec, defaults = {}) {
+-      const text = node('text', {
+-        x: spec.x,
+-        y: spec.y,
+-        fill: spec.fill || defaults.color || '#111111',
+-        'font-family': spec.fontFamily || defaults.fontFamily || 'Arial, Helvetica, sans-serif',
+-        'font-size': spec.fontSize || defaults.defaultSize || 13,
+-        'font-weight': spec.fontWeight || 400,
+-        'text-anchor': spec.anchor || 'start',
+-        'dominant-baseline': spec.baseline || 'alphabetic',
+-        'letter-spacing': spec.letterSpacing ?? defaults.calibration?.letterSpacing ?? 0,
+-        transform: spec.rotation ? `rotate(${spec.rotation} ${spec.x} ${spec.y})` : undefined,
+-        'data-id': spec.id,
+-        'data-role': spec.role || 'text',
+-        'data-anchor-to': spec.anchorTo || undefined
++    function renderText(svg, item, typography, extra = {}) {
++      const text = makeSvg('text', {
++        x: item.x,
++        y: item.y,
++        'font-family': item.fontFamily || typography.fontFamily,
++        'font-size': item.fontSize || typography.defaultSize,
++        'font-weight': item.fontWeight || 400,
++        'text-anchor': item.anchor || 'start',
++        transform: item.rotation ? `rotate(${item.rotation} ${item.x} ${item.y})` : undefined,
++        id: item.id,
++        ...extra
+       });
+-      text.textContent = spec.text || '';
++      text.textContent = item.text;
+       svg.appendChild(text);
+-      return text;
+-    }
+-
+-    function systemsById(spec) {
+-      return Object.fromEntries((spec.coordinateSystems || []).map(system => [system.id, system]));
+-    }
+-
+-    function recipeById(panel, id) {
+-      return Object.values(panel.data || {}).find(item => item && item.id === id);
+     }
+ 
+-    function gaussian(x, center, sigma) {
+-      const z = (x - center) / sigma;
+-      return Math.exp(-0.5 * z * z);
+-    }
+-
+-    function renderHeatmap(ctx, panel, mark, systems) {
+-      const recipe = recipeById(panel, mark.dataRecipe);
+-      const colorSystem = systems[mark.colorScale];
+-      const colorFor = colorScaleFactory(colorSystem);
+-      const random = seeded(recipe.seed || 1);
+-      const box = mark.bbox;
+-      const cols = recipe.columns;
+-      const rows = recipe.rows;
+-      const image = ctx.createImageData(cols, rows);
+-      const speckles = [];
+-      for (let i = 0; i < recipe.horizontalSpeckles.count; i += 1) {
+-        const row = Math.floor(random() * rows);
+-        const start = Math.floor(random() * cols);
+-        const length = Math.floor(lerp(recipe.horizontalSpeckles.lengthRange[0], recipe.horizontalSpeckles.lengthRange[1], random()));
+-        const polarity = random() < recipe.horizontalSpeckles.polarityBalance ? 1 : -1;
+-        const amplitude = lerp(recipe.horizontalSpeckles.amplitudeRange[0], recipe.horizontalSpeckles.amplitudeRange[1], random()) * polarity;
+-        speckles.push({row, start, length, amplitude});
+-      }
+-      for (let y = 0; y < rows; y += 1) {
+-        const neuron = 1 + y / (rows - 1) * 199;
+-        for (let x = 0; x < cols; x += 1) {
+-          const time = -1 + x / (cols - 1) * 2;
+-          let value = (random() - 0.5) * recipe.baselineNoise;
+-          value += 0.08 * Math.sin(y * 0.31 + x * 0.08);
+-          value += 0.05 * Math.sin(y * 0.09 - x * 0.17);
+-          for (const band of recipe.bands) {
+-            const driftedCenter = band.timeCenter + 0.16 * Math.sin((neuron - band.rowCenter) / 58);
+-            value += band.amplitude * gaussian(neuron, band.rowCenter, band.rowSigma) * gaussian(time, driftedCenter, band.timeSigma);
+-          }
+-          for (const speckle of speckles) {
+-            if (Math.abs(y - speckle.row) <= 1 && x >= speckle.start && x <= speckle.start + speckle.length) {
+-              value += speckle.amplitude;
+-            }
+-          }
+-          const rgb = colorFor(value);
+-          const off = (y * cols + x) * 4;
+-          image.data[off] = rgb[0];
+-          image.data[off + 1] = rgb[1];
+-          image.data[off + 2] = rgb[2];
+-          image.data[off + 3] = 255;
+-        }
+-      }
+-      const scratch = document.createElement('canvas');
+-      scratch.width = cols;
+-      scratch.height = rows;
+-      scratch.getContext('2d').putImageData(image, 0, 0);
+-      ctx.save();
+-      ctx.imageSmoothingEnabled = false;
+-      ctx.drawImage(scratch, box.x, box.y, box.width, box.height);
+-      ctx.restore();
+-    }
+-
+-    function drawAxes(svg, panel, defaults) {
++    function renderAxes(svg, panel, typography, tokens) {
+       const plot = panel.plot;
+       const box = plot.bbox;
+-      const xDomain = plot.x.domain;
+-      const yDomain = plot.y.domain;
+-      const xPx = value => scale(xDomain, [box.x, box.x + box.width], value);
+-      const yPx = value => scale(yDomain, [box.y, box.y + box.height], value);
+-      const axis = {stroke: '#111111', 'stroke-width': 1.05, fill: 'none'};
+-      svg.appendChild(node('rect', {...axis, x: box.x, y: box.y, width: box.width, height: box.height, 'data-role': 'plot-frame'}));
++      const xScale = value => scale(plot.x.domain, [box.x, box.x + box.width], value);
++      const yScale = value => scale(plot.y.domain, [box.y, box.y + box.height], value);
++      svg.appendChild(makeSvg('rect', {x: box.x, y: box.y, width: box.width, height: box.height, fill: 'none', stroke: tokens.axisStroke, 'stroke-width': tokens.axisWidth}));
+       for (const tick of plot.x.ticks) {
+-        const x = xPx(tick.value);
+-        svg.appendChild(node('line', {...axis, x1: x, y1: box.y + box.height, x2: x, y2: box.y + box.height + 5, 'data-role': 'axis-tick-mark', 'data-axis': plot.x.id, 'data-value': tick.value}));
+-        addText(svg, {text: tick.label, x, y: box.y + box.height + 20, fontSize: 14, anchor: 'middle', role: 'tick-label'}, defaults);
++        const x = xScale(tick.value);
++        svg.appendChild(makeSvg('line', {x1: x, y1: box.y + box.height, x2: x, y2: box.y + box.height + 4, stroke: tokens.axisStroke, 'stroke-width': 1, 'data-axis': 'x', 'data-value': tick.value}));
++        renderText(svg, {text: tick.label, x, y: box.y + box.height + 21, fontSize: tokens.tickFontSize, anchor: 'middle'}, typography);
+       }
+       for (const tick of plot.y.ticks) {
+-        const y = yPx(tick.value);
+-        svg.appendChild(node('line', {...axis, x1: box.x - 5, y1: y, x2: box.x, y2: y, 'data-role': 'axis-tick-mark', 'data-axis': plot.y.id, 'data-value': tick.value}));
+-        addText(svg, {text: tick.label, x: box.x - 10, y: y + 4, fontSize: 14, anchor: 'end', role: 'tick-label'}, defaults);
++        const y = yScale(tick.value);
++        svg.appendChild(makeSvg('line', {x1: box.x - 4, y1: y, x2: box.x, y2: y, stroke: tokens.axisStroke, 'stroke-width': 1, 'data-axis': 'y', 'data-value': tick.value}));
++        renderText(svg, {text: tick.label, x: box.x - 9, y: y + 5, fontSize: tokens.tickFontSize, anchor: 'end'}, typography);
+       }
+-      addText(svg, {...plot.x.label, role: 'x-axis-label'}, defaults);
+-      addText(svg, {...plot.y.label, role: 'y-axis-label'}, defaults);
+-      for (const label of plot.topEpochLabels || []) addText(svg, {...label, role: 'epoch-label'}, defaults);
++      renderText(svg, plot.x.label, typography);
++      renderText(svg, plot.y.label, typography);
+     }
+ 
+-    function drawEventLine(svg, panel, mark) {
++    function renderEventLine(svg, panel) {
+       const box = panel.plot.bbox;
++      const mark = panel.marks.find(item => item.type === 'eventLine');
+       const x = scale(panel.plot.x.domain, [box.x, box.x + box.width], mark.xValue);
+-      svg.appendChild(node('line', {
+-        x1: x, y1: mark.y1, x2: x, y2: mark.y2,
+-        stroke: mark.stroke || '#111111',
+-        'stroke-width': mark.strokeWidth || 1,
+-        'data-role': 'event-line',
+-        'data-id': mark.id,
+-        'data-event-anchor': mark.eventAnchor
+-      }));
++      svg.appendChild(makeSvg('line', {id: mark.id, x1: x, y1: mark.y1, x2: x, y2: mark.y2, stroke: mark.stroke, 'stroke-width': mark.strokeWidth, 'data-anchor': mark.anchorTo}));
+     }
+ 
+-    function drawColorbar(svg, panel, systems, defaults) {
+-      const legend = panel.legend;
+-      const scaleSystem = systems[legend.scale];
+-      const colorFor = colorScaleFactory(scaleSystem);
+-      const box = legend.bbox;
+-      const defs = node('defs');
+-      const gradient = node('linearGradient', {id: `${legend.id}-gradient`, x1: '0', y1: '1', x2: '0', y2: '0'});
+-      const domain = scaleSystem.domain;
+-      scaleSystem.stops.forEach(stop => {
+-        const offset = 100 * (stop.value - domain[0]) / (domain[domain.length - 1] - domain[0]);
+-        gradient.appendChild(node('stop', {offset: `${offset}%`, 'stop-color': stop.color}));
+-      });
+-      defs.appendChild(gradient);
+-      svg.appendChild(defs);
+-      svg.appendChild(node('rect', {x: box.x, y: box.y, width: box.width, height: box.height, fill: `url(#${legend.id}-gradient)`, stroke: '#333333', 'stroke-width': 0.6, 'data-role': 'colorbar'}));
+-      addText(svg, {...legend.title, role: 'colorbar-title'}, defaults);
+-      for (const tick of legend.ticks || []) {
+-        const y = scale([domain[0], domain[domain.length - 1]], [box.y + box.height, box.y], tick.value);
+-        const rgb = colorFor(tick.value);
+-        svg.appendChild(node('line', {x1: box.x + box.width, y1: y, x2: box.x + box.width + 4, y2: y, stroke: '#111111', 'stroke-width': 0.8, 'data-role': 'colorbar-tick', 'data-value': tick.value}));
+-        addText(svg, {text: tick.label, x: box.x + box.width + 7, y: y + 4, fontSize: 10, anchor: 'start', fill: `rgb(${rgb.join(',')})`, role: 'colorbar-tick-label'}, defaults);
++    function renderColorbar(ctx, svg, panel, colorScale, typography) {
++      const object = panel.layoutObjects.find(item => item.type === 'colorbar');
++      const box = object.bbox;
++      const image = ctx.createImageData(box.width, box.height);
++      for (let y = 0; y < box.height; y++) {
++        const z = scale([0, box.height - 1], [colorScale.domain[2], colorScale.domain[0]], y);
++        const rgb = colorForZ(z, colorScale);
++        for (let x = 0; x < box.width; x++) {
++          const i = (y * box.width + x) * 4;
++          image.data[i] = rgb[0];
++          image.data[i + 1] = rgb[1];
++          image.data[i + 2] = rgb[2];
++          image.data[i + 3] = 255;
++        }
+       }
++      ctx.putImageData(image, box.x, box.y);
++      svg.appendChild(makeSvg('rect', {x: box.x, y: box.y, width: box.width, height: box.height, fill: 'none', stroke: '#333333', 'stroke-width': 0.7}));
++      renderText(svg, object.label, typography);
+     }
+ 
+-    function render(spec) {
+-      const frame = byId('frame');
+-      const surface = byId('surface');
+-      const reference = byId('reference');
+-      const canvasSpec = spec.canvas;
+-      const defaults = spec.typography || {};
+-      const systems = systemsById(spec);
+-      byId('title').textContent = spec.id;
+-      frame.style.width = `${canvasSpec.width}px`;
+-      frame.style.height = `${canvasSpec.height}px`;
+-      frame.style.background = canvasSpec.background || '#ffffff';
+-      reference.src = spec.source.path;
+-      surface.innerHTML = '';
++    async function loadSpec() {
++      const response = await fetch('reference-04-motor-manifold-D.json');
++      if (!response.ok) throw new Error(`Unable to load JSON spec: ${response.status}`);
++      return response.json();
++    }
++
++    async function render() {
++      const spec = await loadSpec();
++      const frame = document.getElementById('frame');
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      frame.style.background = spec.canvas.background;
+       const canvas = document.createElement('canvas');
+-      canvas.width = canvasSpec.width;
+-      canvas.height = canvasSpec.height;
+-      surface.appendChild(canvas);
++      canvas.width = spec.canvas.width;
++      canvas.height = spec.canvas.height;
+       const ctx = canvas.getContext('2d');
+-      ctx.fillStyle = canvasSpec.background || '#ffffff';
++      ctx.fillStyle = spec.canvas.background;
+       ctx.fillRect(0, 0, canvas.width, canvas.height);
+-      const svg = node('svg', {width: canvasSpec.width, height: canvasSpec.height, viewBox: `0 0 ${canvasSpec.width} ${canvasSpec.height}`, role: 'img', 'aria-label': `${spec.id} generated reconstruction`});
+-      surface.appendChild(svg);
+-      for (const panel of spec.panels || []) {
+-        for (const mark of panel.marks || []) {
+-          if (mark.type === 'heatmapRecipe') renderHeatmap(ctx, panel, mark, systems);
+-        }
+-        addText(svg, panel.label, defaults);
+-        addText(svg, panel.title, defaults);
+-        drawAxes(svg, panel, defaults);
+-        for (const mark of panel.marks || []) {
+-          if (mark.type === 'eventLine') drawEventLine(svg, panel, mark);
+-        }
+-        drawColorbar(svg, panel, systems, defaults);
+-      }
++      const svg = makeSvg('svg', {width: spec.canvas.width, height: spec.canvas.height, viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, role: 'img'});
++      frame.appendChild(canvas);
++      frame.appendChild(svg);
++      const panel = spec.panels[0];
++      const colorScale = spec.coordinateSystems.find(item => item.id === 'panel-d.z');
++      renderHeatmap(ctx, panel, colorScale);
++      renderColorbar(ctx, svg, panel, colorScale, spec.typography);
++      renderAxes(svg, panel, spec.typography, spec.rendering.styleTokens);
++      renderEventLine(svg, panel);
++      renderText(svg, panel.label, spec.typography);
++      renderText(svg, panel.title, spec.typography);
++      const phases = panel.layoutObjects.find(item => item.type === 'phaseLabels');
++      for (const item of phases.items) renderText(svg, item, spec.typography);
+     }
+ 
+-    byId('generatedButton').onclick = () => {
+-      byId('frame').classList.remove('show-reference');
+-      byId('generatedButton').classList.add('active');
+-      byId('referenceButton').classList.remove('active');
+-    };
+-
+-    byId('referenceButton').onclick = () => {
+-      byId('frame').classList.add('show-reference');
+-      byId('referenceButton').classList.add('active');
+-      byId('generatedButton').classList.remove('active');
+-    };
+-
+-    fetch(SPEC_URL, {cache: 'no-store'})
+-      .then(response => response.json())
+-      .then(render)
+-      .catch(error => {
+-        console.error('Unable to load reconstruction spec', error);
+-      });
++    render().catch(error => {
++      document.body.textContent = error.message;
++      console.error(error);
++    });
+   </script>
+ </body>
+ </html>
+diff --git a/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.json b/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.json
+index a19297892ea93063f4d2e58db46145012b0d0172..daebdf865bccef45217e3f0e8704a7c73b3e27dc
+--- a/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.json
++++ b/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.json
+@@ -3,75 +3,75 @@
+   "id": "reference-04-motor-manifold-D",
+   "source": {
+     "path": "../../assets/reference/reference-04-motor-manifold-D-reference.png",
+-    "usage": "QA-only; not used by generated candidate.",
+-    "nativeSize": {"width": 382, "height": 296},
+-    "notes": "Single heatmap panel inspected visually. Dense activity is generated from semantic recipes and calibrated layout, not copied from source pixels."
++    "usage": "QA/reference only; not rendered by generated candidate.",
++    "notes": "Single heatmap panel D showing peristimulus time aligned to movement onset. Dense field is reconstructed from semantic recipes, not the source raster."
++  },
++  "canvas": {
++    "width": 382,
++    "height": 296,
++    "background": "#ffffff"
+   },
+-  "canvas": {"width": 382, "height": 296, "background": "#ffffff"},
+   "typography": {
+     "fontFamily": "Arial, Helvetica, sans-serif",
+-    "defaultSize": 14,
++    "defaultSize": 12,
+     "color": "#111111",
+     "fontImports": [],
+     "fontFaces": [],
+-    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Source Sans 3"],
++    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Roboto"],
+     "calibration": {
+       "letterSpacing": 0,
+-      "lineHeight": 1.05,
+-      "notes": "First-pass visual typography fit to panel crop; no font-scoring harness was run."
++      "lineHeight": 1.08,
++      "notes": "Approximate Arial-like sizing matched visually to the source crop."
+     }
+   },
+   "coordinateSystems": [
+     {
+-      "id": "panel-d.time-neuron",
+-      "type": "cartesianHeatmap",
+-      "x": {"domain": [-1, 1], "range": [56, 350], "eventAnchor": {"id": "movement-onset", "value": 0, "pixel": 192}},
+-      "y": {"domain": [1, 200], "range": [62, 252], "sort": "neurons sorted by peri-movement response timing"}
++      "id": "panel-d.xy",
++      "type": "cartesian",
++      "xDomain": [-1, 1],
++      "yDomain": [1, 200],
++      "dataBbox": {"x": 57, "y": 58, "width": 292, "height": 194}
+     },
+     {
+-      "id": "panel-d.zscore",
++      "id": "panel-d.z",
+       "type": "divergingColorScale",
+       "domain": [-2, 0, 2],
+-      "stops": [
+-        {"value": -2, "color": "#1f3fda"},
+-        {"value": 0, "color": "#f7f7f7"},
+-        {"value": 2, "color": "#d7191c"}
+-      ],
+-      "missingColor": "#ffffff"
++      "negative": "#1945d8",
++      "neutral": "#f3f3f3",
++      "positive": "#d7191c"
+     }
+   ],
+   "panels": [
+     {
+       "id": "panel-d",
++      "bbox": {"x": 0, "y": 0, "width": 382, "height": 296},
+       "label": {
+-        "id": "panel-label",
++        "id": "panel-d-label",
+         "text": "D",
+         "x": 8,
+         "y": 25,
++        "fontFamily": "Arial, Helvetica, sans-serif",
+         "fontSize": 20,
+         "fontWeight": 700,
+-        "sourceBox": {"x": 8, "y": 9, "width": 13, "height": 20},
+-        "fit": "visual"
++        "anchor": "start",
++        "sourceBox": {"x": 7, "y": 8, "width": 15, "height": 21}
+       },
+       "title": {
+-        "id": "panel-title",
++        "id": "panel-d-title",
+         "text": "Peristimulus time (aligned to movement onset)",
+-        "x": 36,
++        "x": 35,
+         "y": 25,
++        "fontFamily": "Arial, Helvetica, sans-serif",
+         "fontSize": 16,
+-        "fontWeight": 700,
+-        "sourceBox": {"x": 35, "y": 10, "width": 315, "height": 19},
+-        "fit": "visual"
++        "fontWeight": 400,
++        "anchor": "start",
++        "sourceBox": {"x": 35, "y": 12, "width": 286, "height": 18}
+       },
+-      "bbox": {"x": 0, "y": 0, "width": 382, "height": 296},
+       "plot": {
+-        "id": "peristimulus-heatmap",
+-        "usesTransform": "panel-d.time-neuron",
+-        "bbox": {"x": 56, "y": 62, "width": 294, "height": 190},
+-        "clip": true,
++        "id": "panel-d-heatmap-plot",
++        "usesTransform": "panel-d.xy",
++        "bbox": {"x": 57, "y": 58, "width": 292, "height": 194},
+         "x": {
+-          "id": "time-axis",
+-          "scale": "linear",
+           "domain": [-1, 1],
+           "ticks": [
+             {"value": -1, "label": "-1.0"},
+@@ -80,11 +80,9 @@
+             {"value": 0.5, "label": "0.5"},
+             {"value": 1, "label": "1.0"}
+           ],
+-          "label": {"id": "x-axis-label", "text": "Time (s)", "x": 192, "y": 292, "fontSize": 14, "anchor": "middle"}
++          "label": {"id": "panel-d-x-label", "text": "Time (s)", "x": 203, "y": 293, "fontSize": 14, "anchor": "middle"}
+         },
+         "y": {
+-          "id": "neuron-axis",
+-          "scale": "linear",
+           "domain": [1, 200],
+           "ticks": [
+             {"value": 1, "label": "1"},
+@@ -93,101 +91,94 @@
+             {"value": 150, "label": "150"},
+             {"value": 200, "label": "200"}
+           ],
+-          "label": {"id": "y-axis-label", "text": "Neuron (sorted)", "x": 17, "y": 157, "fontSize": 14, "rotation": -90, "anchor": "middle"}
++          "label": {"id": "panel-d-y-label", "text": "Neuron (sorted)", "x": 17, "y": 157, "fontSize": 14, "anchor": "middle", "rotation": -90}
+         },
+-        "topEpochLabels": [
+-          {"id": "cue-label", "text": "Cue", "x": 92, "y": 52, "fontSize": 12, "anchor": "middle", "anchorTo": "time-axis:-0.75"},
+-          {"id": "delay-label", "text": "Delay", "x": 158, "y": 52, "fontSize": 12, "anchor": "middle", "anchorTo": "time-axis:-0.25"},
+-          {"id": "move-label", "text": "Move", "x": 229, "y": 52, "fontSize": 12, "anchor": "middle", "anchorTo": "movement-onset"},
+-          {"id": "hold-label", "text": "Hold", "x": 306, "y": 52, "fontSize": 12, "anchor": "middle", "anchorTo": "time-axis:0.75"}
+-        ]
+-      },
+-      "data": {
+-        "heatmapRecipe": {
+-          "id": "sorted-peristimulus-zscore",
+-          "type": "syntheticSortedNeuralHeatmap",
+-          "seed": 4044,
+-          "rows": 200,
+-          "columns": 260,
+-          "rowSmoothing": 0.45,
+-          "columnSmoothing": 0.55,
+-          "baselineNoise": 0.32,
+-          "bands": [
+-            {"id": "early-blue", "rowCenter": 28, "rowSigma": 32, "timeCenter": -0.32, "timeSigma": 0.24, "amplitude": -1.2},
+-            {"id": "movement-red", "rowCenter": 79, "rowSigma": 34, "timeCenter": 0.11, "timeSigma": 0.16, "amplitude": 1.85},
+-            {"id": "post-blue", "rowCenter": 73, "rowSigma": 45, "timeCenter": 0.54, "timeSigma": 0.35, "amplitude": -1.25},
+-            {"id": "late-red", "rowCenter": 163, "rowSigma": 31, "timeCenter": 0.43, "timeSigma": 0.18, "amplitude": 1.45},
+-            {"id": "lower-blue", "rowCenter": 177, "rowSigma": 42, "timeCenter": -0.02, "timeSigma": 0.23, "amplitude": -1.15},
+-            {"id": "cue-red-flecks", "rowCenter": 34, "rowSigma": 48, "timeCenter": -0.75, "timeSigma": 0.21, "amplitude": 0.65}
+-          ],
+-          "horizontalSpeckles": {"count": 420, "lengthRange": [4, 18], "amplitudeRange": [0.35, 1.05], "polarityBalance": 0.52},
+-          "description": "Low-amplitude streaked z-scored activity with a red diagonal movement-onset band, blue suppression around and after movement, and sparse red/blue horizontal streaks."
++        "axes": {
++          "xAxis": {"id": "panel-d-x-axis", "line": {"x1": 57, "y1": 252, "x2": 349, "y2": 252}, "tickLength": 4},
++          "yAxis": {"id": "panel-d-y-axis", "line": {"x1": 57, "y1": 58, "x2": 57, "y2": 252}, "tickLength": 4}
+         }
+       },
++      "layoutObjects": [
++        {
++          "id": "panel-d-phase-labels",
++          "type": "phaseLabels",
++          "anchorTo": "panel-d.x",
++          "items": [
++            {"text": "Cue", "x": 92, "y": 51, "fontSize": 14, "anchor": "middle"},
++            {"text": "Delay", "x": 158, "y": 51, "fontSize": 14, "anchor": "middle"},
++            {"text": "Move", "x": 229, "y": 51, "fontSize": 14, "anchor": "middle"},
++            {"text": "Hold", "x": 306, "y": 51, "fontSize": 14, "anchor": "middle"}
++          ]
++        },
++        {
++          "id": "panel-d-colorbar",
++          "type": "colorbar",
++          "colorScale": "panel-d.z",
++          "bbox": {"x": 372, "y": 147, "width": 10, "height": 93},
++          "label": {"text": "z-score", "x": 366, "y": 135, "fontSize": 13, "anchor": "start"},
++          "ticks": []
++        }
++      ],
+       "marks": [
+         {
+-          "id": "zscore-heatmap",
+-          "type": "heatmapRecipe",
+-          "renderer": "canvas",
+-          "bbox": {"x": 56, "y": 62, "width": 294, "height": 190},
+-          "usesTransform": "panel-d.time-neuron",
+-          "colorScale": "panel-d.zscore",
+-          "dataRecipe": "sorted-peristimulus-zscore",
+-          "interpolation": "nearest"
++          "id": "panel-d-synthetic-heatmap",
++          "type": "heatmap",
++          "renderer": "canvasImageData",
++          "usesTransform": "panel-d.xy",
++          "colorScale": "panel-d.z",
++          "matrix": {"rows": 200, "cols": 292},
++          "interpolation": false,
++          "recipe": {
++            "type": "rankedPeristimulusField",
++            "seed": 40518,
++            "backgroundNoise": 0.28,
++            "rowSmoothing": 0.42,
++            "timeSmoothing": 0.22,
++            "features": [
++              {"kind": "blueDelayBand", "centerTime": -0.22, "width": 0.23, "amplitude": -0.9, "rowCenter": 92, "rowWidth": 120},
++              {"kind": "redMoveRidge", "centerTime": 0.16, "slope": 0.0027, "width": 0.12, "amplitude": 1.55, "rowCenter": 92, "rowWidth": 82},
++              {"kind": "bluePostMoveBand", "centerTime": 0.43, "width": 0.25, "amplitude": -1.05, "rowCenter": 45, "rowWidth": 72},
++              {"kind": "redHoldPatch", "centerTime": 0.48, "width": 0.16, "amplitude": 1.2, "rowCenter": 162, "rowWidth": 34},
++              {"kind": "earlyMixedStripes", "centerTime": -0.72, "width": 0.22, "amplitude": 0.55, "rowPeriod": 23}
++            ]
++          },
++          "provenance": {"confidence": "medium", "note": "Approximates sorted neuron heatmap texture and broad red/blue temporal structure."}
+         },
+         {
+-          "id": "movement-onset-line",
++          "id": "panel-d-movement-onset",
+           "type": "eventLine",
++          "anchorTo": "x=0",
+           "xValue": 0,
+-          "eventAnchor": "movement-onset",
+           "y1": 58,
+-          "y2": 254,
+-          "stroke": "#111111",
++          "y2": 252,
++          "stroke": "#000000",
+           "strokeWidth": 2
+         }
+       ],
+-      "legend": {
+-        "id": "zscore-colorbar",
+-        "type": "verticalColorbar",
+-        "scale": "panel-d.zscore",
+-        "bbox": {"x": 371, "y": 147, "width": 10, "height": 93},
+-        "title": {"text": "z-score", "x": 366, "y": 136, "fontSize": 11, "anchor": "start"},
+-        "ticks": [
+-          {"value": 2, "label": "2"},
+-          {"value": 0, "label": "0"},
+-          {"value": -2, "label": "-2"}
+-        ]
+-      },
+-      "annotations": [
+-        {"id": "epoch-labels", "type": "textGroup", "anchorsTo": "plot.topEpochLabels"},
+-        {"id": "movement-onset", "type": "eventLine", "anchorsTo": "panel-d.time-neuron.x.eventAnchor"},
+-        {"id": "colorbar", "type": "colorLegend", "anchorsTo": "panel-d.zscore"}
+-      ],
++      "annotations": [],
+       "provenance": [
+-        {"target": "plot bbox", "confidence": "medium", "note": "Measured visually from heatmap edges and axis tick placement."},
+-        {"target": "heatmap values", "confidence": "low", "note": "Generated texture approximates visible sorted activity motifs; no source data were recovered."},
+-        {"target": "text", "confidence": "medium-high", "note": "Visible title, axis labels, epoch labels, and tick labels transcribed from the raster."},
+-        {"target": "colorbar tick labels", "confidence": "low", "note": "Right edge is cropped in the prompt; z-score title is visible and tick values are inferred from standard diverging scale layout."}
++        {"target": "panel-d.xy", "confidence": "high", "note": "Plot bounds and ticks estimated from visible axes."},
++        {"target": "panel-d-z", "confidence": "low", "note": "Colorbar numeric ticks are cropped/absent in source crop; only label and diverging scale are represented."}
+       ]
+     }
+   ],
+-  "constraints": [
+-    {"id": "source-is-qa-only", "description": "Generated candidate must not render the source raster as a candidate layer."},
+-    {"id": "shared-time-transform", "description": "X ticks, epoch labels, heatmap bbox, and movement-onset line share the named time transform."},
+-    {"id": "editable-axes", "description": "Axis labels, tick labels, epoch labels, event line, and colorbar are SVG/DOM objects generated from JSON."}
+-  ],
++  "rendering": {
++    "layerOrder": ["background", "heatmap", "axes", "eventLine", "labels", "colorbar"],
++    "styleTokens": {
++      "axisStroke": "#111111",
++      "axisWidth": 1,
++      "tickFontSize": 14,
++      "phaseFontSize": 14
++    }
++  },
+   "validation": {
+     "expectedCanvas": {"width": 382, "height": 296},
+-    "expectedHeatmapRows": 200,
+-    "expectedXAxisTicks": [-1, -0.5, 0, 0.5, 1],
+-    "expectedYAxisTicks": [1, 50, 100, 150, 200],
+-    "sourceReuseCheck": [
+-      "No candidate canvas source-raster blit calls.",
+-      "No CSS background using the source path.",
+-      "Source image appears only in the QA reference img element."
+-    ]
++    "mustNotUseSourceRasterAsLayer": true,
++    "expectedEventAnchors": [{"id": "panel-d-movement-onset", "xValue": 0}],
++    "expectedTickCounts": {"x": 5, "y": 5}
+   },
+   "confidence": [
+-    {"target": "overall first-pass visual match", "confidence": "medium-low", "note": "Suitable for visual inspection; editable layout and qualitative heatmap structure are represented, but activity values are synthetic."}
++    {"target": "heatmap-data", "confidence": "medium", "note": "Generated statistical texture, semantic and editable but not source pixel data."},
++    {"target": "typography", "confidence": "medium", "note": "Approximate Arial-compatible publication typography."}
+   ]
+ }
+
+diff --git a/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.html b/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.html
+index 4bf144a30dd6c85200487ebb606bd0a7aa531167..48bddeb0c7f4aa54fdf62640883aae13bbff6ef6
+--- a/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.html
++++ b/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.html
+@@ -11,369 +11,251 @@
+       color: #111111;
+       font-family: Arial, Helvetica, sans-serif;
+     }
+-    header {
+-      display: flex;
+-      align-items: center;
+-      justify-content: space-between;
+-      gap: 16px;
+-      padding: 10px 14px;
+-      background: #ffffff;
+-      border-bottom: 1px solid #cfcfcf;
+-    }
+-    h1 {
+-      margin: 0;
+-      font-size: 16px;
+-      font-weight: 700;
+-    }
+-    .note {
+-      margin-top: 3px;
+-      font-size: 12px;
+-      color: #555555;
+-    }
+-    .toggle {
+-      display: inline-flex;
+-      border: 1px solid #aaaaaa;
+-      border-radius: 4px;
+-      overflow: hidden;
+-      flex: 0 0 auto;
+-    }
+-    .toggle button {
+-      border: 0;
+-      padding: 5px 10px;
+-      background: #ffffff;
+-      color: #111111;
+-      font: inherit;
+-      font-size: 12px;
+-      cursor: pointer;
+-    }
+-    .toggle button.active {
+-      background: #111111;
+-      color: #ffffff;
+-    }
+     main {
+-      min-height: calc(100vh - 48px);
++      min-height: 100vh;
+       display: grid;
+       place-items: center;
+       padding: 16px;
+       box-sizing: border-box;
+     }
+-    .frame {
++    #frame {
+       position: relative;
++      width: 382px;
++      height: 296px;
+       background: #ffffff;
+-      border: 1px solid #d0d0d0;
+-      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+       overflow: hidden;
+     }
+-    .surface, .reference {
++    canvas, svg {
+       position: absolute;
+       inset: 0;
+     }
+-    .reference {
+-      display: none;
+-      width: 100%;
+-      height: 100%;
+-      object-fit: contain;
+-      background-color: #ffffff;
+-    }
+-    .show-reference .surface {
+-      display: none;
+-    }
+-    .show-reference .reference {
+-      display: block;
++    text {
++      dominant-baseline: alphabetic;
++      fill: #111111;
+     }
+-    canvas, svg {
+-      position: absolute;
+-      inset: 0;
+-    }
+   </style>
+ </head>
+ <body>
+-  <header>
+-    <div>
+-      <h1 id="title">reference-04-motor-manifold-D</h1>
+-      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+-    </div>
+-    <div class="toggle" aria-label="View mode">
+-      <button id="generatedButton" class="active" type="button">Generated</button>
+-      <button id="referenceButton" type="button">QA reference</button>
+-    </div>
+-  </header>
+   <main>
+-    <div id="frame" class="frame">
+-      <div id="surface" class="surface"></div>
+-      <img id="reference" class="reference" alt="QA reference source image">
+-    </div>
++    <div id="frame" aria-label="Generated reconstruction from semantic JSON"></div>
+   </main>
+   <script>
+-    const SPEC_URL = './reference-04-motor-manifold-D.json';
+     const SVG_NS = 'http://www.w3.org/2000/svg';
+ 
+-    function byId(id) {
+-      return document.getElementById(id);
+-    }
+-
+-    function node(tag, attrs = {}) {
+-      const item = document.createElementNS(SVG_NS, tag);
++    function makeSvg(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
+       for (const [key, value] of Object.entries(attrs)) {
+-        if (value !== undefined && value !== null) item.setAttribute(key, value);
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
+       }
+-      return item;
++      return node;
+     }
+ 
+-    function seeded(seed) {
+-      let state = seed >>> 0;
+-      return () => {
+-        state = (1664525 * state + 1013904223) >>> 0;
+-        return state / 4294967296;
++    function mulberry32(seed) {
++      return function random() {
++        let t = seed += 0x6D2B79F5;
++        t = Math.imul(t ^ (t >>> 15), t | 1);
++        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
++        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+       };
+     }
+ 
+-    function clamp(value, min, max) {
+-      return Math.max(min, Math.min(max, value));
++    function gaussian(x, center, width) {
++      const z = (x - center) / width;
++      return Math.exp(-0.5 * z * z);
+     }
+ 
+-    function lerp(a, b, t) {
+-      return a + (b - a) * t;
+-    }
+-
+     function scale(domain, range, value) {
+       return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+     }
+ 
+-    function mixColor(a, b, t) {
++    function colorForZ(z, colorScale) {
++      const clamped = Math.max(colorScale.domain[0], Math.min(colorScale.domain[2], z));
++      const neg = [25, 69, 216];
++      const mid = [243, 243, 243];
++      const pos = [215, 25, 28];
++      const t = clamped < 0 ? Math.abs(clamped / colorScale.domain[0]) : clamped / colorScale.domain[2];
++      const from = mid;
++      const to = clamped < 0 ? neg : pos;
++      const mix = Math.pow(t, 0.72);
+       return [
+-        Math.round(lerp(a[0], b[0], t)),
+-        Math.round(lerp(a[1], b[1], t)),
+-        Math.round(lerp(a[2], b[2], t))
++        Math.round(from[0] + (to[0] - from[0]) * mix),
++        Math.round(from[1] + (to[1] - from[1]) * mix),
++        Math.round(from[2] + (to[2] - from[2]) * mix)
+       ];
+     }
+ 
+-    function parseHex(hex) {
+-      const value = hex.replace('#', '');
+-      return [
+-        parseInt(value.slice(0, 2), 16),
+-        parseInt(value.slice(2, 4), 16),
+-        parseInt(value.slice(4, 6), 16)
+-      ];
++    function heatValue(time, row, recipe, randomValue) {
++      let z = (randomValue - 0.5) * 2 * recipe.backgroundNoise;
++      z += 0.18 * Math.sin(row * 0.41 + time * 13.0);
++      z += 0.12 * Math.sin(row * 0.13 - time * 21.0);
++      for (const f of recipe.features) {
++        if (f.kind === 'blueDelayBand') {
++          z += f.amplitude * gaussian(time, f.centerTime, f.width) * gaussian(row, f.rowCenter, f.rowWidth);
++        } else if (f.kind === 'redMoveRidge') {
++          const ridge = f.centerTime + (row - f.rowCenter) * f.slope;
++          z += f.amplitude * gaussian(time, ridge, f.width) * gaussian(row, f.rowCenter, f.rowWidth);
++        } else if (f.kind === 'bluePostMoveBand') {
++          z += f.amplitude * gaussian(time, f.centerTime, f.width) * gaussian(row, f.rowCenter, f.rowWidth);
++        } else if (f.kind === 'redHoldPatch') {
++          z += f.amplitude * gaussian(time, f.centerTime, f.width) * gaussian(row, f.rowCenter, f.rowWidth);
++        } else if (f.kind === 'earlyMixedStripes') {
++          z += f.amplitude * gaussian(time, f.centerTime, f.width) * Math.sin(row / f.rowPeriod * Math.PI * 2);
++        }
++      }
++      return z;
+     }
+ 
+-    function colorScaleFactory(system) {
+-      const stops = system.stops.map(stop => ({value: stop.value, rgb: parseHex(stop.color)})).sort((a, b) => a.value - b.value);
+-      return value => {
+-        const v = clamp(value, stops[0].value, stops[stops.length - 1].value);
+-        for (let i = 0; i < stops.length - 1; i += 1) {
+-          const left = stops[i];
+-          const right = stops[i + 1];
+-          if (v >= left.value && v <= right.value) {
+-            const t = (v - left.value) / (right.value - left.value);
+-            return mixColor(left.rgb, right.rgb, t);
+-          }
++    function renderHeatmap(ctx, panel, colorScale) {
++      const mark = panel.marks.find(item => item.type === 'heatmap');
++      const box = panel.plot.bbox;
++      const rows = mark.matrix.rows;
++      const cols = mark.matrix.cols;
++      const image = ctx.createImageData(cols, rows);
++      const random = mulberry32(mark.recipe.seed);
++      const rowOffsets = Array.from({length: rows}, () => (random() - 0.5) * 0.55);
++      const noise = Array.from({length: rows}, () => Array.from({length: cols}, () => random()));
++      for (let r = 0; r < rows; r++) {
++        for (let c = 0; c < cols; c++) {
++          const time = scale([0, cols - 1], panel.plot.x.domain, c);
++          const neuron = scale([0, rows - 1], panel.plot.y.domain, r);
++          const smoothedNoise = (
++            noise[r][c] +
++            noise[Math.max(0, r - 1)][c] +
++            noise[Math.min(rows - 1, r + 1)][c] +
++            noise[r][Math.max(0, c - 1)] +
++            noise[r][Math.min(cols - 1, c + 1)]
++          ) / 5;
++          const z = heatValue(time, neuron, mark.recipe, smoothedNoise) + rowOffsets[r];
++          const rgb = colorForZ(z, colorScale);
++          const i = (r * cols + c) * 4;
++          image.data[i] = rgb[0];
++          image.data[i + 1] = rgb[1];
++          image.data[i + 2] = rgb[2];
++          image.data[i + 3] = 230;
+         }
+-        return stops[stops.length - 1].rgb;
+-      };
++      }
++      const offscreen = document.createElement('canvas');
++      offscreen.width = cols;
++      offscreen.height = rows;
++      const offscreenContext = offscreen.getContext('2d');
++      offscreenContext.putImageData(image, 0, 0);
++      const sourceData = offscreenContext.getImageData(0, 0, cols, rows);
++      const scaled = ctx.createImageData(box.width, box.height);
++      for (let y = 0; y < box.height; y++) {
++        const sy = Math.min(rows - 1, Math.floor(y / box.height * rows));
++        for (let x = 0; x < box.width; x++) {
++          const sx = Math.min(cols - 1, Math.floor(x / box.width * cols));
++          const src = (sy * cols + sx) * 4;
++          const dst = (y * box.width + x) * 4;
++          scaled.data[dst] = sourceData.data[src];
++          scaled.data[dst + 1] = sourceData.data[src + 1];
++          scaled.data[dst + 2] = sourceData.data[src + 2];
++          scaled.data[dst + 3] = sourceData.data[src + 3];
++        }
++      }
++      ctx.putImageData(scaled, box.x, box.y);
+     }
+ 
+-    function addText(svg, spec, defaults = {}) {
+-      const text = node('text', {
+-        x: spec.x,
+-        y: spec.y,
+-        fill: spec.fill || defaults.color || '#111111',
+-        'font-family': spec.fontFamily || defaults.fontFamily || 'Arial, Helvetica, sans-serif',
+-        'font-size': spec.fontSize || defaults.defaultSize || 13,
+-        'font-weight': spec.fontWeight || 400,
+-        'text-anchor': spec.anchor || 'start',
+-        'dominant-baseline': spec.baseline || 'alphabetic',
+-        'letter-spacing': spec.letterSpacing ?? defaults.calibration?.letterSpacing ?? 0,
+-        transform: spec.rotation ? `rotate(${spec.rotation} ${spec.x} ${spec.y})` : undefined,
+-        'data-id': spec.id,
+-        'data-role': spec.role || 'text',
+-        'data-anchor-to': spec.anchorTo || undefined
++    function renderText(svg, item, typography, extra = {}) {
++      const text = makeSvg('text', {
++        x: item.x,
++        y: item.y,
++        'font-family': item.fontFamily || typography.fontFamily,
++        'font-size': item.fontSize || typography.defaultSize,
++        'font-weight': item.fontWeight || 400,
++        'text-anchor': item.anchor || 'start',
++        transform: item.rotation ? `rotate(${item.rotation} ${item.x} ${item.y})` : undefined,
++        id: item.id,
++        ...extra
+       });
+-      text.textContent = spec.text || '';
++      text.textContent = item.text;
+       svg.appendChild(text);
+-      return text;
+-    }
+-
+-    function systemsById(spec) {
+-      return Object.fromEntries((spec.coordinateSystems || []).map(system => [system.id, system]));
+-    }
+-
+-    function recipeById(panel, id) {
+-      return Object.values(panel.data || {}).find(item => item && item.id === id);
+     }
+ 
+-    function gaussian(x, center, sigma) {
+-      const z = (x - center) / sigma;
+-      return Math.exp(-0.5 * z * z);
+-    }
+-
+-    function renderHeatmap(ctx, panel, mark, systems) {
+-      const recipe = recipeById(panel, mark.dataRecipe);
+-      const colorSystem = systems[mark.colorScale];
+-      const colorFor = colorScaleFactory(colorSystem);
+-      const random = seeded(recipe.seed || 1);
+-      const box = mark.bbox;
+-      const cols = recipe.columns;
+-      const rows = recipe.rows;
+-      const image = ctx.createImageData(cols, rows);
+-      const speckles = [];
+-      for (let i = 0; i < recipe.horizontalSpeckles.count; i += 1) {
+-        const row = Math.floor(random() * rows);
+-        const start = Math.floor(random() * cols);
+-        const length = Math.floor(lerp(recipe.horizontalSpeckles.lengthRange[0], recipe.horizontalSpeckles.lengthRange[1], random()));
+-        const polarity = random() < recipe.horizontalSpeckles.polarityBalance ? 1 : -1;
+-        const amplitude = lerp(recipe.horizontalSpeckles.amplitudeRange[0], recipe.horizontalSpeckles.amplitudeRange[1], random()) * polarity;
+-        speckles.push({row, start, length, amplitude});
+-      }
+-      for (let y = 0; y < rows; y += 1) {
+-        const neuron = 1 + y / (rows - 1) * 199;
+-        for (let x = 0; x < cols; x += 1) {
+-          const time = -1 + x / (cols - 1) * 2;
+-          let value = (random() - 0.5) * recipe.baselineNoise;
+-          value += 0.08 * Math.sin(y * 0.31 + x * 0.08);
+-          value += 0.05 * Math.sin(y * 0.09 - x * 0.17);
+-          for (const band of recipe.bands) {
+-            const driftedCenter = band.timeCenter + 0.16 * Math.sin((neuron - band.rowCenter) / 58);
+-            value += band.amplitude * gaussian(neuron, band.rowCenter, band.rowSigma) * gaussian(time, driftedCenter, band.timeSigma);
+-          }
+-          for (const speckle of speckles) {
+-            if (Math.abs(y - speckle.row) <= 1 && x >= speckle.start && x <= speckle.start + speckle.length) {
+-              value += speckle.amplitude;
+-            }
+-          }
+-          const rgb = colorFor(value);
+-          const off = (y * cols + x) * 4;
+-          image.data[off] = rgb[0];
+-          image.data[off + 1] = rgb[1];
+-          image.data[off + 2] = rgb[2];
+-          image.data[off + 3] = 255;
+-        }
+-      }
+-      const scratch = document.createElement('canvas');
+-      scratch.width = cols;
+-      scratch.height = rows;
+-      scratch.getContext('2d').putImageData(image, 0, 0);
+-      ctx.save();
+-      ctx.imageSmoothingEnabled = false;
+-      ctx.drawImage(scratch, box.x, box.y, box.width, box.height);
+-      ctx.restore();
+-    }
+-
+-    function drawAxes(svg, panel, defaults) {
++    function renderAxes(svg, panel, typography, tokens) {
+       const plot = panel.plot;
+       const box = plot.bbox;
+-      const xDomain = plot.x.domain;
+-      const yDomain = plot.y.domain;
+-      const xPx = value => scale(xDomain, [box.x, box.x + box.width], value);
+-      const yPx = value => scale(yDomain, [box.y, box.y + box.height], value);
+-      const axis = {stroke: '#111111', 'stroke-width': 1.05, fill: 'none'};
+-      svg.appendChild(node('rect', {...axis, x: box.x, y: box.y, width: box.width, height: box.height, 'data-role': 'plot-frame'}));
++      const xScale = value => scale(plot.x.domain, [box.x, box.x + box.width], value);
++      const yScale = value => scale(plot.y.domain, [box.y, box.y + box.height], value);
++      svg.appendChild(makeSvg('rect', {x: box.x, y: box.y, width: box.width, height: box.height, fill: 'none', stroke: tokens.axisStroke, 'stroke-width': tokens.axisWidth}));
+       for (const tick of plot.x.ticks) {
+-        const x = xPx(tick.value);
+-        svg.appendChild(node('line', {...axis, x1: x, y1: box.y + box.height, x2: x, y2: box.y + box.height + 5, 'data-role': 'axis-tick-mark', 'data-axis': plot.x.id, 'data-value': tick.value}));
+-        addText(svg, {text: tick.label, x, y: box.y + box.height + 20, fontSize: 14, anchor: 'middle', role: 'tick-label'}, defaults);
++        const x = xScale(tick.value);
++        svg.appendChild(makeSvg('line', {x1: x, y1: box.y + box.height, x2: x, y2: box.y + box.height + 4, stroke: tokens.axisStroke, 'stroke-width': 1, 'data-axis': 'x', 'data-value': tick.value}));
++        renderText(svg, {text: tick.label, x, y: box.y + box.height + 21, fontSize: tokens.tickFontSize, anchor: 'middle'}, typography);
+       }
+       for (const tick of plot.y.ticks) {
+-        const y = yPx(tick.value);
+-        svg.appendChild(node('line', {...axis, x1: box.x - 5, y1: y, x2: box.x, y2: y, 'data-role': 'axis-tick-mark', 'data-axis': plot.y.id, 'data-value': tick.value}));
+-        addText(svg, {text: tick.label, x: box.x - 10, y: y + 4, fontSize: 14, anchor: 'end', role: 'tick-label'}, defaults);
++        const y = yScale(tick.value);
++        svg.appendChild(makeSvg('line', {x1: box.x - 4, y1: y, x2: box.x, y2: y, stroke: tokens.axisStroke, 'stroke-width': 1, 'data-axis': 'y', 'data-value': tick.value}));
++        renderText(svg, {text: tick.label, x: box.x - 9, y: y + 5, fontSize: tokens.tickFontSize, anchor: 'end'}, typography);
+       }
+-      addText(svg, {...plot.x.label, role: 'x-axis-label'}, defaults);
+-      addText(svg, {...plot.y.label, role: 'y-axis-label'}, defaults);
+-      for (const label of plot.topEpochLabels || []) addText(svg, {...label, role: 'epoch-label'}, defaults);
++      renderText(svg, plot.x.label, typography);
++      renderText(svg, plot.y.label, typography);
+     }
+ 
+-    function drawEventLine(svg, panel, mark) {
++    function renderEventLine(svg, panel) {
+       const box = panel.plot.bbox;
++      const mark = panel.marks.find(item => item.type === 'eventLine');
+       const x = scale(panel.plot.x.domain, [box.x, box.x + box.width], mark.xValue);
+-      svg.appendChild(node('line', {
+-        x1: x, y1: mark.y1, x2: x, y2: mark.y2,
+-        stroke: mark.stroke || '#111111',
+-        'stroke-width': mark.strokeWidth || 1,
+-        'data-role': 'event-line',
+-        'data-id': mark.id,
+-        'data-event-anchor': mark.eventAnchor
+-      }));
++      svg.appendChild(makeSvg('line', {id: mark.id, x1: x, y1: mark.y1, x2: x, y2: mark.y2, stroke: mark.stroke, 'stroke-width': mark.strokeWidth, 'data-anchor': mark.anchorTo}));
+     }
+ 
+-    function drawColorbar(svg, panel, systems, defaults) {
+-      const legend = panel.legend;
+-      const scaleSystem = systems[legend.scale];
+-      const colorFor = colorScaleFactory(scaleSystem);
+-      const box = legend.bbox;
+-      const defs = node('defs');
+-      const gradient = node('linearGradient', {id: `${legend.id}-gradient`, x1: '0', y1: '1', x2: '0', y2: '0'});
+-      const domain = scaleSystem.domain;
+-      scaleSystem.stops.forEach(stop => {
+-        const offset = 100 * (stop.value - domain[0]) / (domain[domain.length - 1] - domain[0]);
+-        gradient.appendChild(node('stop', {offset: `${offset}%`, 'stop-color': stop.color}));
+-      });
+-      defs.appendChild(gradient);
+-      svg.appendChild(defs);
+-      svg.appendChild(node('rect', {x: box.x, y: box.y, width: box.width, height: box.height, fill: `url(#${legend.id}-gradient)`, stroke: '#333333', 'stroke-width': 0.6, 'data-role': 'colorbar'}));
+-      addText(svg, {...legend.title, role: 'colorbar-title'}, defaults);
+-      for (const tick of legend.ticks || []) {
+-        const y = scale([domain[0], domain[domain.length - 1]], [box.y + box.height, box.y], tick.value);
+-        const rgb = colorFor(tick.value);
+-        svg.appendChild(node('line', {x1: box.x + box.width, y1: y, x2: box.x + box.width + 4, y2: y, stroke: '#111111', 'stroke-width': 0.8, 'data-role': 'colorbar-tick', 'data-value': tick.value}));
+-        addText(svg, {text: tick.label, x: box.x + box.width + 7, y: y + 4, fontSize: 10, anchor: 'start', fill: `rgb(${rgb.join(',')})`, role: 'colorbar-tick-label'}, defaults);
++    function renderColorbar(ctx, svg, panel, colorScale, typography) {
++      const object = panel.layoutObjects.find(item => item.type === 'colorbar');
++      const box = object.bbox;
++      const image = ctx.createImageData(box.width, box.height);
++      for (let y = 0; y < box.height; y++) {
++        const z = scale([0, box.height - 1], [colorScale.domain[2], colorScale.domain[0]], y);
++        const rgb = colorForZ(z, colorScale);
++        for (let x = 0; x < box.width; x++) {
++          const i = (y * box.width + x) * 4;
++          image.data[i] = rgb[0];
++          image.data[i + 1] = rgb[1];
++          image.data[i + 2] = rgb[2];
++          image.data[i + 3] = 255;
++        }
+       }
++      ctx.putImageData(image, box.x, box.y);
++      svg.appendChild(makeSvg('rect', {x: box.x, y: box.y, width: box.width, height: box.height, fill: 'none', stroke: '#333333', 'stroke-width': 0.7}));
++      renderText(svg, object.label, typography);
+     }
+ 
+-    function render(spec) {
+-      const frame = byId('frame');
+-      const surface = byId('surface');
+-      const reference = byId('reference');
+-      const canvasSpec = spec.canvas;
+-      const defaults = spec.typography || {};
+-      const systems = systemsById(spec);
+-      byId('title').textContent = spec.id;
+-      frame.style.width = `${canvasSpec.width}px`;
+-      frame.style.height = `${canvasSpec.height}px`;
+-      frame.style.background = canvasSpec.background || '#ffffff';
+-      reference.src = spec.source.path;
+-      surface.innerHTML = '';
++    async function loadSpec() {
++      const response = await fetch('reference-04-motor-manifold-D.json');
++      if (!response.ok) throw new Error(`Unable to load JSON spec: ${response.status}`);
++      return response.json();
++    }
++
++    async function render() {
++      const spec = await loadSpec();
++      const frame = document.getElementById('frame');
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      frame.style.background = spec.canvas.background;
+       const canvas = document.createElement('canvas');
+-      canvas.width = canvasSpec.width;
+-      canvas.height = canvasSpec.height;
+-      surface.appendChild(canvas);
++      canvas.width = spec.canvas.width;
++      canvas.height = spec.canvas.height;
+       const ctx = canvas.getContext('2d');
+-      ctx.fillStyle = canvasSpec.background || '#ffffff';
++      ctx.fillStyle = spec.canvas.background;
+       ctx.fillRect(0, 0, canvas.width, canvas.height);
+-      const svg = node('svg', {width: canvasSpec.width, height: canvasSpec.height, viewBox: `0 0 ${canvasSpec.width} ${canvasSpec.height}`, role: 'img', 'aria-label': `${spec.id} generated reconstruction`});
+-      surface.appendChild(svg);
+-      for (const panel of spec.panels || []) {
+-        for (const mark of panel.marks || []) {
+-          if (mark.type === 'heatmapRecipe') renderHeatmap(ctx, panel, mark, systems);
+-        }
+-        addText(svg, panel.label, defaults);
+-        addText(svg, panel.title, defaults);
+-        drawAxes(svg, panel, defaults);
+-        for (const mark of panel.marks || []) {
+-          if (mark.type === 'eventLine') drawEventLine(svg, panel, mark);
+-        }
+-        drawColorbar(svg, panel, systems, defaults);
+-      }
++      const svg = makeSvg('svg', {width: spec.canvas.width, height: spec.canvas.height, viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, role: 'img'});
++      frame.appendChild(canvas);
++      frame.appendChild(svg);
++      const panel = spec.panels[0];
++      const colorScale = spec.coordinateSystems.find(item => item.id === 'panel-d.z');
++      renderHeatmap(ctx, panel, colorScale);
++      renderColorbar(ctx, svg, panel, colorScale, spec.typography);
++      renderAxes(svg, panel, spec.typography, spec.rendering.styleTokens);
++      renderEventLine(svg, panel);
++      renderText(svg, panel.label, spec.typography);
++      renderText(svg, panel.title, spec.typography);
++      const phases = panel.layoutObjects.find(item => item.type === 'phaseLabels');
++      for (const item of phases.items) renderText(svg, item, spec.typography);
+     }
+ 
+-    byId('generatedButton').onclick = () => {
+-      byId('frame').classList.remove('show-reference');
+-      byId('generatedButton').classList.add('active');
+-      byId('referenceButton').classList.remove('active');
+-    };
+-
+-    byId('referenceButton').onclick = () => {
+-      byId('frame').classList.add('show-reference');
+-      byId('referenceButton').classList.add('active');
+-      byId('generatedButton').classList.remove('active');
+-    };
+-
+-    fetch(SPEC_URL, {cache: 'no-store'})
+-      .then(response => response.json())
+-      .then(render)
+-      .catch(error => {
+-        console.error('Unable to load reconstruction spec', error);
+-      });
++    render().catch(error => {
++      document.body.textContent = error.message;
++      console.error(error);
++    });
+   </script>
+ </body>
+ </html>
+diff --git a/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.json b/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.json
+index a19297892ea93063f4d2e58db46145012b0d0172..daebdf865bccef45217e3f0e8704a7c73b3e27dc
+--- a/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.json
++++ b/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.json
+@@ -3,75 +3,75 @@
+   "id": "reference-04-motor-manifold-D",
+   "source": {
+     "path": "../../assets/reference/reference-04-motor-manifold-D-reference.png",
+-    "usage": "QA-only; not used by generated candidate.",
+-    "nativeSize": {"width": 382, "height": 296},
+-    "notes": "Single heatmap panel inspected visually. Dense activity is generated from semantic recipes and calibrated layout, not copied from source pixels."
++    "usage": "QA/reference only; not rendered by generated candidate.",
++    "notes": "Single heatmap panel D showing peristimulus time aligned to movement onset. Dense field is reconstructed from semantic recipes, not the source raster."
++  },
++  "canvas": {
++    "width": 382,
++    "height": 296,
++    "background": "#ffffff"
+   },
+-  "canvas": {"width": 382, "height": 296, "background": "#ffffff"},
+   "typography": {
+     "fontFamily": "Arial, Helvetica, sans-serif",
+-    "defaultSize": 14,
++    "defaultSize": 12,
+     "color": "#111111",
+     "fontImports": [],
+     "fontFaces": [],
+-    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Source Sans 3"],
++    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Roboto"],
+     "calibration": {
+       "letterSpacing": 0,
+-      "lineHeight": 1.05,
+-      "notes": "First-pass visual typography fit to panel crop; no font-scoring harness was run."
++      "lineHeight": 1.08,
++      "notes": "Approximate Arial-like sizing matched visually to the source crop."
+     }
+   },
+   "coordinateSystems": [
+     {
+-      "id": "panel-d.time-neuron",
+-      "type": "cartesianHeatmap",
+-      "x": {"domain": [-1, 1], "range": [56, 350], "eventAnchor": {"id": "movement-onset", "value": 0, "pixel": 192}},
+-      "y": {"domain": [1, 200], "range": [62, 252], "sort": "neurons sorted by peri-movement response timing"}
++      "id": "panel-d.xy",
++      "type": "cartesian",
++      "xDomain": [-1, 1],
++      "yDomain": [1, 200],
++      "dataBbox": {"x": 57, "y": 58, "width": 292, "height": 194}
+     },
+     {
+-      "id": "panel-d.zscore",
++      "id": "panel-d.z",
+       "type": "divergingColorScale",
+       "domain": [-2, 0, 2],
+-      "stops": [
+-        {"value": -2, "color": "#1f3fda"},
+-        {"value": 0, "color": "#f7f7f7"},
+-        {"value": 2, "color": "#d7191c"}
+-      ],
+-      "missingColor": "#ffffff"
++      "negative": "#1945d8",
++      "neutral": "#f3f3f3",
++      "positive": "#d7191c"
+     }
+   ],
+   "panels": [
+     {
+       "id": "panel-d",
++      "bbox": {"x": 0, "y": 0, "width": 382, "height": 296},
+       "label": {
+-        "id": "panel-label",
++        "id": "panel-d-label",
+         "text": "D",
+         "x": 8,
+         "y": 25,
++        "fontFamily": "Arial, Helvetica, sans-serif",
+         "fontSize": 20,
+         "fontWeight": 700,
+-        "sourceBox": {"x": 8, "y": 9, "width": 13, "height": 20},
+-        "fit": "visual"
++        "anchor": "start",
++        "sourceBox": {"x": 7, "y": 8, "width": 15, "height": 21}
+       },
+       "title": {
+-        "id": "panel-title",
++        "id": "panel-d-title",
+         "text": "Peristimulus time (aligned to movement onset)",
+-        "x": 36,
++        "x": 35,
+         "y": 25,
++        "fontFamily": "Arial, Helvetica, sans-serif",
+         "fontSize": 16,
+-        "fontWeight": 700,
+-        "sourceBox": {"x": 35, "y": 10, "width": 315, "height": 19},
+-        "fit": "visual"
++        "fontWeight": 400,
++        "anchor": "start",
++        "sourceBox": {"x": 35, "y": 12, "width": 286, "height": 18}
+       },
+-      "bbox": {"x": 0, "y": 0, "width": 382, "height": 296},
+       "plot": {
+-        "id": "peristimulus-heatmap",
+-        "usesTransform": "panel-d.time-neuron",
+-        "bbox": {"x": 56, "y": 62, "width": 294, "height": 190},
+-        "clip": true,
++        "id": "panel-d-heatmap-plot",
++        "usesTransform": "panel-d.xy",
++        "bbox": {"x": 57, "y": 58, "width": 292, "height": 194},
+         "x": {
+-          "id": "time-axis",
+-          "scale": "linear",
+           "domain": [-1, 1],
+           "ticks": [
+             {"value": -1, "label": "-1.0"},
+@@ -80,11 +80,9 @@
+             {"value": 0.5, "label": "0.5"},
+             {"value": 1, "label": "1.0"}
+           ],
+-          "label": {"id": "x-axis-label", "text": "Time (s)", "x": 192, "y": 292, "fontSize": 14, "anchor": "middle"}
++          "label": {"id": "panel-d-x-label", "text": "Time (s)", "x": 203, "y": 293, "fontSize": 14, "anchor": "middle"}
+         },
+         "y": {
+-          "id": "neuron-axis",
+-          "scale": "linear",
+           "domain": [1, 200],
+           "ticks": [
+             {"value": 1, "label": "1"},
+@@ -93,101 +91,94 @@
+             {"value": 150, "label": "150"},
+             {"value": 200, "label": "200"}
+           ],
+-          "label": {"id": "y-axis-label", "text": "Neuron (sorted)", "x": 17, "y": 157, "fontSize": 14, "rotation": -90, "anchor": "middle"}
++          "label": {"id": "panel-d-y-label", "text": "Neuron (sorted)", "x": 17, "y": 157, "fontSize": 14, "anchor": "middle", "rotation": -90}
+         },
+-        "topEpochLabels": [
+-          {"id": "cue-label", "text": "Cue", "x": 92, "y": 52, "fontSize": 12, "anchor": "middle", "anchorTo": "time-axis:-0.75"},
+-          {"id": "delay-label", "text": "Delay", "x": 158, "y": 52, "fontSize": 12, "anchor": "middle", "anchorTo": "time-axis:-0.25"},
+-          {"id": "move-label", "text": "Move", "x": 229, "y": 52, "fontSize": 12, "anchor": "middle", "anchorTo": "movement-onset"},
+-          {"id": "hold-label", "text": "Hold", "x": 306, "y": 52, "fontSize": 12, "anchor": "middle", "anchorTo": "time-axis:0.75"}
+-        ]
+-      },
+-      "data": {
+-        "heatmapRecipe": {
+-          "id": "sorted-peristimulus-zscore",
+-          "type": "syntheticSortedNeuralHeatmap",
+-          "seed": 4044,
+-          "rows": 200,
+-          "columns": 260,
+-          "rowSmoothing": 0.45,
+-          "columnSmoothing": 0.55,
+-          "baselineNoise": 0.32,
+-          "bands": [
+-            {"id": "early-blue", "rowCenter": 28, "rowSigma": 32, "timeCenter": -0.32, "timeSigma": 0.24, "amplitude": -1.2},
+-            {"id": "movement-red", "rowCenter": 79, "rowSigma": 34, "timeCenter": 0.11, "timeSigma": 0.16, "amplitude": 1.85},
+-            {"id": "post-blue", "rowCenter": 73, "rowSigma": 45, "timeCenter": 0.54, "timeSigma": 0.35, "amplitude": -1.25},
+-            {"id": "late-red", "rowCenter": 163, "rowSigma": 31, "timeCenter": 0.43, "timeSigma": 0.18, "amplitude": 1.45},
+-            {"id": "lower-blue", "rowCenter": 177, "rowSigma": 42, "timeCenter": -0.02, "timeSigma": 0.23, "amplitude": -1.15},
+-            {"id": "cue-red-flecks", "rowCenter": 34, "rowSigma": 48, "timeCenter": -0.75, "timeSigma": 0.21, "amplitude": 0.65}
+-          ],
+-          "horizontalSpeckles": {"count": 420, "lengthRange": [4, 18], "amplitudeRange": [0.35, 1.05], "polarityBalance": 0.52},
+-          "description": "Low-amplitude streaked z-scored activity with a red diagonal movement-onset band, blue suppression around and after movement, and sparse red/blue horizontal streaks."
++        "axes": {
++          "xAxis": {"id": "panel-d-x-axis", "line": {"x1": 57, "y1": 252, "x2": 349, "y2": 252}, "tickLength": 4},
++          "yAxis": {"id": "panel-d-y-axis", "line": {"x1": 57, "y1": 58, "x2": 57, "y2": 252}, "tickLength": 4}
+         }
+       },
++      "layoutObjects": [
++        {
++          "id": "panel-d-phase-labels",
++          "type": "phaseLabels",
++          "anchorTo": "panel-d.x",
++          "items": [
++            {"text": "Cue", "x": 92, "y": 51, "fontSize": 14, "anchor": "middle"},
++            {"text": "Delay", "x": 158, "y": 51, "fontSize": 14, "anchor": "middle"},
++            {"text": "Move", "x": 229, "y": 51, "fontSize": 14, "anchor": "middle"},
++            {"text": "Hold", "x": 306, "y": 51, "fontSize": 14, "anchor": "middle"}
++          ]
++        },
++        {
++          "id": "panel-d-colorbar",
++          "type": "colorbar",
++          "colorScale": "panel-d.z",
++          "bbox": {"x": 372, "y": 147, "width": 10, "height": 93},
++          "label": {"text": "z-score", "x": 366, "y": 135, "fontSize": 13, "anchor": "start"},
++          "ticks": []
++        }
++      ],
+       "marks": [
+         {
+-          "id": "zscore-heatmap",
+-          "type": "heatmapRecipe",
+-          "renderer": "canvas",
+-          "bbox": {"x": 56, "y": 62, "width": 294, "height": 190},
+-          "usesTransform": "panel-d.time-neuron",
+-          "colorScale": "panel-d.zscore",
+-          "dataRecipe": "sorted-peristimulus-zscore",
+-          "interpolation": "nearest"
++          "id": "panel-d-synthetic-heatmap",
++          "type": "heatmap",
++          "renderer": "canvasImageData",
++          "usesTransform": "panel-d.xy",
++          "colorScale": "panel-d.z",
++          "matrix": {"rows": 200, "cols": 292},
++          "interpolation": false,
++          "recipe": {
++            "type": "rankedPeristimulusField",
++            "seed": 40518,
++            "backgroundNoise": 0.28,
++            "rowSmoothing": 0.42,
++            "timeSmoothing": 0.22,
++            "features": [
++              {"kind": "blueDelayBand", "centerTime": -0.22, "width": 0.23, "amplitude": -0.9, "rowCenter": 92, "rowWidth": 120},
++              {"kind": "redMoveRidge", "centerTime": 0.16, "slope": 0.0027, "width": 0.12, "amplitude": 1.55, "rowCenter": 92, "rowWidth": 82},
++              {"kind": "bluePostMoveBand", "centerTime": 0.43, "width": 0.25, "amplitude": -1.05, "rowCenter": 45, "rowWidth": 72},
++              {"kind": "redHoldPatch", "centerTime": 0.48, "width": 0.16, "amplitude": 1.2, "rowCenter": 162, "rowWidth": 34},
++              {"kind": "earlyMixedStripes", "centerTime": -0.72, "width": 0.22, "amplitude": 0.55, "rowPeriod": 23}
++            ]
++          },
++          "provenance": {"confidence": "medium", "note": "Approximates sorted neuron heatmap texture and broad red/blue temporal structure."}
+         },
+         {
+-          "id": "movement-onset-line",
++          "id": "panel-d-movement-onset",
+           "type": "eventLine",
++          "anchorTo": "x=0",
+           "xValue": 0,
+-          "eventAnchor": "movement-onset",
+           "y1": 58,
+-          "y2": 254,
+-          "stroke": "#111111",
++          "y2": 252,
++          "stroke": "#000000",
+           "strokeWidth": 2
+         }
+       ],
+-      "legend": {
+-        "id": "zscore-colorbar",
+-        "type": "verticalColorbar",
+-        "scale": "panel-d.zscore",
+-        "bbox": {"x": 371, "y": 147, "width": 10, "height": 93},
+-        "title": {"text": "z-score", "x": 366, "y": 136, "fontSize": 11, "anchor": "start"},
+-        "ticks": [
+-          {"value": 2, "label": "2"},
+-          {"value": 0, "label": "0"},
+-          {"value": -2, "label": "-2"}
+-        ]
+-      },
+-      "annotations": [
+-        {"id": "epoch-labels", "type": "textGroup", "anchorsTo": "plot.topEpochLabels"},
+-        {"id": "movement-onset", "type": "eventLine", "anchorsTo": "panel-d.time-neuron.x.eventAnchor"},
+-        {"id": "colorbar", "type": "colorLegend", "anchorsTo": "panel-d.zscore"}
+-      ],
++      "annotations": [],
+       "provenance": [
+-        {"target": "plot bbox", "confidence": "medium", "note": "Measured visually from heatmap edges and axis tick placement."},
+-        {"target": "heatmap values", "confidence": "low", "note": "Generated texture approximates visible sorted activity motifs; no source data were recovered."},
+-        {"target": "text", "confidence": "medium-high", "note": "Visible title, axis labels, epoch labels, and tick labels transcribed from the raster."},
+-        {"target": "colorbar tick labels", "confidence": "low", "note": "Right edge is cropped in the prompt; z-score title is visible and tick values are inferred from standard diverging scale layout."}
++        {"target": "panel-d.xy", "confidence": "high", "note": "Plot bounds and ticks estimated from visible axes."},
++        {"target": "panel-d-z", "confidence": "low", "note": "Colorbar numeric ticks are cropped/absent in source crop; only label and diverging scale are represented."}
+       ]
+     }
+   ],
+-  "constraints": [
+-    {"id": "source-is-qa-only", "description": "Generated candidate must not render the source raster as a candidate layer."},
+-    {"id": "shared-time-transform", "description": "X ticks, epoch labels, heatmap bbox, and movement-onset line share the named time transform."},
+-    {"id": "editable-axes", "description": "Axis labels, tick labels, epoch labels, event line, and colorbar are SVG/DOM objects generated from JSON."}
+-  ],
++  "rendering": {
++    "layerOrder": ["background", "heatmap", "axes", "eventLine", "labels", "colorbar"],
++    "styleTokens": {
++      "axisStroke": "#111111",
++      "axisWidth": 1,
++      "tickFontSize": 14,
++      "phaseFontSize": 14
++    }
++  },
+   "validation": {
+     "expectedCanvas": {"width": 382, "height": 296},
+-    "expectedHeatmapRows": 200,
+-    "expectedXAxisTicks": [-1, -0.5, 0, 0.5, 1],
+-    "expectedYAxisTicks": [1, 50, 100, 150, 200],
+-    "sourceReuseCheck": [
+-      "No candidate canvas source-raster blit calls.",
+-      "No CSS background using the source path.",
+-      "Source image appears only in the QA reference img element."
+-    ]
++    "mustNotUseSourceRasterAsLayer": true,
++    "expectedEventAnchors": [{"id": "panel-d-movement-onset", "xValue": 0}],
++    "expectedTickCounts": {"x": 5, "y": 5}
+   },
+   "confidence": [
+-    {"target": "overall first-pass visual match", "confidence": "medium-low", "note": "Suitable for visual inspection; editable layout and qualitative heatmap structure are represented, but activity values are synthetic."}
++    {"target": "heatmap-data", "confidence": "medium", "note": "Generated statistical texture, semantic and editable but not source pixel data."},
++    {"target": "typography", "confidence": "medium", "note": "Approximate Arial-compatible publication typography."}
+   ]
+ }
+
+codex
+The first pass is written. I’m validating the JSON and scanning both outputs for forbidden raster reuse patterns, including `drawImage`, CSS backgrounds pointing at the source, and direct reference PNG usage in the HTML.
+exec
+/bin/zsh -lc "rg -n \"drawImage|background-image|reference-04-motor-manifold-D-reference|<img|url\\(\" outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.html outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.json" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.json:5:    "path": "../../assets/reference/reference-04-motor-manifold-D-reference.png",
+
+exec
+/bin/zsh -lc 'python3 -m json.tool outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.json >/tmp/reference-04-motor-manifold-D.validated.json' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+exec
+/bin/zsh -lc 'ls -l outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.json outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.html' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+-rw-r--r--  1 alex  staff  11004 Jun  6 16:33 outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.html
+-rw-r--r--  1 alex  staff   6949 Jun  6 16:33 outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.json
+
+diff --git a/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.html b/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.html
+index 4bf144a30dd6c85200487ebb606bd0a7aa531167..48bddeb0c7f4aa54fdf62640883aae13bbff6ef6
+--- a/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.html
++++ b/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.html
+@@ -11,369 +11,251 @@
+       color: #111111;
+       font-family: Arial, Helvetica, sans-serif;
+     }
+-    header {
+-      display: flex;
+-      align-items: center;
+-      justify-content: space-between;
+-      gap: 16px;
+-      padding: 10px 14px;
+-      background: #ffffff;
+-      border-bottom: 1px solid #cfcfcf;
+-    }
+-    h1 {
+-      margin: 0;
+-      font-size: 16px;
+-      font-weight: 700;
+-    }
+-    .note {
+-      margin-top: 3px;
+-      font-size: 12px;
+-      color: #555555;
+-    }
+-    .toggle {
+-      display: inline-flex;
+-      border: 1px solid #aaaaaa;
+-      border-radius: 4px;
+-      overflow: hidden;
+-      flex: 0 0 auto;
+-    }
+-    .toggle button {
+-      border: 0;
+-      padding: 5px 10px;
+-      background: #ffffff;
+-      color: #111111;
+-      font: inherit;
+-      font-size: 12px;
+-      cursor: pointer;
+-    }
+-    .toggle button.active {
+-      background: #111111;
+-      color: #ffffff;
+-    }
+     main {
+-      min-height: calc(100vh - 48px);
++      min-height: 100vh;
+       display: grid;
+       place-items: center;
+       padding: 16px;
+       box-sizing: border-box;
+     }
+-    .frame {
++    #frame {
+       position: relative;
++      width: 382px;
++      height: 296px;
+       background: #ffffff;
+-      border: 1px solid #d0d0d0;
+-      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+       overflow: hidden;
+     }
+-    .surface, .reference {
++    canvas, svg {
+       position: absolute;
+       inset: 0;
+     }
+-    .reference {
+-      display: none;
+-      width: 100%;
+-      height: 100%;
+-      object-fit: contain;
+-      background-color: #ffffff;
+-    }
+-    .show-reference .surface {
+-      display: none;
+-    }
+-    .show-reference .reference {
+-      display: block;
++    text {
++      dominant-baseline: alphabetic;
++      fill: #111111;
+     }
+-    canvas, svg {
+-      position: absolute;
+-      inset: 0;
+-    }
+   </style>
+ </head>
+ <body>
+-  <header>
+-    <div>
+-      <h1 id="title">reference-04-motor-manifold-D</h1>
+-      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+-    </div>
+-    <div class="toggle" aria-label="View mode">
+-      <button id="generatedButton" class="active" type="button">Generated</button>
+-      <button id="referenceButton" type="button">QA reference</button>
+-    </div>
+-  </header>
+   <main>
+-    <div id="frame" class="frame">
+-      <div id="surface" class="surface"></div>
+-      <img id="reference" class="reference" alt="QA reference source image">
+-    </div>
++    <div id="frame" aria-label="Generated reconstruction from semantic JSON"></div>
+   </main>
+   <script>
+-    const SPEC_URL = './reference-04-motor-manifold-D.json';
+     const SVG_NS = 'http://www.w3.org/2000/svg';
+ 
+-    function byId(id) {
+-      return document.getElementById(id);
+-    }
+-
+-    function node(tag, attrs = {}) {
+-      const item = document.createElementNS(SVG_NS, tag);
++    function makeSvg(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
+       for (const [key, value] of Object.entries(attrs)) {
+-        if (value !== undefined && value !== null) item.setAttribute(key, value);
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
+       }
+-      return item;
++      return node;
+     }
+ 
+-    function seeded(seed) {
+-      let state = seed >>> 0;
+-      return () => {
+-        state = (1664525 * state + 1013904223) >>> 0;
+-        return state / 4294967296;
++    function mulberry32(seed) {
++      return function random() {
++        let t = seed += 0x6D2B79F5;
++        t = Math.imul(t ^ (t >>> 15), t | 1);
++        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
++        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+       };
+     }
+ 
+-    function clamp(value, min, max) {
+-      return Math.max(min, Math.min(max, value));
++    function gaussian(x, center, width) {
++      const z = (x - center) / width;
++      return Math.exp(-0.5 * z * z);
+     }
+ 
+-    function lerp(a, b, t) {
+-      return a + (b - a) * t;
+-    }
+-
+     function scale(domain, range, value) {
+       return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+     }
+ 
+-    function mixColor(a, b, t) {
++    function colorForZ(z, colorScale) {
++      const clamped = Math.max(colorScale.domain[0], Math.min(colorScale.domain[2], z));
++      const neg = [25, 69, 216];
++      const mid = [243, 243, 243];
++      const pos = [215, 25, 28];
++      const t = clamped < 0 ? Math.abs(clamped / colorScale.domain[0]) : clamped / colorScale.domain[2];
++      const from = mid;
++      const to = clamped < 0 ? neg : pos;
++      const mix = Math.pow(t, 0.72);
+       return [
+-        Math.round(lerp(a[0], b[0], t)),
+-        Math.round(lerp(a[1], b[1], t)),
+-        Math.round(lerp(a[2], b[2], t))
++        Math.round(from[0] + (to[0] - from[0]) * mix),
++        Math.round(from[1] + (to[1] - from[1]) * mix),
++        Math.round(from[2] + (to[2] - from[2]) * mix)
+       ];
+     }
+ 
+-    function parseHex(hex) {
+-      const value = hex.replace('#', '');
+-      return [
+-        parseInt(value.slice(0, 2), 16),
+-        parseInt(value.slice(2, 4), 16),
+-        parseInt(value.slice(4, 6), 16)
+-      ];
++    function heatValue(time, row, recipe, randomValue) {
++      let z = (randomValue - 0.5) * 2 * recipe.backgroundNoise;
++      z += 0.18 * Math.sin(row * 0.41 + time * 13.0);
++      z += 0.12 * Math.sin(row * 0.13 - time * 21.0);
++      for (const f of recipe.features) {
++        if (f.kind === 'blueDelayBand') {
++          z += f.amplitude * gaussian(time, f.centerTime, f.width) * gaussian(row, f.rowCenter, f.rowWidth);
++        } else if (f.kind === 'redMoveRidge') {
++          const ridge = f.centerTime + (row - f.rowCenter) * f.slope;
++          z += f.amplitude * gaussian(time, ridge, f.width) * gaussian(row, f.rowCenter, f.rowWidth);
++        } else if (f.kind === 'bluePostMoveBand') {
++          z += f.amplitude * gaussian(time, f.centerTime, f.width) * gaussian(row, f.rowCenter, f.rowWidth);
++        } else if (f.kind === 'redHoldPatch') {
++          z += f.amplitude * gaussian(time, f.centerTime, f.width) * gaussian(row, f.rowCenter, f.rowWidth);
++        } else if (f.kind === 'earlyMixedStripes') {
++          z += f.amplitude * gaussian(time, f.centerTime, f.width) * Math.sin(row / f.rowPeriod * Math.PI * 2);
++        }
++      }
++      return z;
+     }
+ 
+-    function colorScaleFactory(system) {
+-      const stops = system.stops.map(stop => ({value: stop.value, rgb: parseHex(stop.color)})).sort((a, b) => a.value - b.value);
+-      return value => {
+-        const v = clamp(value, stops[0].value, stops[stops.length - 1].value);
+-        for (let i = 0; i < stops.length - 1; i += 1) {
+-          const left = stops[i];
+-          const right = stops[i + 1];
+-          if (v >= left.value && v <= right.value) {
+-            const t = (v - left.value) / (right.value - left.value);
+-            return mixColor(left.rgb, right.rgb, t);
+-          }
++    function renderHeatmap(ctx, panel, colorScale) {
++      const mark = panel.marks.find(item => item.type === 'heatmap');
++      const box = panel.plot.bbox;
++      const rows = mark.matrix.rows;
++      const cols = mark.matrix.cols;
++      const image = ctx.createImageData(cols, rows);
++      const random = mulberry32(mark.recipe.seed);
++      const rowOffsets = Array.from({length: rows}, () => (random() - 0.5) * 0.55);
++      const noise = Array.from({length: rows}, () => Array.from({length: cols}, () => random()));
++      for (let r = 0; r < rows; r++) {
++        for (let c = 0; c < cols; c++) {
++          const time = scale([0, cols - 1], panel.plot.x.domain, c);
++          const neuron = scale([0, rows - 1], panel.plot.y.domain, r);
++          const smoothedNoise = (
++            noise[r][c] +
++            noise[Math.max(0, r - 1)][c] +
++            noise[Math.min(rows - 1, r + 1)][c] +
++            noise[r][Math.max(0, c - 1)] +
++            noise[r][Math.min(cols - 1, c + 1)]
++          ) / 5;
++          const z = heatValue(time, neuron, mark.recipe, smoothedNoise) + rowOffsets[r];
++          const rgb = colorForZ(z, colorScale);
++          const i = (r * cols + c) * 4;
++          image.data[i] = rgb[0];
++          image.data[i + 1] = rgb[1];
++          image.data[i + 2] = rgb[2];
++          image.data[i + 3] = 230;
+         }
+-        return stops[stops.length - 1].rgb;
+-      };
++      }
++      const offscreen = document.createElement('canvas');
++      offscreen.width = cols;
++      offscreen.height = rows;
++      const offscreenContext = offscreen.getContext('2d');
++      offscreenContext.putImageData(image, 0, 0);
++      const sourceData = offscreenContext.getImageData(0, 0, cols, rows);
++      const scaled = ctx.createImageData(box.width, box.height);
++      for (let y = 0; y < box.height; y++) {
++        const sy = Math.min(rows - 1, Math.floor(y / box.height * rows));
++        for (let x = 0; x < box.width; x++) {
++          const sx = Math.min(cols - 1, Math.floor(x / box.width * cols));
++          const src = (sy * cols + sx) * 4;
++          const dst = (y * box.width + x) * 4;
++          scaled.data[dst] = sourceData.data[src];
++          scaled.data[dst + 1] = sourceData.data[src + 1];
++          scaled.data[dst + 2] = sourceData.data[src + 2];
++          scaled.data[dst + 3] = sourceData.data[src + 3];
++        }
++      }
++      ctx.putImageData(scaled, box.x, box.y);
+     }
+ 
+-    function addText(svg, spec, defaults = {}) {
+-      const text = node('text', {
+-        x: spec.x,
+-        y: spec.y,
+-        fill: spec.fill || defaults.color || '#111111',
+-        'font-family': spec.fontFamily || defaults.fontFamily || 'Arial, Helvetica, sans-serif',
+-        'font-size': spec.fontSize || defaults.defaultSize || 13,
+-        'font-weight': spec.fontWeight || 400,
+-        'text-anchor': spec.anchor || 'start',
+-        'dominant-baseline': spec.baseline || 'alphabetic',
+-        'letter-spacing': spec.letterSpacing ?? defaults.calibration?.letterSpacing ?? 0,
+-        transform: spec.rotation ? `rotate(${spec.rotation} ${spec.x} ${spec.y})` : undefined,
+-        'data-id': spec.id,
+-        'data-role': spec.role || 'text',
+-        'data-anchor-to': spec.anchorTo || undefined
++    function renderText(svg, item, typography, extra = {}) {
++      const text = makeSvg('text', {
++        x: item.x,
++        y: item.y,
++        'font-family': item.fontFamily || typography.fontFamily,
++        'font-size': item.fontSize || typography.defaultSize,
++        'font-weight': item.fontWeight || 400,
++        'text-anchor': item.anchor || 'start',
++        transform: item.rotation ? `rotate(${item.rotation} ${item.x} ${item.y})` : undefined,
++        id: item.id,
++        ...extra
+       });
+-      text.textContent = spec.text || '';
++      text.textContent = item.text;
+       svg.appendChild(text);
+-      return text;
+-    }
+-
+-    function systemsById(spec) {
+-      return Object.fromEntries((spec.coordinateSystems || []).map(system => [system.id, system]));
+-    }
+-
+-    function recipeById(panel, id) {
+-      return Object.values(panel.data || {}).find(item => item && item.id === id);
+     }
+ 
+-    function gaussian(x, center, sigma) {
+-      const z = (x - center) / sigma;
+-      return Math.exp(-0.5 * z * z);
+-    }
+-
+-    function renderHeatmap(ctx, panel, mark, systems) {
+-      const recipe = recipeById(panel, mark.dataRecipe);
+-      const colorSystem = systems[mark.colorScale];
+-      const colorFor = colorScaleFactory(colorSystem);
+-      const random = seeded(recipe.seed || 1);
+-      const box = mark.bbox;
+-      const cols = recipe.columns;
+-      const rows = recipe.rows;
+-      const image = ctx.createImageData(cols, rows);
+-      const speckles = [];
+-      for (let i = 0; i < recipe.horizontalSpeckles.count; i += 1) {
+-        const row = Math.floor(random() * rows);
+-        const start = Math.floor(random() * cols);
+-        const length = Math.floor(lerp(recipe.horizontalSpeckles.lengthRange[0], recipe.horizontalSpeckles.lengthRange[1], random()));
+-        const polarity = random() < recipe.horizontalSpeckles.polarityBalance ? 1 : -1;
+-        const amplitude = lerp(recipe.horizontalSpeckles.amplitudeRange[0], recipe.horizontalSpeckles.amplitudeRange[1], random()) * polarity;
+-        speckles.push({row, start, length, amplitude});
+-      }
+-      for (let y = 0; y < rows; y += 1) {
+-        const neuron = 1 + y / (rows - 1) * 199;
+-        for (let x = 0; x < cols; x += 1) {
+-          const time = -1 + x / (cols - 1) * 2;
+-          let value = (random() - 0.5) * recipe.baselineNoise;
+-          value += 0.08 * Math.sin(y * 0.31 + x * 0.08);
+-          value += 0.05 * Math.sin(y * 0.09 - x * 0.17);
+-          for (const band of recipe.bands) {
+-            const driftedCenter = band.timeCenter + 0.16 * Math.sin((neuron - band.rowCenter) / 58);
+-            value += band.amplitude * gaussian(neuron, band.rowCenter, band.rowSigma) * gaussian(time, driftedCenter, band.timeSigma);
+-          }
+-          for (const speckle of speckles) {
+-            if (Math.abs(y - speckle.row) <= 1 && x >= speckle.start && x <= speckle.start + speckle.length) {
+-              value += speckle.amplitude;
+-            }
+-          }
+-          const rgb = colorFor(value);
+-          const off = (y * cols + x) * 4;
+-          image.data[off] = rgb[0];
+-          image.data[off + 1] = rgb[1];
+-          image.data[off + 2] = rgb[2];
+-          image.data[off + 3] = 255;
+-        }
+-      }
+-      const scratch = document.createElement('canvas');
+-      scratch.width = cols;
+-      scratch.height = rows;
+-      scratch.getContext('2d').putImageData(image, 0, 0);
+-      ctx.save();
+-      ctx.imageSmoothingEnabled = false;
+-      ctx.drawImage(scratch, box.x, box.y, box.width, box.height);
+-      ctx.restore();
+-    }
+-
+-    function drawAxes(svg, panel, defaults) {
++    function renderAxes(svg, panel, typography, tokens) {
+       const plot = panel.plot;
+       const box = plot.bbox;
+-      const xDomain = plot.x.domain;
+-      const yDomain = plot.y.domain;
+-      const xPx = value => scale(xDomain, [box.x, box.x + box.width], value);
+-      const yPx = value => scale(yDomain, [box.y, box.y + box.height], value);
+-      const axis = {stroke: '#111111', 'stroke-width': 1.05, fill: 'none'};
+-      svg.appendChild(node('rect', {...axis, x: box.x, y: box.y, width: box.width, height: box.height, 'data-role': 'plot-frame'}));
++      const xScale = value => scale(plot.x.domain, [box.x, box.x + box.width], value);
++      const yScale = value => scale(plot.y.domain, [box.y, box.y + box.height], value);
++      svg.appendChild(makeSvg('rect', {x: box.x, y: box.y, width: box.width, height: box.height, fill: 'none', stroke: tokens.axisStroke, 'stroke-width': tokens.axisWidth}));
+       for (const tick of plot.x.ticks) {
+-        const x = xPx(tick.value);
+-        svg.appendChild(node('line', {...axis, x1: x, y1: box.y + box.height, x2: x, y2: box.y + box.height + 5, 'data-role': 'axis-tick-mark', 'data-axis': plot.x.id, 'data-value': tick.value}));
+-        addText(svg, {text: tick.label, x, y: box.y + box.height + 20, fontSize: 14, anchor: 'middle', role: 'tick-label'}, defaults);
++        const x = xScale(tick.value);
++        svg.appendChild(makeSvg('line', {x1: x, y1: box.y + box.height, x2: x, y2: box.y + box.height + 4, stroke: tokens.axisStroke, 'stroke-width': 1, 'data-axis': 'x', 'data-value': tick.value}));
++        renderText(svg, {text: tick.label, x, y: box.y + box.height + 21, fontSize: tokens.tickFontSize, anchor: 'middle'}, typography);
+       }
+       for (const tick of plot.y.ticks) {
+-        const y = yPx(tick.value);
+-        svg.appendChild(node('line', {...axis, x1: box.x - 5, y1: y, x2: box.x, y2: y, 'data-role': 'axis-tick-mark', 'data-axis': plot.y.id, 'data-value': tick.value}));
+-        addText(svg, {text: tick.label, x: box.x - 10, y: y + 4, fontSize: 14, anchor: 'end', role: 'tick-label'}, defaults);
++        const y = yScale(tick.value);
++        svg.appendChild(makeSvg('line', {x1: box.x - 4, y1: y, x2: box.x, y2: y, stroke: tokens.axisStroke, 'stroke-width': 1, 'data-axis': 'y', 'data-value': tick.value}));
++        renderText(svg, {text: tick.label, x: box.x - 9, y: y + 5, fontSize: tokens.tickFontSize, anchor: 'end'}, typography);
+       }
+-      addText(svg, {...plot.x.label, role: 'x-axis-label'}, defaults);
+-      addText(svg, {...plot.y.label, role: 'y-axis-label'}, defaults);
+-      for (const label of plot.topEpochLabels || []) addText(svg, {...label, role: 'epoch-label'}, defaults);
++      renderText(svg, plot.x.label, typography);
++      renderText(svg, plot.y.label, typography);
+     }
+ 
+-    function drawEventLine(svg, panel, mark) {
++    function renderEventLine(svg, panel) {
+       const box = panel.plot.bbox;
++      const mark = panel.marks.find(item => item.type === 'eventLine');
+       const x = scale(panel.plot.x.domain, [box.x, box.x + box.width], mark.xValue);
+-      svg.appendChild(node('line', {
+-        x1: x, y1: mark.y1, x2: x, y2: mark.y2,
+-        stroke: mark.stroke || '#111111',
+-        'stroke-width': mark.strokeWidth || 1,
+-        'data-role': 'event-line',
+-        'data-id': mark.id,
+-        'data-event-anchor': mark.eventAnchor
+-      }));
++      svg.appendChild(makeSvg('line', {id: mark.id, x1: x, y1: mark.y1, x2: x, y2: mark.y2, stroke: mark.stroke, 'stroke-width': mark.strokeWidth, 'data-anchor': mark.anchorTo}));
+     }
+ 
+-    function drawColorbar(svg, panel, systems, defaults) {
+-      const legend = panel.legend;
+-      const scaleSystem = systems[legend.scale];
+-      const colorFor = colorScaleFactory(scaleSystem);
+-      const box = legend.bbox;
+-      const defs = node('defs');
+-      const gradient = node('linearGradient', {id: `${legend.id}-gradient`, x1: '0', y1: '1', x2: '0', y2: '0'});
+-      const domain = scaleSystem.domain;
+-      scaleSystem.stops.forEach(stop => {
+-        const offset = 100 * (stop.value - domain[0]) / (domain[domain.length - 1] - domain[0]);
+-        gradient.appendChild(node('stop', {offset: `${offset}%`, 'stop-color': stop.color}));
+-      });
+-      defs.appendChild(gradient);
+-      svg.appendChild(defs);
+-      svg.appendChild(node('rect', {x: box.x, y: box.y, width: box.width, height: box.height, fill: `url(#${legend.id}-gradient)`, stroke: '#333333', 'stroke-width': 0.6, 'data-role': 'colorbar'}));
+-      addText(svg, {...legend.title, role: 'colorbar-title'}, defaults);
+-      for (const tick of legend.ticks || []) {
+-        const y = scale([domain[0], domain[domain.length - 1]], [box.y + box.height, box.y], tick.value);
+-        const rgb = colorFor(tick.value);
+-        svg.appendChild(node('line', {x1: box.x + box.width, y1: y, x2: box.x + box.width + 4, y2: y, stroke: '#111111', 'stroke-width': 0.8, 'data-role': 'colorbar-tick', 'data-value': tick.value}));
+-        addText(svg, {text: tick.label, x: box.x + box.width + 7, y: y + 4, fontSize: 10, anchor: 'start', fill: `rgb(${rgb.join(',')})`, role: 'colorbar-tick-label'}, defaults);
++    function renderColorbar(ctx, svg, panel, colorScale, typography) {
++      const object = panel.layoutObjects.find(item => item.type === 'colorbar');
++      const box = object.bbox;
++      const image = ctx.createImageData(box.width, box.height);
++      for (let y = 0; y < box.height; y++) {
++        const z = scale([0, box.height - 1], [colorScale.domain[2], colorScale.domain[0]], y);
++        const rgb = colorForZ(z, colorScale);
++        for (let x = 0; x < box.width; x++) {
++          const i = (y * box.width + x) * 4;
++          image.data[i] = rgb[0];
++          image.data[i + 1] = rgb[1];
++          image.data[i + 2] = rgb[2];
++          image.data[i + 3] = 255;
++        }
+       }
++      ctx.putImageData(image, box.x, box.y);
++      svg.appendChild(makeSvg('rect', {x: box.x, y: box.y, width: box.width, height: box.height, fill: 'none', stroke: '#333333', 'stroke-width': 0.7}));
++      renderText(svg, object.label, typography);
+     }
+ 
+-    function render(spec) {
+-      const frame = byId('frame');
+-      const surface = byId('surface');
+-      const reference = byId('reference');
+-      const canvasSpec = spec.canvas;
+-      const defaults = spec.typography || {};
+-      const systems = systemsById(spec);
+-      byId('title').textContent = spec.id;
+-      frame.style.width = `${canvasSpec.width}px`;
+-      frame.style.height = `${canvasSpec.height}px`;
+-      frame.style.background = canvasSpec.background || '#ffffff';
+-      reference.src = spec.source.path;
+-      surface.innerHTML = '';
++    async function loadSpec() {
++      const response = await fetch('reference-04-motor-manifold-D.json');
++      if (!response.ok) throw new Error(`Unable to load JSON spec: ${response.status}`);
++      return response.json();
++    }
++
++    async function render() {
++      const spec = await loadSpec();
++      const frame = document.getElementById('frame');
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      frame.style.background = spec.canvas.background;
+       const canvas = document.createElement('canvas');
+-      canvas.width = canvasSpec.width;
+-      canvas.height = canvasSpec.height;
+-      surface.appendChild(canvas);
++      canvas.width = spec.canvas.width;
++      canvas.height = spec.canvas.height;
+       const ctx = canvas.getContext('2d');
+-      ctx.fillStyle = canvasSpec.background || '#ffffff';
++      ctx.fillStyle = spec.canvas.background;
+       ctx.fillRect(0, 0, canvas.width, canvas.height);
+-      const svg = node('svg', {width: canvasSpec.width, height: canvasSpec.height, viewBox: `0 0 ${canvasSpec.width} ${canvasSpec.height}`, role: 'img', 'aria-label': `${spec.id} generated reconstruction`});
+-      surface.appendChild(svg);
+-      for (const panel of spec.panels || []) {
+-        for (const mark of panel.marks || []) {
+-          if (mark.type === 'heatmapRecipe') renderHeatmap(ctx, panel, mark, systems);
+-        }
+-        addText(svg, panel.label, defaults);
+-        addText(svg, panel.title, defaults);
+-        drawAxes(svg, panel, defaults);
+-        for (const mark of panel.marks || []) {
+-          if (mark.type === 'eventLine') drawEventLine(svg, panel, mark);
+-        }
+-        drawColorbar(svg, panel, systems, defaults);
+-      }
++      const svg = makeSvg('svg', {width: spec.canvas.width, height: spec.canvas.height, viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, role: 'img'});
++      frame.appendChild(canvas);
++      frame.appendChild(svg);
++      const panel = spec.panels[0];
++      const colorScale = spec.coordinateSystems.find(item => item.id === 'panel-d.z');
++      renderHeatmap(ctx, panel, colorScale);
++      renderColorbar(ctx, svg, panel, colorScale, spec.typography);
++      renderAxes(svg, panel, spec.typography, spec.rendering.styleTokens);
++      renderEventLine(svg, panel);
++      renderText(svg, panel.label, spec.typography);
++      renderText(svg, panel.title, spec.typography);
++      const phases = panel.layoutObjects.find(item => item.type === 'phaseLabels');
++      for (const item of phases.items) renderText(svg, item, spec.typography);
+     }
+ 
+-    byId('generatedButton').onclick = () => {
+-      byId('frame').classList.remove('show-reference');
+-      byId('generatedButton').classList.add('active');
+-      byId('referenceButton').classList.remove('active');
+-    };
+-
+-    byId('referenceButton').onclick = () => {
+-      byId('frame').classList.add('show-reference');
+-      byId('referenceButton').classList.add('active');
+-      byId('generatedButton').classList.remove('active');
+-    };
+-
+-    fetch(SPEC_URL, {cache: 'no-store'})
+-      .then(response => response.json())
+-      .then(render)
+-      .catch(error => {
+-        console.error('Unable to load reconstruction spec', error);
+-      });
++    render().catch(error => {
++      document.body.textContent = error.message;
++      console.error(error);
++    });
+   </script>
+ </body>
+ </html>
+diff --git a/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.json b/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.json
+index a19297892ea93063f4d2e58db46145012b0d0172..daebdf865bccef45217e3f0e8704a7c73b3e27dc
+--- a/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.json
++++ b/outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.json
+@@ -3,75 +3,75 @@
+   "id": "reference-04-motor-manifold-D",
+   "source": {
+     "path": "../../assets/reference/reference-04-motor-manifold-D-reference.png",
+-    "usage": "QA-only; not used by generated candidate.",
+-    "nativeSize": {"width": 382, "height": 296},
+-    "notes": "Single heatmap panel inspected visually. Dense activity is generated from semantic recipes and calibrated layout, not copied from source pixels."
++    "usage": "QA/reference only; not rendered by generated candidate.",
++    "notes": "Single heatmap panel D showing peristimulus time aligned to movement onset. Dense field is reconstructed from semantic recipes, not the source raster."
++  },
++  "canvas": {
++    "width": 382,
++    "height": 296,
++    "background": "#ffffff"
+   },
+-  "canvas": {"width": 382, "height": 296, "background": "#ffffff"},
+   "typography": {
+     "fontFamily": "Arial, Helvetica, sans-serif",
+-    "defaultSize": 14,
++    "defaultSize": 12,
+     "color": "#111111",
+     "fontImports": [],
+     "fontFaces": [],
+-    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Source Sans 3"],
++    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Roboto"],
+     "calibration": {
+       "letterSpacing": 0,
+-      "lineHeight": 1.05,
+-      "notes": "First-pass visual typography fit to panel crop; no font-scoring harness was run."
++      "lineHeight": 1.08,
++      "notes": "Approximate Arial-like sizing matched visually to the source crop."
+     }
+   },
+   "coordinateSystems": [
+     {
+-      "id": "panel-d.time-neuron",
+-      "type": "cartesianHeatmap",
+-      "x": {"domain": [-1, 1], "range": [56, 350], "eventAnchor": {"id": "movement-onset", "value": 0, "pixel": 192}},
+-      "y": {"domain": [1, 200], "range": [62, 252], "sort": "neurons sorted by peri-movement response timing"}
++      "id": "panel-d.xy",
++      "type": "cartesian",
++      "xDomain": [-1, 1],
++      "yDomain": [1, 200],
++      "dataBbox": {"x": 57, "y": 58, "width": 292, "height": 194}
+     },
+     {
+-      "id": "panel-d.zscore",
++      "id": "panel-d.z",
+       "type": "divergingColorScale",
+       "domain": [-2, 0, 2],
+-      "stops": [
+-        {"value": -2, "color": "#1f3fda"},
+-        {"value": 0, "color": "#f7f7f7"},
+-        {"value": 2, "color": "#d7191c"}
+-      ],
+-      "missingColor": "#ffffff"
++      "negative": "#1945d8",
++      "neutral": "#f3f3f3",
++      "positive": "#d7191c"
+     }
+   ],
+   "panels": [
+     {
+       "id": "panel-d",
++      "bbox": {"x": 0, "y": 0, "width": 382, "height": 296},
+       "label": {
+-        "id": "panel-label",
++        "id": "panel-d-label",
+         "text": "D",
+         "x": 8,
+         "y": 25,
++        "fontFamily": "Arial, Helvetica, sans-serif",
+         "fontSize": 20,
+         "fontWeight": 700,
+-        "sourceBox": {"x": 8, "y": 9, "width": 13, "height": 20},
+-        "fit": "visual"
++        "anchor": "start",
++        "sourceBox": {"x": 7, "y": 8, "width": 15, "height": 21}
+       },
+       "title": {
+-        "id": "panel-title",
++        "id": "panel-d-title",
+         "text": "Peristimulus time (aligned to movement onset)",
+-        "x": 36,
++        "x": 35,
+         "y": 25,
++        "fontFamily": "Arial, Helvetica, sans-serif",
+         "fontSize": 16,
+-        "fontWeight": 700,
+-        "sourceBox": {"x": 35, "y": 10, "width": 315, "height": 19},
+-        "fit": "visual"
++        "fontWeight": 400,
++        "anchor": "start",
++        "sourceBox": {"x": 35, "y": 12, "width": 286, "height": 18}
+       },
+-      "bbox": {"x": 0, "y": 0, "width": 382, "height": 296},
+       "plot": {
+-        "id": "peristimulus-heatmap",
+-        "usesTransform": "panel-d.time-neuron",
+-        "bbox": {"x": 56, "y": 62, "width": 294, "height": 190},
+-        "clip": true,
++        "id": "panel-d-heatmap-plot",
++        "usesTransform": "panel-d.xy",
++        "bbox": {"x": 57, "y": 58, "width": 292, "height": 194},
+         "x": {
+-          "id": "time-axis",
+-          "scale": "linear",
+           "domain": [-1, 1],
+           "ticks": [
+             {"value": -1, "label": "-1.0"},
+@@ -80,11 +80,9 @@
+             {"value": 0.5, "label": "0.5"},
+             {"value": 1, "label": "1.0"}
+           ],
+-          "label": {"id": "x-axis-label", "text": "Time (s)", "x": 192, "y": 292, "fontSize": 14, "anchor": "middle"}
++          "label": {"id": "panel-d-x-label", "text": "Time (s)", "x": 203, "y": 293, "fontSize": 14, "anchor": "middle"}
+         },
+         "y": {
+-          "id": "neuron-axis",
+-          "scale": "linear",
+           "domain": [1, 200],
+           "ticks": [
+             {"value": 1, "label": "1"},
+@@ -93,101 +91,94 @@
+             {"value": 150, "label": "150"},
+             {"value": 200, "label": "200"}
+           ],
+-          "label": {"id": "y-axis-label", "text": "Neuron (sorted)", "x": 17, "y": 157, "fontSize": 14, "rotation": -90, "anchor": "middle"}
++          "label": {"id": "panel-d-y-label", "text": "Neuron (sorted)", "x": 17, "y": 157, "fontSize": 14, "anchor": "middle", "rotation": -90}
+         },
+-        "topEpochLabels": [
+-          {"id": "cue-label", "text": "Cue", "x": 92, "y": 52, "fontSize": 12, "anchor": "middle", "anchorTo": "time-axis:-0.75"},
+-          {"id": "delay-label", "text": "Delay", "x": 158, "y": 52, "fontSize": 12, "anchor": "middle", "anchorTo": "time-axis:-0.25"},
+-          {"id": "move-label", "text": "Move", "x": 229, "y": 52, "fontSize": 12, "anchor": "middle", "anchorTo": "movement-onset"},
+-          {"id": "hold-label", "text": "Hold", "x": 306, "y": 52, "fontSize": 12, "anchor": "middle", "anchorTo": "time-axis:0.75"}
+-        ]
+-      },
+-      "data": {
+-        "heatmapRecipe": {
+-          "id": "sorted-peristimulus-zscore",
+-          "type": "syntheticSortedNeuralHeatmap",
+-          "seed": 4044,
+-          "rows": 200,
+-          "columns": 260,
+-          "rowSmoothing": 0.45,
+-          "columnSmoothing": 0.55,
+-          "baselineNoise": 0.32,
+-          "bands": [
+-            {"id": "early-blue", "rowCenter": 28, "rowSigma": 32, "timeCenter": -0.32, "timeSigma": 0.24, "amplitude": -1.2},
+-            {"id": "movement-red", "rowCenter": 79, "rowSigma": 34, "timeCenter": 0.11, "timeSigma": 0.16, "amplitude": 1.85},
+-            {"id": "post-blue", "rowCenter": 73, "rowSigma": 45, "timeCenter": 0.54, "timeSigma": 0.35, "amplitude": -1.25},
+-            {"id": "late-red", "rowCenter": 163, "rowSigma": 31, "timeCenter": 0.43, "timeSigma": 0.18, "amplitude": 1.45},
+-            {"id": "lower-blue", "rowCenter": 177, "rowSigma": 42, "timeCenter": -0.02, "timeSigma": 0.23, "amplitude": -1.15},
+-            {"id": "cue-red-flecks", "rowCenter": 34, "rowSigma": 48, "timeCenter": -0.75, "timeSigma": 0.21, "amplitude": 0.65}
+-          ],
+-          "horizontalSpeckles": {"count": 420, "lengthRange": [4, 18], "amplitudeRange": [0.35, 1.05], "polarityBalance": 0.52},
+-          "description": "Low-amplitude streaked z-scored activity with a red diagonal movement-onset band, blue suppression around and after movement, and sparse red/blue horizontal streaks."
++        "axes": {
++          "xAxis": {"id": "panel-d-x-axis", "line": {"x1": 57, "y1": 252, "x2": 349, "y2": 252}, "tickLength": 4},
++          "yAxis": {"id": "panel-d-y-axis", "line": {"x1": 57, "y1": 58, "x2": 57, "y2": 252}, "tickLength": 4}
+         }
+       },
++      "layoutObjects": [
++        {
++          "id": "panel-d-phase-labels",
++          "type": "phaseLabels",
++          "anchorTo": "panel-d.x",
++          "items": [
++            {"text": "Cue", "x": 92, "y": 51, "fontSize": 14, "anchor": "middle"},
++            {"text": "Delay", "x": 158, "y": 51, "fontSize": 14, "anchor": "middle"},
++            {"text": "Move", "x": 229, "y": 51, "fontSize": 14, "anchor": "middle"},
++            {"text": "Hold", "x": 306, "y": 51, "fontSize": 14, "anchor": "middle"}
++          ]
++        },
++        {
++          "id": "panel-d-colorbar",
++          "type": "colorbar",
++          "colorScale": "panel-d.z",
++          "bbox": {"x": 372, "y": 147, "width": 10, "height": 93},
++          "label": {"text": "z-score", "x": 366, "y": 135, "fontSize": 13, "anchor": "start"},
++          "ticks": []
++        }
++      ],
+       "marks": [
+         {
+-          "id": "zscore-heatmap",
+-          "type": "heatmapRecipe",
+-          "renderer": "canvas",
+-          "bbox": {"x": 56, "y": 62, "width": 294, "height": 190},
+-          "usesTransform": "panel-d.time-neuron",
+-          "colorScale": "panel-d.zscore",
+-          "dataRecipe": "sorted-peristimulus-zscore",
+-          "interpolation": "nearest"
++          "id": "panel-d-synthetic-heatmap",
++          "type": "heatmap",
++          "renderer": "canvasImageData",
++          "usesTransform": "panel-d.xy",
++          "colorScale": "panel-d.z",
++          "matrix": {"rows": 200, "cols": 292},
++          "interpolation": false,
++          "recipe": {
++            "type": "rankedPeristimulusField",
++            "seed": 40518,
++            "backgroundNoise": 0.28,
++            "rowSmoothing": 0.42,
++            "timeSmoothing": 0.22,
++            "features": [
++              {"kind": "blueDelayBand", "centerTime": -0.22, "width": 0.23, "amplitude": -0.9, "rowCenter": 92, "rowWidth": 120},
++              {"kind": "redMoveRidge", "centerTime": 0.16, "slope": 0.0027, "width": 0.12, "amplitude": 1.55, "rowCenter": 92, "rowWidth": 82},
++              {"kind": "bluePostMoveBand", "centerTime": 0.43, "width": 0.25, "amplitude": -1.05, "rowCenter": 45, "rowWidth": 72},
++              {"kind": "redHoldPatch", "centerTime": 0.48, "width": 0.16, "amplitude": 1.2, "rowCenter": 162, "rowWidth": 34},
++              {"kind": "earlyMixedStripes", "centerTime": -0.72, "width": 0.22, "amplitude": 0.55, "rowPeriod": 23}
++            ]
++          },
++          "provenance": {"confidence": "medium", "note": "Approximates sorted neuron heatmap texture and broad red/blue temporal structure."}
+         },
+         {
+-          "id": "movement-onset-line",
++          "id": "panel-d-movement-onset",
+           "type": "eventLine",
++          "anchorTo": "x=0",
+           "xValue": 0,
+-          "eventAnchor": "movement-onset",
+           "y1": 58,
+-          "y2": 254,
+-          "stroke": "#111111",
++          "y2": 252,
++          "stroke": "#000000",
+           "strokeWidth": 2
+         }
+       ],
+-      "legend": {
+-        "id": "zscore-colorbar",
+-        "type": "verticalColorbar",
+-        "scale": "panel-d.zscore",
+-        "bbox": {"x": 371, "y": 147, "width": 10, "height": 93},
+-        "title": {"text": "z-score", "x": 366, "y": 136, "fontSize": 11, "anchor": "start"},
+-        "ticks": [
+-          {"value": 2, "label": "2"},
+-          {"value": 0, "label": "0"},
+-          {"value": -2, "label": "-2"}
+-        ]
+-      },
+-      "annotations": [
+-        {"id": "epoch-labels", "type": "textGroup", "anchorsTo": "plot.topEpochLabels"},
+-        {"id": "movement-onset", "type": "eventLine", "anchorsTo": "panel-d.time-neuron.x.eventAnchor"},
+-        {"id": "colorbar", "type": "colorLegend", "anchorsTo": "panel-d.zscore"}
+-      ],
++      "annotations": [],
+       "provenance": [
+-        {"target": "plot bbox", "confidence": "medium", "note": "Measured visually from heatmap edges and axis tick placement."},
+-        {"target": "heatmap values", "confidence": "low", "note": "Generated texture approximates visible sorted activity motifs; no source data were recovered."},
+-        {"target": "text", "confidence": "medium-high", "note": "Visible title, axis labels, epoch labels, and tick labels transcribed from the raster."},
+-        {"target": "colorbar tick labels", "confidence": "low", "note": "Right edge is cropped in the prompt; z-score title is visible and tick values are inferred from standard diverging scale layout."}
++        {"target": "panel-d.xy", "confidence": "high", "note": "Plot bounds and ticks estimated from visible axes."},
++        {"target": "panel-d-z", "confidence": "low", "note": "Colorbar numeric ticks are cropped/absent in source crop; only label and diverging scale are represented."}
+       ]
+     }
+   ],
+-  "constraints": [
+-    {"id": "source-is-qa-only", "description": "Generated candidate must not render the source raster as a candidate layer."},
+-    {"id": "shared-time-transform", "description": "X ticks, epoch labels, heatmap bbox, and movement-onset line share the named time transform."},
+-    {"id": "editable-axes", "description": "Axis labels, tick labels, epoch labels, event line, and colorbar are SVG/DOM objects generated from JSON."}
+-  ],
++  "rendering": {
++    "layerOrder": ["background", "heatmap", "axes", "eventLine", "labels", "colorbar"],
++    "styleTokens": {
++      "axisStroke": "#111111",
++      "axisWidth": 1,
++      "tickFontSize": 14,
++      "phaseFontSize": 14
++    }
++  },
+   "validation": {
+     "expectedCanvas": {"width": 382, "height": 296},
+-    "expectedHeatmapRows": 200,
+-    "expectedXAxisTicks": [-1, -0.5, 0, 0.5, 1],
+-    "expectedYAxisTicks": [1, 50, 100, 150, 200],
+-    "sourceReuseCheck": [
+-      "No candidate canvas source-raster blit calls.",
+-      "No CSS background using the source path.",
+-      "Source image appears only in the QA reference img element."
+-    ]
++    "mustNotUseSourceRasterAsLayer": true,
++    "expectedEventAnchors": [{"id": "panel-d-movement-onset", "xValue": 0}],
++    "expectedTickCounts": {"x": 5, "y": 5}
+   },
+   "confidence": [
+-    {"target": "overall first-pass visual match", "confidence": "medium-low", "note": "Suitable for visual inspection; editable layout and qualitative heatmap structure are represented, but activity values are synthetic."}
++    {"target": "heatmap-data", "confidence": "medium", "note": "Generated statistical texture, semantic and editable but not source pixel data."},
++    {"target": "typography", "confidence": "medium", "note": "Approximate Arial-compatible publication typography."}
+   ]
+ }
+

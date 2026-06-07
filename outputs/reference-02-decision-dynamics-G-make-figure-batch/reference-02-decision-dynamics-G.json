@@ -1,0 +1,524 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-02-decision-dynamics-G",
+  "source": {
+    "path": "../../assets/reference/reference-02-decision-dynamics-G-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Single-panel 2D low-dimensional trajectory plot reconstructed from visual inspection. Generated layers are SVG axes, text, deterministic trial trajectory recipes, uncertainty bands, mean paths, and point markers."
+  },
+  "canvas": {
+    "width": 361,
+    "height": 510,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial Narrow, Helvetica Neue, Arial, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Narrow sans-serif approximates the compact source typography; title and label sizes were visually tuned at native dimensions."
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-g",
+      "type": "trajectory_comparison",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 361,
+        "height": 510
+      },
+      "label": {
+        "id": "panel-label",
+        "text": "G",
+        "x": 10,
+        "y": 29,
+        "fontSize": 22,
+        "fontWeight": 700
+      },
+      "title": {
+        "id": "panel-title-line-1",
+        "text": "Low-dimensional trajectory comparison",
+        "x": 37,
+        "y": 30,
+        "fontSize": 18,
+        "fontWeight": 700
+      },
+      "subtitle": {
+        "id": "panel-title-line-2",
+        "text": "(mean \u00b1 SEM)",
+        "x": 37,
+        "y": 50,
+        "fontSize": 18,
+        "fontWeight": 400
+      },
+      "plot": {
+        "id": "trajectory-plot",
+        "dataBbox": {
+          "x": 47,
+          "y": 137,
+          "width": 294,
+          "height": 240
+        },
+        "x": {
+          "id": "pc1",
+          "scale": "linear",
+          "domain": [
+            -2,
+            3
+          ],
+          "ticks": [
+            {
+              "value": -2,
+              "label": "-2"
+            },
+            {
+              "value": -1,
+              "label": "-1"
+            },
+            {
+              "value": 0,
+              "label": "0"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            }
+          ],
+          "label": {
+            "id": "x-axis-label",
+            "text": "PC 1 (25%)",
+            "x": 178,
+            "y": 432,
+            "fontSize": 16,
+            "anchor": "middle"
+          }
+        },
+        "y": {
+          "id": "pc2",
+          "scale": "linear",
+          "domain": [
+            -2,
+            2
+          ],
+          "ticks": [
+            {
+              "value": -2,
+              "label": "-2"
+            },
+            {
+              "value": -1,
+              "label": "-1"
+            },
+            {
+              "value": 0,
+              "label": "0"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            }
+          ],
+          "label": {
+            "id": "y-axis-label",
+            "text": "PC 2 (12%)",
+            "x": 19,
+            "y": 258,
+            "fontSize": 16,
+            "rotation": -90,
+            "anchor": "middle"
+          }
+        },
+        "axes": {
+          "xAxis": {
+            "id": "x-axis",
+            "line": {
+              "x1": 47,
+              "y1": 377,
+              "x2": 341,
+              "y2": 377
+            },
+            "tickLength": 7
+          },
+          "yAxis": {
+            "id": "y-axis",
+            "line": {
+              "x1": 47,
+              "y1": 137,
+              "x2": 47,
+              "y2": 377
+            },
+            "tickLength": 7
+          },
+          "zeroGuides": [
+            {
+              "id": "x-zero-guide",
+              "axis": "y",
+              "value": 0,
+              "dasharray": "4 4"
+            },
+            {
+              "id": "y-zero-guide",
+              "axis": "x",
+              "value": 0,
+              "dasharray": "4 4"
+            }
+          ]
+        }
+      },
+      "legend": {
+        "id": "choice-legend",
+        "x": 184,
+        "y": 73,
+        "lineLength": 18,
+        "rowGap": 21,
+        "items": [
+          {
+            "id": "left-choice-legend",
+            "series": "left-choice",
+            "label": "Left choice (n = 142)",
+            "stroke": "#1749b5",
+            "type": "line"
+          },
+          {
+            "id": "right-choice-legend",
+            "series": "right-choice",
+            "label": "Right choice (n = 138)",
+            "stroke": "#e22b24",
+            "type": "line"
+          },
+          {
+            "id": "timepoints-legend",
+            "label": "Time points",
+            "fill": "#050505",
+            "type": "point"
+          }
+        ]
+      },
+      "data": {
+        "series": [
+          {
+            "id": "left-choice",
+            "label": "Left choice (n = 142)",
+            "stroke": "#1749b5",
+            "bandFill": "#8db1ee",
+            "mean": [
+              {
+                "pc1": -1.20,
+                "pc2": 0.00
+              },
+              {
+                "pc1": -0.80,
+                "pc2": 0.24
+              },
+              {
+                "pc1": -0.20,
+                "pc2": 0.48
+              },
+              {
+                "pc1": 0.35,
+                "pc2": 0.63
+              },
+              {
+                "pc1": 0.85,
+                "pc2": 0.78
+              },
+              {
+                "pc1": 1.15,
+                "pc2": 1.03
+              },
+              {
+                "pc1": 1.45,
+                "pc2": 1.18
+              },
+              {
+                "pc1": 1.78,
+                "pc2": 1.17
+              },
+              {
+                "pc1": 2.02,
+                "pc2": 1.22
+              }
+            ],
+            "sem": [
+              0.07,
+              0.09,
+              0.12,
+              0.12,
+              0.12,
+              0.13,
+              0.12,
+              0.12,
+              0.10
+            ],
+            "trialRecipe": {
+              "seed": 142,
+              "count": 44,
+              "pc1Jitter": 0.07,
+              "pc2Jitter": 0.11,
+              "opacity": 0.16
+            },
+            "timepoints": [
+              {
+                "id": "left-stim",
+                "label": "Stim\n(0 ms)",
+                "pc1": -1.20,
+                "pc2": 0.00,
+                "labelOffset": {
+                  "x": -38,
+                  "y": -23
+                },
+                "anchor": "start"
+              },
+              {
+                "id": "left-500",
+                "label": "500 ms",
+                "pc1": 0.35,
+                "pc2": 0.63,
+                "labelOffset": {
+                  "x": -12,
+                  "y": -18
+                },
+                "anchor": "middle"
+              },
+              {
+                "id": "left-go",
+                "label": "Go",
+                "pc1": 2.02,
+                "pc2": 1.22,
+                "labelOffset": {
+                  "x": 15,
+                  "y": 5
+                },
+                "anchor": "start"
+              }
+            ]
+          },
+          {
+            "id": "right-choice",
+            "label": "Right choice (n = 138)",
+            "stroke": "#e22b24",
+            "bandFill": "#f4a29c",
+            "mean": [
+              {
+                "pc1": -1.20,
+                "pc2": 0.00
+              },
+              {
+                "pc1": -0.75,
+                "pc2": 0.05
+              },
+              {
+                "pc1": -0.20,
+                "pc2": 0.00
+              },
+              {
+                "pc1": 0.25,
+                "pc2": 0.03
+              },
+              {
+                "pc1": 0.65,
+                "pc2": -0.12
+              },
+              {
+                "pc1": 0.95,
+                "pc2": -0.48
+              },
+              {
+                "pc1": 1.30,
+                "pc2": -0.78
+              },
+              {
+                "pc1": 1.60,
+                "pc2": -1.05
+              },
+              {
+                "pc1": 1.95,
+                "pc2": -1.28
+              }
+            ],
+            "sem": [
+              0.05,
+              0.07,
+              0.08,
+              0.08,
+              0.10,
+              0.12,
+              0.15,
+              0.16,
+              0.17
+            ],
+            "trialRecipe": {
+              "seed": 138,
+              "count": 44,
+              "pc1Jitter": 0.08,
+              "pc2Jitter": 0.14,
+              "opacity": 0.16
+            },
+            "timepoints": [
+              {
+                "id": "right-stim",
+                "pc1": -1.20,
+                "pc2": 0.00
+              },
+              {
+                "id": "right-early",
+                "pc1": -0.75,
+                "pc2": 0.05
+              },
+              {
+                "id": "right-middle",
+                "pc1": 0.25,
+                "pc2": 0.03
+              },
+              {
+                "id": "right-late-1",
+                "pc1": 0.95,
+                "pc2": -0.48
+              },
+              {
+                "id": "right-late-2",
+                "pc1": 1.45,
+                "pc2": -0.98
+              },
+              {
+                "id": "right-outcome",
+                "label": "Outcome",
+                "pc1": 1.95,
+                "pc2": -1.28,
+                "labelOffset": {
+                  "x": 12,
+                  "y": 23
+                },
+                "anchor": "start"
+              }
+            ]
+          }
+        ]
+      },
+      "marks": [
+        {
+          "id": "trial-cloud-left",
+          "type": "generatedTrajectoryCloud",
+          "series": "left-choice",
+          "renderer": "svg",
+          "usesTransform": "trajectory-plot.data"
+        },
+        {
+          "id": "trial-cloud-right",
+          "type": "generatedTrajectoryCloud",
+          "series": "right-choice",
+          "renderer": "svg",
+          "usesTransform": "trajectory-plot.data"
+        },
+        {
+          "id": "sem-band-left",
+          "type": "uncertaintyBand",
+          "series": "left-choice",
+          "renderer": "svg",
+          "usesTransform": "trajectory-plot.data"
+        },
+        {
+          "id": "sem-band-right",
+          "type": "uncertaintyBand",
+          "series": "right-choice",
+          "renderer": "svg",
+          "usesTransform": "trajectory-plot.data"
+        },
+        {
+          "id": "mean-left",
+          "type": "lineSeries",
+          "series": "left-choice",
+          "renderer": "svg",
+          "usesTransform": "trajectory-plot.data"
+        },
+        {
+          "id": "mean-right",
+          "type": "lineSeries",
+          "series": "right-choice",
+          "renderer": "svg",
+          "usesTransform": "trajectory-plot.data"
+        },
+        {
+          "id": "timepoints",
+          "type": "scatter",
+          "series": [
+            "left-choice",
+            "right-choice"
+          ],
+          "renderer": "svg",
+          "usesTransform": "trajectory-plot.data"
+        }
+      ],
+      "annotations": [
+        {
+          "id": "stim-label",
+          "type": "text",
+          "anchorTo": "left-stim"
+        },
+        {
+          "id": "go-label",
+          "type": "text",
+          "anchorTo": "left-go"
+        },
+        {
+          "id": "outcome-label",
+          "type": "text",
+          "anchorTo": "right-outcome"
+        }
+      ],
+      "constraints": [
+        "Axis ticks and labels are generated from plot domains and share the trajectory-plot transform.",
+        "Zero guide lines anchor to PC1=0 and PC2=0.",
+        "Legend entries reference the left-choice, right-choice, and timepoint marker encodings.",
+        "Generated trial clouds use deterministic recipes and do not reuse source pixels."
+      ],
+      "provenance": [
+        {
+          "confidence": "medium",
+          "note": "Mean trajectories and SEM widths are approximate visual reconstructions, not extracted numerical data."
+        },
+        {
+          "confidence": "medium",
+          "note": "Plot bounds and tick locations were estimated from the raster at native 361 x 510 dimensions."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "expectedElements": {
+      "panels": 1,
+      "xTicks": 5,
+      "yTicks": 5,
+      "meanSeries": 2,
+      "legendItems": 3,
+      "timepointMarkers": 9
+    },
+    "sourceReusePolicy": "Source raster may appear only in the QA reference image element; generated candidate renders all figure marks from semantic SVG objects."
+  },
+  "confidence": [
+    {
+      "aspect": "layout",
+      "level": "medium-high"
+    },
+    {
+      "aspect": "trajectory numeric values",
+      "level": "medium"
+    },
+    {
+      "aspect": "typography",
+      "level": "medium"
+    }
+  ]
+}

@@ -1,0 +1,580 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-01-place-code-opto-D",
+  "source": {
+    "path": "../../assets/reference/reference-01-place-code-opto-D-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Single time-series panel reconstructed by visual inspection. Curve anchors, uncertainty bands, axes, event line, legend, and light-on bar are generated semantic SVG elements rather than raster reuse."
+  },
+  "canvas": {
+    "width": 512,
+    "height": 512,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "fontCandidates": [
+      "Arial",
+      "Helvetica",
+      "Arial Narrow",
+      "Roboto Condensed",
+      "Arimo"
+    ],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "First-pass manual font tuning against the raster; labels use Arial-like sans-serif with explicit sizes and anchors."
+    }
+  },
+  "styles": {
+    "axis": "#111111",
+    "tick": "#111111",
+    "control": "#111111",
+    "controlBand": "rgba(120, 120, 120, 0.5)",
+    "opto": "#008f99",
+    "optoBand": "rgba(0, 143, 153, 0.42)",
+    "chance": "#666666",
+    "panelBorder": "#111111"
+  },
+  "sourceEvidence": [
+    {
+      "id": "bbox-canvas",
+      "type": "sourceImageSize",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 512,
+        "height": 512
+      },
+      "confidence": "high"
+    },
+    {
+      "id": "plot-bbox-estimate",
+      "type": "measuredPlotArea",
+      "bbox": {
+        "x": 68,
+        "y": 66,
+        "width": 397,
+        "height": 339
+      },
+      "confidence": "medium",
+      "note": "Estimated from visible left and bottom axes and tick labels."
+    },
+    {
+      "id": "event-anchor-source",
+      "type": "eventLine",
+      "xData": 0,
+      "xPx": 181.4,
+      "confidence": "medium"
+    },
+    {
+      "id": "chance-line-source",
+      "type": "horizontalReference",
+      "yData": 40,
+      "yPx": 369.2,
+      "confidence": "medium"
+    }
+  ],
+  "coordinateSystems": [
+    {
+      "id": "panel-d.xy",
+      "type": "cartesian2d",
+      "xDomain": [
+        -2,
+        5
+      ],
+      "yDomain": [
+        33,
+        100
+      ],
+      "dataBbox": {
+        "x": 68,
+        "y": 66,
+        "width": 397,
+        "height": 339
+      }
+    },
+    {
+      "id": "light-on-event",
+      "type": "eventAnchor",
+      "usesTransform": "panel-d.xy",
+      "x": 0
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-d",
+      "type": "time_series_with_event",
+      "label": {
+        "id": "panel-d-label",
+        "text": "D",
+        "x": 16,
+        "y": 27,
+        "fontSize": 24,
+        "fontWeight": 700,
+        "anchor": "start"
+      },
+      "title": {
+        "id": "panel-d-title",
+        "text": "Position decoding accuracy over time",
+        "x": 56,
+        "y": 26,
+        "fontSize": 18,
+        "fontWeight": 700,
+        "anchor": "start",
+        "targetWidth": 320,
+        "fit": "scaleX",
+        "sourceBox": {
+          "x": 56,
+          "y": 10,
+          "width": 300,
+          "height": 22
+        }
+      },
+      "plot": {
+        "id": "panel-d-plot",
+        "usesTransform": "panel-d.xy",
+        "dataBbox": {
+          "x": 68,
+          "y": 66,
+          "width": 397,
+          "height": 339
+        },
+        "x": {
+          "scale": "linear",
+          "domain": [
+            -2,
+            5
+          ],
+          "ticks": [
+            {
+              "value": -2,
+              "label": "-2"
+            },
+            {
+              "value": -1,
+              "label": "-1"
+            },
+            {
+              "value": 0,
+              "label": "0"
+            },
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 2,
+              "label": "2"
+            },
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 4,
+              "label": "4"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            }
+          ],
+          "label": {
+            "id": "panel-d-x-label",
+            "text": "Time from light onset (s)",
+            "x": 267,
+            "y": 455,
+            "fontSize": 17,
+            "anchor": "middle",
+            "anchorTo": "panel-d-x-axis"
+          }
+        },
+        "y": {
+          "scale": "linear",
+          "domain": [
+            33,
+            100
+          ],
+          "ticks": [
+            {
+              "value": 40,
+              "label": "40"
+            },
+            {
+              "value": 50,
+              "label": "50"
+            },
+            {
+              "value": 60,
+              "label": "60"
+            },
+            {
+              "value": 70,
+              "label": "70"
+            },
+            {
+              "value": 80,
+              "label": "80"
+            },
+            {
+              "value": 90,
+              "label": "90"
+            },
+            {
+              "value": 100,
+              "label": "100"
+            }
+          ],
+          "label": {
+            "id": "panel-d-y-label",
+            "text": "Decoding accuracy (%)",
+            "x": 29,
+            "y": 236,
+            "fontSize": 18,
+            "anchor": "middle",
+            "rotation": -90,
+            "anchorTo": "panel-d-y-axis"
+          }
+        },
+        "axes": {
+          "xAxis": {
+            "id": "panel-d-x-axis",
+            "line": {
+              "x1": 68,
+              "y1": 405,
+              "x2": 465,
+              "y2": 405
+            },
+            "tickLength": 6
+          },
+          "yAxis": {
+            "id": "panel-d-y-axis",
+            "line": {
+              "x1": 68,
+              "y1": 66,
+              "x2": 68,
+              "y2": 405
+            },
+            "tickLength": 6
+          }
+        }
+      },
+      "legend": {
+        "id": "panel-d-legend",
+        "items": [
+          {
+            "id": "legend-control",
+            "seriesId": "control-no-light",
+            "label": "Control (no light)",
+            "x": 94,
+            "y": 50,
+            "lineLength": 28,
+            "stroke": "#111111"
+          },
+          {
+            "id": "legend-opto",
+            "seriesId": "opto-archt",
+            "label": "Optogenetic inhibition (ArchT)",
+            "x": 94,
+            "y": 72,
+            "lineLength": 28,
+            "stroke": "#008f99"
+          }
+        ]
+      },
+      "marks": [
+        {
+          "id": "control-band",
+          "type": "uncertaintyBand",
+          "seriesId": "control-no-light",
+          "usesTransform": "panel-d.xy",
+          "fill": "rgba(120, 120, 120, 0.5)",
+          "bandHalfWidth": 1.15
+        },
+        {
+          "id": "control-no-light",
+          "type": "lineSeries",
+          "usesTransform": "panel-d.xy",
+          "label": "Control (no light)",
+          "stroke": "#111111",
+          "strokeWidth": 2.4,
+          "bandHalfWidth": 1.15,
+          "jitter": {
+            "amplitude": 0.55,
+            "frequency": 8.4,
+            "phase": 0.9
+          },
+          "points": [
+            [
+              -2,
+              78.8
+            ],
+            [
+              -1.6,
+              78.9
+            ],
+            [
+              -1.2,
+              79.5
+            ],
+            [
+              -0.8,
+              79.4
+            ],
+            [
+              -0.4,
+              78.9
+            ],
+            [
+              0,
+              78.1
+            ],
+            [
+              0.35,
+              76.2
+            ],
+            [
+              0.8,
+              74.4
+            ],
+            [
+              1.2,
+              74.1
+            ],
+            [
+              1.6,
+              75.0
+            ],
+            [
+              2.0,
+              75.9
+            ],
+            [
+              2.6,
+              77.0
+            ],
+            [
+              3.2,
+              78.0
+            ],
+            [
+              3.8,
+              78.5
+            ],
+            [
+              4.4,
+              78.3
+            ],
+            [
+              5,
+              78.8
+            ]
+          ]
+        },
+        {
+          "id": "opto-band",
+          "type": "uncertaintyBand",
+          "seriesId": "opto-archt",
+          "usesTransform": "panel-d.xy",
+          "fill": "rgba(0, 143, 153, 0.42)",
+          "bandHalfWidth": 1.25
+        },
+        {
+          "id": "opto-archt",
+          "type": "lineSeries",
+          "usesTransform": "panel-d.xy",
+          "label": "Optogenetic inhibition (ArchT)",
+          "stroke": "#008f99",
+          "strokeWidth": 2.6,
+          "bandHalfWidth": 1.25,
+          "jitter": {
+            "amplitude": 0.42,
+            "frequency": 9.2,
+            "phase": 2.1
+          },
+          "points": [
+            [
+              -2,
+              74.5
+            ],
+            [
+              -1.6,
+              74.0
+            ],
+            [
+              -1.2,
+              74.1
+            ],
+            [
+              -0.8,
+              74.2
+            ],
+            [
+              -0.4,
+              72.6
+            ],
+            [
+              -0.15,
+              70.2
+            ],
+            [
+              0,
+              64.0
+            ],
+            [
+              0.12,
+              55.5
+            ],
+            [
+              0.25,
+              44.2
+            ],
+            [
+              0.38,
+              41.6
+            ],
+            [
+              0.65,
+              41.7
+            ],
+            [
+              1.0,
+              42.6
+            ],
+            [
+              1.4,
+              44.5
+            ],
+            [
+              1.8,
+              46.2
+            ],
+            [
+              2.2,
+              48.4
+            ],
+            [
+              2.6,
+              50.6
+            ],
+            [
+              3.0,
+              52.3
+            ],
+            [
+              3.4,
+              54.2
+            ],
+            [
+              3.8,
+              56.0
+            ],
+            [
+              4.2,
+              57.0
+            ],
+            [
+              4.6,
+              58.0
+            ],
+            [
+              5,
+              58.7
+            ]
+          ]
+        }
+      ],
+      "annotations": [
+        {
+          "id": "light-on-event-line",
+          "type": "line",
+          "usesTransform": "panel-d.xy",
+          "anchorTo": "light-on-event",
+          "x": 0,
+          "y1": 36,
+          "y2": 100,
+          "stroke": "#00a7ad",
+          "strokeWidth": 1.2,
+          "dasharray": "5 5"
+        },
+        {
+          "id": "chance-line",
+          "type": "horizontalReference",
+          "usesTransform": "panel-d.xy",
+          "y": 40,
+          "label": {
+            "id": "chance-label",
+            "text": "Chance (20%)",
+            "x": 80,
+            "y": 374,
+            "fontSize": 14,
+            "anchor": "start"
+          },
+          "stroke": "#666666",
+          "strokeWidth": 1.2,
+          "dasharray": "5 4",
+          "x1": -2,
+          "x2": 5.08
+        },
+        {
+          "id": "light-on-bar",
+          "type": "rectWithLabel",
+          "anchorTo": "light-on-event",
+          "x": 185,
+          "y": 380,
+          "width": 120,
+          "height": 18,
+          "fill": "#008f99",
+          "label": {
+            "text": "Light ON",
+            "x": 245,
+            "y": 393,
+            "fontSize": 14,
+            "fill": "#ffffff",
+            "anchor": "middle"
+          }
+        }
+      ],
+      "provenance": [
+        {
+          "target": "panel-d.xy",
+          "confidence": "medium",
+          "note": "Axes and domains inferred from tick positions; lower domain extended below 40 to match bottom margin."
+        },
+        {
+          "target": "control-no-light",
+          "confidence": "medium",
+          "note": "Series anchors approximate the mean line; small deterministic jitter is generated for publication-like line roughness."
+        },
+        {
+          "target": "opto-archt",
+          "confidence": "medium",
+          "note": "Rapid drop after light onset and recovery trend are visually estimated."
+        },
+        {
+          "target": "uncertaintyBands",
+          "confidence": "low",
+          "note": "Bands are editable curve-following envelopes with approximate constant half-widths, not measured SEM values."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "expectedPanelCount": 1,
+    "expectedLineSeries": 2,
+    "expectedAxes": 2,
+    "expectedXTickCount": 8,
+    "expectedYTickCount": 7,
+    "sourceRasterUse": "Reference image only through labeled QA toggle; generated SVG does not use source raster."
+  },
+  "confidence": [
+    {
+      "target": "overall",
+      "confidence": "medium",
+      "note": "Independent first-pass reconstruction intended for visual inspection, with semantic editability prioritized over exact pixel matching."
+    }
+  ]
+}

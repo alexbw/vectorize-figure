@@ -1,0 +1,210 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-08-neuropixels-central-heatmap-B",
+  "source": {
+    "path": "../../../assets/reference/reference-08-neuropixels-central-heatmap-B-reference.png",
+    "usage": "QA/reference only; not used by generated candidate layers.",
+    "nativeWidth": 391,
+    "nativeHeight": 268,
+    "notes": "Single cropped Neuropixels spike raster panel. Source inspected visually; generated marks are procedural and editable rather than copied pixels."
+  },
+  "canvas": {
+    "width": 391,
+    "height": 268,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 16,
+    "color": "#111111",
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "First-pass visual match to compact rasterized sans-serif text; no automated font calibration was run."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "panel-b.data",
+      "type": "cartesian2d",
+      "x": {"domain": [100, 140], "range": [49, 377]},
+      "y": {"domain": [1, 200], "range": [33, 195], "direction": "down"}
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-b",
+      "bbox": {"x": 0, "y": 0, "width": 391, "height": 268},
+      "label": {
+        "id": "panel-b-label",
+        "text": "B",
+        "x": -5,
+        "y": 17,
+        "fontSize": 20,
+        "fontWeight": 700,
+        "textAnchor": "end",
+        "sourceBox": {"x": -10, "y": 0, "width": 16, "height": 20},
+        "fit": "source crop cuts off left side of panel label"
+      },
+      "title": {
+        "id": "panel-b-title",
+        "text": "Spike raster (example neurons)",
+        "x": 21,
+        "y": 17,
+        "fontSize": 16,
+        "fontWeight": 700,
+        "targetWidth": 258,
+        "sourceBox": {"x": 21, "y": 1, "width": 258, "height": 20}
+      },
+      "plot": {
+        "id": "panel-b-plot",
+        "dataBbox": {"x": 49, "y": 33, "width": 328, "height": 162},
+        "axes": {
+          "xAxis": {
+            "id": "panel-b-x-axis",
+            "line": {"x1": 49, "y1": 195, "x2": 377, "y2": 195},
+            "tickLength": 4
+          },
+          "yAxis": {
+            "id": "panel-b-y-axis",
+            "line": {"x1": 49, "y1": 33, "x2": 49, "y2": 195},
+            "tickLength": 4
+          }
+        },
+        "x": {
+          "scale": "linear",
+          "domain": [100, 140],
+          "ticks": [
+            {"value": 100, "label": "100"},
+            {"value": 110, "label": "110"},
+            {"value": 120, "label": "120"},
+            {"value": 130, "label": "130"},
+            {"value": 140, "label": "140"}
+          ],
+          "label": {
+            "id": "panel-b-x-label",
+            "text": "Time (s)",
+            "x": 213,
+            "y": 240,
+            "fontSize": 16,
+            "textAnchor": "middle",
+            "anchorTo": "panel-b-x-axis"
+          }
+        },
+        "y": {
+          "scale": "linear",
+          "domain": [1, 200],
+          "ticks": [
+            {"value": 1, "label": "1"},
+            {"value": 50, "label": "50"},
+            {"value": 100, "label": "100"},
+            {"value": 150, "label": "150"},
+            {"value": 200, "label": "200"}
+          ],
+          "label": {
+            "id": "panel-b-y-label",
+            "text": "Neuron #",
+            "x": 6,
+            "y": 114,
+            "fontSize": 16,
+            "rotation": -90,
+            "textAnchor": "middle",
+            "anchorTo": "panel-b-y-axis"
+          }
+        }
+      },
+      "marks": [
+        {
+          "id": "spike-raster-events",
+          "type": "raster",
+          "usesTransform": "panel-b.data",
+          "renderer": "canvas",
+          "style": {"fill": "#111111", "alpha": 0.82, "width": 1, "height": 1},
+          "generationRecipe": {
+            "seed": 3808,
+            "rowDomain": [1, 200],
+            "backgroundEvents": {"count": 620, "timeRange": [100, 140], "rowRange": [1, 200]},
+            "bands": [
+              {"id": "early-cluster", "center": 103.0, "sigma": 1.35, "count": 410, "rowRange": [1, 165], "rowJitter": 0.45},
+              {"id": "central-dense", "center": 114.1, "sigma": 1.18, "count": 720, "rowRange": [1, 200], "rowJitter": 0.45},
+              {"id": "late-mid", "center": 128.7, "sigma": 1.50, "count": 330, "rowRange": [5, 165], "rowJitter": 0.45},
+              {"id": "right-cluster", "center": 138.3, "sigma": 0.95, "count": 280, "rowRange": [1, 160], "rowJitter": 0.45}
+            ],
+            "horizontalRowBands": [
+              {"centerRow": 33, "heightRows": 3, "count": 70, "timeRange": [100, 116]},
+              {"centerRow": 76, "heightRows": 4, "count": 92, "timeRange": [101, 116]},
+              {"centerRow": 116, "heightRows": 4, "count": 80, "timeRange": [100, 134]},
+              {"centerRow": 155, "heightRows": 5, "count": 98, "timeRange": [100, 140]}
+            ],
+            "dropoutWindows": [
+              {"timeRange": [119.5, 125.2], "keepProbability": 0.28},
+              {"timeRange": [131.8, 136.0], "keepProbability": 0.55}
+            ]
+          }
+        }
+      ],
+      "annotations": [
+        {
+          "id": "bottom-left-modality-label",
+          "type": "text",
+          "text": "Neuropixels",
+          "x": 5,
+          "y": 264,
+          "fontSize": 14,
+          "fontWeight": 400,
+          "textAnchor": "start",
+          "sourceBox": {"x": 5, "y": 252, "width": 77, "height": 16}
+        },
+        {
+          "id": "bottom-roman-ii",
+          "type": "text",
+          "text": "II",
+          "x": 311,
+          "y": 267,
+          "fontSize": 14,
+          "fontWeight": 700,
+          "textAnchor": "middle",
+          "sourceBox": {"x": 306, "y": 256, "width": 11, "height": 13}
+        }
+      ],
+      "provenance": [
+        {
+          "object": "panel-b-plot",
+          "confidence": "medium",
+          "note": "Plot bounds and tick anchors estimated from visible axis spines and labels."
+        },
+        {
+          "object": "spike-raster-events",
+          "confidence": "medium-low",
+          "note": "Event distribution is a seeded synthetic recipe matching visual density and clustered timing, not recovered original spike times."
+        }
+      ]
+    }
+  ],
+  "rendering": {
+    "strategy": "hybrid",
+    "layers": [
+      {"id": "background", "renderer": "svg"},
+      {"id": "raster-marks", "renderer": "canvas"},
+      {"id": "axes-and-text", "renderer": "svg"}
+    ],
+    "styleTokens": {
+      "axisStroke": "#111111",
+      "axisStrokeWidth": 1,
+      "tickFontSize": 16,
+      "tickLabelColor": "#111111"
+    }
+  },
+  "validation": {
+    "expectedNativeSize": [391, 268],
+    "checks": [
+      "Generated candidate does not render source raster as a layer.",
+      "Axis ticks are linked to x/y domains and share panel-b.data transform.",
+      "Raster points are generated from an editable seed and density recipe."
+    ]
+  },
+  "confidence": [
+    {"field": "typography", "level": "medium", "note": "Arial/Helvetica approximates source text but exact paper font is unknown."},
+    {"field": "raster-data", "level": "low", "note": "Only visual distribution is reconstructed; original spike event table is unavailable."}
+  ]
+}

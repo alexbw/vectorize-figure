@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-08-neuropixels-central-heatmap-G reconstruction</title>
+  <style>
+    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #cfcfcf; }
+    h1 { margin: 0; font-size: 16px; line-height: 1.15; }
+    .note { margin-top: 3px; font-size: 12px; color: #555555; }
+    .toggle { display: inline-flex; border: 1px solid #999999; border-radius: 4px; overflow: hidden; flex: 0 0 auto; }
+    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
+    .toggle button.active { background: #111111; color: #ffffff; }
+    main { min-height: calc(100vh - 52px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
+    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
+    .surface, .reference { position: absolute; inset: 0; }
+    .reference { display: none; width: 100%; height: 100%; object-fit: contain; background: #ffffff; }
+    .show-reference .surface { display: none; }
+    .show-reference .reference { display: block; }
+    svg, canvas { position: absolute; inset: 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-08-neuropixels-central-heatmap-G</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">QA reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA reference source image">
+    </div>
+  </main>
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const $ = id => document.getElementById(id);
+    const make = (tag, attrs = {}) => {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) if (value !== undefined && value !== null) node.setAttribute(key, value);
+      return node;
+    };
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+    const scale = (domain, range, value) => range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+    function rng(seed) {
+      return function random() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    function hexToRgb(hex) {
+      const n = parseInt(hex.slice(1), 16);
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    }
+    function mix(a, b, t) {
+      const ar = hexToRgb(a), br = hexToRgb(b);
+      return `rgb(${Math.round(ar[0] + (br[0] - ar[0]) * t)},${Math.round(ar[1] + (br[1] - ar[1]) * t)},${Math.round(ar[2] + (br[2] - ar[2]) * t)})`;
+    }
+    function text(svg, obj) {
+      const node = make('text', {
+        x: obj.x, y: obj.y, fill: obj.fill || '#111111', 'font-size': obj.fontSize || 14,
+        'font-weight': obj.fontWeight || 400, 'text-anchor': obj.anchor || 'start',
+        'dominant-baseline': obj.baseline || 'alphabetic',
+        transform: obj.rotation ? `rotate(${obj.rotation} ${obj.x} ${obj.y})` : null
+      });
+      node.textContent = obj.text;
+      svg.appendChild(node);
+    }
+    function path(svg, obj) {
+      svg.appendChild(make('path', { d: obj.d, fill: obj.fill || 'none', stroke: obj.stroke || 'none', 'stroke-width': obj.strokeWidth || 1, opacity: obj.opacity, 'stroke-dasharray': obj.dasharray }));
+    }
+    function line(svg, obj) {
+      svg.appendChild(make('line', { x1: obj.x1, y1: obj.y1, x2: obj.x2, y2: obj.y2, stroke: obj.stroke || '#111111', 'stroke-width': obj.strokeWidth || 1, 'stroke-dasharray': obj.dasharray }));
+    }
+    function renderHeatmap(canvas, obj) {
+      const ctx = canvas.getContext('2d');
+      const {x, y, width, height} = obj.bbox;
+      const rows = obj.matrix.rows, cols = obj.matrix.cols, rand = rng(obj.matrix.seed);
+      const cw = width / cols, rh = height / rows;
+      ctx.fillStyle = obj.matrix.base;
+      ctx.fillRect(x, y, width, height);
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const band = Math.exp(-Math.pow((r - rows * (0.28 + 0.16 * Math.sin(c / 22))) / 5.5, 2));
+          const streak = (Math.sin(c / 7 + r * 0.6) + 1) * 0.12;
+          const impulse = rand() < obj.matrix.speckle ? rand() * 0.75 : 0;
+          const t = clamp(band * 0.55 + streak + impulse, 0, 1);
+          ctx.fillStyle = mix(obj.matrix.base, obj.matrix.hot, t);
+          ctx.fillRect(x + c * cw, y + r * rh, Math.ceil(cw) + 0.2, Math.ceil(rh) + 0.2);
+        }
+      }
+    }
+    function interpAnchors(anchors, x) {
+      for (let i = 1; i < anchors.length; i++) {
+        if (x <= anchors[i][0]) {
+          const a = anchors[i - 1], b = anchors[i], t = (x - a[0]) / (b[0] - a[0]);
+          return a[1] + (b[1] - a[1]) * t;
+        }
+      }
+      return anchors[anchors.length - 1][1];
+    }
+    function lineSeriesPath(plot, recipe, series) {
+      const box = plot.dataBbox, rand = rng(series.noiseSeed);
+      const xMap = v => scale(plot.x.domain, [box.x, box.x + box.width], v);
+      const yMap = v => scale(plot.y.domain, [box.y + box.height, box.y], v);
+      const count = recipe.xValues.count;
+      const pts = [];
+      for (let i = 0; i < count; i++) {
+        const x = recipe.xValues.start + (recipe.xValues.end - recipe.xValues.start) * i / (count - 1);
+        const wobble = (rand() - 0.5) * 2 * (series.noise || 0);
+        pts.push([xMap(x), yMap(clamp(interpAnchors(series.anchors, x) + wobble, 0, 1))]);
+      }
+      return pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
+    }
+    function renderTop(svg, canvas, panel) {
+      const top = panel.layoutObjects;
+      const probe = top.find(o => o.id === 'probe-layer-legend');
+      svg.appendChild(make('polygon', { points: probe.probe.outline.map(p => p.join(',')).join(' '), fill: '#ffffff', stroke: '#111111', 'stroke-width': 1.2 }));
+      probe.probe.segments.forEach(s => svg.appendChild(make('rect', { x: 29, y: s.y1, width: 10, height: s.y2 - s.y1, fill: s.fill, stroke: 'none' })));
+      probe.probe.dashConnectors.forEach(c => svg.appendChild(make('polyline', { points: c.from.join(',') + ' ' + c.to.join(','), fill: 'none', stroke: '#8a8a8a', 'stroke-width': 1, 'stroke-dasharray': '3 4' })));
+      probe.labels.forEach(l => text(svg, {fontSize: 14, ...l}));
+      const brain = top.find(o => o.id === 'brain-schematic');
+      brain.paths.forEach(p => path(svg, p));
+      brain.connectors.forEach(c => svg.appendChild(make('polyline', { points: c.points.map(p => p.join(',')).join(' '), fill: 'none', stroke: '#9a9a9a', 'stroke-width': 1, 'stroke-dasharray': c.dasharray })));
+      const heat = top.find(o => o.id === 'partial-heatmap');
+      renderHeatmap(canvas, heat);
+      const g = canvas.getContext('2d');
+      const cb = heat.colorbar;
+      const grad = g.createLinearGradient(0, cb.y + cb.height, 0, cb.y);
+      cb.colors.forEach((c, i) => grad.addColorStop(i / (cb.colors.length - 1), c));
+      g.fillStyle = grad; g.fillRect(cb.x, cb.y, cb.width, cb.height);
+      line(svg, heat.axisLine);
+      heat.colorbar.tickLabels.forEach(l => text(svg, {fontSize: 14, ...l}));
+      heat.labels.forEach(l => text(svg, l));
+    }
+    function renderAxes(svg, panel) {
+      const plot = panel.plot, box = plot.dataBbox;
+      line(svg, {...plot.axes.xAxis.line, stroke: '#222222', strokeWidth: 1.2});
+      line(svg, {...plot.axes.yAxis.line, stroke: '#222222', strokeWidth: 1.2});
+      plot.x.ticks.forEach(t => {
+        const x = scale(plot.x.domain, [box.x, box.x + box.width], t.value);
+        line(svg, {x1: x, y1: plot.axes.xAxis.line.y1, x2: x, y2: plot.axes.xAxis.line.y1 + plot.axes.xAxis.tickLength, stroke: '#222222', strokeWidth: 1});
+        text(svg, {text: t.label, x, y: plot.axes.xAxis.line.y1 + 22, fontSize: 16, anchor: 'middle'});
+      });
+      plot.y.ticks.forEach(t => {
+        const y = scale(plot.y.domain, [box.y + box.height, box.y], t.value);
+        line(svg, {x1: plot.axes.yAxis.line.x1 - plot.axes.yAxis.tickLength, y1: y, x2: plot.axes.yAxis.line.x1, y2: y, stroke: '#222222', strokeWidth: 1});
+        text(svg, {text: t.label, x: plot.axes.yAxis.line.x1 - 13, y: y + 5, fontSize: 16, anchor: 'end'});
+      });
+      text(svg, plot.x.label);
+      text(svg, plot.y.label);
+    }
+    function renderChart(svg, panel) {
+      text(svg, panel.label);
+      text(svg, panel.title);
+      renderAxes(svg, panel);
+      const group = make('g', {'data-mark-type': 'lineSeriesGroup'});
+      panel.data.series.forEach(s => {
+        group.appendChild(make('path', {
+          d: lineSeriesPath(panel.plot, panel.data.seriesRecipe, s),
+          fill: 'none', stroke: s.color, 'stroke-width': s.strokeWidth,
+          'stroke-linejoin': 'round', 'stroke-linecap': 'round',
+          'stroke-dasharray': s.dasharray || null, 'data-series-id': s.id
+        }));
+      });
+      svg.appendChild(group);
+    }
+    async function loadSpec() {
+      const response = await fetch('reference-08-neuropixels-central-heatmap-G.json');
+      return response.json();
+    }
+    function render(spec) {
+      document.title = spec.id + ' reconstruction';
+      $('title').textContent = spec.id;
+      $('frame').style.width = spec.canvas.width + 'px';
+      $('frame').style.height = spec.canvas.height + 'px';
+      $('reference').src = spec.source.path;
+      const surface = $('surface');
+      surface.innerHTML = '';
+      const canvas = document.createElement('canvas');
+      canvas.width = spec.canvas.width; canvas.height = spec.canvas.height;
+      const svg = make('svg', {width: spec.canvas.width, height: spec.canvas.height, viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, role: 'img'});
+      svg.style.fontFamily = spec.typography.fontFamily;
+      const bg = make('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background});
+      svg.appendChild(bg);
+      surface.appendChild(canvas);
+      surface.appendChild(svg);
+      spec.panels.forEach(panel => {
+        if (panel.id === 'top-context') renderTop(svg, canvas, panel);
+        if (panel.id === 'panel-g') renderChart(svg, panel);
+      });
+    }
+    $('generatedButton').addEventListener('click', () => {
+      $('frame').classList.remove('show-reference');
+      $('generatedButton').classList.add('active');
+      $('referenceButton').classList.remove('active');
+    });
+    $('referenceButton').addEventListener('click', () => {
+      $('frame').classList.add('show-reference');
+      $('referenceButton').classList.add('active');
+      $('generatedButton').classList.remove('active');
+    });
+    loadSpec().then(render).catch(error => {
+      document.body.insertAdjacentHTML('beforeend', `<pre style="color:#a00;padding:16px">${String(error)}</pre>`);
+      throw error;
+    });
+  </script>
+</body>
+</html>

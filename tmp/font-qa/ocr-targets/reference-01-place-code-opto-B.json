@@ -1,0 +1,142 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-01-place-code-opto-B-ocr-text-targets",
+  "source": {
+    "path": "/assets/reference/reference-01-place-code-opto-B-reference.png",
+    "usage": "QA-only OCR text target extraction for typography calibration."
+  },
+  "canvas": {
+    "width": 464,
+    "height": 512,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Helvetica, Arial, sans-serif",
+    "defaultSize": 13,
+    "color": "#111111"
+  },
+  "panels": [
+    {
+      "id": "ocr-text-targets",
+      "marks": [
+        {
+          "id": "ocr-01",
+          "type": "text",
+          "text": "B Population place fields",
+          "x": 10,
+          "y": 39,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 20.7,
+          "fontWeight": 700,
+          "anchor": "start",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 10,
+            "y": 16,
+            "width": 200,
+            "height": 23
+          },
+          "targetWidth": 200,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 89.8
+        },
+        {
+          "id": "ocr-02",
+          "type": "text",
+          "text": "20 7 Control (no light)",
+          "x": 31,
+          "y": 90,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 27,
+          "fontWeight": 700,
+          "anchor": "start",
+          "fill": "#009da3",
+          "sourceBox": {
+            "x": 31,
+            "y": 60,
+            "width": 180,
+            "height": 30
+          },
+          "targetWidth": 180,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 88.9
+        },
+        {
+          "id": "ocr-03",
+          "type": "text",
+          "text": "Optogenetic inhibition (ArchT)",
+          "x": 107,
+          "y": 107,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 13.5,
+          "fontWeight": 400,
+          "anchor": "start",
+          "fill": "#009da3",
+          "sourceBox": {
+            "x": 107,
+            "y": 92,
+            "width": 189,
+            "height": 15
+          },
+          "targetWidth": 189,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 91.9
+        },
+        {
+          "id": "ocr-04",
+          "type": "text",
+          "text": "Rn",
+          "x": 14,
+          "y": 189,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 11.700000000000001,
+          "fontWeight": 400,
+          "anchor": "middle",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 5,
+            "y": 176,
+            "width": 18,
+            "height": 13
+          },
+          "targetWidth": 18,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 40
+        },
+        {
+          "id": "ocr-05",
+          "type": "text",
+          "text": "Position (cm)",
+          "x": 229.5,
+          "y": 493,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 15.3,
+          "fontWeight": 400,
+          "anchor": "middle",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 186,
+            "y": 476,
+            "width": 87,
+            "height": 17
+          },
+          "targetWidth": 87,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 96.3
+        }
+      ]
+    }
+  ],
+  "confidence": [
+    {
+      "target": "ocr-text-targets",
+      "confidence": "medium",
+      "note": "Generated from Tesseract line OCR; noisy lines should be ignored in visual QA."
+    }
+  ]
+}

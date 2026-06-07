@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-05-grid-remapping-C reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #aaaaaa;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .frame {
+      position: relative;
+      width: 566px;
+      height: 500px;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+    .surface,
+    .reference {
+      position: absolute;
+      inset: 0;
+    }
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+    }
+    .show-reference .surface {
+      display: none;
+    }
+    .show-reference .reference {
+      display: block;
+    }
+    svg,
+    canvas {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>reference-05-grid-remapping-C</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA reference source image">
+    </div>
+  </main>
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function makeSvg(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function seededRandom(seed) {
+      return function random() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function interpolateColor(stops, value) {
+      const v = Math.max(0, Math.min(1, value));
+      let left = stops[0];
+      let right = stops[stops.length - 1];
+      for (let i = 0; i < stops.length - 1; i += 1) {
+        if (v >= stops[i].value && v <= stops[i + 1].value) {
+          left = stops[i];
+          right = stops[i + 1];
+          break;
+        }
+      }
+      const span = Math.max(0.0001, right.value - left.value);
+      const t = (v - left.value) / span;
+      const a = hexToRgb(left.color);
+      const b = hexToRgb(right.color);
+      return [
+        Math.round(a[0] + (b[0] - a[0]) * t),
+        Math.round(a[1] + (b[1] - a[1]) * t),
+        Math.round(a[2] + (b[2] - a[2]) * t)
+      ];
+    }
+
+    function hexToRgb(hex) {
+      const clean = hex.replace('#', '');
+      return [
+        parseInt(clean.slice(0, 2), 16),
+        parseInt(clean.slice(2, 4), 16),
+        parseInt(clean.slice(4, 6), 16)
+      ];
+    }
+
+    function scale(domain, range, value) {
+      return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+    }
+
+    function panelScales(panel) {
+      const box = panel.plot.dataBbox;
+      return {
+        x: value => scale(panel.plot.x.domain, [box.x, box.x + box.width], value),
+        y: value => scale(panel.plot.y.domain, [box.y + box.height, box.y], value),
+        xInv: px => scale([box.x, box.x + box.width], panel.plot.x.domain, px),
+        yInv: py => scale([box.y + box.height, box.y], panel.plot.y.domain, py)
+      };
+    }
+
+    function latticeSpots(recipe, rand) {
+      const spots = [];
+      const spacing = recipe.spacing;
+      const yStep = spacing * Math.sqrt(3) / 2;
+      for (let row = -4; row <= 4; row += 1) {
+        for (let col = -4; col <= 4; col += 1) {
+          const baseX = (col + (Math.abs(row) % 2) * 0.5) * spacing;
+          const baseY = row * yStep;
+          const r = Math.hypot(baseX, baseY);
+          if (r > 78 || r < 7) continue;
+          const angle = Math.atan2(baseY, baseX) + (rand() - 0.5) * recipe.angularJitter;
+          const rr = r + (rand() - 0.5) * recipe.radialJitter;
+          spots.push({
+            x: Math.cos(angle) * rr,
+            y: Math.sin(angle) * rr,
+            sigma: recipe.sigma * (0.84 + rand() * 0.36),
+            amplitude: Math.max(0.15, 0.78 - r / 145 + (rand() - 0.5) * 0.16)
+          });
+        }
+      }
+      spots.push({x: 0, y: 0, sigma: recipe.centerSigma, amplitude: recipe.centerGain});
+      return spots;
+    }
+
+    function renderHeatmap(canvas, spec, panel, mark, colorScale) {
+      const ctx = canvas.getContext('2d');
+      const box = panel.plot.dataBbox;
+      const image = ctx.createImageData(box.width, box.height);
+      const scales = panelScales(panel);
+      const rand = seededRandom(mark.latticeRecipe.seed);
+      const noiseRand = seededRandom(mark.backgroundNoise.seed);
+      const spots = latticeSpots(mark.latticeRecipe, rand).concat(mark.spots);
+      const coarse = Array.from({length: 30 * 30}, () => noiseRand());
+
+      for (let py = 0; py < box.height; py += 1) {
+        for (let px = 0; px < box.width; px += 1) {
+          const dataX = scales.xInv(box.x + px);
+          const dataY = scales.yInv(box.y + py);
+          let value = 0.02;
+          for (const spot of spots) {
+            const dx = dataX - spot.x;
+            const dy = dataY - spot.y;
+            value += spot.amplitude * Math.exp(-(dx * dx + dy * dy) / (2 * spot.sigma * spot.sigma));
+          }
+          const gx = Math.floor(px / box.width * 29);
+          const gy = Math.floor(py / box.height * 29);
+          const grain = (noiseRand() - 0.5) * mark.backgroundNoise.grain;
+          const coarseNoise = coarse[gy * 30 + gx] - 0.5;
+          value = value * 0.82 + mark.backgroundNoise.amplitude * coarseNoise + grain * 0.05;
+          value = Math.pow(Math.max(0, Math.min(1, value)), 1.16);
+          const [r, g, b] = interpolateColor(colorScale.stops, value);
+          const offset = (py * box.width + px) * 4;
+          image.data[offset] = r;
+          image.data[offset + 1] = g;
+          image.data[offset + 2] = b;
+          image.data[offset + 3] = 255;
+        }
+      }
+      ctx.putImageData(image, box.x, box.y);
+    }
+
+    function addText(svg, textSpec, className = 'figure-text') {
+      const text = makeSvg('text', {
+        x: textSpec.x ?? textSpec.anchor?.x,
+        y: textSpec.y ?? textSpec.anchor?.y,
+        fill: textSpec.fill || '#050505',
+        'font-size': textSpec.fontSize,
+        'font-weight': textSpec.fontWeight || 400,
+        'font-family': textSpec.fontFamily || 'Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif',
+        'text-anchor': textSpec.textAnchor || textSpec.anchor || 'start',
+        class: className
+      });
+      if (textSpec.rotation) {
+        text.setAttribute('transform', `rotate(${textSpec.rotation} ${textSpec.x} ${textSpec.y})`);
+      }
+      const lines = String(textSpec.text).split('\n');
+      lines.forEach((line, index) => {
+        const tspan = makeSvg('tspan', {
+          x: textSpec.x ?? textSpec.anchor?.x,
+          dy: index === 0 ? 0 : (textSpec.lineHeight || textSpec.fontSize * 1.1)
+        });
+        tspan.textContent = line;
+        text.appendChild(tspan);
+      });
+      svg.appendChild(text);
+      return text;
+    }
+
+    function renderAxes(svg, panel) {
+      const box = panel.plot.dataBbox;
+      const scales = panelScales(panel);
+      const axis = panel.plot.axes;
+      svg.appendChild(makeSvg('line', {x1: box.x, y1: box.y + box.height, x2: box.x + box.width, y2: box.y + box.height, stroke: axis.stroke, 'stroke-width': axis.strokeWidth}));
+      svg.appendChild(makeSvg('line', {x1: box.x, y1: box.y, x2: box.x, y2: box.y + box.height, stroke: axis.stroke, 'stroke-width': axis.strokeWidth}));
+      panel.plot.x.ticks.forEach(tick => {
+        const x = scales.x(tick.value);
+        const y = box.y + box.height;
+        svg.appendChild(makeSvg('line', {x1: x, y1: y, x2: x, y2: y + axis.tickLength, stroke: axis.stroke, 'stroke-width': axis.strokeWidth}));
+        addText(svg, {text: tick.label, x, y: y + 27, fontSize: 17, textAnchor: 'middle'});
+      });
+      panel.plot.y.ticks.forEach(tick => {
+        const y = scales.y(tick.value);
+        svg.appendChild(makeSvg('line', {x1: box.x - axis.tickLength, y1: y, x2: box.x, y2: y, stroke: axis.stroke, 'stroke-width': axis.strokeWidth}));
+        if (tick.label) addText(svg, {text: tick.label, x: box.x - 13, y: y + 6, fontSize: 17, textAnchor: 'end'});
+      });
+      if (panel.plot.x.label) addText(svg, {...panel.plot.x.label, textAnchor: 'middle'});
+      if (panel.plot.y.label) addText(svg, {...panel.plot.y.label, textAnchor: 'middle'});
+    }
+
+    function renderColorbar(svg, spec) {
+      const colorbar = spec.layoutObjects.find(item => item.id === 'colorbar');
+      const scaleSpec = spec.coordinateSystems.find(item => item.id === colorbar.colorScale);
+      const gradientId = 'norm-counts-gradient';
+      const defs = makeSvg('defs');
+      const gradient = makeSvg('linearGradient', {id: gradientId, x1: '0%', y1: '100%', x2: '0%', y2: '0%'});
+      scaleSpec.stops.forEach(stop => gradient.appendChild(makeSvg('stop', {offset: `${stop.value * 100}%`, 'stop-color': stop.color})));
+      defs.appendChild(gradient);
+      svg.appendChild(defs);
+      const box = colorbar.bbox;
+      svg.appendChild(makeSvg('rect', {x: box.x, y: box.y, width: box.width, height: box.height, fill: `url(#${gradientId})`, stroke: '#111111', 'stroke-width': 1}));
+      colorbar.ticks.forEach(tick => {
+        const y = scale([0, 1], [box.y + box.height, box.y], tick.value);
+        svg.appendChild(makeSvg('line', {x1: box.x + box.width, y1: y, x2: box.x + box.width + 5, y2: y, stroke: '#111111', 'stroke-width': 1}));
+        addText(svg, {text: tick.label, x: box.x + box.width + 9, y: y + 5, fontSize: 16});
+      });
+      addText(svg, {text: colorbar.title.text, x: colorbar.title.x, y: colorbar.title.y, fontSize: colorbar.title.fontSize, lineHeight: colorbar.title.lineHeight});
+    }
+
+    async function loadSpec() {
+      const response = await fetch('reference-05-grid-remapping-C.json');
+      if (!response.ok) throw new Error(`Could not load JSON spec: ${response.status}`);
+      return response.json();
+    }
+
+    function render(spec) {
+      const frame = document.getElementById('frame');
+      const surface = document.getElementById('surface');
+      const reference = document.getElementById('reference');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      reference.src = spec.source.path;
+      surface.replaceChildren();
+
+      const canvas = document.createElement('canvas');
+      canvas.width = spec.canvas.width;
+      canvas.height = spec.canvas.height;
+      surface.appendChild(canvas);
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = spec.canvas.background;
+      ctx.fillRect(0, 0, spec.canvas.width, spec.canvas.height);
+
+      const svg = makeSvg('svg', {viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, width: spec.canvas.width, height: spec.canvas.height});
+      surface.appendChild(svg);
+
+      const colorScale = spec.coordinateSystems.find(item => item.id === 'norm-counts');
+      spec.panels.forEach(panel => {
+        panel.marks.filter(mark => mark.type === 'heatmap').forEach(mark => renderHeatmap(canvas, spec, panel, mark, colorScale));
+      });
+      spec.panels.forEach(panel => renderAxes(svg, panel));
+      spec.layoutObjects.filter(item => item.type !== 'colorbar').forEach(item => addText(svg, item));
+      renderColorbar(svg, spec);
+    }
+
+    function setMode(mode) {
+      const frame = document.getElementById('frame');
+      const generatedButton = document.getElementById('generatedButton');
+      const referenceButton = document.getElementById('referenceButton');
+      const isReference = mode === 'reference';
+      frame.classList.toggle('show-reference', isReference);
+      generatedButton.classList.toggle('active', !isReference);
+      referenceButton.classList.toggle('active', isReference);
+    }
+
+    document.getElementById('generatedButton').addEventListener('click', () => setMode('generated'));
+    document.getElementById('referenceButton').addEventListener('click', () => setMode('reference'));
+    loadSpec().then(render).catch(error => {
+      document.getElementById('surface').textContent = error.message;
+      console.error(error);
+    });
+  </script>
+</body>
+</html>

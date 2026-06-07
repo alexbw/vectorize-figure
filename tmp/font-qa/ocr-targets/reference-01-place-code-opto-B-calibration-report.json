@@ -1,0 +1,97 @@
+[
+  {
+    "id": "ocr-01",
+    "text": "B Population place fields",
+    "family": "Arial Narrow",
+    "size": 19.9,
+    "weight": 600,
+    "lineHeight": 1,
+    "scaleX": 1.025,
+    "naturalWidth": 194.06,
+    "x": 13.25,
+    "y": 34.7,
+    "score": 0.55738,
+    "crop": {
+      "x": 6,
+      "y": 12,
+      "width": 208,
+      "height": 31
+    }
+  },
+  {
+    "id": "ocr-02",
+    "text": "20 7 Control (no light)",
+    "family": "Source Sans 3",
+    "size": 18.64,
+    "weight": 600,
+    "lineHeight": 1,
+    "scaleX": 0.73,
+    "naturalWidth": 96.16,
+    "x": 31,
+    "y": 80,
+    "score": 1.48785,
+    "crop": {
+      "x": 27,
+      "y": 56,
+      "width": 188,
+      "height": 38
+    }
+  },
+  {
+    "id": "ocr-03",
+    "text": "Optogenetic inhibition (ArchT)",
+    "family": "Helvetica Neue",
+    "size": 8.92,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1.25,
+    "naturalWidth": 108.41,
+    "x": 107,
+    "y": 112.5,
+    "score": 1.27733,
+    "crop": {
+      "x": 103,
+      "y": 88,
+      "width": 197,
+      "height": 23
+    }
+  },
+  {
+    "id": "ocr-04",
+    "text": "Rn",
+    "family": "Helvetica Neue",
+    "size": 13.76,
+    "weight": 500,
+    "lineHeight": 1,
+    "scaleX": 1.025,
+    "naturalWidth": 17.59,
+    "x": 14,
+    "y": 191.7,
+    "score": 0.88029,
+    "crop": {
+      "x": 1,
+      "y": 172,
+      "width": 26,
+      "height": 21
+    }
+  },
+  {
+    "id": "ocr-05",
+    "text": "Position (cm)",
+    "family": "Arial Narrow",
+    "size": 18.51,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1,
+    "naturalWidth": 88.56,
+    "x": 229.5,
+    "y": 490.05,
+    "score": 0.30315,
+    "crop": {
+      "x": 182,
+      "y": 472,
+      "width": 95,
+      "height": 25
+    }
+  }
+]

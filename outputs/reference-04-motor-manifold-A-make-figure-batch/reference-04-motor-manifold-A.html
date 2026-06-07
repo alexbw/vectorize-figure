@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-04-motor-manifold-A reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #aaaaaa;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+    .surface, .reference {
+      position: absolute;
+      inset: 0;
+    }
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background-color: #ffffff;
+    }
+    .show-reference .surface {
+      display: none;
+    }
+    .show-reference .reference {
+      display: block;
+    }
+    svg {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-04-motor-manifold-A</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">QA reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA reference source image">
+    </div>
+  </main>
+  <script>
+    const SPEC_URL = './reference-04-motor-manifold-A.json';
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function byId(id) {
+      return document.getElementById(id);
+    }
+
+    function node(tag, attrs = {}) {
+      const item = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) item.setAttribute(key, value);
+      }
+      return item;
+    }
+
+    function seeded(seed) {
+      let state = seed >>> 0;
+      return () => {
+        state = (1664525 * state + 1013904223) >>> 0;
+        return state / 4294967296;
+      };
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function colorAt(degrees) {
+      const hue = ((degrees % 360) + 360) % 360;
+      return `hsl(${hue}, 82%, 51%)`;
+    }
+
+    function projectFactory(system) {
+      const origin = system.projection.origin;
+      const domainOrigin = system.projection.domainOrigin;
+      const basis = system.projection.basis;
+      const domains = system.domains;
+      const span = {
+        pc1: domains.pc1[1] - domains.pc1[0],
+        pc2: domains.pc2[1] - domains.pc2[0],
+        pc3: domains.pc3[1] - domains.pc3[0]
+      };
+      return (point) => {
+        const u = {
+          pc1: (point.pc1 - domainOrigin.pc1) / span.pc1,
+          pc2: (point.pc2 - domainOrigin.pc2) / span.pc2,
+          pc3: (point.pc3 - domainOrigin.pc3) / span.pc3
+        };
+        return {
+          x: origin.x + u.pc1 * basis.pc1.x + u.pc2 * basis.pc2.x + u.pc3 * basis.pc3.x,
+          y: origin.y + u.pc1 * basis.pc1.y + u.pc2 * basis.pc2.y + u.pc3 * basis.pc3.y
+        };
+      };
+    }
+
+    function addText(svg, spec, defaults = {}) {
+      const text = node('text', {
+        x: spec.x,
+        y: spec.y,
+        fill: spec.fill || defaults.color || '#111111',
+        'font-family': spec.fontFamily || defaults.fontFamily,
+        'font-size': spec.fontSize || defaults.defaultSize || 13,
+        'font-weight': spec.fontWeight || 400,
+        'text-anchor': spec.anchor || 'start',
+        'dominant-baseline': spec.baseline || 'alphabetic',
+        'letter-spacing': spec.letterSpacing ?? defaults.calibration?.letterSpacing ?? 0,
+        transform: spec.rotation ? `rotate(${spec.rotation} ${spec.x} ${spec.y})` : undefined,
+        'data-id': spec.id,
+        'data-role': spec.role || 'text'
+      });
+      text.textContent = spec.text || '';
+      svg.appendChild(text);
+      return text;
+    }
+
+    function pathFrom(points) {
+      return points.map((p, index) => `${index ? 'L' : 'M'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+    }
+
+    function axisPoint(axis, value, domains) {
+      const p = {pc1: domains.pc1[0], pc2: domains.pc2[0], pc3: domains.pc3[0]};
+      p[axis.dimension] = value;
+      if (axis.dimension === 'pc1') {
+        p.pc2 = domains.pc2[0];
+        p.pc3 = domains.pc3[0];
+      } else if (axis.dimension === 'pc2') {
+        p.pc1 = domains.pc1[1];
+        p.pc3 = domains.pc3[0];
+      } else {
+        p.pc1 = domains.pc1[0];
+        p.pc2 = domains.pc2[0];
+      }
+      return p;
+    }
+
+    function drawAxes(svg, panel, system, project, defaults) {
+      const group = node('g', {'data-role': 'axes'});
+      const domains = system.domains;
+      const axisEnds = {
+        pc1: [{pc1: domains.pc1[0], pc2: domains.pc2[0], pc3: domains.pc3[0]}, {pc1: domains.pc1[1], pc2: domains.pc2[0], pc3: domains.pc3[0]}],
+        pc2: [{pc1: domains.pc1[1], pc2: domains.pc2[0], pc3: domains.pc3[0]}, {pc1: domains.pc1[1], pc2: domains.pc2[1], pc3: domains.pc3[0]}],
+        pc3: [{pc1: domains.pc1[0], pc2: domains.pc2[0], pc3: domains.pc3[0]}, {pc1: domains.pc1[0], pc2: domains.pc2[0], pc3: domains.pc3[1]}]
+      };
+      panel.scene.axes.forEach((axis) => {
+        const ends = axisEnds[axis.dimension].map(project);
+        group.appendChild(node('line', {
+          x1: ends[0].x, y1: ends[0].y, x2: ends[1].x, y2: ends[1].y,
+          stroke: '#111111', 'stroke-width': 1.25,
+          'data-id': axis.id, 'data-role': 'axis-spine'
+        }));
+        axis.ticks.forEach((tick) => {
+          const base = project(axisPoint(axis, tick.value, domains));
+          const tv = axis.tickLabelPlacement.tickVector;
+          group.appendChild(node('line', {
+            x1: base.x, y1: base.y, x2: base.x + tv.x, y2: base.y + tv.y,
+            stroke: '#111111', 'stroke-width': 1,
+            'data-axis': axis.dimension, 'data-value': tick.value, 'data-role': 'axis-tick'
+          }));
+          const off = axis.tickLabelPlacement.labelOffset;
+          addText(group, {
+            id: `${axis.id}-tick-${tick.label}`,
+            text: tick.label,
+            x: base.x + off.x,
+            y: base.y + off.y,
+            fontSize: 14,
+            anchor: axis.dimension === 'pc3' ? 'end' : 'middle',
+            role: 'axis-tick-label'
+          }, defaults);
+        });
+        addText(group, {...axis.label, id: `${axis.id}-label`, role: 'axis-label'}, defaults);
+      });
+      svg.appendChild(group);
+    }
+
+    function drawGrid(svg, panel, system, project) {
+      const domains = system.domains;
+      const group = node('g', {'data-role': 'grid-planes'});
+      panel.scene.gridPlanes.forEach((plane) => {
+        plane.families.forEach((family) => {
+          family.values.forEach((value) => {
+            const dims = ['pc1', 'pc2', 'pc3'].filter((dim) => dim !== family.dimension && plane.fixed[dim] === undefined);
+            if (dims.length !== 1) return;
+            const vary = dims[0];
+            const a = {pc1: domains.pc1[0], pc2: domains.pc2[0], pc3: domains.pc3[0], ...plane.fixed};
+            const b = {...a};
+            a[family.dimension] = value;
+            b[family.dimension] = value;
+            a[vary] = domains[vary][0];
+            b[vary] = domains[vary][1];
+            const pa = project(a);
+            const pb = project(b);
+            group.appendChild(node('line', {
+              x1: pa.x, y1: pa.y, x2: pb.x, y2: pb.y,
+              stroke: '#d7d7d7', 'stroke-width': 0.8,
+              'data-plane': plane.id, 'data-family': family.dimension, 'data-value': value
+            }));
+          });
+        });
+      });
+      svg.appendChild(group);
+    }
+
+    function generateTrajectories(recipe) {
+      const random = seeded(recipe.seed);
+      const out = [];
+      for (let i = 0; i < recipe.trialCount; i += 1) {
+        const startAngle = random() * 42 - 20;
+        const radiusJitter = 0.76 + random() * 0.32;
+        const phase = random() * Math.PI * 2;
+        const verticalShift = (random() - 0.5) * 0.85;
+        const points = [];
+        for (let j = 0; j < recipe.pointsPerTrial; j += 1) {
+          const t = j / (recipe.pointsPerTrial - 1);
+          const theta = (startAngle + 315 * t + 18 * Math.sin(t * Math.PI + phase)) * Math.PI / 180;
+          const radius = radiusJitter * (4.15 - 1.2 * t + 0.35 * Math.sin(t * Math.PI * 2 + phase));
+          const centerPc1 = lerp(-1.2, 0.7, t);
+          const centerPc2 = lerp(-0.65, 0.9, t);
+          const pc1 = centerPc1 + radius * Math.cos(theta) + (random() - 0.5) * recipe.noise.path;
+          const pc2 = centerPc2 + 1.25 * radius * Math.sin(theta) + (random() - 0.5) * recipe.noise.radial;
+          const pc3 = -1.05 + 3.35 * Math.sin(Math.PI * t) + verticalShift + 0.38 * Math.sin(theta * 1.4) + (random() - 0.5) * recipe.noise.vertical;
+          points.push({pc1, pc2, pc3, angle: (360 * t + startAngle + 360) % 360});
+        }
+        out.push(points);
+      }
+      return out;
+    }
+
+    function drawTrajectories(svg, panel, project) {
+      const recipe = panel.data.trajectoryRecipe;
+      const mark = panel.marks.find((item) => item.id === 'trajectory-cloud');
+      const group = node('g', {'data-id': mark.id, 'data-role': 'trajectory-cloud'});
+      generateTrajectories(recipe).forEach((trial, trialIndex) => {
+        const screen = trial.map(project);
+        const midAngle = trial[Math.floor(trial.length * 0.58)].angle;
+        group.appendChild(node('path', {
+          d: pathFrom(screen),
+          fill: 'none',
+          stroke: colorAt(midAngle),
+          'stroke-width': mark.strokeWidth,
+          'stroke-opacity': mark.strokeOpacity,
+          'data-trial': trialIndex,
+          'data-role': 'trajectory'
+        }));
+        trial.forEach((point, pointIndex) => {
+          if (pointIndex % mark.markerEvery !== 0 && pointIndex !== 0 && pointIndex !== trial.length - 1) return;
+          const p = project(point);
+          group.appendChild(node('circle', {
+            cx: p.x, cy: p.y,
+            r: pointIndex === 0 || pointIndex === trial.length - 1 ? 2.7 : mark.markerRadius,
+            fill: pointIndex === 0 ? '#666666' : mark.markerFill,
+            stroke: colorAt(point.angle),
+            'stroke-width': 1.2,
+            opacity: 0.9,
+            'data-trial': trialIndex,
+            'data-role': pointIndex === 0 ? 'start-marker' : (pointIndex === trial.length - 1 ? 'end-marker' : 'trajectory-marker')
+          }));
+        });
+      });
+      svg.appendChild(group);
+    }
+
+    function arcPath(cx, cy, rOuter, rInner, startDeg, endDeg) {
+      const a0 = (startDeg - 90) * Math.PI / 180;
+      const a1 = (endDeg - 90) * Math.PI / 180;
+      const p0 = {x: cx + Math.cos(a0) * rOuter, y: cy + Math.sin(a0) * rOuter};
+      const p1 = {x: cx + Math.cos(a1) * rOuter, y: cy + Math.sin(a1) * rOuter};
+      const p2 = {x: cx + Math.cos(a1) * rInner, y: cy + Math.sin(a1) * rInner};
+      const p3 = {x: cx + Math.cos(a0) * rInner, y: cy + Math.sin(a0) * rInner};
+      const large = endDeg - startDeg > 180 ? 1 : 0;
+      return `M ${p0.x} ${p0.y} A ${rOuter} ${rOuter} 0 ${large} 1 ${p1.x} ${p1.y} L ${p2.x} ${p2.y} A ${rInner} ${rInner} 0 ${large} 0 ${p3.x} ${p3.y} Z`;
+    }
+
+    function drawLegend(svg, panel, defaults) {
+      const legend = panel.legend;
+      const group = node('g', {'data-id': legend.id, 'data-role': 'angle-colorwheel'});
+      for (let a = 0; a < 360; a += 15) {
+        group.appendChild(node('path', {
+          d: arcPath(legend.center.x, legend.center.y, legend.outerRadius, legend.innerRadius, a, a + 15.2),
+          fill: colorAt(a)
+        }));
+      }
+      legend.labels.forEach((label) => addText(group, {...label, id: `${legend.id}-${label.text}`, fontSize: 14}, defaults));
+      legend.markerLegend.items.forEach((item, index) => {
+        group.appendChild(node('circle', {
+          cx: item.x, cy: item.y, r: 4.1,
+          fill: item.fill, stroke: item.stroke, 'stroke-width': 1.1,
+          'data-role': index === 0 ? 'legend-start-marker' : 'legend-end-marker'
+        }));
+        addText(group, {id: `marker-legend-${item.label}`, text: item.label, x: item.x + 12, y: item.y + 5, fontSize: 14}, defaults);
+      });
+      svg.appendChild(group);
+    }
+
+    function render(spec) {
+      byId('title').textContent = spec.id;
+      const frame = byId('frame');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      const reference = byId('reference');
+      reference.src = spec.source.path;
+      const svg = node('svg', {
+        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
+        width: spec.canvas.width,
+        height: spec.canvas.height,
+        role: 'img',
+        'aria-label': `${spec.id} generated reconstruction`
+      });
+      svg.appendChild(node('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
+      const panel = spec.panels[0];
+      const system = spec.coordinateSystems.find((item) => item.id === panel.scene.usesTransform);
+      const project = projectFactory(system);
+      addText(svg, {...panel.label, role: 'panel-label'}, spec.typography);
+      addText(svg, {...panel.title, role: 'panel-title'}, spec.typography);
+      drawGrid(svg, panel, system, project);
+      drawTrajectories(svg, panel, project);
+      drawAxes(svg, panel, system, project, spec.typography);
+      drawLegend(svg, panel, spec.typography);
+      byId('surface').replaceChildren(svg);
+    }
+
+    function setMode(mode) {
+      const showReference = mode === 'reference';
+      byId('frame').classList.toggle('show-reference', showReference);
+      byId('generatedButton').classList.toggle('active', !showReference);
+      byId('referenceButton').classList.toggle('active', showReference);
+    }
+
+    byId('generatedButton').addEventListener('click', () => setMode('generated'));
+    byId('referenceButton').addEventListener('click', () => setMode('reference'));
+
+    fetch(SPEC_URL)
+      .then((response) => {
+        if (!response.ok) throw new Error(`Unable to load ${SPEC_URL}`);
+        return response.json();
+      })
+      .then(render)
+      .catch((error) => {
+        byId('surface').textContent = error.message;
+      });
+  </script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-01-place-code-opto-B",
+  "source": {
+    "path": "../../assets/reference/reference-01-place-code-opto-B-reference.png",
+    "usage": "QA-only; not used as a generated visual layer.",
+    "nativeWidth": 464,
+    "nativeHeight": 512,
+    "notes": "Single cropped panel B showing population place fields. Numeric data are approximate visual reconstruction from the raster."
+  },
+  "canvas": {
+    "width": 464,
+    "height": 512,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 16,
+    "color": "#111111",
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Helvetica/Arial-like bold condensed appearance approximated with Arial weights and measured source anchors."
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-b",
+      "bbox": {"x": 0, "y": 0, "width": 464, "height": 512},
+      "label": {
+        "id": "panel-b-label",
+        "text": "B",
+        "x": 8,
+        "y": 16,
+        "fontSize": 22,
+        "fontWeight": 700,
+        "sourceBox": {"x": 7, "y": 16, "width": 18, "height": 22},
+        "fit": "source-calibrated anchor"
+      },
+      "title": {
+        "id": "panel-b-title",
+        "text": "Population place fields",
+        "x": 42,
+        "y": 22,
+        "fontSize": 16,
+        "fontWeight": 700,
+        "sourceBox": {"x": 42, "y": 20, "width": 163, "height": 18},
+        "fit": "source-calibrated anchor"
+      },
+      "plot": {
+        "id": "panel-b-plot",
+        "dataBbox": {"x": 58, "y": 70, "width": 347, "height": 369},
+        "coordinateSystem": {
+          "id": "panel-b.xy",
+          "type": "cartesian2d",
+          "x": {"domain": [0, 210], "range": [58, 405]},
+          "y": {"domain": [0, 20], "range": [439, 70]}
+        },
+        "axes": {
+          "xAxis": {
+            "id": "panel-b-x-axis",
+            "line": {"x1": 58, "y1": 439, "x2": 405, "y2": 439},
+            "tickLength": 6,
+            "ticks": [
+              {"value": 0, "label": "0"},
+              {"value": 50, "label": "50"},
+              {"value": 100, "label": "100"},
+              {"value": 150, "label": "150"},
+              {"value": 200, "label": "200"}
+            ],
+            "label": {
+              "id": "panel-b-x-label",
+              "text": "Position (cm)",
+              "anchor": {"x": 232, "y": 489},
+              "fontSize": 18,
+              "textAnchor": "middle"
+            }
+          },
+          "yAxis": {
+            "id": "panel-b-y-axis",
+            "line": {"x1": 58, "y1": 70, "x2": 58, "y2": 439},
+            "tickLength": 6,
+            "ticks": [
+              {"value": 0, "label": "0"},
+              {"value": 5, "label": "5"},
+              {"value": 10, "label": "10"},
+              {"value": 15, "label": "15"},
+              {"value": 20, "label": "20"}
+            ],
+            "label": {
+              "id": "panel-b-y-label",
+              "text": "Mean firing rate (Hz)",
+              "anchor": {"x": 21, "y": 254},
+              "fontSize": 18,
+              "rotation": -90,
+              "textAnchor": "middle"
+            }
+          }
+        }
+      },
+      "legend": {
+        "id": "panel-b-legend",
+        "items": [
+          {
+            "series": "control",
+            "label": "Control (no light)",
+            "line": {"x1": 71, "y1": 75, "x2": 100, "y2": 75}
+          },
+          {
+            "series": "opto",
+            "label": "Optogenetic inhibition (ArchT)",
+            "line": {"x1": 71, "y1": 97, "x2": 100, "y2": 97}
+          }
+        ],
+        "fontSize": 14,
+        "labelX": 107,
+        "strokeWidth": 3
+      },
+      "data": {
+        "series": [
+          {
+            "id": "control",
+            "label": "Control (no light)",
+            "color": "#111111",
+            "bandColor": "#9a9a9a",
+            "mean": [
+              [0, 1.7], [20, 2.8], [35, 4.7], [50, 7.0], [65, 9.2],
+              [80, 11.6], [92, 12.7], [105, 11.8], [120, 9.8], [135, 7.3],
+              [150, 5.0], [165, 3.3], [185, 2.0], [205, 1.4]
+            ],
+            "uncertainty": [
+              [0, 0.25], [20, 0.38], [35, 0.52], [50, 0.68], [65, 0.88],
+              [80, 1.02], [92, 1.05], [105, 0.95], [120, 0.78], [135, 0.62],
+              [150, 0.50], [165, 0.38], [185, 0.30], [205, 0.24]
+            ],
+            "traceRecipe": {"count": 34, "seed": 7101, "jitter": 0.9, "peakScale": [0.78, 1.32], "peakShift": [-16, 18], "opacity": 0.14}
+          },
+          {
+            "id": "opto",
+            "label": "Optogenetic inhibition (ArchT)",
+            "color": "#1b9da1",
+            "bandColor": "#77c8ca",
+            "mean": [
+              [0, 1.2], [20, 1.8], [35, 2.6], [50, 3.4], [65, 4.5],
+              [80, 5.5], [92, 5.8], [105, 5.1], [120, 4.1], [135, 3.3],
+              [150, 2.7], [165, 2.1], [185, 1.4], [205, 1.0]
+            ],
+            "uncertainty": [
+              [0, 0.18], [20, 0.22], [35, 0.30], [50, 0.40], [65, 0.50],
+              [80, 0.58], [92, 0.60], [105, 0.54], [120, 0.46], [135, 0.38],
+              [150, 0.32], [165, 0.26], [185, 0.20], [205, 0.16]
+            ],
+            "traceRecipe": {"count": 24, "seed": 9303, "jitter": 0.58, "peakScale": [0.66, 1.34], "peakShift": [-18, 19], "opacity": 0.20}
+          }
+        ]
+      },
+      "marks": [
+        {"id": "control-individual-traces", "type": "lineSeriesReplicates", "series": "control", "renderer": "svg", "strokeWidth": 1, "stroke": "#c8c8c8"},
+        {"id": "opto-individual-traces", "type": "lineSeriesReplicates", "series": "opto", "renderer": "svg", "strokeWidth": 1, "stroke": "#8fcfd0"},
+        {"id": "control-uncertainty", "type": "uncertaintyBand", "series": "control", "renderer": "svg", "opacity": 0.50},
+        {"id": "opto-uncertainty", "type": "uncertaintyBand", "series": "opto", "renderer": "svg", "opacity": 0.55},
+        {"id": "control-mean", "type": "lineSeries", "series": "control", "renderer": "svg", "strokeWidth": 5.2},
+        {"id": "opto-mean", "type": "lineSeries", "series": "opto", "renderer": "svg", "strokeWidth": 5.8}
+      ],
+      "provenance": [
+        {"field": "plot.dataBbox", "confidence": "medium", "note": "Axis spine anchors measured visually from crop."},
+        {"field": "data.series.mean", "confidence": "low-medium", "note": "Approximate digitization by visual inspection; intended as editable first-pass reconstruction."},
+        {"field": "traceRecipe", "confidence": "low", "note": "Individual place-field traces are synthetic replicates matching visible density and distribution, not measured cells."}
+      ]
+    }
+  ],
+  "constraints": [
+    {"id": "source-not-generated-layer", "description": "Source raster may only appear in a labeled QA/reference view."},
+    {"id": "axis-ticks-linked", "description": "Each tick label is generated from the same domain-to-range transform as its tick mark."},
+    {"id": "legend-series-linked", "description": "Legend swatches reference control and opto series colors."}
+  ],
+  "validation": {
+    "expectedCanvas": {"width": 464, "height": 512},
+    "expectedSeries": 2,
+    "expectedXTicks": 5,
+    "expectedYTicks": 5,
+    "sourceReusePolicy": "The generated candidate is SVG/DOM only; the raster source is limited to the labeled QA/reference image."
+  },
+  "confidence": [
+    {"aspect": "layout", "value": "medium-high"},
+    {"aspect": "mean curves", "value": "medium"},
+    {"aspect": "individual traces", "value": "low-medium"},
+    {"aspect": "typography", "value": "medium"}
+  ]
+}

@@ -1,0 +1,135 @@
+[
+  {
+    "id": "panel-label",
+    "text": "C",
+    "family": "Helvetica",
+    "size": 23.84,
+    "weight": 600,
+    "lineHeight": 1,
+    "scaleX": 0.93,
+    "naturalWidth": 17.22,
+    "x": 0,
+    "y": 33.75,
+    "score": 0.31321,
+    "crop": {
+      "x": 0,
+      "y": 11,
+      "width": 24,
+      "height": 28
+    }
+  },
+  {
+    "id": "panel-title",
+    "text": "Event-aligned responses to light onset",
+    "family": "Arial Narrow",
+    "size": 19.78,
+    "weight": 600,
+    "lineHeight": 1,
+    "scaleX": 0.955,
+    "naturalWidth": 298.34,
+    "x": 32.25,
+    "y": 35,
+    "score": 0.31527,
+    "crop": {
+      "x": 30,
+      "y": 16,
+      "width": 291,
+      "height": 27
+    }
+  },
+  {
+    "id": "event-label",
+    "text": "532 nm light ON",
+    "family": "Arial",
+    "size": 15.68,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 0.93,
+    "naturalWidth": 113.3,
+    "x": 263.25,
+    "y": 62,
+    "score": 0.30187,
+    "crop": {
+      "x": 207,
+      "y": 46,
+      "width": 111,
+      "height": 31
+    }
+  },
+  {
+    "id": "raster-x-label",
+    "text": "Time from light onset (s)",
+    "family": "Helvetica Neue",
+    "size": 13.6,
+    "weight": 500,
+    "lineHeight": 1,
+    "scaleX": 1,
+    "naturalWidth": 151.18,
+    "x": 290.75,
+    "y": 299.75,
+    "score": 0.67441,
+    "crop": {
+      "x": 207,
+      "y": 285,
+      "width": 164,
+      "height": 24
+    }
+  },
+  {
+    "id": "control-label",
+    "text": "Control\n(no light)",
+    "family": "Arial Narrow",
+    "size": 15.76,
+    "weight": 300,
+    "lineHeight": 1.1,
+    "scaleX": 1.05,
+    "naturalWidth": 50.28,
+    "x": 43.25,
+    "y": 92.75,
+    "score": 0.3582,
+    "crop": {
+      "x": 14,
+      "y": 74,
+      "width": 62,
+      "height": 40
+    }
+  },
+  {
+    "id": "opto-label",
+    "text": "Optogenetic\ninhibition\n(ArchT)",
+    "family": "Helvetica Neue",
+    "size": 14.24,
+    "weight": 400,
+    "lineHeight": 1.1,
+    "scaleX": 0.95,
+    "naturalWidth": 78.6,
+    "x": 44,
+    "y": 194.25,
+    "score": 0.4685,
+    "crop": {
+      "x": 0,
+      "y": 175,
+      "width": 90,
+      "height": 62
+    }
+  },
+  {
+    "id": "line-x-label",
+    "text": "Time from light onset (s)",
+    "family": "Helvetica Neue",
+    "size": 14.71,
+    "weight": 500,
+    "lineHeight": 1,
+    "scaleX": 0.95,
+    "naturalWidth": 163.52,
+    "x": 291.75,
+    "y": 494,
+    "score": 0.38895,
+    "crop": {
+      "x": 210,
+      "y": 477,
+      "width": 162,
+      "height": 26
+    }
+  }
+]

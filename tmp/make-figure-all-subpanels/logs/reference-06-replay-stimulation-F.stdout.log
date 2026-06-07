@@ -1,0 +1,4545 @@
+Reading additional input from stdin...
+OpenAI Codex v0.137.0
+--------
+workdir: /Users/alex/Code/scientific-figure-reconstruction
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: low
+reasoning summaries: none
+session id: 019e9e7b-36cb-7741-9c20-e7d1c7e38d14
+--------
+user
+$make-figure assets/reference/reference-06-replay-stimulation-F-reference.png. Generate an independent first-pass reconstruction for visual inspection. Write outputs only to outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json and outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html. Use the make-figure skill contract and the repository command/skill code: generated visual layers must not reuse the source raster; the source may appear only as a clearly labeled QA/reference view. Keep the JSON semantic and editable. Verify JSON validity and search the output for accidental drawImage/background source reuse. Do not modify existing output directories, docs, skills, plugins, source assets, or unrelated files.
+codex
+I’m using the `make-figure` skill and will keep the output constrained to the two requested files. I’ll inspect the source dimensions and existing project patterns first, then write a semantic JSON plus a generated HTML renderer without using the source as a drawing layer.
+exec
+/bin/zsh -lc "sed -n '1,220p' skills/make-figure/references/semantic-figure-ir.md" in /Users/alex/Code/scientific-figure-reconstruction
+exec
+/bin/zsh -lc "sed -n '1,220p' skills/make-figure/references/reconstruction-contract.md" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+# Semantic Figure IR
+
+Use this document with `reconstruction-contract.md`. The reconstruction output
+is a semantic figure intermediate representation, not a collection of detected
+bounding boxes.
+
+## Core Model
+
+A scientific figure reconstruction is a typed scene graph:
+
+```text
+source evidence
+  -> semantic figure objects
+  -> named coordinate systems and transforms
+  -> derived layout objects
+  -> renderable marks and text
+  -> validation constraints
+```
+
+Bounding boxes, OCR text, detected line segments, and color samples are source
+evidence. They help infer the graph, but they are not the graph itself.
+
+## Common Object Fields
+
+Any semantic object may use these fields:
+
+```json
+{
+  "id": "panel-a-x-tick-0",
+  "type": "axisTick",
+  "parent": "panel-a-x-axis",
+  "children": ["panel-a-x-tick-0-mark", "panel-a-x-tick-0-label"],
+  "usesTransform": "panel-a.xy",
+  "anchorTo": "panel-a-x-axis",
+  "derivesFrom": "panel-a.x.ticks[0]",
+  "sourceEvidence": ["bbox-17", "line-04"],
+  "provenance": {"confidence": "medium", "note": "Tick position measured from source."}
+}
+```
+
+Prefer stable ids and explicit relationships over free-floating pixel objects.
+When an object needs source-calibrated coordinates, keep those coordinates on
+the semantic object as measured anchors instead of detaching the rendered mark
+or text.
+
+## Top-Level IR Concepts
+
+- `sourceEvidence`: source bboxes, OCR snippets, measured line segments, color
+  samples, and notes. These are evidence records, not render instructions.
+- `coordinateSystems`: named transforms such as Cartesian data scales,
+  categorical scales, event anchors, color scales, image/matrix ranges, and
+  projected 3D scenes.
+- `layoutObjects`: axes, tick-label bands, legends, colorbars, tables, insets,
+  panel titles, scale bars, and other objects that reserve space or anchor text.
+- `data`: exact data, approximate data, or generation recipes.
+- `marks`: visual encodings derived from data or layout objects.
+- `annotations`: labels, arrows, brackets, callouts, and event labels anchored
+  to data points, marks, or layout objects.
+- `constraints`: relationship and layout invariants that must survive rendering.
+- `rendering`: renderer hints, layer order, and style tokens.
+- `validation`: renderer- or harness-readable checks and expected counts.
+- `provenance`: object-level confidence and unresolved inferences.
+
+Panel-specific schemas may organize these concepts differently, but they should
+preserve the same relationships.
+
+## Required Relationship Invariants
+
+Renderers and validation scripts should enforce these when the source shows the
+corresponding objects:
+
+- Labeled ticks render one tick mark and one tick label with matching
+  `axis`/`value` metadata.
+- Axis titles anchor to an axis, tick-label band, or measured source anchor;
+  they are not independent guessed text.
+- Event-aligned ticks, event lines, brackets, and annotations share a named
+  event anchor or explicit measured visual anchor.
+- Grid lines belong to named grid planes and families; grid lines must not be
+  confused with solid box edges.
+- Legends reference real series, marker classes, or mark groups.
+- Colorbars reference a color scale and own their ticks and title.
+- Table cell text, row rules, separators, and highlights remain separate
+  objects when their visual styles differ.
+- Annotations anchor to data coordinates, generated marks, or layout objects
+  unless they are explicitly page-positioned.
+- Generated visuals never reuse the source raster as a generated layer.
+
+## Relationship Inventory Step
+
+Before writing the final JSON for a nontrivial panel, produce a short inventory:
+
+- plot type and renderer strategy
+- coordinate systems and named anchors
+- layout objects and their children
+- data-driven marks and their series/group ownership
+- annotations and what each one anchors to
+- source-calibrated overrides and why the transform alone is insufficient
+- validation constraints that should be checked in the rendered DOM
+
+Do this before visual tuning. If a generated object looks wrong, first ask which
+relationship or transform is missing before changing pixels.
+
+
+ succeeded in 0ms:
+# Reconstruction Contract
+
+Use this contract when converting a raster scientific figure into configurable HTML and JSON.
+
+Read `semantic-figure-ir.md` alongside this contract. The JSON may be
+panel-specific, but it must preserve semantic relationships between data,
+transforms, layout objects, marks, labels, and validation constraints.
+
+## JSON Shape
+
+Minimum top-level fields:
+
+```json
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "figure-id",
+  "source": {
+    "path": "./source.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "What was inferred visually."
+  },
+  "canvas": {
+    "width": 800,
+    "height": 600,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [
+      "https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&display=swap"
+    ],
+    "fontFaces": [
+      {"family": "FigureSans", "weight": 400, "src": "./fonts/FigureSans-Regular.woff2"},
+      {"family": "FigureSans", "weight": 700, "src": "./fonts/FigureSans-Bold.woff2"}
+    ],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Source Sans 3", "Roboto", "Noto Sans"],
+    "calibration": {
+      "fontStretch": "normal",
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Use measured source text boxes to tune font family, stretch, size, and line height."
+    }
+  },
+  "panels": [],
+  "confidence": []
+}
+```
+
+`fontImports` is for lightweight browser-based experimentation with external
+CSS font providers such as Google Fonts. `fontFaces` is for reproducible local
+or adjacent font files when a typeface has been selected. Do not introduce a
+build system only to test fonts; use browser-native font loading and SVG text
+measurement first.
+
+## Panel Shape
+
+Represent each subpanel explicitly. For a single cropped panel, use one item in `panels`.
+
+```json
+{
+  "id": "panel-a",
+  "label": {"text": "A", "x": 16, "y": 20, "fontSize": 24, "fontWeight": 700},
+  "title": {"text": "Panel title", "x": 56, "y": 24, "fontSize": 16, "fontWeight": 700},
+  "bbox": {"x": 0, "y": 0, "width": 400, "height": 300},
+  "plot": {
+    "dataBbox": {"x": 64, "y": 48, "width": 300, "height": 210},
+    "axes": {
+      "xAxis": {"id": "panel-a-x-axis", "line": {"x1": 64, "y1": 258, "x2": 364, "y2": 258}, "tickLength": 6},
+      "yAxis": {"id": "panel-a-y-axis", "line": {"x1": 64, "y1": 48, "x2": 64, "y2": 258}, "tickLength": 6}
+    },
+    "x": {
+      "scale": "linear",
+      "domain": [0, 10],
+      "ticks": [{"value": 0, "label": "0"}, {"value": 5, "label": "5"}, {"value": 10, "label": "10"}],
+      "label": {"text": "Time (s)"}
+    },
+    "y": {
+      "scale": "linear",
+      "domain": [0, 1],
+      "ticks": [{"value": 0, "label": "0"}, {"value": 0.5, "label": "0.5"}, {"value": 1, "label": "1"}],
+      "label": {"text": "Response"}
+    }
+  },
+  "marks": [],
+  "annotations": [],
+  "provenance": []
+}
+```
+
+## Mark Types
+
+Use semantic mark objects. Add fields as needed, but keep the meaning explicit.
+
+- `lineSeries`: data points plus stroke, width, optional uncertainty band.
+- `scatter`: points, marker shape, size, fill, stroke, opacity.
+- `bar`: categorical or numeric bars with baseline, fill, stroke.
+- `heatmap`: matrix, color scale, bounds, interpolation flag.
+- `raster`: event times by row or a generation recipe with seed and density.
+- `violin`: category, outline path or generated KDE recipe, median/quantile marks.
+- `path`: editable SVG path data for contours, arrows, outlines, or schematic curves.
+- `rect`, `circle`, `ellipse`, `text`, `bracket`, `arrow`: annotations and schematics.
+- `imageRecipe`: generated texture or synthetic field; never point this at the source raster.
+
+## Coordinate Systems
+
+Define named transforms before rendering marks:
+
+- `plot.dataBbox` maps data to pixels.
+- For charts where the visual data rectangle is offset from axes, split
+  `dataBbox` from `axisBbox` or explicit axis anchors such as `yAxisX` and
+  `xAxisY`. Do not force source axis offsets into the data transform.
+- `x.domain` and `y.domain` map quantitative axes.
+- `categories` map categorical positions.
+- `eventAnchor` maps event-aligned plots.
+- `colorScale.domain` maps heatmaps and colorbars.
+
+Avoid mixing hard-coded pixel marks with data-space marks unless the mark is truly an annotation. Ticks, event lines, and data marks should share the same transform.
+
+### 3D Scientific Plots
+
+Recognize 3D plots from visual cues such as three nonparallel labeled axes,
+isometric or perspective box frames, oblique grid planes, tick labels attached
+to multiple axis directions, and data paths or markers that overlap within a
+projected volume. Do not require the user to identify a panel as 3D.
+
+For static publication-style 3D plots made of axes, grid lines, trajectories,
+markers, and labels, prefer semantic 3D data rendered into SVG through an
+explicit projection function. Reserve WebGL or Three.js for genuinely complex
+surfaces, dense point clouds, lighting, meshes, or interactive rotation.
+
+Represent 3D scenes with explicit camera or projection metadata:
+
+```json
+{
+  "scene": {
+    "projection": {
+      "type": "orthographicBasis",
+      "corner": {"x": 58, "y": 327},
+      "domainCorner": {"pc1": -2, "pc2": -2, "pc3": -2},
+      "basis": {
+        "pc1": {"x": 258, "y": 30},
+        "pc2": {"x": 145, "y": 90},
+        "pc3": {"x": 0, "y": -184}
+      }
+    },
+    "domains": {"pc1": [-2, 2], "pc2": [-2, 2], "pc3": [-2, 2]},
+    "trajectories": [{"points": [[-1.5, -1.6, -0.3], [0.7, -1.1, 1.8]]}]
+  }
+}
+```
+
+`fontImports` is for lightweight browser-based experimentation with external
+CSS font providers such as Google Fonts. `fontFaces` is for reproducible local
+or adjacent font files when a typeface has been selected. Do not introduce a
+build system only to test fonts; use browser-native font loading and SVG text
+measurement first.
+
+Axes, grid planes, trajectories, markers, and annotations must use the same
+3D-to-2D projection. Depth-sort generated marks when overlap matters: back grid
+and box edges first, faint trial clouds, mean trajectories, timepoint markers,
+then text labels. Labels should anchor to projected 3D points or axis objects
+and then participate in the normal text-collision pass.
+
+When using source-calibrated projected grid segments, avoid segments that
+duplicate solid box edges or accidentally close into polygons. Grid lines should
+read as independent faint plane guides unless the source explicitly shows a
+closed projected face.
+
+Prefer named 3D grid planes over a flat list of projected line segments. For
+example, encode separate `floor`, `backWall`, and `sideWall` grid groups so each
+axis pair has its own Cartesian grid. Inventory the source grid before tuning:
+for every plane, count visible interior guides separately from boundary-aligned
+guides that are merged with or hidden under box edges. Encode grid lines as
+per-family values, such as independent `pc1`, `pc2`, and `pc3` guide families,
+instead of one shared plane-level value list. Each family should state whether
+domain-boundary values are included, and generated SVG lines should expose
+stable plane/family attributes so count validation can catch drift. A 3D
+state-space panel with PC1, PC2, and PC3 axes should not collapse into one wall
+plus a triangular base.
+
+If the source uses faint face shading, encode plane fills separately from grid
+lines and generate the fill polygon from the same 3D projection. Do not bake the
+shading into arbitrary background shapes. Tick labels in 3D plots are layout
+text: allow source-calibrated text positions or offsets from projected ticks so
+labels do not collide with each other, axis titles, or spines.
+
+3D tick labels should be placed by semantic layout rules, not by one-shot
+coordinates alone. Treat axis spines and tick marks as protected geometry with
+padded hit zones. Treat faint grid lines and trajectory clouds as non-protected
+unless the source clearly reserves label space around them. Tick labels may use
+source-calibrated initial positions, but renderers should measure the final text
+box and apply a constrained outward nudge if it intersects protected axis
+geometry:
+
+```json
+{
+  "axis": {
+    "id": "pc1",
+    "tickLabelPlacement": {
+      "avoid": ["axis-spine"],
+      "minGap": 5,
+      "nudge": {"x": 8, "y": 7},
+      "maxSteps": 6
+    }
+  }
+}
+```
+
+3D axes with visible tick labels should also render visible tick marks unless
+the source suppresses them. Store tick geometry as a projected tick anchor, a
+short `markVector`, and a label offset or outward normal. The label should be
+placed from the tick mark first; collision correction is a secondary adjustment,
+not the primary placement mechanism.
+
+When a source-fitted frame or projection still does not reproduce the source's
+tick text positions, keep the numeric tick `value` semantic but add separate
+source-calibrated `markAnchor` and/or `labelAnchor` fields. Do not force tick
+labels through one shared offset vector if the source clearly uses
+
+exec
+/bin/zsh -lc 'file assets/reference/reference-06-replay-stimulation-F-reference.png && identify -verbose assets/reference/reference-06-replay-stimulation-F-reference.png | head -40' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+assets/reference/reference-06-replay-stimulation-F-reference.png: PNG image data, 374 x 524, 8-bit/color RGB, non-interlaced
+Image:
+  Filename: assets/reference/reference-06-replay-stimulation-F-reference.png
+  Permissions: rw-r--r--
+  Format: PNG (Portable Network Graphics)
+  Mime type: image/png
+  Class: DirectClass
+  Geometry: 374x524+0+0
+  Units: Undefined
+  Colorspace: sRGB
+  Type: TrueColor
+  Endianness: Undefined
+  Depth: 8-bit
+  Channels: 3.0
+  Channel depth:
+    Red: 8-bit
+    Green: 8-bit
+    Blue: 8-bit
+  Channel statistics:
+    Pixels: 195976
+    Red:
+      min: 0  (0)
+      max: 255 (1)
+      mean: 241.895 (0.948608)
+      median: 254 (0.996078)
+      standard deviation: 45.1668 (0.177125)
+      kurtosis: 16.3002
+      skewness: -4.12589
+      entropy: 0.378742
+    Green:
+      min: 0  (0)
+      max: 255 (1)
+      mean: 242.151 (0.949611)
+      median: 254 (0.996078)
+      standard deviation: 43.9626 (0.172402)
+      kurtosis: 16.6502
+      skewness: -4.15199
+      entropy: 0.379514
+    Blue:
+      min: 0  (0)
+      max: 255 (1)
+
+exec
+/bin/zsh -lc "ls -la outputs || true && find outputs -maxdepth 2 -type f -name '*.html' | head -10" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+total 16
+drwxr-xr-x  56 alex  staff  1792 Jun  6 15:48 .
+drwxr-xr-x  15 alex  staff   480 Jun  6 05:13 ..
+-rw-r--r--@  1 alex  staff  6148 Jun  4 05:39 .DS_Store
+drwxr-xr-x   8 alex  staff   256 Jun  6 05:15 _regression-baselines
+drwxr-xr-x   4 alex  staff   128 Jun  5 05:51 reference-01-place-code-opto-A-make-figure
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:24 reference-01-place-code-opto-A-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  4 06:23 reference-01-place-code-opto-B-make-figure
+drwxr-xr-x   4 alex  staff   128 Jun  6 14:59 reference-01-place-code-opto-B-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  3 04:11 reference-01-place-code-opto-C-make-figure
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:22 reference-01-place-code-opto-C-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:24 reference-01-place-code-opto-D-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 14:26 reference-01-place-code-opto-D-make-figure-test
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:24 reference-01-place-code-opto-E-make-figure-batch
+drwxr-xr-x   2 alex  staff    64 Jun  6 14:45 reference-01-place-code-opto-E-make-figure-test
+drwxr-xr-x   4 alex  staff   128 Jun  5 07:51 reference-01-place-code-opto-F-make-figure
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:23 reference-01-place-code-opto-F-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  5 08:20 reference-02-decision-dynamics-A-make-figure
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:26 reference-02-decision-dynamics-A-make-figure-batch
+drwxr-xr-x   5 alex  staff   160 Jun  6 04:30 reference-02-decision-dynamics-B-make-figure
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:27 reference-02-decision-dynamics-B-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:27 reference-02-decision-dynamics-C-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:27 reference-02-decision-dynamics-D-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:29 reference-02-decision-dynamics-E-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:29 reference-02-decision-dynamics-F-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:30 reference-02-decision-dynamics-G-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:30 reference-02-decision-dynamics-H-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:31 reference-03-learning-remapping-A-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:32 reference-03-learning-remapping-B-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:33 reference-03-learning-remapping-C-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:33 reference-03-learning-remapping-D-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:34 reference-03-learning-remapping-E-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:36 reference-03-learning-remapping-F-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:35 reference-03-learning-remapping-G-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:36 reference-04-motor-manifold-A-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:37 reference-04-motor-manifold-B-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:38 reference-04-motor-manifold-C-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:39 reference-04-motor-manifold-D-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:39 reference-04-motor-manifold-E-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:39 reference-04-motor-manifold-F-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:41 reference-04-motor-manifold-G-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:42 reference-04-motor-manifold-H-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:42 reference-04-motor-manifold-I-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:43 reference-05-grid-remapping-A-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:44 reference-05-grid-remapping-B-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:44 reference-05-grid-remapping-C-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 14:30 reference-05-grid-remapping-C-make-figure-test
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:45 reference-05-grid-remapping-D-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 14:41 reference-05-grid-remapping-D-make-figure-test
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:46 reference-05-grid-remapping-E-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:47 reference-05-grid-remapping-F-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:47 reference-06-replay-stimulation-A-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:48 reference-06-replay-stimulation-B-make-figure-batch
+drwxr-xr-x   2 alex  staff    64 Jun  6 15:46 reference-06-replay-stimulation-C-make-figure-batch
+drwxr-xr-x   2 alex  staff    64 Jun  6 15:47 reference-06-replay-stimulation-D-make-figure-batch
+drwxr-xr-x   2 alex  staff    64 Jun  6 15:47 reference-06-replay-stimulation-E-make-figure-batch
+drwxr-xr-x   2 alex  staff    64 Jun  6 15:48 reference-06-replay-stimulation-F-make-figure-batch
+outputs/reference-03-learning-remapping-B-make-figure-batch/reference-03-learning-remapping-B.html
+outputs/reference-02-decision-dynamics-H-make-figure-batch/reference-02-decision-dynamics-H.html
+outputs/reference-04-motor-manifold-B-make-figure-batch/reference-04-motor-manifold-B.html
+outputs/reference-03-learning-remapping-G-make-figure-batch/reference-03-learning-remapping-G.html
+outputs/reference-04-motor-manifold-G-make-figure-batch/reference-04-motor-manifold-G.html
+outputs/reference-03-learning-remapping-C-make-figure-batch/reference-03-learning-remapping-C.html
+outputs/reference-04-motor-manifold-C-make-figure-batch/reference-04-motor-manifold-C.html
+outputs/reference-03-learning-remapping-F-make-figure-batch/reference-03-learning-remapping-F.html
+outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html
+outputs/reference-01-place-code-opto-B-make-figure/reference-01-place-code-opto-B.html
+
+codex
+The source is a single 374 by 524 px forest-plot panel. I’m treating the left counts as editable table text, the vertical dashed line and bottom axis as semantic axes, each session point/error bar as data marks, and the diamond as the random-effects summary.
+exec
+/bin/zsh -lc "sed -n '1,180p' outputs/reference-06-replay-stimulation-A-make-figure-batch/reference-06-replay-stimulation-A.html 2>/dev/null || true" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-06-replay-stimulation-A reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cccccc;
+    }
+    h1 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #999999;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+    main {
+      min-height: calc(100vh - 50px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .frame {
+      position: relative;
+      background: #ffffff;
+      overflow: hidden;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.10);
+    }
+    .surface, .reference, canvas, svg {
+      position: absolute;
+      inset: 0;
+    }
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+    }
+    .show-reference .surface {
+      display: none;
+    }
+    .show-reference .reference {
+      display: block;
+    }
+    text {
+      dominant-baseline: alphabetic;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">Replay event raster reconstruction</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA reference source image">
+    </div>
+  </main>
+  <script id="fallback-spec" type="application/json">{"schema":"scientific_figure_reconstruction.v1","id":"reference-06-replay-stimulation-A","source":{"path":"../../assets/reference/reference-06-replay-stimulation-A-reference.png","usage":"QA-only; not used by generated candidate."},"canvas":{"width":378,"height":500,"background":"#ffffff"},"typography":{"fontFamily":"Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif","defaultSize":14,"color":"#111111"},"panels":[]}</script>
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function el(id) {
+      return document.getElementById(id);
+    }
+
+    function svgNode(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function rng(seed) {
+      return function random() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function scale(domain, range, value) {
+      return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+    }
+
+    function transforms(plot) {
+      const box = plot.dataBbox;
+      return {
+        x: value => scale(plot.x.domain, [box.x, box.x + box.width], value),
+        y: value => scale(plot.y.domain, [box.y + box.height, box.y], value)
+      };
+    }
+
+    function textAttrs(spec, typography, extra = {}) {
+      return {
+        x: spec.x,
+        y: spec.y,
+        fill: spec.fill || typography.color || '#111111',
+        'font-family': spec.fontFamily || typography.fontFamily,
+        'font-size': spec.fontSize || typography.defaultSize || 12,
+        'font-weight': spec.fontWeight || 400,
+        'text-anchor': spec.anchor || 'start',
+        transform: spec.rotation ? `rotate(${spec.rotation} ${spec.x} ${spec.y})` : undefined,
+        ...extra
+      };
+    }
+
+    function addText(svg, spec, typography, className) {
+      const text = svgNode('text', textAttrs(spec, typography, {id: spec.id, class: className}));
+      const lines = String(spec.text || '').split('\n');
+      lines.forEach((line, index) => {
+        const tspan = svgNode('tspan', {
+          x: spec.x,
+          dy: index === 0 ? 0 : `${(spec.lineHeight || 1.1)}em`
+        });
+        tspan.textContent = line;
+        text.appendChild(tspan);
+      });
+      svg.appendChild(text);
+      return text;
+    }
+
+    function generatedPoints(mark) {
+      const recipe = mark.recipe;
+      const rand = rng(recipe.seed);
+      const points = [];
+      for (let i = 0; i < recipe.backgroundCount; i += 1) {
+        points.push([
+          recipe.positionDomain[0] + rand() * (recipe.positionDomain[1] - recipe.positionDomain[0]),
+          recipe.rowDomain[0] + rand() * (recipe.rowDomain[1] - recipe.rowDomain[0])
+        ]);
+      }
+
+exec
+/bin/zsh -lc "sed -n '1,160p' outputs/reference-06-replay-stimulation-A-make-figure-batch/reference-06-replay-stimulation-A.json 2>/dev/null || true" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-06-replay-stimulation-A",
+  "source": {
+    "path": "../../assets/reference/reference-06-replay-stimulation-A-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Single cropped panel reconstructed from visual inspection. Dense event positions are synthetic seeded recipes matching visible density, colors, and diagonal replay bands rather than extracted source pixels."
+  },
+  "canvas": {
+    "width": 378,
+    "height": 500,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Arial", "Helvetica"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "Condensed sans chosen to approximate compact source labels and title."
+    }
+  },
+  "styleTokens": {
+    "preStim": "#1b7d82",
+    "stim": "#ff7a1a",
+    "axis": "#111111",
+    "divider": "#888888",
+    "colorbarStroke": "#555555"
+  },
+  "coordinateSystems": [
+    {
+      "id": "panel-a.plot.xy",
+      "type": "cartesian",
+      "bbox": {"x": 51, "y": 94, "width": 239, "height": 318},
+      "xDomain": [1, 200],
+      "yDomain": [1, 200],
+      "yDirection": "up"
+    },
+    {
+      "id": "panel-a.colorbar.scale",
+      "type": "linearColorScale",
+      "domain": [0, 1],
+      "range": ["#f4f4f4", "#111111"],
+      "bbox": {"x": 317, "y": 156, "width": 10, "height": 222}
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-a",
+      "label": {
+        "id": "panel-a-label",
+        "text": "A",
+        "x": 8,
+        "y": 27,
+        "fontSize": 22,
+        "fontWeight": 700,
+        "anchor": "start"
+      },
+      "title": {
+        "id": "panel-a-title",
+        "text": "Replay event raster (position order)",
+        "x": 37,
+        "y": 27,
+        "fontSize": 21,
+        "fontWeight": 700,
+        "anchor": "start",
+        "targetWidth": 298,
+        "sourceBox": {"x": 37, "y": 9, "width": 297, "height": 23},
+        "fit": "condensed"
+      },
+      "bbox": {"x": 0, "y": 0, "width": 378, "height": 500},
+      "legend": {
+        "id": "panel-a-legend",
+        "items": [
+          {"id": "legend-pre-stim", "label": "Pre-stim", "series": "pre-stim-events", "x": 104, "y": 57, "color": "#1b7d82"},
+          {"id": "legend-stim", "label": "Stim", "series": "stim-events", "x": 203, "y": 57, "color": "#ff7a1a"}
+        ],
+        "markerRadius": 3.4,
+        "fontSize": 14
+      },
+      "plot": {
+        "id": "panel-a-raster-plot",
+        "dataBbox": {"x": 51, "y": 94, "width": 239, "height": 318},
+        "usesTransform": "panel-a.plot.xy",
+        "split": {
+          "id": "stim-boundary",
+          "yValue": 100,
+          "stroke": "#888888",
+          "strokeWidth": 1,
+          "dasharray": "5 3"
+        },
+        "axes": {
+          "xAxis": {"id": "panel-a-x-axis", "line": {"x1": 51, "y1": 412, "x2": 290, "y2": 412}, "tickLength": 5},
+          "yAxis": {"id": "panel-a-y-axis", "line": {"x1": 51, "y1": 94, "x2": 51, "y2": 412}, "tickLength": 5}
+        },
+        "x": {
+          "scale": "linear",
+          "domain": [1, 200],
+          "ticks": [
+            {"value": 1, "label": "1"},
+            {"value": 50, "label": "50"},
+            {"value": 100, "label": "100"},
+            {"value": 150, "label": "150"},
+            {"value": 200, "label": "200"}
+          ],
+          "label": {"id": "panel-a-x-label", "text": "Position bin", "x": 170.5, "y": 463, "fontSize": 19, "fontWeight": 400, "anchor": "middle"}
+        },
+        "y": {
+          "scale": "linear",
+          "domain": [1, 200],
+          "ticks": [
+            {"value": 1, "label": "1"},
+            {"value": 200, "label": "200"}
+          ],
+          "label": {"id": "panel-a-y-label", "text": "Replay events (sorted)", "x": 28, "y": 256, "fontSize": 16, "fontWeight": 400, "rotation": -90, "anchor": "middle"}
+        }
+      },
+      "marks": [
+        {
+          "id": "pre-stim-events",
+          "type": "raster",
+          "usesTransform": "panel-a.plot.xy",
+          "seriesRole": "Pre-stim",
+          "color": "#1b7d82",
+          "opacity": 0.72,
+          "markerRadius": 1.35,
+          "clipToPlot": true,
+          "recipe": {
+            "seed": 6101,
+            "rowDomain": [101, 200],
+            "positionDomain": [1, 200],
+            "backgroundCount": 890,
+            "bands": [
+              {"start": [29, 199], "end": [93, 111], "count": 190, "jitterX": 4.1, "jitterY": 3.7},
+              {"start": [141, 199], "end": [196, 126], "count": 118, "jitterX": 4.8, "jitterY": 4.2},
+              {"start": [92, 184], "end": [124, 102], "count": 76, "jitterX": 5.2, "jitterY": 4.4}
+            ]
+          }
+        },
+        {
+          "id": "stim-events",
+          "type": "raster",
+          "usesTransform": "panel-a.plot.xy",
+          "seriesRole": "Stim",
+          "color": "#ff7a1a",
+          "opacity": 0.72,
+          "markerRadius": 1.35,
+          "clipToPlot": true,
+          "recipe": {
+            "seed": 6202,
+            "rowDomain": [1, 100],
+            "positionDomain": [1, 200],
+            "backgroundCount": 760,
+            "bands": [
+              {"start": [143, 99], "end": [197, 2], "count": 190, "jitterX": 4.7, "jitterY": 4.5},
+              {"start": [63, 93], "end": [88, 5], "count": 82, "jitterX": 5.2, "jitterY": 5.0}
+
+codex
+I’m going to add only the two requested files in the already-empty target output directory. The HTML will fetch the adjacent JSON and render SVG elements from it; the only source image reference will be an `<img>` in a labeled QA/reference mode.
+exec
+/bin/zsh -lc 'mkdir -p outputs/reference-06-replay-stimulation-F-make-figure-batch' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+apply patch
+patch: completed
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json
+diff --git a/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..6917cd357243fc2a3fa63304ab1decf7840deddb
+--- /dev/null
++++ b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html
+@@ -0,0 +1,271 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-06-replay-stimulation-F reconstruction</title>
++  <style>
++    html, body {
++      margin: 0;
++      background: #eeeeee;
++      color: #111111;
++      font-family: Arial, Helvetica, sans-serif;
++    }
++    header {
++      display: flex;
++      align-items: center;
++      justify-content: space-between;
++      gap: 16px;
++      padding: 10px 14px;
++      background: #ffffff;
++      border-bottom: 1px solid #cccccc;
++    }
++    h1 {
++      margin: 0;
++      font-size: 15px;
++      font-weight: 700;
++    }
++    .note {
++      margin-top: 3px;
++      color: #555555;
++      font-size: 12px;
++    }
++    .toggle {
++      display: inline-flex;
++      border: 1px solid #999999;
++      border-radius: 4px;
++      overflow: hidden;
++      flex: 0 0 auto;
++    }
++    .toggle button {
++      border: 0;
++      padding: 5px 10px;
++      background: #ffffff;
++      color: #111111;
++      font: inherit;
++      font-size: 12px;
++      cursor: pointer;
++    }
++    .toggle button.active {
++      background: #111111;
++      color: #ffffff;
++    }
++    main {
++      min-height: calc(100vh - 50px);
++      display: grid;
++      place-items: center;
++      padding: 16px;
++      box-sizing: border-box;
++    }
++    .frame {
++      position: relative;
++      background: #ffffff;
++      overflow: hidden;
++      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.10);
++    }
++    .surface, .reference, svg {
++      position: absolute;
++      inset: 0;
++    }
++    .reference {
++      display: none;
++      width: 100%;
++      height: 100%;
++      object-fit: contain;
++      background-color: #ffffff;
++    }
++    .show-reference .surface {
++      display: none;
++    }
++    .show-reference .reference {
++      display: block;
++    }
++    text {
++      dominant-baseline: alphabetic;
++    }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1>Forest plot reconstruction</h1>
++      <div class="note">Generated candidate is JSON-rendered SVG. Source image is QA/reference-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">Reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <img id="reference" class="reference" alt="QA reference source image">
++    </div>
++  </main>
++  <script>
++    const SVG_NS = 'http://www.w3.org/2000/svg';
++
++    function svgNode(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
++      Object.entries(attrs).forEach(([key, value]) => {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      });
++      return node;
++    }
++
++    function xScale(spec, value) {
++      const cs = spec.coordinateSystems.find(item => item.id === 'panel-f.effect.x');
++      const t = (value - cs.domain[0]) / (cs.domain[1] - cs.domain[0]);
++      return cs.range[0] + t * (cs.range[1] - cs.range[0]);
++    }
++
++    function rowY(session) {
++      return 81 + (session - 1) * (249 / 14);
++    }
++
++    function addText(svg, typography, item, className) {
++      const text = svgNode('text', {
++        id: item.id,
++        class: className,
++        x: item.x,
++        y: item.y,
++        fill: item.fill || typography.color,
++        'font-family': item.fontFamily || typography.fontFamily,
++        'font-size': item.fontSize || typography.defaultSize,
++        'font-weight': item.fontWeight || 400,
++        'text-anchor': item.anchor || 'start',
++        transform: item.rotation ? `rotate(${item.rotation} ${item.x} ${item.y})` : null
++      });
++      String(item.text || '').split('\n').forEach((line, index) => {
++        const tspan = svgNode('tspan', {
++          x: item.x,
++          dy: index === 0 ? 0 : `${item.lineHeight || 1.08}em`
++        });
++        tspan.textContent = line;
++        text.appendChild(tspan);
++      });
++      svg.appendChild(text);
++    }
++
++    function addLine(svg, attrs) {
++      svg.appendChild(svgNode('line', attrs));
++    }
++
++    function render(spec) {
++      const frame = document.getElementById('frame');
++      const surface = document.getElementById('surface');
++      const reference = document.getElementById('reference');
++      const panel = spec.panels[0];
++      const typography = spec.typography;
++      const styles = spec.styleTokens;
++
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      reference.src = spec.source.path;
++
++      const svg = svgNode('svg', {
++        width: spec.canvas.width,
++        height: spec.canvas.height,
++        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
++        role: 'img',
++        'aria-label': panel.title.text
++      });
++      svg.appendChild(svgNode('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
++      surface.innerHTML = '';
++      surface.appendChild(svg);
++
++      addText(svg, typography, panel.label, 'panel-label');
++      addText(svg, typography, panel.title, 'panel-title');
++      panel.layout.leftTable.headers.forEach(header => addText(svg, typography, header, 'table-header'));
++
++      const plot = panel.layout.plot;
++      addLine(svg, {
++        id: 'zero-guide',
++        x1: plot.zeroGuide.x,
++        y1: plot.zeroGuide.y1,
++        x2: plot.zeroGuide.x,
++        y2: plot.zeroGuide.y2,
++        stroke: styles.guide,
++        'stroke-width': 1,
++        'stroke-dasharray': plot.zeroGuide.strokeDasharray
++      });
++      addLine(svg, {
++        id: 'separator-rule',
++        x1: plot.separator.x1,
++        y1: plot.separator.y1,
++        x2: plot.separator.x2,
++        y2: plot.separator.y2,
++        stroke: styles.rule,
++        'stroke-width': 1,
++        'stroke-dasharray': plot.separator.strokeDasharray
++      });
++
++      panel.data.sessions.forEach(row => {
++        const y = rowY(row.session);
++        addText(svg, typography, {id: `session-${row.session}-label`, text: row.session, x: panel.layout.leftTable.sessionX, y: y + 4, fontSize: 15, anchor: 'middle'}, 'session-label');
++        addText(svg, typography, {id: `session-${row.session}-events`, text: row.events, x: panel.layout.leftTable.countsX, y: y + 4, fontSize: 14, anchor: 'middle'}, 'event-count');
++
++        const x1 = xScale(spec, row.ciLow);
++        const x2 = xScale(spec, row.ciHigh);
++        const xc = xScale(spec, row.effect);
++        addLine(svg, {id: `ci-${row.session}`, x1, y1: y, x2, y2: y, stroke: '#222222', 'stroke-width': 0.9});
++        addLine(svg, {x1, y1: y - 3, x2: x1, y2: y + 3, stroke: '#222222', 'stroke-width': 0.9});
++        addLine(svg, {x1: x2, y1: y - 3, x2, y2: y + 3, stroke: '#222222', 'stroke-width': 0.9});
++        svg.appendChild(svgNode('circle', {
++          id: `point-${row.session}`,
++          cx: xc,
++          cy: y,
++          r: 3.3,
++          fill: styles.pointFill,
++          stroke: styles.pointStroke,
++          'stroke-width': 0.8
++        }));
++      });
++
++      const axis = plot.bottomAxis;
++      addLine(svg, {id: 'x-axis', x1: axis.x1, y1: axis.y1, x2: axis.x2, y2: axis.y2, stroke: styles.axis, 'stroke-width': 1.1});
++      plot.x.ticks.forEach(tick => {
++        const x = xScale(spec, tick.value);
++        addLine(svg, {id: `x-tick-${tick.label}`, x1: x, y1: axis.y1, x2: x, y2: axis.y1 + axis.tickLength, stroke: styles.axis, 'stroke-width': 1});
++        addText(svg, typography, {id: `x-tick-label-${tick.label}`, text: tick.label, x, y: axis.y1 + 23, fontSize: 17, anchor: 'middle'}, 'x-tick-label');
++      });
++      addText(svg, typography, plot.x.label, 'axis-label');
++
++      const summary = panel.data.summary;
++      addText(svg, typography, panel.annotations[0], 'summary-label');
++      const y = panel.marks.find(mark => mark.id === 'summary-diamond').centerY;
++      const xLow = xScale(spec, summary.ciLow);
++      const xMid = xScale(spec, summary.effect);
++      const xHigh = xScale(spec, summary.ciHigh);
++      const h = panel.marks.find(mark => mark.id === 'summary-diamond').height / 2;
++      svg.appendChild(svgNode('polygon', {
++        id: 'summary-diamond',
++        points: `${xLow},${y} ${xMid},${y - h} ${xHigh},${y} ${xMid},${y + h}`,
++        fill: styles.summaryFill
++      }));
++      addText(svg, typography, panel.annotations[1], 'summary-ci-text');
++    }
++
++    async function loadSpec() {
++      const response = await fetch('reference-06-replay-stimulation-F.json');
++      return response.json();
++    }
++
++    loadSpec().then(render);
++
++    const frame = document.getElementById('frame');
++    const generatedButton = document.getElementById('generatedButton');
++    const referenceButton = document.getElementById('referenceButton');
++    generatedButton.addEventListener('click', () => {
++      frame.classList.remove('show-reference');
++      generatedButton.classList.add('active');
++      referenceButton.classList.remove('active');
++    });
++    referenceButton.addEventListener('click', () => {
++      frame.classList.add('show-reference');
++      referenceButton.classList.add('active');
++      generatedButton.classList.remove('active');
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..9c041dc9b3a20409db98840f5c4dfb077940f11e
+--- /dev/null
++++ b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json
+@@ -0,0 +1,171 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-06-replay-stimulation-F",
++  "source": {
++    "path": "../../assets/reference/reference-06-replay-stimulation-F-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "Single forest-plot panel reconstructed by visual inspection. Session counts are transcribed from the raster; effect sizes and intervals are approximate source-calibrated values."
++  },
++  "canvas": {
++    "width": 374,
++    "height": 524,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
++    "defaultSize": 14,
++    "color": "#111111",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Arial", "Helvetica"],
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "Condensed sans approximates the compact source text. Title and axis labels are visually fitted, not OCR-calibrated."
++    }
++  },
++  "styleTokens": {
++    "axis": "#111111",
++    "guide": "#666666",
++    "pointFill": "#0b7777",
++    "pointStroke": "#064f4f",
++    "summaryFill": "#000000",
++    "rule": "#777777"
++  },
++  "coordinateSystems": [
++    {
++      "id": "panel-f.effect.x",
++      "type": "linear",
++      "domain": [-1, 2],
++      "range": [92, 321],
++      "zeroX": 168.3333333333
++    },
++    {
++      "id": "panel-f.session.y",
++      "type": "ordinal",
++      "categories": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
++      "range": [81, 330]
++    }
++  ],
++  "panels": [
++    {
++      "id": "panel-f",
++      "label": {
++        "id": "panel-f-label",
++        "text": "F",
++        "x": 10,
++        "y": 24,
++        "fontSize": 24,
++        "fontWeight": 700,
++        "anchor": "start"
++      },
++      "title": {
++        "id": "panel-f-title",
++        "text": "Effect size by session (Cohen's d)",
++        "x": 38,
++        "y": 24,
++        "fontSize": 21,
++        "fontWeight": 700,
++        "anchor": "start",
++        "sourceBox": {"x": 38, "y": 5, "width": 299, "height": 24},
++        "targetWidth": 300,
++        "fit": "condensed"
++      },
++      "bbox": {"x": 0, "y": 0, "width": 374, "height": 524},
++      "layout": {
++        "leftTable": {
++          "headers": [
++            {"id": "session-header", "text": "Session", "x": 23, "y": 61, "fontSize": 14, "anchor": "middle"},
++            {"id": "events-header", "text": "n. events\n(Stim / Pre)", "x": 91, "y": 51, "fontSize": 14, "lineHeight": 1.05, "anchor": "middle"}
++          ],
++          "sessionX": 24,
++          "countsX": 91
++        },
++        "plot": {
++          "dataBbox": {"x": 92, "y": 75, "width": 229, "height": 255},
++          "zeroGuide": {"x": 168.3333333333, "y1": 74, "y2": 391, "strokeDasharray": "7 8"},
++          "bottomAxis": {"x1": 92, "y1": 392, "x2": 321, "y2": 392, "tickLength": 5},
++          "x": {
++            "domain": [-1, 2],
++            "ticks": [
++              {"value": -1, "label": "-1"},
++              {"value": 0, "label": "0"},
++              {"value": 1, "label": "1"},
++              {"value": 2, "label": "2"}
++            ],
++            "label": {"id": "x-label", "text": "Cohen's d (Stim \u2013 Pre)", "x": 206, "y": 441, "fontSize": 19, "anchor": "middle"}
++          },
++          "separator": {"x1": 0, "y1": 350, "x2": 291, "y2": 350, "strokeDasharray": "5 6"}
++        }
++      },
++      "data": {
++        "sessions": [
++          {"session": 1, "events": "512 / 471", "effect": 1.02, "ciLow": 0.78, "ciHigh": 1.23},
++          {"session": 2, "events": "498 / 450", "effect": 1.15, "ciLow": 0.88, "ciHigh": 1.35},
++          {"session": 3, "events": "620 / 584", "effect": 0.96, "ciLow": 0.70, "ciHigh": 1.17},
++          {"session": 4, "events": "534 / 488", "effect": 1.38, "ciLow": 1.15, "ciHigh": 1.60},
++          {"session": 5, "events": "475 / 452", "effect": 0.99, "ciLow": 0.76, "ciHigh": 1.23},
++          {"session": 6, "events": "610 / 570", "effect": 1.16, "ciLow": 0.92, "ciHigh": 1.37},
++          {"session": 7, "events": "502 / 468", "effect": 0.91, "ciLow": 0.65, "ciHigh": 1.14},
++          {"session": 8, "events": "559 / 516", "effect": 1.02, "ciLow": 0.78, "ciHigh": 1.25},
++          {"session": 9, "events": "583 / 544", "effect": 0.95, "ciLow": 0.73, "ciHigh": 1.18},
++          {"session": 10, "events": "478 / 439", "effect": 0.89, "ciLow": 0.63, "ciHigh": 1.13},
++          {"session": 11, "events": "621 / 590", "effect": 1.09, "ciLow": 0.83, "ciHigh": 1.31},
++          {"session": 12, "events": "505 / 487", "effect": 0.91, "ciLow": 0.65, "ciHigh": 1.16},
++          {"session": 13, "events": "567 / 532", "effect": 1.04, "ciLow": 0.78, "ciHigh": 1.31},
++          {"session": 14, "events": "540 / 505", "effect": 0.93, "ciLow": 0.66, "ciHigh": 1.18},
++          {"session": 15, "events": "489 / 463", "effect": 0.94, "ciLow": 0.70, "ciHigh": 1.18}
++        ],
++        "summary": {
++          "label": "RE Model",
++          "effect": 0.84,
++          "ciLow": 0.65,
++          "ciHigh": 1.02,
++          "text": "0.61 [0.40, 0.82]",
++          "note": "Diamond position follows visible mark; right-side text is transcribed from source and appears partly cropped."
++        }
++      },
++      "marks": [
++        {
++          "id": "session-effects",
++          "type": "forestPointInterval",
++          "usesTransform": "panel-f.effect.x",
++          "dataRef": "panel-f.data.sessions",
++          "pointShape": "circle",
++          "pointRadius": 3.3,
++          "ciCapHeight": 6,
++          "strokeWidth": 0.9,
++          "fill": "#0b7777",
++          "stroke": "#064f4f"
++        },
++        {
++          "id": "summary-diamond",
++          "type": "diamondInterval",
++          "usesTransform": "panel-f.effect.x",
++          "dataRef": "panel-f.data.summary",
++          "centerY": 373,
++          "height": 12,
++          "fill": "#000000"
++        }
++      ],
++      "annotations": [
++        {"id": "summary-label", "type": "text", "text": "RE Model", "x": 10, "y": 379, "fontSize": 16, "anchor": "start"},
++        {"id": "summary-ci-text", "type": "text", "text": "0.61 [0.40, 0.82]", "x": 295, "y": 388, "fontSize": 14, "anchor": "start"}
++      ],
++      "provenance": [
++        {"confidence": "high", "note": "Counts and visible labels are manually transcribed."},
++        {"confidence": "medium", "note": "Point estimates and confidence intervals are approximate from pixel positions."},
++        {"confidence": "low", "note": "The right summary interval text is clipped in the crop; semantic summary values preserve the visible text separately from the diamond geometry."}
++      ]
++    }
++  ],
++  "validation": {
++    "expectedCounts": {
++      "sessionRows": 15,
++      "forestIntervals": 15,
++      "summaryDiamonds": 1,
++      "xTicks": 4
++    },
++    "forbiddenGeneratedLayerReuse": ["drawImage", "background-image", "reference-06-replay-stimulation-F-reference.png as candidate layer"]
++  }
++}
+
+diff --git a/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..6917cd357243fc2a3fa63304ab1decf7840deddb
+--- /dev/null
++++ b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html
+@@ -0,0 +1,271 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-06-replay-stimulation-F reconstruction</title>
++  <style>
++    html, body {
++      margin: 0;
++      background: #eeeeee;
++      color: #111111;
++      font-family: Arial, Helvetica, sans-serif;
++    }
++    header {
++      display: flex;
++      align-items: center;
++      justify-content: space-between;
++      gap: 16px;
++      padding: 10px 14px;
++      background: #ffffff;
++      border-bottom: 1px solid #cccccc;
++    }
++    h1 {
++      margin: 0;
++      font-size: 15px;
++      font-weight: 700;
++    }
++    .note {
++      margin-top: 3px;
++      color: #555555;
++      font-size: 12px;
++    }
++    .toggle {
++      display: inline-flex;
++      border: 1px solid #999999;
++      border-radius: 4px;
++      overflow: hidden;
++      flex: 0 0 auto;
++    }
++    .toggle button {
++      border: 0;
++      padding: 5px 10px;
++      background: #ffffff;
++      color: #111111;
++      font: inherit;
++      font-size: 12px;
++      cursor: pointer;
++    }
++    .toggle button.active {
++      background: #111111;
++      color: #ffffff;
++    }
++    main {
++      min-height: calc(100vh - 50px);
++      display: grid;
++      place-items: center;
++      padding: 16px;
++      box-sizing: border-box;
++    }
++    .frame {
++      position: relative;
++      background: #ffffff;
++      overflow: hidden;
++      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.10);
++    }
++    .surface, .reference, svg {
++      position: absolute;
++      inset: 0;
++    }
++    .reference {
++      display: none;
++      width: 100%;
++      height: 100%;
++      object-fit: contain;
++      background-color: #ffffff;
++    }
++    .show-reference .surface {
++      display: none;
++    }
++    .show-reference .reference {
++      display: block;
++    }
++    text {
++      dominant-baseline: alphabetic;
++    }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1>Forest plot reconstruction</h1>
++      <div class="note">Generated candidate is JSON-rendered SVG. Source image is QA/reference-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">Reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <img id="reference" class="reference" alt="QA reference source image">
++    </div>
++  </main>
++  <script>
++    const SVG_NS = 'http://www.w3.org/2000/svg';
++
++    function svgNode(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
++      Object.entries(attrs).forEach(([key, value]) => {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      });
++      return node;
++    }
++
++    function xScale(spec, value) {
++      const cs = spec.coordinateSystems.find(item => item.id === 'panel-f.effect.x');
++      const t = (value - cs.domain[0]) / (cs.domain[1] - cs.domain[0]);
++      return cs.range[0] + t * (cs.range[1] - cs.range[0]);
++    }
++
++    function rowY(session) {
++      return 81 + (session - 1) * (249 / 14);
++    }
++
++    function addText(svg, typography, item, className) {
++      const text = svgNode('text', {
++        id: item.id,
++        class: className,
++        x: item.x,
++        y: item.y,
++        fill: item.fill || typography.color,
++        'font-family': item.fontFamily || typography.fontFamily,
++        'font-size': item.fontSize || typography.defaultSize,
++        'font-weight': item.fontWeight || 400,
++        'text-anchor': item.anchor || 'start',
++        transform: item.rotation ? `rotate(${item.rotation} ${item.x} ${item.y})` : null
++      });
++      String(item.text || '').split('\n').forEach((line, index) => {
++        const tspan = svgNode('tspan', {
++          x: item.x,
++          dy: index === 0 ? 0 : `${item.lineHeight || 1.08}em`
++        });
++        tspan.textContent = line;
++        text.appendChild(tspan);
++      });
++      svg.appendChild(text);
++    }
++
++    function addLine(svg, attrs) {
++      svg.appendChild(svgNode('line', attrs));
++    }
++
++    function render(spec) {
++      const frame = document.getElementById('frame');
++      const surface = document.getElementById('surface');
++      const reference = document.getElementById('reference');
++      const panel = spec.panels[0];
++      const typography = spec.typography;
++      const styles = spec.styleTokens;
++
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      reference.src = spec.source.path;
++
++      const svg = svgNode('svg', {
++        width: spec.canvas.width,
++        height: spec.canvas.height,
++        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
++        role: 'img',
++        'aria-label': panel.title.text
++      });
++      svg.appendChild(svgNode('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
++      surface.innerHTML = '';
++      surface.appendChild(svg);
++
++      addText(svg, typography, panel.label, 'panel-label');
++      addText(svg, typography, panel.title, 'panel-title');
++      panel.layout.leftTable.headers.forEach(header => addText(svg, typography, header, 'table-header'));
++
++      const plot = panel.layout.plot;
++      addLine(svg, {
++        id: 'zero-guide',
++        x1: plot.zeroGuide.x,
++        y1: plot.zeroGuide.y1,
++        x2: plot.zeroGuide.x,
++        y2: plot.zeroGuide.y2,
++        stroke: styles.guide,
++        'stroke-width': 1,
++        'stroke-dasharray': plot.zeroGuide.strokeDasharray
++      });
++      addLine(svg, {
++        id: 'separator-rule',
++        x1: plot.separator.x1,
++        y1: plot.separator.y1,
++        x2: plot.separator.x2,
++        y2: plot.separator.y2,
++        stroke: styles.rule,
++        'stroke-width': 1,
++        'stroke-dasharray': plot.separator.strokeDasharray
++      });
++
++      panel.data.sessions.forEach(row => {
++        const y = rowY(row.session);
++        addText(svg, typography, {id: `session-${row.session}-label`, text: row.session, x: panel.layout.leftTable.sessionX, y: y + 4, fontSize: 15, anchor: 'middle'}, 'session-label');
++        addText(svg, typography, {id: `session-${row.session}-events`, text: row.events, x: panel.layout.leftTable.countsX, y: y + 4, fontSize: 14, anchor: 'middle'}, 'event-count');
++
++        const x1 = xScale(spec, row.ciLow);
++        const x2 = xScale(spec, row.ciHigh);
++        const xc = xScale(spec, row.effect);
++        addLine(svg, {id: `ci-${row.session}`, x1, y1: y, x2, y2: y, stroke: '#222222', 'stroke-width': 0.9});
++        addLine(svg, {x1, y1: y - 3, x2: x1, y2: y + 3, stroke: '#222222', 'stroke-width': 0.9});
++        addLine(svg, {x1: x2, y1: y - 3, x2, y2: y + 3, stroke: '#222222', 'stroke-width': 0.9});
++        svg.appendChild(svgNode('circle', {
++          id: `point-${row.session}`,
++          cx: xc,
++          cy: y,
++          r: 3.3,
++          fill: styles.pointFill,
++          stroke: styles.pointStroke,
++          'stroke-width': 0.8
++        }));
++      });
++
++      const axis = plot.bottomAxis;
++      addLine(svg, {id: 'x-axis', x1: axis.x1, y1: axis.y1, x2: axis.x2, y2: axis.y2, stroke: styles.axis, 'stroke-width': 1.1});
++      plot.x.ticks.forEach(tick => {
++        const x = xScale(spec, tick.value);
++        addLine(svg, {id: `x-tick-${tick.label}`, x1: x, y1: axis.y1, x2: x, y2: axis.y1 + axis.tickLength, stroke: styles.axis, 'stroke-width': 1});
++        addText(svg, typography, {id: `x-tick-label-${tick.label}`, text: tick.label, x, y: axis.y1 + 23, fontSize: 17, anchor: 'middle'}, 'x-tick-label');
++      });
++      addText(svg, typography, plot.x.label, 'axis-label');
++
++      const summary = panel.data.summary;
++      addText(svg, typography, panel.annotations[0], 'summary-label');
++      const y = panel.marks.find(mark => mark.id === 'summary-diamond').centerY;
++      const xLow = xScale(spec, summary.ciLow);
++      const xMid = xScale(spec, summary.effect);
++      const xHigh = xScale(spec, summary.ciHigh);
++      const h = panel.marks.find(mark => mark.id === 'summary-diamond').height / 2;
++      svg.appendChild(svgNode('polygon', {
++        id: 'summary-diamond',
++        points: `${xLow},${y} ${xMid},${y - h} ${xHigh},${y} ${xMid},${y + h}`,
++        fill: styles.summaryFill
++      }));
++      addText(svg, typography, panel.annotations[1], 'summary-ci-text');
++    }
++
++    async function loadSpec() {
++      const response = await fetch('reference-06-replay-stimulation-F.json');
++      return response.json();
++    }
++
++    loadSpec().then(render);
++
++    const frame = document.getElementById('frame');
++    const generatedButton = document.getElementById('generatedButton');
++    const referenceButton = document.getElementById('referenceButton');
++    generatedButton.addEventListener('click', () => {
++      frame.classList.remove('show-reference');
++      generatedButton.classList.add('active');
++      referenceButton.classList.remove('active');
++    });
++    referenceButton.addEventListener('click', () => {
++      frame.classList.add('show-reference');
++      referenceButton.classList.add('active');
++      generatedButton.classList.remove('active');
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..9c041dc9b3a20409db98840f5c4dfb077940f11e
+--- /dev/null
++++ b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json
+@@ -0,0 +1,171 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-06-replay-stimulation-F",
++  "source": {
++    "path": "../../assets/reference/reference-06-replay-stimulation-F-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "Single forest-plot panel reconstructed by visual inspection. Session counts are transcribed from the raster; effect sizes and intervals are approximate source-calibrated values."
++  },
++  "canvas": {
++    "width": 374,
++    "height": 524,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
++    "defaultSize": 14,
++    "color": "#111111",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Arial", "Helvetica"],
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "Condensed sans approximates the compact source text. Title and axis labels are visually fitted, not OCR-calibrated."
++    }
++  },
++  "styleTokens": {
++    "axis": "#111111",
++    "guide": "#666666",
++    "pointFill": "#0b7777",
++    "pointStroke": "#064f4f",
++    "summaryFill": "#000000",
++    "rule": "#777777"
++  },
++  "coordinateSystems": [
++    {
++      "id": "panel-f.effect.x",
++      "type": "linear",
++      "domain": [-1, 2],
++      "range": [92, 321],
++      "zeroX": 168.3333333333
++    },
++    {
++      "id": "panel-f.session.y",
++      "type": "ordinal",
++      "categories": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
++      "range": [81, 330]
++    }
++  ],
++  "panels": [
++    {
++      "id": "panel-f",
++      "label": {
++        "id": "panel-f-label",
++        "text": "F",
++        "x": 10,
++        "y": 24,
++        "fontSize": 24,
++        "fontWeight": 700,
++        "anchor": "start"
++      },
++      "title": {
++        "id": "panel-f-title",
++        "text": "Effect size by session (Cohen's d)",
++        "x": 38,
++        "y": 24,
++        "fontSize": 21,
++        "fontWeight": 700,
++        "anchor": "start",
++        "sourceBox": {"x": 38, "y": 5, "width": 299, "height": 24},
++        "targetWidth": 300,
++        "fit": "condensed"
++      },
++      "bbox": {"x": 0, "y": 0, "width": 374, "height": 524},
++      "layout": {
++        "leftTable": {
++          "headers": [
++            {"id": "session-header", "text": "Session", "x": 23, "y": 61, "fontSize": 14, "anchor": "middle"},
++            {"id": "events-header", "text": "n. events\n(Stim / Pre)", "x": 91, "y": 51, "fontSize": 14, "lineHeight": 1.05, "anchor": "middle"}
++          ],
++          "sessionX": 24,
++          "countsX": 91
++        },
++        "plot": {
++          "dataBbox": {"x": 92, "y": 75, "width": 229, "height": 255},
++          "zeroGuide": {"x": 168.3333333333, "y1": 74, "y2": 391, "strokeDasharray": "7 8"},
++          "bottomAxis": {"x1": 92, "y1": 392, "x2": 321, "y2": 392, "tickLength": 5},
++          "x": {
++            "domain": [-1, 2],
++            "ticks": [
++              {"value": -1, "label": "-1"},
++              {"value": 0, "label": "0"},
++              {"value": 1, "label": "1"},
++              {"value": 2, "label": "2"}
++            ],
++            "label": {"id": "x-label", "text": "Cohen's d (Stim \u2013 Pre)", "x": 206, "y": 441, "fontSize": 19, "anchor": "middle"}
++          },
++          "separator": {"x1": 0, "y1": 350, "x2": 291, "y2": 350, "strokeDasharray": "5 6"}
++        }
++      },
++      "data": {
++        "sessions": [
++          {"session": 1, "events": "512 / 471", "effect": 1.02, "ciLow": 0.78, "ciHigh": 1.23},
++          {"session": 2, "events": "498 / 450", "effect": 1.15, "ciLow": 0.88, "ciHigh": 1.35},
++          {"session": 3, "events": "620 / 584", "effect": 0.96, "ciLow": 0.70, "ciHigh": 1.17},
++          {"session": 4, "events": "534 / 488", "effect": 1.38, "ciLow": 1.15, "ciHigh": 1.60},
++          {"session": 5, "events": "475 / 452", "effect": 0.99, "ciLow": 0.76, "ciHigh": 1.23},
++          {"session": 6, "events": "610 / 570", "effect": 1.16, "ciLow": 0.92, "ciHigh": 1.37},
++          {"session": 7, "events": "502 / 468", "effect": 0.91, "ciLow": 0.65, "ciHigh": 1.14},
++          {"session": 8, "events": "559 / 516", "effect": 1.02, "ciLow": 0.78, "ciHigh": 1.25},
++          {"session": 9, "events": "583 / 544", "effect": 0.95, "ciLow": 0.73, "ciHigh": 1.18},
++          {"session": 10, "events": "478 / 439", "effect": 0.89, "ciLow": 0.63, "ciHigh": 1.13},
++          {"session": 11, "events": "621 / 590", "effect": 1.09, "ciLow": 0.83, "ciHigh": 1.31},
++          {"session": 12, "events": "505 / 487", "effect": 0.91, "ciLow": 0.65, "ciHigh": 1.16},
++          {"session": 13, "events": "567 / 532", "effect": 1.04, "ciLow": 0.78, "ciHigh": 1.31},
++          {"session": 14, "events": "540 / 505", "effect": 0.93, "ciLow": 0.66, "ciHigh": 1.18},
++          {"session": 15, "events": "489 / 463", "effect": 0.94, "ciLow": 0.70, "ciHigh": 1.18}
++        ],
++        "summary": {
++          "label": "RE Model",
++          "effect": 0.84,
++          "ciLow": 0.65,
++          "ciHigh": 1.02,
++          "text": "0.61 [0.40, 0.82]",
++          "note": "Diamond position follows visible mark; right-side text is transcribed from source and appears partly cropped."
++        }
++      },
++      "marks": [
++        {
++          "id": "session-effects",
++          "type": "forestPointInterval",
++          "usesTransform": "panel-f.effect.x",
++          "dataRef": "panel-f.data.sessions",
++          "pointShape": "circle",
++          "pointRadius": 3.3,
++          "ciCapHeight": 6,
++          "strokeWidth": 0.9,
++          "fill": "#0b7777",
++          "stroke": "#064f4f"
++        },
++        {
++          "id": "summary-diamond",
++          "type": "diamondInterval",
++          "usesTransform": "panel-f.effect.x",
++          "dataRef": "panel-f.data.summary",
++          "centerY": 373,
++          "height": 12,
++          "fill": "#000000"
++        }
++      ],
++      "annotations": [
++        {"id": "summary-label", "type": "text", "text": "RE Model", "x": 10, "y": 379, "fontSize": 16, "anchor": "start"},
++        {"id": "summary-ci-text", "type": "text", "text": "0.61 [0.40, 0.82]", "x": 295, "y": 388, "fontSize": 14, "anchor": "start"}
++      ],
++      "provenance": [
++        {"confidence": "high", "note": "Counts and visible labels are manually transcribed."},
++        {"confidence": "medium", "note": "Point estimates and confidence intervals are approximate from pixel positions."},
++        {"confidence": "low", "note": "The right summary interval text is clipped in the crop; semantic summary values preserve the visible text separately from the diamond geometry."}
++      ]
++    }
++  ],
++  "validation": {
++    "expectedCounts": {
++      "sessionRows": 15,
++      "forestIntervals": 15,
++      "summaryDiamonds": 1,
++      "xTicks": 4
++    },
++    "forbiddenGeneratedLayerReuse": ["drawImage", "background-image", "reference-06-replay-stimulation-F-reference.png as candidate layer"]
++  }
++}
+
+codex
+The first-pass files are in place. I’m running the contract checks now: parse the JSON, scan the HTML/JSON for forbidden source reuse patterns, and make sure the output directory contains only the intended deliverables.
+exec
+/bin/zsh -lc 'python -m json.tool outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json >/tmp/reference-06-F-jsoncheck.txt && wc -c /tmp/reference-06-F-jsoncheck.txt' in /Users/alex/Code/scientific-figure-reconstruction
+ exited 127 in 0ms:
+zsh:1: command not found: python
+
+exec
+/bin/zsh -lc "rg -n \"drawImage|background-image|background:.*reference|url\\(|reference-06-replay-stimulation-F-reference\\.png\" outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json:5:    "path": "../../assets/reference/reference-06-replay-stimulation-F-reference.png",
+outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json:169:    "forbiddenGeneratedLayerReuse": ["drawImage", "background-image", "reference-06-replay-stimulation-F-reference.png as candidate layer"]
+
+exec
+/bin/zsh -lc 'find outputs/reference-06-replay-stimulation-F-make-figure-batch -maxdepth 1 -type f -print' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json
+outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html
+
+diff --git a/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..6917cd357243fc2a3fa63304ab1decf7840deddb
+--- /dev/null
++++ b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html
+@@ -0,0 +1,271 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-06-replay-stimulation-F reconstruction</title>
++  <style>
++    html, body {
++      margin: 0;
++      background: #eeeeee;
++      color: #111111;
++      font-family: Arial, Helvetica, sans-serif;
++    }
++    header {
++      display: flex;
++      align-items: center;
++      justify-content: space-between;
++      gap: 16px;
++      padding: 10px 14px;
++      background: #ffffff;
++      border-bottom: 1px solid #cccccc;
++    }
++    h1 {
++      margin: 0;
++      font-size: 15px;
++      font-weight: 700;
++    }
++    .note {
++      margin-top: 3px;
++      color: #555555;
++      font-size: 12px;
++    }
++    .toggle {
++      display: inline-flex;
++      border: 1px solid #999999;
++      border-radius: 4px;
++      overflow: hidden;
++      flex: 0 0 auto;
++    }
++    .toggle button {
++      border: 0;
++      padding: 5px 10px;
++      background: #ffffff;
++      color: #111111;
++      font: inherit;
++      font-size: 12px;
++      cursor: pointer;
++    }
++    .toggle button.active {
++      background: #111111;
++      color: #ffffff;
++    }
++    main {
++      min-height: calc(100vh - 50px);
++      display: grid;
++      place-items: center;
++      padding: 16px;
++      box-sizing: border-box;
++    }
++    .frame {
++      position: relative;
++      background: #ffffff;
++      overflow: hidden;
++      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.10);
++    }
++    .surface, .reference, svg {
++      position: absolute;
++      inset: 0;
++    }
++    .reference {
++      display: none;
++      width: 100%;
++      height: 100%;
++      object-fit: contain;
++      background-color: #ffffff;
++    }
++    .show-reference .surface {
++      display: none;
++    }
++    .show-reference .reference {
++      display: block;
++    }
++    text {
++      dominant-baseline: alphabetic;
++    }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1>Forest plot reconstruction</h1>
++      <div class="note">Generated candidate is JSON-rendered SVG. Source image is QA/reference-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">Reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <img id="reference" class="reference" alt="QA reference source image">
++    </div>
++  </main>
++  <script>
++    const SVG_NS = 'http://www.w3.org/2000/svg';
++
++    function svgNode(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
++      Object.entries(attrs).forEach(([key, value]) => {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      });
++      return node;
++    }
++
++    function xScale(spec, value) {
++      const cs = spec.coordinateSystems.find(item => item.id === 'panel-f.effect.x');
++      const t = (value - cs.domain[0]) / (cs.domain[1] - cs.domain[0]);
++      return cs.range[0] + t * (cs.range[1] - cs.range[0]);
++    }
++
++    function rowY(session) {
++      return 81 + (session - 1) * (249 / 14);
++    }
++
++    function addText(svg, typography, item, className) {
++      const text = svgNode('text', {
++        id: item.id,
++        class: className,
++        x: item.x,
++        y: item.y,
++        fill: item.fill || typography.color,
++        'font-family': item.fontFamily || typography.fontFamily,
++        'font-size': item.fontSize || typography.defaultSize,
++        'font-weight': item.fontWeight || 400,
++        'text-anchor': item.anchor || 'start',
++        transform: item.rotation ? `rotate(${item.rotation} ${item.x} ${item.y})` : null
++      });
++      String(item.text || '').split('\n').forEach((line, index) => {
++        const tspan = svgNode('tspan', {
++          x: item.x,
++          dy: index === 0 ? 0 : `${item.lineHeight || 1.08}em`
++        });
++        tspan.textContent = line;
++        text.appendChild(tspan);
++      });
++      svg.appendChild(text);
++    }
++
++    function addLine(svg, attrs) {
++      svg.appendChild(svgNode('line', attrs));
++    }
++
++    function render(spec) {
++      const frame = document.getElementById('frame');
++      const surface = document.getElementById('surface');
++      const reference = document.getElementById('reference');
++      const panel = spec.panels[0];
++      const typography = spec.typography;
++      const styles = spec.styleTokens;
++
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      reference.src = spec.source.path;
++
++      const svg = svgNode('svg', {
++        width: spec.canvas.width,
++        height: spec.canvas.height,
++        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
++        role: 'img',
++        'aria-label': panel.title.text
++      });
++      svg.appendChild(svgNode('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
++      surface.innerHTML = '';
++      surface.appendChild(svg);
++
++      addText(svg, typography, panel.label, 'panel-label');
++      addText(svg, typography, panel.title, 'panel-title');
++      panel.layout.leftTable.headers.forEach(header => addText(svg, typography, header, 'table-header'));
++
++      const plot = panel.layout.plot;
++      addLine(svg, {
++        id: 'zero-guide',
++        x1: plot.zeroGuide.x,
++        y1: plot.zeroGuide.y1,
++        x2: plot.zeroGuide.x,
++        y2: plot.zeroGuide.y2,
++        stroke: styles.guide,
++        'stroke-width': 1,
++        'stroke-dasharray': plot.zeroGuide.strokeDasharray
++      });
++      addLine(svg, {
++        id: 'separator-rule',
++        x1: plot.separator.x1,
++        y1: plot.separator.y1,
++        x2: plot.separator.x2,
++        y2: plot.separator.y2,
++        stroke: styles.rule,
++        'stroke-width': 1,
++        'stroke-dasharray': plot.separator.strokeDasharray
++      });
++
++      panel.data.sessions.forEach(row => {
++        const y = rowY(row.session);
++        addText(svg, typography, {id: `session-${row.session}-label`, text: row.session, x: panel.layout.leftTable.sessionX, y: y + 4, fontSize: 15, anchor: 'middle'}, 'session-label');
++        addText(svg, typography, {id: `session-${row.session}-events`, text: row.events, x: panel.layout.leftTable.countsX, y: y + 4, fontSize: 14, anchor: 'middle'}, 'event-count');
++
++        const x1 = xScale(spec, row.ciLow);
++        const x2 = xScale(spec, row.ciHigh);
++        const xc = xScale(spec, row.effect);
++        addLine(svg, {id: `ci-${row.session}`, x1, y1: y, x2, y2: y, stroke: '#222222', 'stroke-width': 0.9});
++        addLine(svg, {x1, y1: y - 3, x2: x1, y2: y + 3, stroke: '#222222', 'stroke-width': 0.9});
++        addLine(svg, {x1: x2, y1: y - 3, x2, y2: y + 3, stroke: '#222222', 'stroke-width': 0.9});
++        svg.appendChild(svgNode('circle', {
++          id: `point-${row.session}`,
++          cx: xc,
++          cy: y,
++          r: 3.3,
++          fill: styles.pointFill,
++          stroke: styles.pointStroke,
++          'stroke-width': 0.8
++        }));
++      });
++
++      const axis = plot.bottomAxis;
++      addLine(svg, {id: 'x-axis', x1: axis.x1, y1: axis.y1, x2: axis.x2, y2: axis.y2, stroke: styles.axis, 'stroke-width': 1.1});
++      plot.x.ticks.forEach(tick => {
++        const x = xScale(spec, tick.value);
++        addLine(svg, {id: `x-tick-${tick.label}`, x1: x, y1: axis.y1, x2: x, y2: axis.y1 + axis.tickLength, stroke: styles.axis, 'stroke-width': 1});
++        addText(svg, typography, {id: `x-tick-label-${tick.label}`, text: tick.label, x, y: axis.y1 + 23, fontSize: 17, anchor: 'middle'}, 'x-tick-label');
++      });
++      addText(svg, typography, plot.x.label, 'axis-label');
++
++      const summary = panel.data.summary;
++      addText(svg, typography, panel.annotations[0], 'summary-label');
++      const y = panel.marks.find(mark => mark.id === 'summary-diamond').centerY;
++      const xLow = xScale(spec, summary.ciLow);
++      const xMid = xScale(spec, summary.effect);
++      const xHigh = xScale(spec, summary.ciHigh);
++      const h = panel.marks.find(mark => mark.id === 'summary-diamond').height / 2;
++      svg.appendChild(svgNode('polygon', {
++        id: 'summary-diamond',
++        points: `${xLow},${y} ${xMid},${y - h} ${xHigh},${y} ${xMid},${y + h}`,
++        fill: styles.summaryFill
++      }));
++      addText(svg, typography, panel.annotations[1], 'summary-ci-text');
++    }
++
++    async function loadSpec() {
++      const response = await fetch('reference-06-replay-stimulation-F.json');
++      return response.json();
++    }
++
++    loadSpec().then(render);
++
++    const frame = document.getElementById('frame');
++    const generatedButton = document.getElementById('generatedButton');
++    const referenceButton = document.getElementById('referenceButton');
++    generatedButton.addEventListener('click', () => {
++      frame.classList.remove('show-reference');
++      generatedButton.classList.add('active');
++      referenceButton.classList.remove('active');
++    });
++    referenceButton.addEventListener('click', () => {
++      frame.classList.add('show-reference');
++      referenceButton.classList.add('active');
++      generatedButton.classList.remove('active');
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..9c041dc9b3a20409db98840f5c4dfb077940f11e
+--- /dev/null
++++ b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json
+@@ -0,0 +1,171 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-06-replay-stimulation-F",
++  "source": {
++    "path": "../../assets/reference/reference-06-replay-stimulation-F-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "Single forest-plot panel reconstructed by visual inspection. Session counts are transcribed from the raster; effect sizes and intervals are approximate source-calibrated values."
++  },
++  "canvas": {
++    "width": 374,
++    "height": 524,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
++    "defaultSize": 14,
++    "color": "#111111",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Arial", "Helvetica"],
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "Condensed sans approximates the compact source text. Title and axis labels are visually fitted, not OCR-calibrated."
++    }
++  },
++  "styleTokens": {
++    "axis": "#111111",
++    "guide": "#666666",
++    "pointFill": "#0b7777",
++    "pointStroke": "#064f4f",
++    "summaryFill": "#000000",
++    "rule": "#777777"
++  },
++  "coordinateSystems": [
++    {
++      "id": "panel-f.effect.x",
++      "type": "linear",
++      "domain": [-1, 2],
++      "range": [92, 321],
++      "zeroX": 168.3333333333
++    },
++    {
++      "id": "panel-f.session.y",
++      "type": "ordinal",
++      "categories": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
++      "range": [81, 330]
++    }
++  ],
++  "panels": [
++    {
++      "id": "panel-f",
++      "label": {
++        "id": "panel-f-label",
++        "text": "F",
++        "x": 10,
++        "y": 24,
++        "fontSize": 24,
++        "fontWeight": 700,
++        "anchor": "start"
++      },
++      "title": {
++        "id": "panel-f-title",
++        "text": "Effect size by session (Cohen's d)",
++        "x": 38,
++        "y": 24,
++        "fontSize": 21,
++        "fontWeight": 700,
++        "anchor": "start",
++        "sourceBox": {"x": 38, "y": 5, "width": 299, "height": 24},
++        "targetWidth": 300,
++        "fit": "condensed"
++      },
++      "bbox": {"x": 0, "y": 0, "width": 374, "height": 524},
++      "layout": {
++        "leftTable": {
++          "headers": [
++            {"id": "session-header", "text": "Session", "x": 23, "y": 61, "fontSize": 14, "anchor": "middle"},
++            {"id": "events-header", "text": "n. events\n(Stim / Pre)", "x": 91, "y": 51, "fontSize": 14, "lineHeight": 1.05, "anchor": "middle"}
++          ],
++          "sessionX": 24,
++          "countsX": 91
++        },
++        "plot": {
++          "dataBbox": {"x": 92, "y": 75, "width": 229, "height": 255},
++          "zeroGuide": {"x": 168.3333333333, "y1": 74, "y2": 391, "strokeDasharray": "7 8"},
++          "bottomAxis": {"x1": 92, "y1": 392, "x2": 321, "y2": 392, "tickLength": 5},
++          "x": {
++            "domain": [-1, 2],
++            "ticks": [
++              {"value": -1, "label": "-1"},
++              {"value": 0, "label": "0"},
++              {"value": 1, "label": "1"},
++              {"value": 2, "label": "2"}
++            ],
++            "label": {"id": "x-label", "text": "Cohen's d (Stim \u2013 Pre)", "x": 206, "y": 441, "fontSize": 19, "anchor": "middle"}
++          },
++          "separator": {"x1": 0, "y1": 350, "x2": 291, "y2": 350, "strokeDasharray": "5 6"}
++        }
++      },
++      "data": {
++        "sessions": [
++          {"session": 1, "events": "512 / 471", "effect": 1.02, "ciLow": 0.78, "ciHigh": 1.23},
++          {"session": 2, "events": "498 / 450", "effect": 1.15, "ciLow": 0.88, "ciHigh": 1.35},
++          {"session": 3, "events": "620 / 584", "effect": 0.96, "ciLow": 0.70, "ciHigh": 1.17},
++          {"session": 4, "events": "534 / 488", "effect": 1.38, "ciLow": 1.15, "ciHigh": 1.60},
++          {"session": 5, "events": "475 / 452", "effect": 0.99, "ciLow": 0.76, "ciHigh": 1.23},
++          {"session": 6, "events": "610 / 570", "effect": 1.16, "ciLow": 0.92, "ciHigh": 1.37},
++          {"session": 7, "events": "502 / 468", "effect": 0.91, "ciLow": 0.65, "ciHigh": 1.14},
++          {"session": 8, "events": "559 / 516", "effect": 1.02, "ciLow": 0.78, "ciHigh": 1.25},
++          {"session": 9, "events": "583 / 544", "effect": 0.95, "ciLow": 0.73, "ciHigh": 1.18},
++          {"session": 10, "events": "478 / 439", "effect": 0.89, "ciLow": 0.63, "ciHigh": 1.13},
++          {"session": 11, "events": "621 / 590", "effect": 1.09, "ciLow": 0.83, "ciHigh": 1.31},
++          {"session": 12, "events": "505 / 487", "effect": 0.91, "ciLow": 0.65, "ciHigh": 1.16},
++          {"session": 13, "events": "567 / 532", "effect": 1.04, "ciLow": 0.78, "ciHigh": 1.31},
++          {"session": 14, "events": "540 / 505", "effect": 0.93, "ciLow": 0.66, "ciHigh": 1.18},
++          {"session": 15, "events": "489 / 463", "effect": 0.94, "ciLow": 0.70, "ciHigh": 1.18}
++        ],
++        "summary": {
++          "label": "RE Model",
++          "effect": 0.84,
++          "ciLow": 0.65,
++          "ciHigh": 1.02,
++          "text": "0.61 [0.40, 0.82]",
++          "note": "Diamond position follows visible mark; right-side text is transcribed from source and appears partly cropped."
++        }
++      },
++      "marks": [
++        {
++          "id": "session-effects",
++          "type": "forestPointInterval",
++          "usesTransform": "panel-f.effect.x",
++          "dataRef": "panel-f.data.sessions",
++          "pointShape": "circle",
++          "pointRadius": 3.3,
++          "ciCapHeight": 6,
++          "strokeWidth": 0.9,
++          "fill": "#0b7777",
++          "stroke": "#064f4f"
++        },
++        {
++          "id": "summary-diamond",
++          "type": "diamondInterval",
++          "usesTransform": "panel-f.effect.x",
++          "dataRef": "panel-f.data.summary",
++          "centerY": 373,
++          "height": 12,
++          "fill": "#000000"
++        }
++      ],
++      "annotations": [
++        {"id": "summary-label", "type": "text", "text": "RE Model", "x": 10, "y": 379, "fontSize": 16, "anchor": "start"},
++        {"id": "summary-ci-text", "type": "text", "text": "0.61 [0.40, 0.82]", "x": 295, "y": 388, "fontSize": 14, "anchor": "start"}
++      ],
++      "provenance": [
++        {"confidence": "high", "note": "Counts and visible labels are manually transcribed."},
++        {"confidence": "medium", "note": "Point estimates and confidence intervals are approximate from pixel positions."},
++        {"confidence": "low", "note": "The right summary interval text is clipped in the crop; semantic summary values preserve the visible text separately from the diamond geometry."}
++      ]
++    }
++  ],
++  "validation": {
++    "expectedCounts": {
++      "sessionRows": 15,
++      "forestIntervals": 15,
++      "summaryDiamonds": 1,
++      "xTicks": 4
++    },
++    "forbiddenGeneratedLayerReuse": ["drawImage", "background-image", "reference-06-replay-stimulation-F-reference.png as candidate layer"]
++  }
++}
+
+codex
+`python` is not installed as `python` in this shell, so I’m rerunning JSON validation with the available runtime instead of treating that as a blocker. The source filename only appears in JSON provenance/QA path text so far, not as a generated drawing layer.
+exec
+/bin/zsh -lc "rg -n \"drawImage|background-image|background:.*reference|url\\(\" outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json || true" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json:169:    "forbiddenGeneratedLayerReuse": ["drawImage", "background-image", "reference-06-replay-stimulation-F-reference.png as candidate layer"]
+
+exec
+/bin/zsh -lc "node -e \"const fs=require('fs'); JSON.parse(fs.readFileSync('outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json','utf8')); console.log('json ok')\"" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+json ok
+
+exec
+/bin/zsh -lc "rg -n \"<img|reference\\.src|source\\.path|reference-06-replay-stimulation-F-reference\\.png\" outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html:102:      <img id="reference" class="reference" alt="QA reference source image">
+outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html:164:      reference.src = spec.source.path;
+outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json:5:    "path": "../../assets/reference/reference-06-replay-stimulation-F-reference.png",
+outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json:169:    "forbiddenGeneratedLayerReuse": ["drawImage", "background-image", "reference-06-replay-stimulation-F-reference.png as candidate layer"]
+
+diff --git a/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..6917cd357243fc2a3fa63304ab1decf7840deddb
+--- /dev/null
++++ b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html
+@@ -0,0 +1,271 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-06-replay-stimulation-F reconstruction</title>
++  <style>
++    html, body {
++      margin: 0;
++      background: #eeeeee;
++      color: #111111;
++      font-family: Arial, Helvetica, sans-serif;
++    }
++    header {
++      display: flex;
++      align-items: center;
++      justify-content: space-between;
++      gap: 16px;
++      padding: 10px 14px;
++      background: #ffffff;
++      border-bottom: 1px solid #cccccc;
++    }
++    h1 {
++      margin: 0;
++      font-size: 15px;
++      font-weight: 700;
++    }
++    .note {
++      margin-top: 3px;
++      color: #555555;
++      font-size: 12px;
++    }
++    .toggle {
++      display: inline-flex;
++      border: 1px solid #999999;
++      border-radius: 4px;
++      overflow: hidden;
++      flex: 0 0 auto;
++    }
++    .toggle button {
++      border: 0;
++      padding: 5px 10px;
++      background: #ffffff;
++      color: #111111;
++      font: inherit;
++      font-size: 12px;
++      cursor: pointer;
++    }
++    .toggle button.active {
++      background: #111111;
++      color: #ffffff;
++    }
++    main {
++      min-height: calc(100vh - 50px);
++      display: grid;
++      place-items: center;
++      padding: 16px;
++      box-sizing: border-box;
++    }
++    .frame {
++      position: relative;
++      background: #ffffff;
++      overflow: hidden;
++      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.10);
++    }
++    .surface, .reference, svg {
++      position: absolute;
++      inset: 0;
++    }
++    .reference {
++      display: none;
++      width: 100%;
++      height: 100%;
++      object-fit: contain;
++      background-color: #ffffff;
++    }
++    .show-reference .surface {
++      display: none;
++    }
++    .show-reference .reference {
++      display: block;
++    }
++    text {
++      dominant-baseline: alphabetic;
++    }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1>Forest plot reconstruction</h1>
++      <div class="note">Generated candidate is JSON-rendered SVG. Source image is QA/reference-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">Reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <img id="reference" class="reference" alt="QA reference source image">
++    </div>
++  </main>
++  <script>
++    const SVG_NS = 'http://www.w3.org/2000/svg';
++
++    function svgNode(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
++      Object.entries(attrs).forEach(([key, value]) => {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      });
++      return node;
++    }
++
++    function xScale(spec, value) {
++      const cs = spec.coordinateSystems.find(item => item.id === 'panel-f.effect.x');
++      const t = (value - cs.domain[0]) / (cs.domain[1] - cs.domain[0]);
++      return cs.range[0] + t * (cs.range[1] - cs.range[0]);
++    }
++
++    function rowY(session) {
++      return 81 + (session - 1) * (249 / 14);
++    }
++
++    function addText(svg, typography, item, className) {
++      const text = svgNode('text', {
++        id: item.id,
++        class: className,
++        x: item.x,
++        y: item.y,
++        fill: item.fill || typography.color,
++        'font-family': item.fontFamily || typography.fontFamily,
++        'font-size': item.fontSize || typography.defaultSize,
++        'font-weight': item.fontWeight || 400,
++        'text-anchor': item.anchor || 'start',
++        transform: item.rotation ? `rotate(${item.rotation} ${item.x} ${item.y})` : null
++      });
++      String(item.text || '').split('\n').forEach((line, index) => {
++        const tspan = svgNode('tspan', {
++          x: item.x,
++          dy: index === 0 ? 0 : `${item.lineHeight || 1.08}em`
++        });
++        tspan.textContent = line;
++        text.appendChild(tspan);
++      });
++      svg.appendChild(text);
++    }
++
++    function addLine(svg, attrs) {
++      svg.appendChild(svgNode('line', attrs));
++    }
++
++    function render(spec) {
++      const frame = document.getElementById('frame');
++      const surface = document.getElementById('surface');
++      const reference = document.getElementById('reference');
++      const panel = spec.panels[0];
++      const typography = spec.typography;
++      const styles = spec.styleTokens;
++
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      reference.src = spec.source.path;
++
++      const svg = svgNode('svg', {
++        width: spec.canvas.width,
++        height: spec.canvas.height,
++        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
++        role: 'img',
++        'aria-label': panel.title.text
++      });
++      svg.appendChild(svgNode('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
++      surface.innerHTML = '';
++      surface.appendChild(svg);
++
++      addText(svg, typography, panel.label, 'panel-label');
++      addText(svg, typography, panel.title, 'panel-title');
++      panel.layout.leftTable.headers.forEach(header => addText(svg, typography, header, 'table-header'));
++
++      const plot = panel.layout.plot;
++      addLine(svg, {
++        id: 'zero-guide',
++        x1: plot.zeroGuide.x,
++        y1: plot.zeroGuide.y1,
++        x2: plot.zeroGuide.x,
++        y2: plot.zeroGuide.y2,
++        stroke: styles.guide,
++        'stroke-width': 1,
++        'stroke-dasharray': plot.zeroGuide.strokeDasharray
++      });
++      addLine(svg, {
++        id: 'separator-rule',
++        x1: plot.separator.x1,
++        y1: plot.separator.y1,
++        x2: plot.separator.x2,
++        y2: plot.separator.y2,
++        stroke: styles.rule,
++        'stroke-width': 1,
++        'stroke-dasharray': plot.separator.strokeDasharray
++      });
++
++      panel.data.sessions.forEach(row => {
++        const y = rowY(row.session);
++        addText(svg, typography, {id: `session-${row.session}-label`, text: row.session, x: panel.layout.leftTable.sessionX, y: y + 4, fontSize: 15, anchor: 'middle'}, 'session-label');
++        addText(svg, typography, {id: `session-${row.session}-events`, text: row.events, x: panel.layout.leftTable.countsX, y: y + 4, fontSize: 14, anchor: 'middle'}, 'event-count');
++
++        const x1 = xScale(spec, row.ciLow);
++        const x2 = xScale(spec, row.ciHigh);
++        const xc = xScale(spec, row.effect);
++        addLine(svg, {id: `ci-${row.session}`, x1, y1: y, x2, y2: y, stroke: '#222222', 'stroke-width': 0.9});
++        addLine(svg, {x1, y1: y - 3, x2: x1, y2: y + 3, stroke: '#222222', 'stroke-width': 0.9});
++        addLine(svg, {x1: x2, y1: y - 3, x2, y2: y + 3, stroke: '#222222', 'stroke-width': 0.9});
++        svg.appendChild(svgNode('circle', {
++          id: `point-${row.session}`,
++          cx: xc,
++          cy: y,
++          r: 3.3,
++          fill: styles.pointFill,
++          stroke: styles.pointStroke,
++          'stroke-width': 0.8
++        }));
++      });
++
++      const axis = plot.bottomAxis;
++      addLine(svg, {id: 'x-axis', x1: axis.x1, y1: axis.y1, x2: axis.x2, y2: axis.y2, stroke: styles.axis, 'stroke-width': 1.1});
++      plot.x.ticks.forEach(tick => {
++        const x = xScale(spec, tick.value);
++        addLine(svg, {id: `x-tick-${tick.label}`, x1: x, y1: axis.y1, x2: x, y2: axis.y1 + axis.tickLength, stroke: styles.axis, 'stroke-width': 1});
++        addText(svg, typography, {id: `x-tick-label-${tick.label}`, text: tick.label, x, y: axis.y1 + 23, fontSize: 17, anchor: 'middle'}, 'x-tick-label');
++      });
++      addText(svg, typography, plot.x.label, 'axis-label');
++
++      const summary = panel.data.summary;
++      addText(svg, typography, panel.annotations[0], 'summary-label');
++      const y = panel.marks.find(mark => mark.id === 'summary-diamond').centerY;
++      const xLow = xScale(spec, summary.ciLow);
++      const xMid = xScale(spec, summary.effect);
++      const xHigh = xScale(spec, summary.ciHigh);
++      const h = panel.marks.find(mark => mark.id === 'summary-diamond').height / 2;
++      svg.appendChild(svgNode('polygon', {
++        id: 'summary-diamond',
++        points: `${xLow},${y} ${xMid},${y - h} ${xHigh},${y} ${xMid},${y + h}`,
++        fill: styles.summaryFill
++      }));
++      addText(svg, typography, panel.annotations[1], 'summary-ci-text');
++    }
++
++    async function loadSpec() {
++      const response = await fetch('reference-06-replay-stimulation-F.json');
++      return response.json();
++    }
++
++    loadSpec().then(render);
++
++    const frame = document.getElementById('frame');
++    const generatedButton = document.getElementById('generatedButton');
++    const referenceButton = document.getElementById('referenceButton');
++    generatedButton.addEventListener('click', () => {
++      frame.classList.remove('show-reference');
++      generatedButton.classList.add('active');
++      referenceButton.classList.remove('active');
++    });
++    referenceButton.addEventListener('click', () => {
++      frame.classList.add('show-reference');
++      referenceButton.classList.add('active');
++      generatedButton.classList.remove('active');
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..9c041dc9b3a20409db98840f5c4dfb077940f11e
+--- /dev/null
++++ b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json
+@@ -0,0 +1,171 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-06-replay-stimulation-F",
++  "source": {
++    "path": "../../assets/reference/reference-06-replay-stimulation-F-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "Single forest-plot panel reconstructed by visual inspection. Session counts are transcribed from the raster; effect sizes and intervals are approximate source-calibrated values."
++  },
++  "canvas": {
++    "width": 374,
++    "height": 524,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
++    "defaultSize": 14,
++    "color": "#111111",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Arial", "Helvetica"],
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "Condensed sans approximates the compact source text. Title and axis labels are visually fitted, not OCR-calibrated."
++    }
++  },
++  "styleTokens": {
++    "axis": "#111111",
++    "guide": "#666666",
++    "pointFill": "#0b7777",
++    "pointStroke": "#064f4f",
++    "summaryFill": "#000000",
++    "rule": "#777777"
++  },
++  "coordinateSystems": [
++    {
++      "id": "panel-f.effect.x",
++      "type": "linear",
++      "domain": [-1, 2],
++      "range": [92, 321],
++      "zeroX": 168.3333333333
++    },
++    {
++      "id": "panel-f.session.y",
++      "type": "ordinal",
++      "categories": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
++      "range": [81, 330]
++    }
++  ],
++  "panels": [
++    {
++      "id": "panel-f",
++      "label": {
++        "id": "panel-f-label",
++        "text": "F",
++        "x": 10,
++        "y": 24,
++        "fontSize": 24,
++        "fontWeight": 700,
++        "anchor": "start"
++      },
++      "title": {
++        "id": "panel-f-title",
++        "text": "Effect size by session (Cohen's d)",
++        "x": 38,
++        "y": 24,
++        "fontSize": 21,
++        "fontWeight": 700,
++        "anchor": "start",
++        "sourceBox": {"x": 38, "y": 5, "width": 299, "height": 24},
++        "targetWidth": 300,
++        "fit": "condensed"
++      },
++      "bbox": {"x": 0, "y": 0, "width": 374, "height": 524},
++      "layout": {
++        "leftTable": {
++          "headers": [
++            {"id": "session-header", "text": "Session", "x": 23, "y": 61, "fontSize": 14, "anchor": "middle"},
++            {"id": "events-header", "text": "n. events\n(Stim / Pre)", "x": 91, "y": 51, "fontSize": 14, "lineHeight": 1.05, "anchor": "middle"}
++          ],
++          "sessionX": 24,
++          "countsX": 91
++        },
++        "plot": {
++          "dataBbox": {"x": 92, "y": 75, "width": 229, "height": 255},
++          "zeroGuide": {"x": 168.3333333333, "y1": 74, "y2": 391, "strokeDasharray": "7 8"},
++          "bottomAxis": {"x1": 92, "y1": 392, "x2": 321, "y2": 392, "tickLength": 5},
++          "x": {
++            "domain": [-1, 2],
++            "ticks": [
++              {"value": -1, "label": "-1"},
++              {"value": 0, "label": "0"},
++              {"value": 1, "label": "1"},
++              {"value": 2, "label": "2"}
++            ],
++            "label": {"id": "x-label", "text": "Cohen's d (Stim \u2013 Pre)", "x": 206, "y": 441, "fontSize": 19, "anchor": "middle"}
++          },
++          "separator": {"x1": 0, "y1": 350, "x2": 291, "y2": 350, "strokeDasharray": "5 6"}
++        }
++      },
++      "data": {
++        "sessions": [
++          {"session": 1, "events": "512 / 471", "effect": 1.02, "ciLow": 0.78, "ciHigh": 1.23},
++          {"session": 2, "events": "498 / 450", "effect": 1.15, "ciLow": 0.88, "ciHigh": 1.35},
++          {"session": 3, "events": "620 / 584", "effect": 0.96, "ciLow": 0.70, "ciHigh": 1.17},
++          {"session": 4, "events": "534 / 488", "effect": 1.38, "ciLow": 1.15, "ciHigh": 1.60},
++          {"session": 5, "events": "475 / 452", "effect": 0.99, "ciLow": 0.76, "ciHigh": 1.23},
++          {"session": 6, "events": "610 / 570", "effect": 1.16, "ciLow": 0.92, "ciHigh": 1.37},
++          {"session": 7, "events": "502 / 468", "effect": 0.91, "ciLow": 0.65, "ciHigh": 1.14},
++          {"session": 8, "events": "559 / 516", "effect": 1.02, "ciLow": 0.78, "ciHigh": 1.25},
++          {"session": 9, "events": "583 / 544", "effect": 0.95, "ciLow": 0.73, "ciHigh": 1.18},
++          {"session": 10, "events": "478 / 439", "effect": 0.89, "ciLow": 0.63, "ciHigh": 1.13},
++          {"session": 11, "events": "621 / 590", "effect": 1.09, "ciLow": 0.83, "ciHigh": 1.31},
++          {"session": 12, "events": "505 / 487", "effect": 0.91, "ciLow": 0.65, "ciHigh": 1.16},
++          {"session": 13, "events": "567 / 532", "effect": 1.04, "ciLow": 0.78, "ciHigh": 1.31},
++          {"session": 14, "events": "540 / 505", "effect": 0.93, "ciLow": 0.66, "ciHigh": 1.18},
++          {"session": 15, "events": "489 / 463", "effect": 0.94, "ciLow": 0.70, "ciHigh": 1.18}
++        ],
++        "summary": {
++          "label": "RE Model",
++          "effect": 0.84,
++          "ciLow": 0.65,
++          "ciHigh": 1.02,
++          "text": "0.61 [0.40, 0.82]",
++          "note": "Diamond position follows visible mark; right-side text is transcribed from source and appears partly cropped."
++        }
++      },
++      "marks": [
++        {
++          "id": "session-effects",
++          "type": "forestPointInterval",
++          "usesTransform": "panel-f.effect.x",
++          "dataRef": "panel-f.data.sessions",
++          "pointShape": "circle",
++          "pointRadius": 3.3,
++          "ciCapHeight": 6,
++          "strokeWidth": 0.9,
++          "fill": "#0b7777",
++          "stroke": "#064f4f"
++        },
++        {
++          "id": "summary-diamond",
++          "type": "diamondInterval",
++          "usesTransform": "panel-f.effect.x",
++          "dataRef": "panel-f.data.summary",
++          "centerY": 373,
++          "height": 12,
++          "fill": "#000000"
++        }
++      ],
++      "annotations": [
++        {"id": "summary-label", "type": "text", "text": "RE Model", "x": 10, "y": 379, "fontSize": 16, "anchor": "start"},
++        {"id": "summary-ci-text", "type": "text", "text": "0.61 [0.40, 0.82]", "x": 295, "y": 388, "fontSize": 14, "anchor": "start"}
++      ],
++      "provenance": [
++        {"confidence": "high", "note": "Counts and visible labels are manually transcribed."},
++        {"confidence": "medium", "note": "Point estimates and confidence intervals are approximate from pixel positions."},
++        {"confidence": "low", "note": "The right summary interval text is clipped in the crop; semantic summary values preserve the visible text separately from the diamond geometry."}
++      ]
++    }
++  ],
++  "validation": {
++    "expectedCounts": {
++      "sessionRows": 15,
++      "forestIntervals": 15,
++      "summaryDiamonds": 1,
++      "xTicks": 4
++    },
++    "forbiddenGeneratedLayerReuse": ["drawImage", "background-image", "reference-06-replay-stimulation-F-reference.png as candidate layer"]
++  }
++}
+
+codex
+One scan hit is self-inflicted: the JSON validation notes literally listed the forbidden terms. I’m removing those literal strings from the semantic spec so the final reuse scan is clean apart from the explicit QA/reference path.
+apply patch
+patch: completed
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json
+diff --git a/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..6917cd357243fc2a3fa63304ab1decf7840deddb
+--- /dev/null
++++ b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html
+@@ -0,0 +1,271 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-06-replay-stimulation-F reconstruction</title>
++  <style>
++    html, body {
++      margin: 0;
++      background: #eeeeee;
++      color: #111111;
++      font-family: Arial, Helvetica, sans-serif;
++    }
++    header {
++      display: flex;
++      align-items: center;
++      justify-content: space-between;
++      gap: 16px;
++      padding: 10px 14px;
++      background: #ffffff;
++      border-bottom: 1px solid #cccccc;
++    }
++    h1 {
++      margin: 0;
++      font-size: 15px;
++      font-weight: 700;
++    }
++    .note {
++      margin-top: 3px;
++      color: #555555;
++      font-size: 12px;
++    }
++    .toggle {
++      display: inline-flex;
++      border: 1px solid #999999;
++      border-radius: 4px;
++      overflow: hidden;
++      flex: 0 0 auto;
++    }
++    .toggle button {
++      border: 0;
++      padding: 5px 10px;
++      background: #ffffff;
++      color: #111111;
++      font: inherit;
++      font-size: 12px;
++      cursor: pointer;
++    }
++    .toggle button.active {
++      background: #111111;
++      color: #ffffff;
++    }
++    main {
++      min-height: calc(100vh - 50px);
++      display: grid;
++      place-items: center;
++      padding: 16px;
++      box-sizing: border-box;
++    }
++    .frame {
++      position: relative;
++      background: #ffffff;
++      overflow: hidden;
++      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.10);
++    }
++    .surface, .reference, svg {
++      position: absolute;
++      inset: 0;
++    }
++    .reference {
++      display: none;
++      width: 100%;
++      height: 100%;
++      object-fit: contain;
++      background-color: #ffffff;
++    }
++    .show-reference .surface {
++      display: none;
++    }
++    .show-reference .reference {
++      display: block;
++    }
++    text {
++      dominant-baseline: alphabetic;
++    }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1>Forest plot reconstruction</h1>
++      <div class="note">Generated candidate is JSON-rendered SVG. Source image is QA/reference-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">Reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <img id="reference" class="reference" alt="QA reference source image">
++    </div>
++  </main>
++  <script>
++    const SVG_NS = 'http://www.w3.org/2000/svg';
++
++    function svgNode(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
++      Object.entries(attrs).forEach(([key, value]) => {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      });
++      return node;
++    }
++
++    function xScale(spec, value) {
++      const cs = spec.coordinateSystems.find(item => item.id === 'panel-f.effect.x');
++      const t = (value - cs.domain[0]) / (cs.domain[1] - cs.domain[0]);
++      return cs.range[0] + t * (cs.range[1] - cs.range[0]);
++    }
++
++    function rowY(session) {
++      return 81 + (session - 1) * (249 / 14);
++    }
++
++    function addText(svg, typography, item, className) {
++      const text = svgNode('text', {
++        id: item.id,
++        class: className,
++        x: item.x,
++        y: item.y,
++        fill: item.fill || typography.color,
++        'font-family': item.fontFamily || typography.fontFamily,
++        'font-size': item.fontSize || typography.defaultSize,
++        'font-weight': item.fontWeight || 400,
++        'text-anchor': item.anchor || 'start',
++        transform: item.rotation ? `rotate(${item.rotation} ${item.x} ${item.y})` : null
++      });
++      String(item.text || '').split('\n').forEach((line, index) => {
++        const tspan = svgNode('tspan', {
++          x: item.x,
++          dy: index === 0 ? 0 : `${item.lineHeight || 1.08}em`
++        });
++        tspan.textContent = line;
++        text.appendChild(tspan);
++      });
++      svg.appendChild(text);
++    }
++
++    function addLine(svg, attrs) {
++      svg.appendChild(svgNode('line', attrs));
++    }
++
++    function render(spec) {
++      const frame = document.getElementById('frame');
++      const surface = document.getElementById('surface');
++      const reference = document.getElementById('reference');
++      const panel = spec.panels[0];
++      const typography = spec.typography;
++      const styles = spec.styleTokens;
++
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      reference.src = spec.source.path;
++
++      const svg = svgNode('svg', {
++        width: spec.canvas.width,
++        height: spec.canvas.height,
++        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
++        role: 'img',
++        'aria-label': panel.title.text
++      });
++      svg.appendChild(svgNode('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
++      surface.innerHTML = '';
++      surface.appendChild(svg);
++
++      addText(svg, typography, panel.label, 'panel-label');
++      addText(svg, typography, panel.title, 'panel-title');
++      panel.layout.leftTable.headers.forEach(header => addText(svg, typography, header, 'table-header'));
++
++      const plot = panel.layout.plot;
++      addLine(svg, {
++        id: 'zero-guide',
++        x1: plot.zeroGuide.x,
++        y1: plot.zeroGuide.y1,
++        x2: plot.zeroGuide.x,
++        y2: plot.zeroGuide.y2,
++        stroke: styles.guide,
++        'stroke-width': 1,
++        'stroke-dasharray': plot.zeroGuide.strokeDasharray
++      });
++      addLine(svg, {
++        id: 'separator-rule',
++        x1: plot.separator.x1,
++        y1: plot.separator.y1,
++        x2: plot.separator.x2,
++        y2: plot.separator.y2,
++        stroke: styles.rule,
++        'stroke-width': 1,
++        'stroke-dasharray': plot.separator.strokeDasharray
++      });
++
++      panel.data.sessions.forEach(row => {
++        const y = rowY(row.session);
++        addText(svg, typography, {id: `session-${row.session}-label`, text: row.session, x: panel.layout.leftTable.sessionX, y: y + 4, fontSize: 15, anchor: 'middle'}, 'session-label');
++        addText(svg, typography, {id: `session-${row.session}-events`, text: row.events, x: panel.layout.leftTable.countsX, y: y + 4, fontSize: 14, anchor: 'middle'}, 'event-count');
++
++        const x1 = xScale(spec, row.ciLow);
++        const x2 = xScale(spec, row.ciHigh);
++        const xc = xScale(spec, row.effect);
++        addLine(svg, {id: `ci-${row.session}`, x1, y1: y, x2, y2: y, stroke: '#222222', 'stroke-width': 0.9});
++        addLine(svg, {x1, y1: y - 3, x2: x1, y2: y + 3, stroke: '#222222', 'stroke-width': 0.9});
++        addLine(svg, {x1: x2, y1: y - 3, x2, y2: y + 3, stroke: '#222222', 'stroke-width': 0.9});
++        svg.appendChild(svgNode('circle', {
++          id: `point-${row.session}`,
++          cx: xc,
++          cy: y,
++          r: 3.3,
++          fill: styles.pointFill,
++          stroke: styles.pointStroke,
++          'stroke-width': 0.8
++        }));
++      });
++
++      const axis = plot.bottomAxis;
++      addLine(svg, {id: 'x-axis', x1: axis.x1, y1: axis.y1, x2: axis.x2, y2: axis.y2, stroke: styles.axis, 'stroke-width': 1.1});
++      plot.x.ticks.forEach(tick => {
++        const x = xScale(spec, tick.value);
++        addLine(svg, {id: `x-tick-${tick.label}`, x1: x, y1: axis.y1, x2: x, y2: axis.y1 + axis.tickLength, stroke: styles.axis, 'stroke-width': 1});
++        addText(svg, typography, {id: `x-tick-label-${tick.label}`, text: tick.label, x, y: axis.y1 + 23, fontSize: 17, anchor: 'middle'}, 'x-tick-label');
++      });
++      addText(svg, typography, plot.x.label, 'axis-label');
++
++      const summary = panel.data.summary;
++      addText(svg, typography, panel.annotations[0], 'summary-label');
++      const y = panel.marks.find(mark => mark.id === 'summary-diamond').centerY;
++      const xLow = xScale(spec, summary.ciLow);
++      const xMid = xScale(spec, summary.effect);
++      const xHigh = xScale(spec, summary.ciHigh);
++      const h = panel.marks.find(mark => mark.id === 'summary-diamond').height / 2;
++      svg.appendChild(svgNode('polygon', {
++        id: 'summary-diamond',
++        points: `${xLow},${y} ${xMid},${y - h} ${xHigh},${y} ${xMid},${y + h}`,
++        fill: styles.summaryFill
++      }));
++      addText(svg, typography, panel.annotations[1], 'summary-ci-text');
++    }
++
++    async function loadSpec() {
++      const response = await fetch('reference-06-replay-stimulation-F.json');
++      return response.json();
++    }
++
++    loadSpec().then(render);
++
++    const frame = document.getElementById('frame');
++    const generatedButton = document.getElementById('generatedButton');
++    const referenceButton = document.getElementById('referenceButton');
++    generatedButton.addEventListener('click', () => {
++      frame.classList.remove('show-reference');
++      generatedButton.classList.add('active');
++      referenceButton.classList.remove('active');
++    });
++    referenceButton.addEventListener('click', () => {
++      frame.classList.add('show-reference');
++      referenceButton.classList.add('active');
++      generatedButton.classList.remove('active');
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..c66647329effa420600bfe87fa9e5d4f21371bb4
+--- /dev/null
++++ b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json
+@@ -0,0 +1,171 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-06-replay-stimulation-F",
++  "source": {
++    "path": "../../assets/reference/reference-06-replay-stimulation-F-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "Single forest-plot panel reconstructed by visual inspection. Session counts are transcribed from the raster; effect sizes and intervals are approximate source-calibrated values."
++  },
++  "canvas": {
++    "width": 374,
++    "height": 524,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
++    "defaultSize": 14,
++    "color": "#111111",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Arial", "Helvetica"],
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "Condensed sans approximates the compact source text. Title and axis labels are visually fitted, not OCR-calibrated."
++    }
++  },
++  "styleTokens": {
++    "axis": "#111111",
++    "guide": "#666666",
++    "pointFill": "#0b7777",
++    "pointStroke": "#064f4f",
++    "summaryFill": "#000000",
++    "rule": "#777777"
++  },
++  "coordinateSystems": [
++    {
++      "id": "panel-f.effect.x",
++      "type": "linear",
++      "domain": [-1, 2],
++      "range": [92, 321],
++      "zeroX": 168.3333333333
++    },
++    {
++      "id": "panel-f.session.y",
++      "type": "ordinal",
++      "categories": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
++      "range": [81, 330]
++    }
++  ],
++  "panels": [
++    {
++      "id": "panel-f",
++      "label": {
++        "id": "panel-f-label",
++        "text": "F",
++        "x": 10,
++        "y": 24,
++        "fontSize": 24,
++        "fontWeight": 700,
++        "anchor": "start"
++      },
++      "title": {
++        "id": "panel-f-title",
++        "text": "Effect size by session (Cohen's d)",
++        "x": 38,
++        "y": 24,
++        "fontSize": 21,
++        "fontWeight": 700,
++        "anchor": "start",
++        "sourceBox": {"x": 38, "y": 5, "width": 299, "height": 24},
++        "targetWidth": 300,
++        "fit": "condensed"
++      },
++      "bbox": {"x": 0, "y": 0, "width": 374, "height": 524},
++      "layout": {
++        "leftTable": {
++          "headers": [
++            {"id": "session-header", "text": "Session", "x": 23, "y": 61, "fontSize": 14, "anchor": "middle"},
++            {"id": "events-header", "text": "n. events\n(Stim / Pre)", "x": 91, "y": 51, "fontSize": 14, "lineHeight": 1.05, "anchor": "middle"}
++          ],
++          "sessionX": 24,
++          "countsX": 91
++        },
++        "plot": {
++          "dataBbox": {"x": 92, "y": 75, "width": 229, "height": 255},
++          "zeroGuide": {"x": 168.3333333333, "y1": 74, "y2": 391, "strokeDasharray": "7 8"},
++          "bottomAxis": {"x1": 92, "y1": 392, "x2": 321, "y2": 392, "tickLength": 5},
++          "x": {
++            "domain": [-1, 2],
++            "ticks": [
++              {"value": -1, "label": "-1"},
++              {"value": 0, "label": "0"},
++              {"value": 1, "label": "1"},
++              {"value": 2, "label": "2"}
++            ],
++            "label": {"id": "x-label", "text": "Cohen's d (Stim \u2013 Pre)", "x": 206, "y": 441, "fontSize": 19, "anchor": "middle"}
++          },
++          "separator": {"x1": 0, "y1": 350, "x2": 291, "y2": 350, "strokeDasharray": "5 6"}
++        }
++      },
++      "data": {
++        "sessions": [
++          {"session": 1, "events": "512 / 471", "effect": 1.02, "ciLow": 0.78, "ciHigh": 1.23},
++          {"session": 2, "events": "498 / 450", "effect": 1.15, "ciLow": 0.88, "ciHigh": 1.35},
++          {"session": 3, "events": "620 / 584", "effect": 0.96, "ciLow": 0.70, "ciHigh": 1.17},
++          {"session": 4, "events": "534 / 488", "effect": 1.38, "ciLow": 1.15, "ciHigh": 1.60},
++          {"session": 5, "events": "475 / 452", "effect": 0.99, "ciLow": 0.76, "ciHigh": 1.23},
++          {"session": 6, "events": "610 / 570", "effect": 1.16, "ciLow": 0.92, "ciHigh": 1.37},
++          {"session": 7, "events": "502 / 468", "effect": 0.91, "ciLow": 0.65, "ciHigh": 1.14},
++          {"session": 8, "events": "559 / 516", "effect": 1.02, "ciLow": 0.78, "ciHigh": 1.25},
++          {"session": 9, "events": "583 / 544", "effect": 0.95, "ciLow": 0.73, "ciHigh": 1.18},
++          {"session": 10, "events": "478 / 439", "effect": 0.89, "ciLow": 0.63, "ciHigh": 1.13},
++          {"session": 11, "events": "621 / 590", "effect": 1.09, "ciLow": 0.83, "ciHigh": 1.31},
++          {"session": 12, "events": "505 / 487", "effect": 0.91, "ciLow": 0.65, "ciHigh": 1.16},
++          {"session": 13, "events": "567 / 532", "effect": 1.04, "ciLow": 0.78, "ciHigh": 1.31},
++          {"session": 14, "events": "540 / 505", "effect": 0.93, "ciLow": 0.66, "ciHigh": 1.18},
++          {"session": 15, "events": "489 / 463", "effect": 0.94, "ciLow": 0.70, "ciHigh": 1.18}
++        ],
++        "summary": {
++          "label": "RE Model",
++          "effect": 0.84,
++          "ciLow": 0.65,
++          "ciHigh": 1.02,
++          "text": "0.61 [0.40, 0.82]",
++          "note": "Diamond position follows visible mark; right-side text is transcribed from source and appears partly cropped."
++        }
++      },
++      "marks": [
++        {
++          "id": "session-effects",
++          "type": "forestPointInterval",
++          "usesTransform": "panel-f.effect.x",
++          "dataRef": "panel-f.data.sessions",
++          "pointShape": "circle",
++          "pointRadius": 3.3,
++          "ciCapHeight": 6,
++          "strokeWidth": 0.9,
++          "fill": "#0b7777",
++          "stroke": "#064f4f"
++        },
++        {
++          "id": "summary-diamond",
++          "type": "diamondInterval",
++          "usesTransform": "panel-f.effect.x",
++          "dataRef": "panel-f.data.summary",
++          "centerY": 373,
++          "height": 12,
++          "fill": "#000000"
++        }
++      ],
++      "annotations": [
++        {"id": "summary-label", "type": "text", "text": "RE Model", "x": 10, "y": 379, "fontSize": 16, "anchor": "start"},
++        {"id": "summary-ci-text", "type": "text", "text": "0.61 [0.40, 0.82]", "x": 295, "y": 388, "fontSize": 14, "anchor": "start"}
++      ],
++      "provenance": [
++        {"confidence": "high", "note": "Counts and visible labels are manually transcribed."},
++        {"confidence": "medium", "note": "Point estimates and confidence intervals are approximate from pixel positions."},
++        {"confidence": "low", "note": "The right summary interval text is clipped in the crop; semantic summary values preserve the visible text separately from the diamond geometry."}
++      ]
++    }
++  ],
++  "validation": {
++    "expectedCounts": {
++      "sessionRows": 15,
++      "forestIntervals": 15,
++      "summaryDiamonds": 1,
++      "xTicks": 4
++    },
++    "candidateLayerRule": "Generated marks must be SVG/DOM from this semantic spec; the source raster is reserved for the labeled QA/reference view."
++  }
++}
+
+diff --git a/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..6917cd357243fc2a3fa63304ab1decf7840deddb
+--- /dev/null
++++ b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html
+@@ -0,0 +1,271 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-06-replay-stimulation-F reconstruction</title>
++  <style>
++    html, body {
++      margin: 0;
++      background: #eeeeee;
++      color: #111111;
++      font-family: Arial, Helvetica, sans-serif;
++    }
++    header {
++      display: flex;
++      align-items: center;
++      justify-content: space-between;
++      gap: 16px;
++      padding: 10px 14px;
++      background: #ffffff;
++      border-bottom: 1px solid #cccccc;
++    }
++    h1 {
++      margin: 0;
++      font-size: 15px;
++      font-weight: 700;
++    }
++    .note {
++      margin-top: 3px;
++      color: #555555;
++      font-size: 12px;
++    }
++    .toggle {
++      display: inline-flex;
++      border: 1px solid #999999;
++      border-radius: 4px;
++      overflow: hidden;
++      flex: 0 0 auto;
++    }
++    .toggle button {
++      border: 0;
++      padding: 5px 10px;
++      background: #ffffff;
++      color: #111111;
++      font: inherit;
++      font-size: 12px;
++      cursor: pointer;
++    }
++    .toggle button.active {
++      background: #111111;
++      color: #ffffff;
++    }
++    main {
++      min-height: calc(100vh - 50px);
++      display: grid;
++      place-items: center;
++      padding: 16px;
++      box-sizing: border-box;
++    }
++    .frame {
++      position: relative;
++      background: #ffffff;
++      overflow: hidden;
++      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.10);
++    }
++    .surface, .reference, svg {
++      position: absolute;
++      inset: 0;
++    }
++    .reference {
++      display: none;
++      width: 100%;
++      height: 100%;
++      object-fit: contain;
++      background-color: #ffffff;
++    }
++    .show-reference .surface {
++      display: none;
++    }
++    .show-reference .reference {
++      display: block;
++    }
++    text {
++      dominant-baseline: alphabetic;
++    }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1>Forest plot reconstruction</h1>
++      <div class="note">Generated candidate is JSON-rendered SVG. Source image is QA/reference-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">Reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <img id="reference" class="reference" alt="QA reference source image">
++    </div>
++  </main>
++  <script>
++    const SVG_NS = 'http://www.w3.org/2000/svg';
++
++    function svgNode(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
++      Object.entries(attrs).forEach(([key, value]) => {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      });
++      return node;
++    }
++
++    function xScale(spec, value) {
++      const cs = spec.coordinateSystems.find(item => item.id === 'panel-f.effect.x');
++      const t = (value - cs.domain[0]) / (cs.domain[1] - cs.domain[0]);
++      return cs.range[0] + t * (cs.range[1] - cs.range[0]);
++    }
++
++    function rowY(session) {
++      return 81 + (session - 1) * (249 / 14);
++    }
++
++    function addText(svg, typography, item, className) {
++      const text = svgNode('text', {
++        id: item.id,
++        class: className,
++        x: item.x,
++        y: item.y,
++        fill: item.fill || typography.color,
++        'font-family': item.fontFamily || typography.fontFamily,
++        'font-size': item.fontSize || typography.defaultSize,
++        'font-weight': item.fontWeight || 400,
++        'text-anchor': item.anchor || 'start',
++        transform: item.rotation ? `rotate(${item.rotation} ${item.x} ${item.y})` : null
++      });
++      String(item.text || '').split('\n').forEach((line, index) => {
++        const tspan = svgNode('tspan', {
++          x: item.x,
++          dy: index === 0 ? 0 : `${item.lineHeight || 1.08}em`
++        });
++        tspan.textContent = line;
++        text.appendChild(tspan);
++      });
++      svg.appendChild(text);
++    }
++
++    function addLine(svg, attrs) {
++      svg.appendChild(svgNode('line', attrs));
++    }
++
++    function render(spec) {
++      const frame = document.getElementById('frame');
++      const surface = document.getElementById('surface');
++      const reference = document.getElementById('reference');
++      const panel = spec.panels[0];
++      const typography = spec.typography;
++      const styles = spec.styleTokens;
++
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      reference.src = spec.source.path;
++
++      const svg = svgNode('svg', {
++        width: spec.canvas.width,
++        height: spec.canvas.height,
++        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
++        role: 'img',
++        'aria-label': panel.title.text
++      });
++      svg.appendChild(svgNode('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
++      surface.innerHTML = '';
++      surface.appendChild(svg);
++
++      addText(svg, typography, panel.label, 'panel-label');
++      addText(svg, typography, panel.title, 'panel-title');
++      panel.layout.leftTable.headers.forEach(header => addText(svg, typography, header, 'table-header'));
++
++      const plot = panel.layout.plot;
++      addLine(svg, {
++        id: 'zero-guide',
++        x1: plot.zeroGuide.x,
++        y1: plot.zeroGuide.y1,
++        x2: plot.zeroGuide.x,
++        y2: plot.zeroGuide.y2,
++        stroke: styles.guide,
++        'stroke-width': 1,
++        'stroke-dasharray': plot.zeroGuide.strokeDasharray
++      });
++      addLine(svg, {
++        id: 'separator-rule',
++        x1: plot.separator.x1,
++        y1: plot.separator.y1,
++        x2: plot.separator.x2,
++        y2: plot.separator.y2,
++        stroke: styles.rule,
++        'stroke-width': 1,
++        'stroke-dasharray': plot.separator.strokeDasharray
++      });
++
++      panel.data.sessions.forEach(row => {
++        const y = rowY(row.session);
++        addText(svg, typography, {id: `session-${row.session}-label`, text: row.session, x: panel.layout.leftTable.sessionX, y: y + 4, fontSize: 15, anchor: 'middle'}, 'session-label');
++        addText(svg, typography, {id: `session-${row.session}-events`, text: row.events, x: panel.layout.leftTable.countsX, y: y + 4, fontSize: 14, anchor: 'middle'}, 'event-count');
++
++        const x1 = xScale(spec, row.ciLow);
++        const x2 = xScale(spec, row.ciHigh);
++        const xc = xScale(spec, row.effect);
++        addLine(svg, {id: `ci-${row.session}`, x1, y1: y, x2, y2: y, stroke: '#222222', 'stroke-width': 0.9});
++        addLine(svg, {x1, y1: y - 3, x2: x1, y2: y + 3, stroke: '#222222', 'stroke-width': 0.9});
++        addLine(svg, {x1: x2, y1: y - 3, x2, y2: y + 3, stroke: '#222222', 'stroke-width': 0.9});
++        svg.appendChild(svgNode('circle', {
++          id: `point-${row.session}`,
++          cx: xc,
++          cy: y,
++          r: 3.3,
++          fill: styles.pointFill,
++          stroke: styles.pointStroke,
++          'stroke-width': 0.8
++        }));
++      });
++
++      const axis = plot.bottomAxis;
++      addLine(svg, {id: 'x-axis', x1: axis.x1, y1: axis.y1, x2: axis.x2, y2: axis.y2, stroke: styles.axis, 'stroke-width': 1.1});
++      plot.x.ticks.forEach(tick => {
++        const x = xScale(spec, tick.value);
++        addLine(svg, {id: `x-tick-${tick.label}`, x1: x, y1: axis.y1, x2: x, y2: axis.y1 + axis.tickLength, stroke: styles.axis, 'stroke-width': 1});
++        addText(svg, typography, {id: `x-tick-label-${tick.label}`, text: tick.label, x, y: axis.y1 + 23, fontSize: 17, anchor: 'middle'}, 'x-tick-label');
++      });
++      addText(svg, typography, plot.x.label, 'axis-label');
++
++      const summary = panel.data.summary;
++      addText(svg, typography, panel.annotations[0], 'summary-label');
++      const y = panel.marks.find(mark => mark.id === 'summary-diamond').centerY;
++      const xLow = xScale(spec, summary.ciLow);
++      const xMid = xScale(spec, summary.effect);
++      const xHigh = xScale(spec, summary.ciHigh);
++      const h = panel.marks.find(mark => mark.id === 'summary-diamond').height / 2;
++      svg.appendChild(svgNode('polygon', {
++        id: 'summary-diamond',
++        points: `${xLow},${y} ${xMid},${y - h} ${xHigh},${y} ${xMid},${y + h}`,
++        fill: styles.summaryFill
++      }));
++      addText(svg, typography, panel.annotations[1], 'summary-ci-text');
++    }
++
++    async function loadSpec() {
++      const response = await fetch('reference-06-replay-stimulation-F.json');
++      return response.json();
++    }
++
++    loadSpec().then(render);
++
++    const frame = document.getElementById('frame');
++    const generatedButton = document.getElementById('generatedButton');
++    const referenceButton = document.getElementById('referenceButton');
++    generatedButton.addEventListener('click', () => {
++      frame.classList.remove('show-reference');
++      generatedButton.classList.add('active');
++      referenceButton.classList.remove('active');
++    });
++    referenceButton.addEventListener('click', () => {
++      frame.classList.add('show-reference');
++      referenceButton.classList.add('active');
++      generatedButton.classList.remove('active');
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..c66647329effa420600bfe87fa9e5d4f21371bb4
+--- /dev/null
++++ b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json
+@@ -0,0 +1,171 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-06-replay-stimulation-F",
++  "source": {
++    "path": "../../assets/reference/reference-06-replay-stimulation-F-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "Single forest-plot panel reconstructed by visual inspection. Session counts are transcribed from the raster; effect sizes and intervals are approximate source-calibrated values."
++  },
++  "canvas": {
++    "width": 374,
++    "height": 524,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
++    "defaultSize": 14,
++    "color": "#111111",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Arial", "Helvetica"],
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "Condensed sans approximates the compact source text. Title and axis labels are visually fitted, not OCR-calibrated."
++    }
++  },
++  "styleTokens": {
++    "axis": "#111111",
++    "guide": "#666666",
++    "pointFill": "#0b7777",
++    "pointStroke": "#064f4f",
++    "summaryFill": "#000000",
++    "rule": "#777777"
++  },
++  "coordinateSystems": [
++    {
++      "id": "panel-f.effect.x",
++      "type": "linear",
++      "domain": [-1, 2],
++      "range": [92, 321],
++      "zeroX": 168.3333333333
++    },
++    {
++      "id": "panel-f.session.y",
++      "type": "ordinal",
++      "categories": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
++      "range": [81, 330]
++    }
++  ],
++  "panels": [
++    {
++      "id": "panel-f",
++      "label": {
++        "id": "panel-f-label",
++        "text": "F",
++        "x": 10,
++        "y": 24,
++        "fontSize": 24,
++        "fontWeight": 700,
++        "anchor": "start"
++      },
++      "title": {
++        "id": "panel-f-title",
++        "text": "Effect size by session (Cohen's d)",
++        "x": 38,
++        "y": 24,
++        "fontSize": 21,
++        "fontWeight": 700,
++        "anchor": "start",
++        "sourceBox": {"x": 38, "y": 5, "width": 299, "height": 24},
++        "targetWidth": 300,
++        "fit": "condensed"
++      },
++      "bbox": {"x": 0, "y": 0, "width": 374, "height": 524},
++      "layout": {
++        "leftTable": {
++          "headers": [
++            {"id": "session-header", "text": "Session", "x": 23, "y": 61, "fontSize": 14, "anchor": "middle"},
++            {"id": "events-header", "text": "n. events\n(Stim / Pre)", "x": 91, "y": 51, "fontSize": 14, "lineHeight": 1.05, "anchor": "middle"}
++          ],
++          "sessionX": 24,
++          "countsX": 91
++        },
++        "plot": {
++          "dataBbox": {"x": 92, "y": 75, "width": 229, "height": 255},
++          "zeroGuide": {"x": 168.3333333333, "y1": 74, "y2": 391, "strokeDasharray": "7 8"},
++          "bottomAxis": {"x1": 92, "y1": 392, "x2": 321, "y2": 392, "tickLength": 5},
++          "x": {
++            "domain": [-1, 2],
++            "ticks": [
++              {"value": -1, "label": "-1"},
++              {"value": 0, "label": "0"},
++              {"value": 1, "label": "1"},
++              {"value": 2, "label": "2"}
++            ],
++            "label": {"id": "x-label", "text": "Cohen's d (Stim \u2013 Pre)", "x": 206, "y": 441, "fontSize": 19, "anchor": "middle"}
++          },
++          "separator": {"x1": 0, "y1": 350, "x2": 291, "y2": 350, "strokeDasharray": "5 6"}
++        }
++      },
++      "data": {
++        "sessions": [
++          {"session": 1, "events": "512 / 471", "effect": 1.02, "ciLow": 0.78, "ciHigh": 1.23},
++          {"session": 2, "events": "498 / 450", "effect": 1.15, "ciLow": 0.88, "ciHigh": 1.35},
++          {"session": 3, "events": "620 / 584", "effect": 0.96, "ciLow": 0.70, "ciHigh": 1.17},
++          {"session": 4, "events": "534 / 488", "effect": 1.38, "ciLow": 1.15, "ciHigh": 1.60},
++          {"session": 5, "events": "475 / 452", "effect": 0.99, "ciLow": 0.76, "ciHigh": 1.23},
++          {"session": 6, "events": "610 / 570", "effect": 1.16, "ciLow": 0.92, "ciHigh": 1.37},
++          {"session": 7, "events": "502 / 468", "effect": 0.91, "ciLow": 0.65, "ciHigh": 1.14},
++          {"session": 8, "events": "559 / 516", "effect": 1.02, "ciLow": 0.78, "ciHigh": 1.25},
++          {"session": 9, "events": "583 / 544", "effect": 0.95, "ciLow": 0.73, "ciHigh": 1.18},
++          {"session": 10, "events": "478 / 439", "effect": 0.89, "ciLow": 0.63, "ciHigh": 1.13},
++          {"session": 11, "events": "621 / 590", "effect": 1.09, "ciLow": 0.83, "ciHigh": 1.31},
++          {"session": 12, "events": "505 / 487", "effect": 0.91, "ciLow": 0.65, "ciHigh": 1.16},
++          {"session": 13, "events": "567 / 532", "effect": 1.04, "ciLow": 0.78, "ciHigh": 1.31},
++          {"session": 14, "events": "540 / 505", "effect": 0.93, "ciLow": 0.66, "ciHigh": 1.18},
++          {"session": 15, "events": "489 / 463", "effect": 0.94, "ciLow": 0.70, "ciHigh": 1.18}
++        ],
++        "summary": {
++          "label": "RE Model",
++          "effect": 0.84,
++          "ciLow": 0.65,
++          "ciHigh": 1.02,
++          "text": "0.61 [0.40, 0.82]",
++          "note": "Diamond position follows visible mark; right-side text is transcribed from source and appears partly cropped."
++        }
++      },
++      "marks": [
++        {
++          "id": "session-effects",
++          "type": "forestPointInterval",
++          "usesTransform": "panel-f.effect.x",
++          "dataRef": "panel-f.data.sessions",
++          "pointShape": "circle",
++          "pointRadius": 3.3,
++          "ciCapHeight": 6,
++          "strokeWidth": 0.9,
++          "fill": "#0b7777",
++          "stroke": "#064f4f"
++        },
++        {
++          "id": "summary-diamond",
++          "type": "diamondInterval",
++          "usesTransform": "panel-f.effect.x",
++          "dataRef": "panel-f.data.summary",
++          "centerY": 373,
++          "height": 12,
++          "fill": "#000000"
++        }
++      ],
++      "annotations": [
++        {"id": "summary-label", "type": "text", "text": "RE Model", "x": 10, "y": 379, "fontSize": 16, "anchor": "start"},
++        {"id": "summary-ci-text", "type": "text", "text": "0.61 [0.40, 0.82]", "x": 295, "y": 388, "fontSize": 14, "anchor": "start"}
++      ],
++      "provenance": [
++        {"confidence": "high", "note": "Counts and visible labels are manually transcribed."},
++        {"confidence": "medium", "note": "Point estimates and confidence intervals are approximate from pixel positions."},
++        {"confidence": "low", "note": "The right summary interval text is clipped in the crop; semantic summary values preserve the visible text separately from the diamond geometry."}
++      ]
++    }
++  ],
++  "validation": {
++    "expectedCounts": {
++      "sessionRows": 15,
++      "forestIntervals": 15,
++      "summaryDiamonds": 1,
++      "xTicks": 4
++    },
++    "candidateLayerRule": "Generated marks must be SVG/DOM from this semantic spec; the source raster is reserved for the labeled QA/reference view."
++  }
++}
+
+exec
+/bin/zsh -lc "rg -n \"drawImage|background-image|background:.*reference|url\\(\" outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json || true" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+exec
+/bin/zsh -lc "node -e \"const fs=require('fs'); JSON.parse(fs.readFileSync('outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json','utf8')); console.log('json ok')\"" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+json ok
+
+exec
+/bin/zsh -lc "rg -n \"reference-06-replay-stimulation-F-reference\\.png|<img|reference\\.src|source\\.path\" outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json:5:    "path": "../../assets/reference/reference-06-replay-stimulation-F-reference.png",
+outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html:102:      <img id="reference" class="reference" alt="QA reference source image">
+outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html:164:      reference.src = spec.source.path;
+
+diff --git a/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..6917cd357243fc2a3fa63304ab1decf7840deddb
+--- /dev/null
++++ b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html
+@@ -0,0 +1,271 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-06-replay-stimulation-F reconstruction</title>
++  <style>
++    html, body {
++      margin: 0;
++      background: #eeeeee;
++      color: #111111;
++      font-family: Arial, Helvetica, sans-serif;
++    }
++    header {
++      display: flex;
++      align-items: center;
++      justify-content: space-between;
++      gap: 16px;
++      padding: 10px 14px;
++      background: #ffffff;
++      border-bottom: 1px solid #cccccc;
++    }
++    h1 {
++      margin: 0;
++      font-size: 15px;
++      font-weight: 700;
++    }
++    .note {
++      margin-top: 3px;
++      color: #555555;
++      font-size: 12px;
++    }
++    .toggle {
++      display: inline-flex;
++      border: 1px solid #999999;
++      border-radius: 4px;
++      overflow: hidden;
++      flex: 0 0 auto;
++    }
++    .toggle button {
++      border: 0;
++      padding: 5px 10px;
++      background: #ffffff;
++      color: #111111;
++      font: inherit;
++      font-size: 12px;
++      cursor: pointer;
++    }
++    .toggle button.active {
++      background: #111111;
++      color: #ffffff;
++    }
++    main {
++      min-height: calc(100vh - 50px);
++      display: grid;
++      place-items: center;
++      padding: 16px;
++      box-sizing: border-box;
++    }
++    .frame {
++      position: relative;
++      background: #ffffff;
++      overflow: hidden;
++      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.10);
++    }
++    .surface, .reference, svg {
++      position: absolute;
++      inset: 0;
++    }
++    .reference {
++      display: none;
++      width: 100%;
++      height: 100%;
++      object-fit: contain;
++      background-color: #ffffff;
++    }
++    .show-reference .surface {
++      display: none;
++    }
++    .show-reference .reference {
++      display: block;
++    }
++    text {
++      dominant-baseline: alphabetic;
++    }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1>Forest plot reconstruction</h1>
++      <div class="note">Generated candidate is JSON-rendered SVG. Source image is QA/reference-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">Reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <img id="reference" class="reference" alt="QA reference source image">
++    </div>
++  </main>
++  <script>
++    const SVG_NS = 'http://www.w3.org/2000/svg';
++
++    function svgNode(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
++      Object.entries(attrs).forEach(([key, value]) => {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      });
++      return node;
++    }
++
++    function xScale(spec, value) {
++      const cs = spec.coordinateSystems.find(item => item.id === 'panel-f.effect.x');
++      const t = (value - cs.domain[0]) / (cs.domain[1] - cs.domain[0]);
++      return cs.range[0] + t * (cs.range[1] - cs.range[0]);
++    }
++
++    function rowY(session) {
++      return 81 + (session - 1) * (249 / 14);
++    }
++
++    function addText(svg, typography, item, className) {
++      const text = svgNode('text', {
++        id: item.id,
++        class: className,
++        x: item.x,
++        y: item.y,
++        fill: item.fill || typography.color,
++        'font-family': item.fontFamily || typography.fontFamily,
++        'font-size': item.fontSize || typography.defaultSize,
++        'font-weight': item.fontWeight || 400,
++        'text-anchor': item.anchor || 'start',
++        transform: item.rotation ? `rotate(${item.rotation} ${item.x} ${item.y})` : null
++      });
++      String(item.text || '').split('\n').forEach((line, index) => {
++        const tspan = svgNode('tspan', {
++          x: item.x,
++          dy: index === 0 ? 0 : `${item.lineHeight || 1.08}em`
++        });
++        tspan.textContent = line;
++        text.appendChild(tspan);
++      });
++      svg.appendChild(text);
++    }
++
++    function addLine(svg, attrs) {
++      svg.appendChild(svgNode('line', attrs));
++    }
++
++    function render(spec) {
++      const frame = document.getElementById('frame');
++      const surface = document.getElementById('surface');
++      const reference = document.getElementById('reference');
++      const panel = spec.panels[0];
++      const typography = spec.typography;
++      const styles = spec.styleTokens;
++
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      reference.src = spec.source.path;
++
++      const svg = svgNode('svg', {
++        width: spec.canvas.width,
++        height: spec.canvas.height,
++        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
++        role: 'img',
++        'aria-label': panel.title.text
++      });
++      svg.appendChild(svgNode('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
++      surface.innerHTML = '';
++      surface.appendChild(svg);
++
++      addText(svg, typography, panel.label, 'panel-label');
++      addText(svg, typography, panel.title, 'panel-title');
++      panel.layout.leftTable.headers.forEach(header => addText(svg, typography, header, 'table-header'));
++
++      const plot = panel.layout.plot;
++      addLine(svg, {
++        id: 'zero-guide',
++        x1: plot.zeroGuide.x,
++        y1: plot.zeroGuide.y1,
++        x2: plot.zeroGuide.x,
++        y2: plot.zeroGuide.y2,
++        stroke: styles.guide,
++        'stroke-width': 1,
++        'stroke-dasharray': plot.zeroGuide.strokeDasharray
++      });
++      addLine(svg, {
++        id: 'separator-rule',
++        x1: plot.separator.x1,
++        y1: plot.separator.y1,
++        x2: plot.separator.x2,
++        y2: plot.separator.y2,
++        stroke: styles.rule,
++        'stroke-width': 1,
++        'stroke-dasharray': plot.separator.strokeDasharray
++      });
++
++      panel.data.sessions.forEach(row => {
++        const y = rowY(row.session);
++        addText(svg, typography, {id: `session-${row.session}-label`, text: row.session, x: panel.layout.leftTable.sessionX, y: y + 4, fontSize: 15, anchor: 'middle'}, 'session-label');
++        addText(svg, typography, {id: `session-${row.session}-events`, text: row.events, x: panel.layout.leftTable.countsX, y: y + 4, fontSize: 14, anchor: 'middle'}, 'event-count');
++
++        const x1 = xScale(spec, row.ciLow);
++        const x2 = xScale(spec, row.ciHigh);
++        const xc = xScale(spec, row.effect);
++        addLine(svg, {id: `ci-${row.session}`, x1, y1: y, x2, y2: y, stroke: '#222222', 'stroke-width': 0.9});
++        addLine(svg, {x1, y1: y - 3, x2: x1, y2: y + 3, stroke: '#222222', 'stroke-width': 0.9});
++        addLine(svg, {x1: x2, y1: y - 3, x2, y2: y + 3, stroke: '#222222', 'stroke-width': 0.9});
++        svg.appendChild(svgNode('circle', {
++          id: `point-${row.session}`,
++          cx: xc,
++          cy: y,
++          r: 3.3,
++          fill: styles.pointFill,
++          stroke: styles.pointStroke,
++          'stroke-width': 0.8
++        }));
++      });
++
++      const axis = plot.bottomAxis;
++      addLine(svg, {id: 'x-axis', x1: axis.x1, y1: axis.y1, x2: axis.x2, y2: axis.y2, stroke: styles.axis, 'stroke-width': 1.1});
++      plot.x.ticks.forEach(tick => {
++        const x = xScale(spec, tick.value);
++        addLine(svg, {id: `x-tick-${tick.label}`, x1: x, y1: axis.y1, x2: x, y2: axis.y1 + axis.tickLength, stroke: styles.axis, 'stroke-width': 1});
++        addText(svg, typography, {id: `x-tick-label-${tick.label}`, text: tick.label, x, y: axis.y1 + 23, fontSize: 17, anchor: 'middle'}, 'x-tick-label');
++      });
++      addText(svg, typography, plot.x.label, 'axis-label');
++
++      const summary = panel.data.summary;
++      addText(svg, typography, panel.annotations[0], 'summary-label');
++      const y = panel.marks.find(mark => mark.id === 'summary-diamond').centerY;
++      const xLow = xScale(spec, summary.ciLow);
++      const xMid = xScale(spec, summary.effect);
++      const xHigh = xScale(spec, summary.ciHigh);
++      const h = panel.marks.find(mark => mark.id === 'summary-diamond').height / 2;
++      svg.appendChild(svgNode('polygon', {
++        id: 'summary-diamond',
++        points: `${xLow},${y} ${xMid},${y - h} ${xHigh},${y} ${xMid},${y + h}`,
++        fill: styles.summaryFill
++      }));
++      addText(svg, typography, panel.annotations[1], 'summary-ci-text');
++    }
++
++    async function loadSpec() {
++      const response = await fetch('reference-06-replay-stimulation-F.json');
++      return response.json();
++    }
++
++    loadSpec().then(render);
++
++    const frame = document.getElementById('frame');
++    const generatedButton = document.getElementById('generatedButton');
++    const referenceButton = document.getElementById('referenceButton');
++    generatedButton.addEventListener('click', () => {
++      frame.classList.remove('show-reference');
++      generatedButton.classList.add('active');
++      referenceButton.classList.remove('active');
++    });
++    referenceButton.addEventListener('click', () => {
++      frame.classList.add('show-reference');
++      referenceButton.classList.add('active');
++      generatedButton.classList.remove('active');
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..c66647329effa420600bfe87fa9e5d4f21371bb4
+--- /dev/null
++++ b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json
+@@ -0,0 +1,171 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-06-replay-stimulation-F",
++  "source": {
++    "path": "../../assets/reference/reference-06-replay-stimulation-F-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "Single forest-plot panel reconstructed by visual inspection. Session counts are transcribed from the raster; effect sizes and intervals are approximate source-calibrated values."
++  },
++  "canvas": {
++    "width": 374,
++    "height": 524,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
++    "defaultSize": 14,
++    "color": "#111111",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Arial", "Helvetica"],
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "Condensed sans approximates the compact source text. Title and axis labels are visually fitted, not OCR-calibrated."
++    }
++  },
++  "styleTokens": {
++    "axis": "#111111",
++    "guide": "#666666",
++    "pointFill": "#0b7777",
++    "pointStroke": "#064f4f",
++    "summaryFill": "#000000",
++    "rule": "#777777"
++  },
++  "coordinateSystems": [
++    {
++      "id": "panel-f.effect.x",
++      "type": "linear",
++      "domain": [-1, 2],
++      "range": [92, 321],
++      "zeroX": 168.3333333333
++    },
++    {
++      "id": "panel-f.session.y",
++      "type": "ordinal",
++      "categories": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
++      "range": [81, 330]
++    }
++  ],
++  "panels": [
++    {
++      "id": "panel-f",
++      "label": {
++        "id": "panel-f-label",
++        "text": "F",
++        "x": 10,
++        "y": 24,
++        "fontSize": 24,
++        "fontWeight": 700,
++        "anchor": "start"
++      },
++      "title": {
++        "id": "panel-f-title",
++        "text": "Effect size by session (Cohen's d)",
++        "x": 38,
++        "y": 24,
++        "fontSize": 21,
++        "fontWeight": 700,
++        "anchor": "start",
++        "sourceBox": {"x": 38, "y": 5, "width": 299, "height": 24},
++        "targetWidth": 300,
++        "fit": "condensed"
++      },
++      "bbox": {"x": 0, "y": 0, "width": 374, "height": 524},
++      "layout": {
++        "leftTable": {
++          "headers": [
++            {"id": "session-header", "text": "Session", "x": 23, "y": 61, "fontSize": 14, "anchor": "middle"},
++            {"id": "events-header", "text": "n. events\n(Stim / Pre)", "x": 91, "y": 51, "fontSize": 14, "lineHeight": 1.05, "anchor": "middle"}
++          ],
++          "sessionX": 24,
++          "countsX": 91
++        },
++        "plot": {
++          "dataBbox": {"x": 92, "y": 75, "width": 229, "height": 255},
++          "zeroGuide": {"x": 168.3333333333, "y1": 74, "y2": 391, "strokeDasharray": "7 8"},
++          "bottomAxis": {"x1": 92, "y1": 392, "x2": 321, "y2": 392, "tickLength": 5},
++          "x": {
++            "domain": [-1, 2],
++            "ticks": [
++              {"value": -1, "label": "-1"},
++              {"value": 0, "label": "0"},
++              {"value": 1, "label": "1"},
++              {"value": 2, "label": "2"}
++            ],
++            "label": {"id": "x-label", "text": "Cohen's d (Stim \u2013 Pre)", "x": 206, "y": 441, "fontSize": 19, "anchor": "middle"}
++          },
++          "separator": {"x1": 0, "y1": 350, "x2": 291, "y2": 350, "strokeDasharray": "5 6"}
++        }
++      },
++      "data": {
++        "sessions": [
++          {"session": 1, "events": "512 / 471", "effect": 1.02, "ciLow": 0.78, "ciHigh": 1.23},
++          {"session": 2, "events": "498 / 450", "effect": 1.15, "ciLow": 0.88, "ciHigh": 1.35},
++          {"session": 3, "events": "620 / 584", "effect": 0.96, "ciLow": 0.70, "ciHigh": 1.17},
++          {"session": 4, "events": "534 / 488", "effect": 1.38, "ciLow": 1.15, "ciHigh": 1.60},
++          {"session": 5, "events": "475 / 452", "effect": 0.99, "ciLow": 0.76, "ciHigh": 1.23},
++          {"session": 6, "events": "610 / 570", "effect": 1.16, "ciLow": 0.92, "ciHigh": 1.37},
++          {"session": 7, "events": "502 / 468", "effect": 0.91, "ciLow": 0.65, "ciHigh": 1.14},
++          {"session": 8, "events": "559 / 516", "effect": 1.02, "ciLow": 0.78, "ciHigh": 1.25},
++          {"session": 9, "events": "583 / 544", "effect": 0.95, "ciLow": 0.73, "ciHigh": 1.18},
++          {"session": 10, "events": "478 / 439", "effect": 0.89, "ciLow": 0.63, "ciHigh": 1.13},
++          {"session": 11, "events": "621 / 590", "effect": 1.09, "ciLow": 0.83, "ciHigh": 1.31},
++          {"session": 12, "events": "505 / 487", "effect": 0.91, "ciLow": 0.65, "ciHigh": 1.16},
++          {"session": 13, "events": "567 / 532", "effect": 1.04, "ciLow": 0.78, "ciHigh": 1.31},
++          {"session": 14, "events": "540 / 505", "effect": 0.93, "ciLow": 0.66, "ciHigh": 1.18},
++          {"session": 15, "events": "489 / 463", "effect": 0.94, "ciLow": 0.70, "ciHigh": 1.18}
++        ],
++        "summary": {
++          "label": "RE Model",
++          "effect": 0.84,
++          "ciLow": 0.65,
++          "ciHigh": 1.02,
++          "text": "0.61 [0.40, 0.82]",
++          "note": "Diamond position follows visible mark; right-side text is transcribed from source and appears partly cropped."
++        }
++      },
++      "marks": [
++        {
++          "id": "session-effects",
++          "type": "forestPointInterval",
++          "usesTransform": "panel-f.effect.x",
++          "dataRef": "panel-f.data.sessions",
++          "pointShape": "circle",
++          "pointRadius": 3.3,
++          "ciCapHeight": 6,
++          "strokeWidth": 0.9,
++          "fill": "#0b7777",
++          "stroke": "#064f4f"
++        },
++        {
++          "id": "summary-diamond",
++          "type": "diamondInterval",
++          "usesTransform": "panel-f.effect.x",
++          "dataRef": "panel-f.data.summary",
++          "centerY": 373,
++          "height": 12,
++          "fill": "#000000"
++        }
++      ],
++      "annotations": [
++        {"id": "summary-label", "type": "text", "text": "RE Model", "x": 10, "y": 379, "fontSize": 16, "anchor": "start"},
++        {"id": "summary-ci-text", "type": "text", "text": "0.61 [0.40, 0.82]", "x": 295, "y": 388, "fontSize": 14, "anchor": "start"}
++      ],
++      "provenance": [
++        {"confidence": "high", "note": "Counts and visible labels are manually transcribed."},
++        {"confidence": "medium", "note": "Point estimates and confidence intervals are approximate from pixel positions."},
++        {"confidence": "low", "note": "The right summary interval text is clipped in the crop; semantic summary values preserve the visible text separately from the diamond geometry."}
++      ]
++    }
++  ],
++  "validation": {
++    "expectedCounts": {
++      "sessionRows": 15,
++      "forestIntervals": 15,
++      "summaryDiamonds": 1,
++      "xTicks": 4
++    },
++    "candidateLayerRule": "Generated marks must be SVG/DOM from this semantic spec; the source raster is reserved for the labeled QA/reference view."
++  }
++}
+
+codex
+Done.
+
+Created:
+- [reference-06-replay-stimulation-F.json](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json)
+- [reference-06-replay-stimulation-F.html](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html)
+
+Verification:
+- JSON parses successfully with `node`.
+- Searched outputs for `drawImage`, `background-image`, `background:.*reference`, and `url(`; no hits.
+- Source raster appears only as the semantic QA path and the labeled reference `<img>` toggle, not as a generated visual layer.
+- Target directory contains only the requested JSON and HTML files.
+diff --git a/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..6917cd357243fc2a3fa63304ab1decf7840deddb
+--- /dev/null
++++ b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html
+@@ -0,0 +1,271 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-06-replay-stimulation-F reconstruction</title>
++  <style>
++    html, body {
++      margin: 0;
++      background: #eeeeee;
++      color: #111111;
++      font-family: Arial, Helvetica, sans-serif;
++    }
++    header {
++      display: flex;
++      align-items: center;
++      justify-content: space-between;
++      gap: 16px;
++      padding: 10px 14px;
++      background: #ffffff;
++      border-bottom: 1px solid #cccccc;
++    }
++    h1 {
++      margin: 0;
++      font-size: 15px;
++      font-weight: 700;
++    }
++    .note {
++      margin-top: 3px;
++      color: #555555;
++      font-size: 12px;
++    }
++    .toggle {
++      display: inline-flex;
++      border: 1px solid #999999;
++      border-radius: 4px;
++      overflow: hidden;
++      flex: 0 0 auto;
++    }
++    .toggle button {
++      border: 0;
++      padding: 5px 10px;
++      background: #ffffff;
++      color: #111111;
++      font: inherit;
++      font-size: 12px;
++      cursor: pointer;
++    }
++    .toggle button.active {
++      background: #111111;
++      color: #ffffff;
++    }
++    main {
++      min-height: calc(100vh - 50px);
++      display: grid;
++      place-items: center;
++      padding: 16px;
++      box-sizing: border-box;
++    }
++    .frame {
++      position: relative;
++      background: #ffffff;
++      overflow: hidden;
++      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.10);
++    }
++    .surface, .reference, svg {
++      position: absolute;
++      inset: 0;
++    }
++    .reference {
++      display: none;
++      width: 100%;
++      height: 100%;
++      object-fit: contain;
++      background-color: #ffffff;
++    }
++    .show-reference .surface {
++      display: none;
++    }
++    .show-reference .reference {
++      display: block;
++    }
++    text {
++      dominant-baseline: alphabetic;
++    }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1>Forest plot reconstruction</h1>
++      <div class="note">Generated candidate is JSON-rendered SVG. Source image is QA/reference-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">Reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <img id="reference" class="reference" alt="QA reference source image">
++    </div>
++  </main>
++  <script>
++    const SVG_NS = 'http://www.w3.org/2000/svg';
++
++    function svgNode(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
++      Object.entries(attrs).forEach(([key, value]) => {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      });
++      return node;
++    }
++
++    function xScale(spec, value) {
++      const cs = spec.coordinateSystems.find(item => item.id === 'panel-f.effect.x');
++      const t = (value - cs.domain[0]) / (cs.domain[1] - cs.domain[0]);
++      return cs.range[0] + t * (cs.range[1] - cs.range[0]);
++    }
++
++    function rowY(session) {
++      return 81 + (session - 1) * (249 / 14);
++    }
++
++    function addText(svg, typography, item, className) {
++      const text = svgNode('text', {
++        id: item.id,
++        class: className,
++        x: item.x,
++        y: item.y,
++        fill: item.fill || typography.color,
++        'font-family': item.fontFamily || typography.fontFamily,
++        'font-size': item.fontSize || typography.defaultSize,
++        'font-weight': item.fontWeight || 400,
++        'text-anchor': item.anchor || 'start',
++        transform: item.rotation ? `rotate(${item.rotation} ${item.x} ${item.y})` : null
++      });
++      String(item.text || '').split('\n').forEach((line, index) => {
++        const tspan = svgNode('tspan', {
++          x: item.x,
++          dy: index === 0 ? 0 : `${item.lineHeight || 1.08}em`
++        });
++        tspan.textContent = line;
++        text.appendChild(tspan);
++      });
++      svg.appendChild(text);
++    }
++
++    function addLine(svg, attrs) {
++      svg.appendChild(svgNode('line', attrs));
++    }
++
++    function render(spec) {
++      const frame = document.getElementById('frame');
++      const surface = document.getElementById('surface');
++      const reference = document.getElementById('reference');
++      const panel = spec.panels[0];
++      const typography = spec.typography;
++      const styles = spec.styleTokens;
++
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      reference.src = spec.source.path;
++
++      const svg = svgNode('svg', {
++        width: spec.canvas.width,
++        height: spec.canvas.height,
++        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
++        role: 'img',
++        'aria-label': panel.title.text
++      });
++      svg.appendChild(svgNode('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
++      surface.innerHTML = '';
++      surface.appendChild(svg);
++
++      addText(svg, typography, panel.label, 'panel-label');
++      addText(svg, typography, panel.title, 'panel-title');
++      panel.layout.leftTable.headers.forEach(header => addText(svg, typography, header, 'table-header'));
++
++      const plot = panel.layout.plot;
++      addLine(svg, {
++        id: 'zero-guide',
++        x1: plot.zeroGuide.x,
++        y1: plot.zeroGuide.y1,
++        x2: plot.zeroGuide.x,
++        y2: plot.zeroGuide.y2,
++        stroke: styles.guide,
++        'stroke-width': 1,
++        'stroke-dasharray': plot.zeroGuide.strokeDasharray
++      });
++      addLine(svg, {
++        id: 'separator-rule',
++        x1: plot.separator.x1,
++        y1: plot.separator.y1,
++        x2: plot.separator.x2,
++        y2: plot.separator.y2,
++        stroke: styles.rule,
++        'stroke-width': 1,
++        'stroke-dasharray': plot.separator.strokeDasharray
++      });
++
++      panel.data.sessions.forEach(row => {
++        const y = rowY(row.session);
++        addText(svg, typography, {id: `session-${row.session}-label`, text: row.session, x: panel.layout.leftTable.sessionX, y: y + 4, fontSize: 15, anchor: 'middle'}, 'session-label');
++        addText(svg, typography, {id: `session-${row.session}-events`, text: row.events, x: panel.layout.leftTable.countsX, y: y + 4, fontSize: 14, anchor: 'middle'}, 'event-count');
++
++        const x1 = xScale(spec, row.ciLow);
++        const x2 = xScale(spec, row.ciHigh);
++        const xc = xScale(spec, row.effect);
++        addLine(svg, {id: `ci-${row.session}`, x1, y1: y, x2, y2: y, stroke: '#222222', 'stroke-width': 0.9});
++        addLine(svg, {x1, y1: y - 3, x2: x1, y2: y + 3, stroke: '#222222', 'stroke-width': 0.9});
++        addLine(svg, {x1: x2, y1: y - 3, x2, y2: y + 3, stroke: '#222222', 'stroke-width': 0.9});
++        svg.appendChild(svgNode('circle', {
++          id: `point-${row.session}`,
++          cx: xc,
++          cy: y,
++          r: 3.3,
++          fill: styles.pointFill,
++          stroke: styles.pointStroke,
++          'stroke-width': 0.8
++        }));
++      });
++
++      const axis = plot.bottomAxis;
++      addLine(svg, {id: 'x-axis', x1: axis.x1, y1: axis.y1, x2: axis.x2, y2: axis.y2, stroke: styles.axis, 'stroke-width': 1.1});
++      plot.x.ticks.forEach(tick => {
++        const x = xScale(spec, tick.value);
++        addLine(svg, {id: `x-tick-${tick.label}`, x1: x, y1: axis.y1, x2: x, y2: axis.y1 + axis.tickLength, stroke: styles.axis, 'stroke-width': 1});
++        addText(svg, typography, {id: `x-tick-label-${tick.label}`, text: tick.label, x, y: axis.y1 + 23, fontSize: 17, anchor: 'middle'}, 'x-tick-label');
++      });
++      addText(svg, typography, plot.x.label, 'axis-label');
++
++      const summary = panel.data.summary;
++      addText(svg, typography, panel.annotations[0], 'summary-label');
++      const y = panel.marks.find(mark => mark.id === 'summary-diamond').centerY;
++      const xLow = xScale(spec, summary.ciLow);
++      const xMid = xScale(spec, summary.effect);
++      const xHigh = xScale(spec, summary.ciHigh);
++      const h = panel.marks.find(mark => mark.id === 'summary-diamond').height / 2;
++      svg.appendChild(svgNode('polygon', {
++        id: 'summary-diamond',
++        points: `${xLow},${y} ${xMid},${y - h} ${xHigh},${y} ${xMid},${y + h}`,
++        fill: styles.summaryFill
++      }));
++      addText(svg, typography, panel.annotations[1], 'summary-ci-text');
++    }
++
++    async function loadSpec() {
++      const response = await fetch('reference-06-replay-stimulation-F.json');
++      return response.json();
++    }
++
++    loadSpec().then(render);
++
++    const frame = document.getElementById('frame');
++    const generatedButton = document.getElementById('generatedButton');
++    const referenceButton = document.getElementById('referenceButton');
++    generatedButton.addEventListener('click', () => {
++      frame.classList.remove('show-reference');
++      generatedButton.classList.add('active');
++      referenceButton.classList.remove('active');
++    });
++    referenceButton.addEventListener('click', () => {
++      frame.classList.add('show-reference');
++      referenceButton.classList.add('active');
++      generatedButton.classList.remove('active');
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..c66647329effa420600bfe87fa9e5d4f21371bb4
+--- /dev/null
++++ b/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json
+@@ -0,0 +1,171 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-06-replay-stimulation-F",
++  "source": {
++    "path": "../../assets/reference/reference-06-replay-stimulation-F-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "Single forest-plot panel reconstructed by visual inspection. Session counts are transcribed from the raster; effect sizes and intervals are approximate source-calibrated values."
++  },
++  "canvas": {
++    "width": 374,
++    "height": 524,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
++    "defaultSize": 14,
++    "color": "#111111",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Arial", "Helvetica"],
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "Condensed sans approximates the compact source text. Title and axis labels are visually fitted, not OCR-calibrated."
++    }
++  },
++  "styleTokens": {
++    "axis": "#111111",
++    "guide": "#666666",
++    "pointFill": "#0b7777",
++    "pointStroke": "#064f4f",
++    "summaryFill": "#000000",
++    "rule": "#777777"
++  },
++  "coordinateSystems": [
++    {
++      "id": "panel-f.effect.x",
++      "type": "linear",
++      "domain": [-1, 2],
++      "range": [92, 321],
++      "zeroX": 168.3333333333
++    },
++    {
++      "id": "panel-f.session.y",
++      "type": "ordinal",
++      "categories": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
++      "range": [81, 330]
++    }
++  ],
++  "panels": [
++    {
++      "id": "panel-f",
++      "label": {
++        "id": "panel-f-label",
++        "text": "F",
++        "x": 10,
++        "y": 24,
++        "fontSize": 24,
++        "fontWeight": 700,
++        "anchor": "start"
++      },
++      "title": {
++        "id": "panel-f-title",
++        "text": "Effect size by session (Cohen's d)",
++        "x": 38,
++        "y": 24,
++        "fontSize": 21,
++        "fontWeight": 700,
++        "anchor": "start",
++        "sourceBox": {"x": 38, "y": 5, "width": 299, "height": 24},
++        "targetWidth": 300,
++        "fit": "condensed"
++      },
++      "bbox": {"x": 0, "y": 0, "width": 374, "height": 524},
++      "layout": {
++        "leftTable": {
++          "headers": [
++            {"id": "session-header", "text": "Session", "x": 23, "y": 61, "fontSize": 14, "anchor": "middle"},
++            {"id": "events-header", "text": "n. events\n(Stim / Pre)", "x": 91, "y": 51, "fontSize": 14, "lineHeight": 1.05, "anchor": "middle"}
++          ],
++          "sessionX": 24,
++          "countsX": 91
++        },
++        "plot": {
++          "dataBbox": {"x": 92, "y": 75, "width": 229, "height": 255},
++          "zeroGuide": {"x": 168.3333333333, "y1": 74, "y2": 391, "strokeDasharray": "7 8"},
++          "bottomAxis": {"x1": 92, "y1": 392, "x2": 321, "y2": 392, "tickLength": 5},
++          "x": {
++            "domain": [-1, 2],
++            "ticks": [
++              {"value": -1, "label": "-1"},
++              {"value": 0, "label": "0"},
++              {"value": 1, "label": "1"},
++              {"value": 2, "label": "2"}
++            ],
++            "label": {"id": "x-label", "text": "Cohen's d (Stim \u2013 Pre)", "x": 206, "y": 441, "fontSize": 19, "anchor": "middle"}
++          },
++          "separator": {"x1": 0, "y1": 350, "x2": 291, "y2": 350, "strokeDasharray": "5 6"}
++        }
++      },
++      "data": {
++        "sessions": [
++          {"session": 1, "events": "512 / 471", "effect": 1.02, "ciLow": 0.78, "ciHigh": 1.23},
++          {"session": 2, "events": "498 / 450", "effect": 1.15, "ciLow": 0.88, "ciHigh": 1.35},
++          {"session": 3, "events": "620 / 584", "effect": 0.96, "ciLow": 0.70, "ciHigh": 1.17},
++          {"session": 4, "events": "534 / 488", "effect": 1.38, "ciLow": 1.15, "ciHigh": 1.60},
++          {"session": 5, "events": "475 / 452", "effect": 0.99, "ciLow": 0.76, "ciHigh": 1.23},
++          {"session": 6, "events": "610 / 570", "effect": 1.16, "ciLow": 0.92, "ciHigh": 1.37},
++          {"session": 7, "events": "502 / 468", "effect": 0.91, "ciLow": 0.65, "ciHigh": 1.14},
++          {"session": 8, "events": "559 / 516", "effect": 1.02, "ciLow": 0.78, "ciHigh": 1.25},
++          {"session": 9, "events": "583 / 544", "effect": 0.95, "ciLow": 0.73, "ciHigh": 1.18},
++          {"session": 10, "events": "478 / 439", "effect": 0.89, "ciLow": 0.63, "ciHigh": 1.13},
++          {"session": 11, "events": "621 / 590", "effect": 1.09, "ciLow": 0.83, "ciHigh": 1.31},
++          {"session": 12, "events": "505 / 487", "effect": 0.91, "ciLow": 0.65, "ciHigh": 1.16},
++          {"session": 13, "events": "567 / 532", "effect": 1.04, "ciLow": 0.78, "ciHigh": 1.31},
++          {"session": 14, "events": "540 / 505", "effect": 0.93, "ciLow": 0.66, "ciHigh": 1.18},
++          {"session": 15, "events": "489 / 463", "effect": 0.94, "ciLow": 0.70, "ciHigh": 1.18}
++        ],
++        "summary": {
++          "label": "RE Model",
++          "effect": 0.84,
++          "ciLow": 0.65,
++          "ciHigh": 1.02,
++          "text": "0.61 [0.40, 0.82]",
++          "note": "Diamond position follows visible mark; right-side text is transcribed from source and appears partly cropped."
++        }
++      },
++      "marks": [
++        {
++          "id": "session-effects",
++          "type": "forestPointInterval",
++          "usesTransform": "panel-f.effect.x",
++          "dataRef": "panel-f.data.sessions",
++          "pointShape": "circle",
++          "pointRadius": 3.3,
++          "ciCapHeight": 6,
++          "strokeWidth": 0.9,
++          "fill": "#0b7777",
++          "stroke": "#064f4f"
++        },
++        {
++          "id": "summary-diamond",
++          "type": "diamondInterval",
++          "usesTransform": "panel-f.effect.x",
++          "dataRef": "panel-f.data.summary",
++          "centerY": 373,
++          "height": 12,
++          "fill": "#000000"
++        }
++      ],
++      "annotations": [
++        {"id": "summary-label", "type": "text", "text": "RE Model", "x": 10, "y": 379, "fontSize": 16, "anchor": "start"},
++        {"id": "summary-ci-text", "type": "text", "text": "0.61 [0.40, 0.82]", "x": 295, "y": 388, "fontSize": 14, "anchor": "start"}
++      ],
++      "provenance": [
++        {"confidence": "high", "note": "Counts and visible labels are manually transcribed."},
++        {"confidence": "medium", "note": "Point estimates and confidence intervals are approximate from pixel positions."},
++        {"confidence": "low", "note": "The right summary interval text is clipped in the crop; semantic summary values preserve the visible text separately from the diamond geometry."}
++      ]
++    }
++  ],
++  "validation": {
++    "expectedCounts": {
++      "sessionRows": 15,
++      "forestIntervals": 15,
++      "summaryDiamonds": 1,
++      "xTicks": 4
++    },
++    "candidateLayerRule": "Generated marks must be SVG/DOM from this semantic spec; the source raster is reserved for the labeled QA/reference view."
++  }
++}
+
+tokens used
+30,606
+Done.
+
+Created:
+- [reference-06-replay-stimulation-F.json](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.json)
+- [reference-06-replay-stimulation-F.html](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-06-replay-stimulation-F-make-figure-batch/reference-06-replay-stimulation-F.html)
+
+Verification:
+- JSON parses successfully with `node`.
+- Searched outputs for `drawImage`, `background-image`, `background:.*reference`, and `url(`; no hits.
+- Source raster appears only as the semantic QA path and the labeled reference `<img>` toggle, not as a generated visual layer.
+- Target directory contains only the requested JSON and HTML files.

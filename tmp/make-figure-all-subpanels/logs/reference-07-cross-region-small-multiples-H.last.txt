@@ -1,0 +1,11 @@
+Generated the independent first-pass reconstruction in the requested directory:
+
+- [reference-07-cross-region-small-multiples-H.json](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-07-cross-region-small-multiples-H-make-figure-batch/reference-07-cross-region-small-multiples-H.json)
+- [reference-07-cross-region-small-multiples-H.html](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-07-cross-region-small-multiples-H-make-figure-batch/reference-07-cross-region-small-multiples-H.html)
+
+Verification completed:
+- JSON validity: passed with `python3 -m json.tool`.
+- Source reuse scan: HTML has no `drawImage`, no CSS `background-image`, no `background: url(...)`, and no literal source raster path.
+- The source raster path appears only in JSON metadata as QA-only and is used by the HTML only for the clearly labeled optional QA reference `<img>`, separate from the generated SVG candidate.
+
+I attempted to start a local `python3 -m http.server` for browser inspection, but the sandbox blocked binding the port with `PermissionError: [Errno 1] Operation not permitted`.

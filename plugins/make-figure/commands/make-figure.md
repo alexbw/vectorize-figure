@@ -12,8 +12,9 @@ Use this command when the user provides or points to a PNG, JPEG, screenshot, or
 2. Identify the source raster path, attachment, or URL. If no image is available, ask for it.
 3. Inspect the image at native resolution and record its dimensions.
 4. Determine whether the input is a single panel or a multipanel figure.
-5. Check the current workspace for existing output conventions, renderers, or figure assets.
-6. If the working tree is dirty and edits will touch tracked files, note the affected paths before editing.
+5. Inventory every visible helper object before rendering: plot frames, axes, tick-label bands, colorbars and tick sides, side color strips, phase bands, legends, scale bars, orientation keys, table rows, annotation brackets, and protected exclusion zones around plot/key/colorbar/legend geometry.
+6. Check the current workspace for existing output conventions, renderers, or figure assets.
+7. If the working tree is dirty and edits will touch tracked files, note the affected paths before editing.
 
 ## Plan
 
@@ -27,13 +28,16 @@ Before creating files:
 ## Commands
 
 1. Create a semantic JSON specification first.
-2. Record a semantic relationship inventory: coordinate systems, layout objects, derived marks/text, source-calibrated anchors, and validation constraints.
+2. Record a semantic relationship inventory: coordinate systems, layout objects, derived marks/text, source-calibrated anchors, protected exclusion zones, owner boxes for bounded marks, and validation constraints.
 3. Represent panels, plot boxes, axes, domains, ticks, labels, legends, marks, annotations, style tokens, provenance, and confidence notes.
 4. Use SVG or DOM for editable structure such as axes, labels, paths, brackets, and legends.
 5. Use canvas only for generated dense fields such as heatmaps, rasters, matrix textures, and large point sets.
 6. Build HTML that renders from the JSON spec. Prefer an adjacent JSON file over hard-coded values.
 7. Include a clearly labeled QA/reference view if the source image is included in the HTML.
 8. Never use the source raster as a generated visual layer, CSS background, or canvas `drawImage` source.
+9. Encode protected text and helper geometry explicitly. Do not rely on renderer defaults for colorbar tick side, axis tick direction, plot boundaries, polar label offsets, table cell text fitting, or text collision avoidance.
+10. Keep tick coordinates and tick label anchors separate. If label text needs an offset to avoid collision, the tick mark must remain at the source-calibrated coordinate and the label must record its offset/anchor explicitly.
+11. Clip or clamp generated raster/event ticks to their owning plot or strip box. Store the owner box relationship in JSON and expose it in the rendered DOM.
 
 ## Verification
 
@@ -42,6 +46,11 @@ Before creating files:
 3. Compare the reconstruction to the source raster for layout, chart grammar, mark density, axis/tick alignment, label hierarchy, and annotation placement.
 4. Confirm the JSON can be edited to change labels, domains, colors, and data recipes without rewriting the HTML.
 5. Search the generated HTML for accidental source-raster reuse in non-QA layers.
+6. Run a rendered protected-text collision check. Any clipped or overlapping panel label, title, tick label, axis label, colorbar label, legend label, phase label, region label, table header, or table cell is a failure.
+7. Run a protected-exclusion-zone check. Protected text must not intersect plot boxes, colorbars, orientation keys, legends, helper strips, or declared reserved regions unless the source visibly does so and provenance records the exception.
+8. Validate one-to-one tick mark/label pairing, source-calibrated tick coordinates, and colorbar tick side against the source. Adjacent small-multiple edge tick labels must not collide, and collision fixes must not move tick marks off their source coordinates.
+9. Validate bounded marks. Raster/event ticks, inward axis ticks, and strip marks must stay inside or be clipped to their owner box.
+10. Confirm helper strips are source-supported. Do not add colored x/y axis bars, phase bands, or region strips unless the source visibly contains them.
 
 ## Summary
 

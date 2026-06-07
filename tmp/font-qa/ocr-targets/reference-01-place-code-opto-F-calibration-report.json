@@ -1,0 +1,211 @@
+[
+  {
+    "id": "ocr-01",
+    "text": "F Example spatial rate map (same session)",
+    "family": "Arial Narrow",
+    "size": 21.33,
+    "weight": 600,
+    "lineHeight": 1,
+    "scaleX": 0.95,
+    "naturalWidth": 356.8,
+    "x": 6.75,
+    "y": 28.5,
+    "score": 0.59494,
+    "crop": {
+      "x": 0,
+      "y": 4,
+      "width": 351,
+      "height": 33
+    }
+  },
+  {
+    "id": "ocr-02",
+    "text": "Optogenetic inhibition Rate",
+    "family": "Source Sans 3",
+    "size": 10.22,
+    "weight": 600,
+    "lineHeight": 1,
+    "scaleX": 0.93,
+    "naturalWidth": 120.08,
+    "x": 307,
+    "y": 72.05,
+    "score": 1.24257,
+    "crop": {
+      "x": 303,
+      "y": 45,
+      "width": 224,
+      "height": 25
+    }
+  },
+  {
+    "id": "ocr-03",
+    "text": "Control (no light) (ArchT, 532 nm) (H2)",
+    "family": "Source Sans 3",
+    "size": 10.86,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 0.805,
+    "naturalWidth": 170.05,
+    "x": 87.25,
+    "y": 93.95,
+    "score": 1.50501,
+    "crop": {
+      "x": 85,
+      "y": 66,
+      "width": 439,
+      "height": 26
+    }
+  },
+  {
+    "id": "ocr-04",
+    "text": "5 Be. I 1",
+    "family": "Helvetica Neue",
+    "size": 27.3,
+    "weight": 500,
+    "lineHeight": 1,
+    "scaleX": 1.25,
+    "naturalWidth": 102.7,
+    "x": 1.75,
+    "y": 244.95,
+    "score": 2.13348,
+    "crop": {
+      "x": 0,
+      "y": 228,
+      "width": 533,
+      "height": 31
+    }
+  },
+  {
+    "id": "ocr-05",
+    "text": "4 i",
+    "family": "Source Sans 3",
+    "size": 12.16,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1.25,
+    "naturalWidth": 10.56,
+    "x": 29.25,
+    "y": 275.75,
+    "score": 1.95023,
+    "crop": {
+      "x": 0,
+      "y": 246,
+      "width": 78,
+      "height": 28
+    }
+  },
+  {
+    "id": "ocr-06",
+    "text": "> V\\ Se LP 05",
+    "family": "Helvetica Neue",
+    "size": 22.69,
+    "weight": 500,
+    "lineHeight": 1,
+    "scaleX": 1.25,
+    "naturalWidth": 141.4,
+    "x": -1.75,
+    "y": 293.85,
+    "score": 1.99643,
+    "crop": {
+      "x": 0,
+      "y": 268,
+      "width": 547,
+      "height": 27
+    }
+  },
+  {
+    "id": "ocr-07",
+    "text": "[leo 1",
+    "family": "Helvetica Neue",
+    "size": 33.06,
+    "weight": 500,
+    "lineHeight": 1,
+    "scaleX": 1.25,
+    "naturalWidth": 83.31,
+    "x": 143.25,
+    "y": 360.2,
+    "score": 1.94021,
+    "crop": {
+      "x": 60,
+      "y": 324,
+      "width": 178,
+      "height": 36
+    }
+  },
+  {
+    "id": "ocr-08",
+    "text": "TT 04",
+    "family": "Helvetica Neue",
+    "size": 18.08,
+    "weight": 500,
+    "lineHeight": 1,
+    "scaleX": 1.25,
+    "naturalWidth": 46.57,
+    "x": 288,
+    "y": 368.5,
+    "score": 2.28474,
+    "crop": {
+      "x": 284,
+      "y": 347,
+      "width": 257,
+      "height": 23
+    }
+  },
+  {
+    "id": "ocr-09",
+    "text": "eee",
+    "family": "Helvetica Neue",
+    "size": 23.84,
+    "weight": 500,
+    "lineHeight": 1,
+    "scaleX": 1.25,
+    "naturalWidth": 39.77,
+    "x": 39.75,
+    "y": 376.25,
+    "score": 2.00668,
+    "crop": {
+      "x": 30,
+      "y": 362,
+      "width": 223,
+      "height": 28
+    }
+  },
+  {
+    "id": "ocr-10",
+    "text": "X position (cm) X position (cm)",
+    "family": "Helvetica",
+    "size": 22.64,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1.025,
+    "naturalWidth": 309.08,
+    "x": 100.75,
+    "y": 431,
+    "score": 0.87773,
+    "crop": {
+      "x": 95,
+      "y": 411,
+      "width": 328,
+      "height": 28
+    }
+  },
+  {
+    "id": "ocr-11",
+    "text": "---- Arena boundary Example trajectory",
+    "family": "Arimo",
+    "size": 18.4,
+    "weight": 600,
+    "lineHeight": 1,
+    "scaleX": 1.13,
+    "naturalWidth": 316.5,
+    "x": 79.25,
+    "y": 463.55,
+    "score": 0.74503,
+    "crop": {
+      "x": 72,
+      "y": 443,
+      "width": 368,
+      "height": 35
+    }
+  }
+]

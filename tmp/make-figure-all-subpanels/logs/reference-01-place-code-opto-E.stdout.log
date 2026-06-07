@@ -1,0 +1,3175 @@
+Reading additional input from stdin...
+OpenAI Codex v0.137.0
+--------
+workdir: /Users/alex/Code/scientific-figure-reconstruction
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: low
+reasoning summaries: none
+session id: 019e9e62-c73f-7033-90fb-5ce391d318ce
+--------
+user
+$make-figure assets/reference/reference-01-place-code-opto-E-reference.png. Generate an independent first-pass reconstruction for visual inspection. Write outputs only to outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.json and outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.html. Use the make-figure skill contract and the repository command/skill code: generated visual layers must not reuse the source raster; the source may appear only as a clearly labeled QA/reference view. Keep the JSON semantic and editable. Verify JSON validity and search the output for accidental drawImage/background source reuse. Do not modify existing output directories, docs, skills, plugins, source assets, or unrelated files.
+codex
+I’m using the `make-figure` skill and will keep this scoped to the two requested output files. I’ll inspect the reference image and the repo renderer patterns first, then write the semantic JSON and HTML reconstruction without using the source raster as a generated layer.
+exec
+/bin/zsh -lc "sed -n '1,220p' skills/make-figure/SKILL.md" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+---
+name: make-figure
+description: Reconstruct raster images of scientific figures into editable, configurable HTML plus a semantic JSON specification. Use when the user invokes $make-figure, asks to recreate a paper figure from a PNG/JPEG/screenshot, wants a no-source-image HTML reconstruction, or needs chart panels converted into editable axes, marks, annotations, legends, styles, and data recipes.
+---
+
+# Make Figure
+
+## Objective
+
+Convert a raster scientific figure or cropped panel into two deliverables:
+
+- `figure-id.json`: semantic, editable figure specification.
+- `figure-id.html`: generated reconstruction rendered from the JSON spec.
+
+The generated candidate must not reuse the source raster as a visual layer. The source image may appear only in clearly labeled QA/reference views.
+
+## Workflow
+
+1. Inspect the source raster at native resolution. Determine whether the input is a single panel, multipanel figure, chart, schematic, heatmap, raster plot, microscopy image, or mixed figure.
+2. Create or infer a panel inventory with pixel dimensions, plot boxes, axes, labels, legends, colorbars, annotations, and visible mark types.
+3. Create a semantic relationship inventory: coordinate systems, layout objects, derived marks/text, source-calibrated anchors, and validation constraints.
+4. Choose renderers by layer: SVG/DOM for axes, labels, legends, paths, brackets, and annotations; canvas for heatmaps, rasters, dense dots, generated textures, and pixel-native fields.
+5. Write the JSON spec first. Include dimensions, scales, domains, ticks, text, marks, renderer hints, style tokens, provenance, and confidence notes.
+6. Build the HTML so every visible element is generated from the JSON. Keep stable IDs/classes/data attributes for programmatic edits.
+7. Calibrate typography when text mismatch is visually material. Measure representative source text boxes, try likely sans-serif families through browser-rendered text, and store the winning local fields (`fontFamily`, `fontSize`, `fontWeight`, `lineHeight`, `targetWidth`, `fit`, `sourceBox`, and calibration notes) on the text objects.
+8. Include an optional QA toggle that shows the source image separately from the generated candidate. Label it clearly as reference-only.
+9. Verify in a browser at source dimensions. Compare alignment, plot grammar, text hierarchy, mark density, axes, tick positions, and annotations. Iterate until the reconstruction is plausibly editable and visually close.
+
+Read `references/semantic-figure-ir.md` and `references/reconstruction-contract.md` when implementing a nontrivial panel or when deciding schema fields.
+
+Use `assets/hybrid-renderer-template.html` as a starting point for new outputs when no better project-local renderer exists.
+
+Use `scripts/font-calibration/` when typography is the main source of visual drift. The calibration harness may use the source raster for scoring and overlay QA, but the generated candidate still must not render the source raster as a figure layer. Treat the report as evidence of improvement over the starting text render; final acceptance is a results-only visual overlay of original text and attempted text, not a zero-pixel-diff target.
+
+## Output Contract
+
+Place outputs next to the source image unless the user gives another destination. Use clear names such as:
+
+- `my-panel.json`
+- `my-panel.html`
+- optional `my-panel-visual-elements.json`
+- optional `my-panel-qa.png` or browser screenshot
+
+The HTML must load or embed the JSON spec and render from it. Prefer loading an adjacent `.json` file for configurability. It is acceptable to embed the initial spec in a `<script type="application/json">` fallback if the file also exists separately.
+
+## Non-Negotiables
+
+- Do not use the source PNG/JPEG/SVG as the generated visual layer.
+- Do not call `drawImage(sourceRaster)` or set the source raster as a CSS background in the generated candidate.
+- Do not flatten axes, ticks, labels, legends, or annotations into an image.
+- Do not invent misleading marks, such as rectangular error boxes for curve-following uncertainty bands.
+- Record uncertain inferences in `confidence` or `provenance` instead of pretending they are measured data.
+
+## Renderer Rules
+
+- Use SVG for axes, ticks, paths, contours, brackets, arrows, legends, and moderately sized editable marks.
+- Use DOM for text-heavy schematics or labels where direct editing matters.
+- Use canvas for heatmaps, matrix images, rasters, dense scatter fields, microscopy-like generated texture, and large point sets.
+- Use hybrid rendering for most scientific figures: canvas for dense generated fields, SVG/DOM for structure.
+
+## Quality Checklist
+
+Before finishing, verify:
+
+- Native canvas/page dimensions match the source crop.
+- Plot boxes, tick labels, event anchors, and annotations share the same coordinate transforms.
+- Visible axes have editable ticks and labels unless intentionally suppressed.
+- Related objects remain linked in the rendered DOM, such as tick mark/label pairs, legends to series, colorbars to color scales, and grid lines to grid planes.
+- Text has explicit alignment and does not overlap neighboring labels.
+- Important text has been visually checked against source text overlays. When calibrated, representative labels improve versus the baseline score and the calibrated fields are recorded in JSON.
+- The JSON can be edited to change labels, domains, colors, or data recipes without rewriting HTML.
+- Any QA reference layer is visually and semantically separate from the generated candidate.
+
+exec
+/bin/zsh -lc "sed -n '1,220p' skills/make-figure/references/reconstruction-contract.md" in /Users/alex/Code/scientific-figure-reconstruction
+exec
+/bin/zsh -lc "sed -n '1,220p' skills/make-figure/references/semantic-figure-ir.md" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+# Semantic Figure IR
+
+Use this document with `reconstruction-contract.md`. The reconstruction output
+is a semantic figure intermediate representation, not a collection of detected
+bounding boxes.
+
+## Core Model
+
+A scientific figure reconstruction is a typed scene graph:
+
+```text
+source evidence
+  -> semantic figure objects
+  -> named coordinate systems and transforms
+  -> derived layout objects
+  -> renderable marks and text
+  -> validation constraints
+```
+
+Bounding boxes, OCR text, detected line segments, and color samples are source
+evidence. They help infer the graph, but they are not the graph itself.
+
+## Common Object Fields
+
+Any semantic object may use these fields:
+
+```json
+{
+  "id": "panel-a-x-tick-0",
+  "type": "axisTick",
+  "parent": "panel-a-x-axis",
+  "children": ["panel-a-x-tick-0-mark", "panel-a-x-tick-0-label"],
+  "usesTransform": "panel-a.xy",
+  "anchorTo": "panel-a-x-axis",
+  "derivesFrom": "panel-a.x.ticks[0]",
+  "sourceEvidence": ["bbox-17", "line-04"],
+  "provenance": {"confidence": "medium", "note": "Tick position measured from source."}
+}
+```
+
+Prefer stable ids and explicit relationships over free-floating pixel objects.
+When an object needs source-calibrated coordinates, keep those coordinates on
+the semantic object as measured anchors instead of detaching the rendered mark
+or text.
+
+## Top-Level IR Concepts
+
+- `sourceEvidence`: source bboxes, OCR snippets, measured line segments, color
+  samples, and notes. These are evidence records, not render instructions.
+- `coordinateSystems`: named transforms such as Cartesian data scales,
+  categorical scales, event anchors, color scales, image/matrix ranges, and
+  projected 3D scenes.
+- `layoutObjects`: axes, tick-label bands, legends, colorbars, tables, insets,
+  panel titles, scale bars, and other objects that reserve space or anchor text.
+- `data`: exact data, approximate data, or generation recipes.
+- `marks`: visual encodings derived from data or layout objects.
+- `annotations`: labels, arrows, brackets, callouts, and event labels anchored
+  to data points, marks, or layout objects.
+- `constraints`: relationship and layout invariants that must survive rendering.
+- `rendering`: renderer hints, layer order, and style tokens.
+- `validation`: renderer- or harness-readable checks and expected counts.
+- `provenance`: object-level confidence and unresolved inferences.
+
+Panel-specific schemas may organize these concepts differently, but they should
+preserve the same relationships.
+
+## Required Relationship Invariants
+
+Renderers and validation scripts should enforce these when the source shows the
+corresponding objects:
+
+- Labeled ticks render one tick mark and one tick label with matching
+  `axis`/`value` metadata.
+- Axis titles anchor to an axis, tick-label band, or measured source anchor;
+  they are not independent guessed text.
+- Event-aligned ticks, event lines, brackets, and annotations share a named
+  event anchor or explicit measured visual anchor.
+- Grid lines belong to named grid planes and families; grid lines must not be
+  confused with solid box edges.
+- Legends reference real series, marker classes, or mark groups.
+- Colorbars reference a color scale and own their ticks and title.
+- Table cell text, row rules, separators, and highlights remain separate
+  objects when their visual styles differ.
+- Annotations anchor to data coordinates, generated marks, or layout objects
+  unless they are explicitly page-positioned.
+- Generated visuals never reuse the source raster as a generated layer.
+
+## Relationship Inventory Step
+
+Before writing the final JSON for a nontrivial panel, produce a short inventory:
+
+- plot type and renderer strategy
+- coordinate systems and named anchors
+- layout objects and their children
+- data-driven marks and their series/group ownership
+- annotations and what each one anchors to
+- source-calibrated overrides and why the transform alone is insufficient
+- validation constraints that should be checked in the rendered DOM
+
+Do this before visual tuning. If a generated object looks wrong, first ask which
+relationship or transform is missing before changing pixels.
+
+
+ succeeded in 0ms:
+# Reconstruction Contract
+
+Use this contract when converting a raster scientific figure into configurable HTML and JSON.
+
+Read `semantic-figure-ir.md` alongside this contract. The JSON may be
+panel-specific, but it must preserve semantic relationships between data,
+transforms, layout objects, marks, labels, and validation constraints.
+
+## JSON Shape
+
+Minimum top-level fields:
+
+```json
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "figure-id",
+  "source": {
+    "path": "./source.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "What was inferred visually."
+  },
+  "canvas": {
+    "width": 800,
+    "height": 600,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [
+      "https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&display=swap"
+    ],
+    "fontFaces": [
+      {"family": "FigureSans", "weight": 400, "src": "./fonts/FigureSans-Regular.woff2"},
+      {"family": "FigureSans", "weight": 700, "src": "./fonts/FigureSans-Bold.woff2"}
+    ],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Source Sans 3", "Roboto", "Noto Sans"],
+    "calibration": {
+      "fontStretch": "normal",
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Use measured source text boxes to tune font family, stretch, size, and line height."
+    }
+  },
+  "panels": [],
+  "confidence": []
+}
+```
+
+`fontImports` is for lightweight browser-based experimentation with external
+CSS font providers such as Google Fonts. `fontFaces` is for reproducible local
+or adjacent font files when a typeface has been selected. Do not introduce a
+build system only to test fonts; use browser-native font loading and SVG text
+measurement first.
+
+## Panel Shape
+
+Represent each subpanel explicitly. For a single cropped panel, use one item in `panels`.
+
+```json
+{
+  "id": "panel-a",
+  "label": {"text": "A", "x": 16, "y": 20, "fontSize": 24, "fontWeight": 700},
+  "title": {"text": "Panel title", "x": 56, "y": 24, "fontSize": 16, "fontWeight": 700},
+  "bbox": {"x": 0, "y": 0, "width": 400, "height": 300},
+  "plot": {
+    "dataBbox": {"x": 64, "y": 48, "width": 300, "height": 210},
+    "axes": {
+      "xAxis": {"id": "panel-a-x-axis", "line": {"x1": 64, "y1": 258, "x2": 364, "y2": 258}, "tickLength": 6},
+      "yAxis": {"id": "panel-a-y-axis", "line": {"x1": 64, "y1": 48, "x2": 64, "y2": 258}, "tickLength": 6}
+    },
+    "x": {
+      "scale": "linear",
+      "domain": [0, 10],
+      "ticks": [{"value": 0, "label": "0"}, {"value": 5, "label": "5"}, {"value": 10, "label": "10"}],
+      "label": {"text": "Time (s)"}
+    },
+    "y": {
+      "scale": "linear",
+      "domain": [0, 1],
+      "ticks": [{"value": 0, "label": "0"}, {"value": 0.5, "label": "0.5"}, {"value": 1, "label": "1"}],
+      "label": {"text": "Response"}
+    }
+  },
+  "marks": [],
+  "annotations": [],
+  "provenance": []
+}
+```
+
+## Mark Types
+
+Use semantic mark objects. Add fields as needed, but keep the meaning explicit.
+
+- `lineSeries`: data points plus stroke, width, optional uncertainty band.
+- `scatter`: points, marker shape, size, fill, stroke, opacity.
+- `bar`: categorical or numeric bars with baseline, fill, stroke.
+- `heatmap`: matrix, color scale, bounds, interpolation flag.
+- `raster`: event times by row or a generation recipe with seed and density.
+- `violin`: category, outline path or generated KDE recipe, median/quantile marks.
+- `path`: editable SVG path data for contours, arrows, outlines, or schematic curves.
+- `rect`, `circle`, `ellipse`, `text`, `bracket`, `arrow`: annotations and schematics.
+- `imageRecipe`: generated texture or synthetic field; never point this at the source raster.
+
+## Coordinate Systems
+
+Define named transforms before rendering marks:
+
+- `plot.dataBbox` maps data to pixels.
+- For charts where the visual data rectangle is offset from axes, split
+  `dataBbox` from `axisBbox` or explicit axis anchors such as `yAxisX` and
+  `xAxisY`. Do not force source axis offsets into the data transform.
+- `x.domain` and `y.domain` map quantitative axes.
+- `categories` map categorical positions.
+- `eventAnchor` maps event-aligned plots.
+- `colorScale.domain` maps heatmaps and colorbars.
+
+Avoid mixing hard-coded pixel marks with data-space marks unless the mark is truly an annotation. Ticks, event lines, and data marks should share the same transform.
+
+### 3D Scientific Plots
+
+Recognize 3D plots from visual cues such as three nonparallel labeled axes,
+isometric or perspective box frames, oblique grid planes, tick labels attached
+to multiple axis directions, and data paths or markers that overlap within a
+projected volume. Do not require the user to identify a panel as 3D.
+
+For static publication-style 3D plots made of axes, grid lines, trajectories,
+markers, and labels, prefer semantic 3D data rendered into SVG through an
+explicit projection function. Reserve WebGL or Three.js for genuinely complex
+surfaces, dense point clouds, lighting, meshes, or interactive rotation.
+
+Represent 3D scenes with explicit camera or projection metadata:
+
+```json
+{
+  "scene": {
+    "projection": {
+      "type": "orthographicBasis",
+      "corner": {"x": 58, "y": 327},
+      "domainCorner": {"pc1": -2, "pc2": -2, "pc3": -2},
+      "basis": {
+        "pc1": {"x": 258, "y": 30},
+        "pc2": {"x": 145, "y": 90},
+        "pc3": {"x": 0, "y": -184}
+      }
+    },
+    "domains": {"pc1": [-2, 2], "pc2": [-2, 2], "pc3": [-2, 2]},
+    "trajectories": [{"points": [[-1.5, -1.6, -0.3], [0.7, -1.1, 1.8]]}]
+  }
+}
+```
+
+`fontImports` is for lightweight browser-based experimentation with external
+CSS font providers such as Google Fonts. `fontFaces` is for reproducible local
+or adjacent font files when a typeface has been selected. Do not introduce a
+build system only to test fonts; use browser-native font loading and SVG text
+measurement first.
+
+Axes, grid planes, trajectories, markers, and annotations must use the same
+3D-to-2D projection. Depth-sort generated marks when overlap matters: back grid
+and box edges first, faint trial clouds, mean trajectories, timepoint markers,
+then text labels. Labels should anchor to projected 3D points or axis objects
+and then participate in the normal text-collision pass.
+
+When using source-calibrated projected grid segments, avoid segments that
+duplicate solid box edges or accidentally close into polygons. Grid lines should
+read as independent faint plane guides unless the source explicitly shows a
+closed projected face.
+
+Prefer named 3D grid planes over a flat list of projected line segments. For
+example, encode separate `floor`, `backWall`, and `sideWall` grid groups so each
+axis pair has its own Cartesian grid. Inventory the source grid before tuning:
+for every plane, count visible interior guides separately from boundary-aligned
+guides that are merged with or hidden under box edges. Encode grid lines as
+per-family values, such as independent `pc1`, `pc2`, and `pc3` guide families,
+instead of one shared plane-level value list. Each family should state whether
+domain-boundary values are included, and generated SVG lines should expose
+stable plane/family attributes so count validation can catch drift. A 3D
+state-space panel with PC1, PC2, and PC3 axes should not collapse into one wall
+plus a triangular base.
+
+If the source uses faint face shading, encode plane fills separately from grid
+lines and generate the fill polygon from the same 3D projection. Do not bake the
+shading into arbitrary background shapes. Tick labels in 3D plots are layout
+text: allow source-calibrated text positions or offsets from projected ticks so
+labels do not collide with each other, axis titles, or spines.
+
+3D tick labels should be placed by semantic layout rules, not by one-shot
+coordinates alone. Treat axis spines and tick marks as protected geometry with
+padded hit zones. Treat faint grid lines and trajectory clouds as non-protected
+unless the source clearly reserves label space around them. Tick labels may use
+source-calibrated initial positions, but renderers should measure the final text
+box and apply a constrained outward nudge if it intersects protected axis
+geometry:
+
+```json
+{
+  "axis": {
+    "id": "pc1",
+    "tickLabelPlacement": {
+      "avoid": ["axis-spine"],
+      "minGap": 5,
+      "nudge": {"x": 8, "y": 7},
+      "maxSteps": 6
+    }
+  }
+}
+```
+
+3D axes with visible tick labels should also render visible tick marks unless
+the source suppresses them. Store tick geometry as a projected tick anchor, a
+short `markVector`, and a label offset or outward normal. The label should be
+placed from the tick mark first; collision correction is a secondary adjustment,
+not the primary placement mechanism.
+
+When a source-fitted frame or projection still does not reproduce the source's
+tick text positions, keep the numeric tick `value` semantic but add separate
+source-calibrated `markAnchor` and/or `labelAnchor` fields. Do not force tick
+labels through one shared offset vector if the source clearly uses
+
+exec
+/bin/zsh -lc 'file assets/reference/reference-01-place-code-opto-E-reference.png && sips -g pixelWidth -g pixelHeight assets/reference/reference-01-place-code-opto-E-reference.png' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+assets/reference/reference-01-place-code-opto-E-reference.png: PNG image data, 464 x 512, 8-bit/color RGB, non-interlaced
+/Users/alex/Code/scientific-figure-reconstruction/assets/reference/reference-01-place-code-opto-E-reference.png
+  pixelWidth: 464
+  pixelHeight: 512
+
+codex
+The source crop is 464 by 512 px and this is a single chart panel with line/scatter series plus a summary point. I’m checking existing output style now so the HTML stays consistent with the repository’s expected standalone renderer pattern.
+exec
+/bin/zsh -lc 'rg --files outputs | head -50' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+outputs/reference-01-place-code-opto-B-make-figure-batch/reference-01-place-code-opto-B.json
+outputs/reference-01-place-code-opto-B-make-figure-batch/reference-01-place-code-opto-B.html
+outputs/reference-02-decision-dynamics-A-make-figure/reference-02-decision-dynamics-A.html
+outputs/reference-02-decision-dynamics-A-make-figure/reference-02-decision-dynamics-A.json
+outputs/reference-01-place-code-opto-D-make-figure-test/reference-01-place-code-opto-D.json
+outputs/reference-01-place-code-opto-D-make-figure-test/reference-01-place-code-opto-D.html
+outputs/reference-01-place-code-opto-F-make-figure/reference-01-place-code-opto-F.html
+outputs/reference-01-place-code-opto-F-make-figure/reference-01-place-code-opto-F.json
+outputs/reference-05-grid-remapping-D-make-figure-test/reference-05-grid-remapping-D.json
+outputs/reference-05-grid-remapping-D-make-figure-test/reference-05-grid-remapping-D.html
+outputs/_regression-baselines/reference-01-place-code-opto-A.png
+outputs/_regression-baselines/reference-01-place-code-opto-C.png
+outputs/_regression-baselines/reference-01-place-code-opto-B.png
+outputs/_regression-baselines/reference-01-place-code-opto-F.png
+outputs/_regression-baselines/reference-02-decision-dynamics-A.png
+outputs/_regression-baselines/reference-02-decision-dynamics-B.png
+outputs/reference-01-place-code-opto-A-make-figure-batch/reference-01-place-code-opto-A.html
+outputs/reference-01-place-code-opto-A-make-figure-batch/reference-01-place-code-opto-A.json
+outputs/reference-02-decision-dynamics-B-make-figure/reference-02-decision-dynamics-B.json
+outputs/reference-02-decision-dynamics-B-make-figure/reference-02-decision-dynamics-B-current.png
+outputs/reference-02-decision-dynamics-B-make-figure/reference-02-decision-dynamics-B.html
+outputs/reference-01-place-code-opto-C-make-figure/reference-01-place-code-opto-C.json
+outputs/reference-01-place-code-opto-C-make-figure/reference-01-place-code-opto-C.html
+outputs/reference-05-grid-remapping-C-make-figure-test/reference-05-grid-remapping-C.json
+outputs/reference-05-grid-remapping-C-make-figure-test/reference-05-grid-remapping-C.html
+outputs/reference-01-place-code-opto-A-make-figure/reference-01-place-code-opto-A.html
+outputs/reference-01-place-code-opto-A-make-figure/reference-01-place-code-opto-A.json
+outputs/reference-01-place-code-opto-B-make-figure/reference-01-place-code-opto-B.json
+outputs/reference-01-place-code-opto-B-make-figure/reference-01-place-code-opto-B.html
+
+exec
+/bin/zsh -lc "sed -n '1,220p' skills/make-figure/assets/hybrid-renderer-template.html" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scientific figure reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #aaaaaa;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .surface,
+    .reference {
+      position: absolute;
+      inset: 0;
+    }
+
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+    }
+
+    .show-reference .surface {
+      display: none;
+    }
+
+    .show-reference .reference {
+      display: block;
+    }
+
+    svg,
+    canvas {
+      position: absolute;
+      inset: 0;
+    }
+
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">Scientific figure reconstruction</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="Reference source image">
+    </div>
+  </main>
+
+  <script id="fallback-spec" type="application/json">
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "example-panel",
+  "source": {
+    "path": "",
+    "usage": "QA-only; not used by generated candidate."
+  },
+  "canvas": {"width": 640, "height": 420, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Source Sans 3", "Roboto", "Noto Sans"]
+  },
+  "panels": [
+    {
+      "id": "panel-a",
+      "label": {"text": "A", "x": 18, "y": 28, "fontSize": 24, "fontWeight": 700},
+      "title": {"text": "Example configurable panel", "x": 58, "y": 30, "fontSize": 16, "fontWeight": 700},
+      "plot": {
+        "bbox": {"x": 80, "y": 70, "width": 470, "height": 270},
+        "x": {"domain": [0, 10], "ticks": [{"value": 0, "label": "0"}, {"value": 5, "label": "5"}, {"value": 10, "label": "10"}], "label": {"text": "Time (s)"}},
+        "y": {"domain": [0, 1], "ticks": [{"value": 0, "label": "0"}, {"value": 0.5, "label": "0.5"}, {"value": 1, "label": "1"}], "label": {"text": "Response"}}
+      },
+      "marks": [
+        {"id": "series-1", "type": "lineSeries", "points": [[0, 0.22], [2, 0.32], [4, 0.71], [6, 0.54], [8, 0.82], [10, 0.76]], "stroke": "#111111", "strokeWidth": 2.5},
+        {"id": "event", "type": "line", "x1": 315, "y1": 70, "x2": 315, "y2": 340, "stroke": "#008f96", "strokeWidth": 1.5, "dasharray": "4 4"},
+        {"id": "event-label", "type": "text", "text": "event", "x": 315, "y": 54, "fontSize": 13, "fill": "#008f96", "anchor": "middle"}
+      ]
+    }
+  ],
+  "confidence": [{"target": "example-panel", "confidence": "demo", "note": "Replace fallback spec with an adjacent JSON file."}]
+}
+  </script>
+
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function $(id) {
+      return document.getElementById(id);
+    }
+
+    function make(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function rng(seed) {
+      return function random() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function scale(domain, range, value) {
+      return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+    }
+
+    function pointScales(plot) {
+      const box = plot.bbox;
+      return {
+        x: value => scale(plot.x.domain, [box.x, box.x + box.width], value),
+        y: value => scale(plot.y.domain, [box.y + box.height, box.y], value)
+      };
+    }
+
+    function appendStylesheet(href) {
+      return new Promise(resolve => {
+        if (!href) return resolve();
+        const existing = document.querySelector(`link[data-font-import="${CSS.escape(href)}"]`);
+        if (existing) return resolve();
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = href;
+        link.dataset.fontImport = href;
+        link.onload = () => resolve();
+        link.onerror = () => {
+          console.warn(`Font stylesheet failed to load: ${href}`);
+          resolve();
+        };
+        document.head.appendChild(link);
+      });
+    }
+
+
+codex
+I have enough structure to build a first-pass editable reconstruction: categorical x positions M1-M8 plus All, y domain -20 to 100, multiple paired black/teal subject trajectories, a dashed zero line, a vertical separator, and the All summary point/error bar. Next I’m writing the JSON spec and a self-contained SVG renderer that loads that JSON.
+exec
+/bin/zsh -lc "sed -n '1,260p' outputs/reference-01-place-code-opto-B-make-figure-batch/reference-01-place-code-opto-B.html" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-01-place-code-opto-B reconstruction</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --page-bg: #f3f4f6;
+      --ink: #111;
+      --muted: #555;
+      --axis: #222;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: start center;
+      background: var(--page-bg);
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--ink);
+    }
+    .workspace {
+      display: grid;
+      grid-template-columns: max-content;
+      gap: 12px;
+      padding: 20px;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .toolbar label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      user-select: none;
+    }
+    .stage {
+      display: grid;
+      grid-template-columns: max-content;
+      gap: 14px;
+      align-items: start;
+    }
+    .stage.show-reference {
+      grid-template-columns: max-content max-content;
+    }
+    figure {
+      margin: 0;
+    }
+    .candidate,
+    .reference {
+      width: 464px;
+    }
+    .candidate svg {
+      display: block;
+      width: 464px;
+      height: 512px;
+      background: #fff;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.16);
+    }
+    .reference {
+      display: none;
+    }
+    .stage.show-reference .reference {
+      display: block;
+    }
+    .reference img {
+      display: block;
+      width: 464px;
+      height: 512px;
+      object-fit: contain;
+      background: #fff;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.16);
+    }
+    figcaption {
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .axis path,
+    .axis line {
+      vector-effect: non-scaling-stroke;
+      shape-rendering: crispEdges;
+    }
+    text {
+      font-family: Arial, Helvetica, sans-serif;
+      dominant-baseline: alphabetic;
+    }
+  </style>
+</head>
+<body>
+  <main class="workspace">
+    <div class="toolbar">
+      <strong>Generated editable reconstruction</strong>
+      <label><input id="toggle-reference" type="checkbox"> Show labeled QA/reference source</label>
+    </div>
+    <div id="stage" class="stage">
+      <figure class="candidate">
+        <svg id="figure" role="img" aria-label="Generated reconstruction of panel B"></svg>
+        <figcaption>Candidate: generated from JSON with SVG text, axes, bands, traces, and lines.</figcaption>
+      </figure>
+      <figure class="reference">
+        <img id="reference-img" alt="QA/reference source raster, not part of the generated candidate">
+        <figcaption>QA/reference only: original source raster.</figcaption>
+      </figure>
+    </div>
+  </main>
+  <script>
+    const fallbackSpec = null;
+    const SVG_NS = "http://www.w3.org/2000/svg";
+
+    function svgEl(name, attrs = {}, parent) {
+      const node = document.createElementNS(SVG_NS, name);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      if (parent) parent.appendChild(node);
+      return node;
+    }
+
+    function mulberry32(seed) {
+      let t = seed >>> 0;
+      return function next() {
+        t += 0x6D2B79F5;
+        let r = Math.imul(t ^ (t >>> 15), 1 | t);
+        r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+        return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function makeScales(plot) {
+      const cs = plot.coordinateSystem;
+      const [x0, x1] = cs.x.domain;
+      const [px0, px1] = cs.x.range;
+      const [y0, y1] = cs.y.domain;
+      const [py0, py1] = cs.y.range;
+      return {
+        x: value => px0 + ((value - x0) / (x1 - x0)) * (px1 - px0),
+        y: value => py0 + ((value - y0) / (y1 - y0)) * (py1 - py0)
+      };
+    }
+
+    function linePath(points, scales) {
+      return points.map((point, index) => {
+        const command = index === 0 ? "M" : "L";
+        return `${command}${scales.x(point[0]).toFixed(2)},${scales.y(point[1]).toFixed(2)}`;
+      }).join(" ");
+    }
+
+    function bandPath(series, scales) {
+      const upper = series.mean.map((point, index) => [point[0], point[1] + series.uncertainty[index][1]]);
+      const lower = series.mean.map((point, index) => [point[0], Math.max(0, point[1] - series.uncertainty[index][1])]).reverse();
+      return `${linePath(upper, scales)} ${lower.map(point => `L${scales.x(point[0]).toFixed(2)},${scales.y(point[1]).toFixed(2)}`).join(" ")} Z`;
+    }
+
+    function generatedTrace(series, index) {
+      const recipe = series.traceRecipe;
+      const rand = mulberry32(recipe.seed + index * 97);
+      const scale = recipe.peakScale[0] + rand() * (recipe.peakScale[1] - recipe.peakScale[0]);
+      const shift = recipe.peakShift[0] + rand() * (recipe.peakShift[1] - recipe.peakShift[0]);
+      const width = 0.78 + rand() * 0.52;
+      return series.mean.map(point => {
+        const x = point[0];
+        const centerWeight = Math.exp(-Math.pow((x - 96 - shift) / 48, 2));
+        const edgeWeight = 0.42 + 0.58 * centerWeight;
+        const wobble = (rand() - 0.5) * recipe.jitter + Math.sin((x + index * 11) / 17) * recipe.jitter * 0.32;
+        const y = Math.max(0.35, point[1] * (1 + (scale - 1) * edgeWeight * width) + wobble);
+        return [x, y];
+      });
+    }
+
+    function drawText(parent, text, attrs = {}) {
+      const node = svgEl("text", attrs, parent);
+      node.textContent = text;
+      return node;
+    }
+
+    function render(spec) {
+      const svg = document.getElementById("figure");
+      svg.replaceChildren();
+      svg.setAttribute("viewBox", `0 0 ${spec.canvas.width} ${spec.canvas.height}`);
+      svg.setAttribute("width", spec.canvas.width);
+      svg.setAttribute("height", spec.canvas.height);
+      svgEl("rect", {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}, svg);
+
+      const panel = spec.panels[0];
+      const plot = panel.plot;
+      const scales = makeScales(plot);
+      const seriesById = Object.fromEntries(panel.data.series.map(series => [series.id, series]));
+
+      drawText(svg, panel.label.text, {
+        id: panel.label.id,
+        x: panel.label.x,
+        y: panel.label.y + panel.label.fontSize,
+        "font-size": panel.label.fontSize,
+        "font-weight": panel.label.fontWeight,
+        fill: spec.typography.color
+      });
+      drawText(svg, panel.title.text, {
+        id: panel.title.id,
+        x: panel.title.x,
+        y: panel.title.y + panel.title.fontSize - 1,
+        "font-size": panel.title.fontSize,
+        "font-weight": panel.title.fontWeight,
+        fill: spec.typography.color
+      });
+
+      const traceLayer = svgEl("g", {id: "trace-layer"}, svg);
+      const bandLayer = svgEl("g", {id: "band-layer"}, svg);
+      const meanLayer = svgEl("g", {id: "mean-layer"}, svg);
+      const axisLayer = svgEl("g", {id: "axis-layer", class: "axis"}, svg);
+      const textLayer = svgEl("g", {id: "text-layer"}, svg);
+
+      for (const mark of panel.marks.filter(item => item.type === "lineSeriesReplicates")) {
+        const series = seriesById[mark.series];
+        for (let i = 0; i < series.traceRecipe.count; i += 1) {
+          svgEl("path", {
+            id: `${mark.id}-${i}`,
+            d: linePath(generatedTrace(series, i), scales),
+            fill: "none",
+            stroke: mark.stroke,
+            "stroke-width": mark.strokeWidth,
+            "stroke-linecap": "round",
+            "stroke-linejoin": "round",
+            opacity: series.traceRecipe.opacity,
+            "data-series": series.id
+          }, traceLayer);
+        }
+      }
+
+      for (const mark of panel.marks.filter(item => item.type === "uncertaintyBand")) {
+        const series = seriesById[mark.series];
+        svgEl("path", {
+          id: mark.id,
+          d: bandPath(series, scales),
+          fill: series.bandColor,
+          opacity: mark.opacity,
+          "data-series": series.id
+        }, bandLayer);
+      }
+
+      for (const mark of panel.marks.filter(item => item.type === "lineSeries")) {
+        const series = seriesById[mark.series];
+        svgEl("path", {
+          id: mark.id,
+          d: linePath(series.mean, scales),
+          fill: "none",
+          stroke: series.color,
+          "stroke-width": mark.strokeWidth,
+          "stroke-linecap": "round",
+          "stroke-linejoin": "round",
+          "data-series": series.id
+        }, meanLayer);
+      }
+
+
+exec
+/bin/zsh -lc "sed -n '1,220p' outputs/reference-01-place-code-opto-B-make-figure-batch/reference-01-place-code-opto-B.json" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-01-place-code-opto-B",
+  "source": {
+    "path": "../../assets/reference/reference-01-place-code-opto-B-reference.png",
+    "usage": "QA-only; not used as a generated visual layer.",
+    "nativeWidth": 464,
+    "nativeHeight": 512,
+    "notes": "Single cropped panel B showing population place fields. Numeric data are approximate visual reconstruction from the raster."
+  },
+  "canvas": {
+    "width": 464,
+    "height": 512,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 16,
+    "color": "#111111",
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Helvetica/Arial-like bold condensed appearance approximated with Arial weights and measured source anchors."
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-b",
+      "bbox": {"x": 0, "y": 0, "width": 464, "height": 512},
+      "label": {
+        "id": "panel-b-label",
+        "text": "B",
+        "x": 8,
+        "y": 16,
+        "fontSize": 22,
+        "fontWeight": 700,
+        "sourceBox": {"x": 7, "y": 16, "width": 18, "height": 22},
+        "fit": "source-calibrated anchor"
+      },
+      "title": {
+        "id": "panel-b-title",
+        "text": "Population place fields",
+        "x": 42,
+        "y": 22,
+        "fontSize": 16,
+        "fontWeight": 700,
+        "sourceBox": {"x": 42, "y": 20, "width": 163, "height": 18},
+        "fit": "source-calibrated anchor"
+      },
+      "plot": {
+        "id": "panel-b-plot",
+        "dataBbox": {"x": 58, "y": 70, "width": 347, "height": 369},
+        "coordinateSystem": {
+          "id": "panel-b.xy",
+          "type": "cartesian2d",
+          "x": {"domain": [0, 210], "range": [58, 405]},
+          "y": {"domain": [0, 20], "range": [439, 70]}
+        },
+        "axes": {
+          "xAxis": {
+            "id": "panel-b-x-axis",
+            "line": {"x1": 58, "y1": 439, "x2": 405, "y2": 439},
+            "tickLength": 6,
+            "ticks": [
+              {"value": 0, "label": "0"},
+              {"value": 50, "label": "50"},
+              {"value": 100, "label": "100"},
+              {"value": 150, "label": "150"},
+              {"value": 200, "label": "200"}
+            ],
+            "label": {
+              "id": "panel-b-x-label",
+              "text": "Position (cm)",
+              "anchor": {"x": 232, "y": 489},
+              "fontSize": 18,
+              "textAnchor": "middle"
+            }
+          },
+          "yAxis": {
+            "id": "panel-b-y-axis",
+            "line": {"x1": 58, "y1": 70, "x2": 58, "y2": 439},
+            "tickLength": 6,
+            "ticks": [
+              {"value": 0, "label": "0"},
+              {"value": 5, "label": "5"},
+              {"value": 10, "label": "10"},
+              {"value": 15, "label": "15"},
+              {"value": 20, "label": "20"}
+            ],
+            "label": {
+              "id": "panel-b-y-label",
+              "text": "Mean firing rate (Hz)",
+              "anchor": {"x": 21, "y": 254},
+              "fontSize": 18,
+              "rotation": -90,
+              "textAnchor": "middle"
+            }
+          }
+        }
+      },
+      "legend": {
+        "id": "panel-b-legend",
+        "items": [
+          {
+            "series": "control",
+            "label": "Control (no light)",
+            "line": {"x1": 71, "y1": 75, "x2": 100, "y2": 75}
+          },
+          {
+            "series": "opto",
+            "label": "Optogenetic inhibition (ArchT)",
+            "line": {"x1": 71, "y1": 97, "x2": 100, "y2": 97}
+          }
+        ],
+        "fontSize": 14,
+        "labelX": 107,
+        "strokeWidth": 3
+      },
+      "data": {
+        "series": [
+          {
+            "id": "control",
+            "label": "Control (no light)",
+            "color": "#111111",
+            "bandColor": "#9a9a9a",
+            "mean": [
+              [0, 1.7], [20, 2.8], [35, 4.7], [50, 7.0], [65, 9.2],
+              [80, 11.6], [92, 12.7], [105, 11.8], [120, 9.8], [135, 7.3],
+              [150, 5.0], [165, 3.3], [185, 2.0], [205, 1.4]
+            ],
+            "uncertainty": [
+              [0, 0.25], [20, 0.38], [35, 0.52], [50, 0.68], [65, 0.88],
+              [80, 1.02], [92, 1.05], [105, 0.95], [120, 0.78], [135, 0.62],
+              [150, 0.50], [165, 0.38], [185, 0.30], [205, 0.24]
+            ],
+            "traceRecipe": {"count": 34, "seed": 7101, "jitter": 0.9, "peakScale": [0.78, 1.32], "peakShift": [-16, 18], "opacity": 0.14}
+          },
+          {
+            "id": "opto",
+            "label": "Optogenetic inhibition (ArchT)",
+            "color": "#1b9da1",
+            "bandColor": "#77c8ca",
+            "mean": [
+              [0, 1.2], [20, 1.8], [35, 2.6], [50, 3.4], [65, 4.5],
+              [80, 5.5], [92, 5.8], [105, 5.1], [120, 4.1], [135, 3.3],
+              [150, 2.7], [165, 2.1], [185, 1.4], [205, 1.0]
+            ],
+            "uncertainty": [
+              [0, 0.18], [20, 0.22], [35, 0.30], [50, 0.40], [65, 0.50],
+              [80, 0.58], [92, 0.60], [105, 0.54], [120, 0.46], [135, 0.38],
+              [150, 0.32], [165, 0.26], [185, 0.20], [205, 0.16]
+            ],
+            "traceRecipe": {"count": 24, "seed": 9303, "jitter": 0.58, "peakScale": [0.66, 1.34], "peakShift": [-18, 19], "opacity": 0.20}
+          }
+        ]
+      },
+      "marks": [
+        {"id": "control-individual-traces", "type": "lineSeriesReplicates", "series": "control", "renderer": "svg", "strokeWidth": 1, "stroke": "#c8c8c8"},
+        {"id": "opto-individual-traces", "type": "lineSeriesReplicates", "series": "opto", "renderer": "svg", "strokeWidth": 1, "stroke": "#8fcfd0"},
+        {"id": "control-uncertainty", "type": "uncertaintyBand", "series": "control", "renderer": "svg", "opacity": 0.50},
+        {"id": "opto-uncertainty", "type": "uncertaintyBand", "series": "opto", "renderer": "svg", "opacity": 0.55},
+        {"id": "control-mean", "type": "lineSeries", "series": "control", "renderer": "svg", "strokeWidth": 5.2},
+        {"id": "opto-mean", "type": "lineSeries", "series": "opto", "renderer": "svg", "strokeWidth": 5.8}
+      ],
+      "provenance": [
+        {"field": "plot.dataBbox", "confidence": "medium", "note": "Axis spine anchors measured visually from crop."},
+        {"field": "data.series.mean", "confidence": "low-medium", "note": "Approximate digitization by visual inspection; intended as editable first-pass reconstruction."},
+        {"field": "traceRecipe", "confidence": "low", "note": "Individual place-field traces are synthetic replicates matching visible density and distribution, not measured cells."}
+      ]
+    }
+  ],
+  "constraints": [
+    {"id": "source-not-generated-layer", "description": "Source raster may only appear in a labeled QA/reference view."},
+    {"id": "axis-ticks-linked", "description": "Each tick label is generated from the same domain-to-range transform as its tick mark."},
+    {"id": "legend-series-linked", "description": "Legend swatches reference control and opto series colors."}
+  ],
+  "validation": {
+    "expectedCanvas": {"width": 464, "height": 512},
+    "expectedSeries": 2,
+    "expectedXTicks": 5,
+    "expectedYTicks": 5,
+    "sourceReusePolicy": "The generated candidate is SVG/DOM only; the raster source is limited to the labeled QA/reference image."
+  },
+  "confidence": [
+    {"aspect": "layout", "value": "medium-high"},
+    {"aspect": "mean curves", "value": "medium"},
+    {"aspect": "individual traces", "value": "low-medium"},
+    {"aspect": "typography", "value": "medium"}
+  ]
+}
+
+codex
+I’m creating only the requested output directory and two files. The reconstruction encodes the approximate subject-level data as editable arrays, with source uncertainty called out in provenance rather than hidden in the renderer.
+exec
+/bin/zsh -lc 'mkdir -p outputs/reference-01-place-code-opto-E-make-figure-batch' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+apply patch
+patch: completed
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.html
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.json
+diff --git a/outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.html b/outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..e2972fa3aa2b211eec153317751813b37c6c7ce3
+--- /dev/null
++++ b/outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.html
+@@ -0,0 +1,454 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-01-place-code-opto-E reconstruction</title>
++  <style>
++    :root {
++      color-scheme: light;
++      --page-bg: #f3f4f6;
++      --ink: #111;
++      --muted: #555;
++    }
++    body {
++      margin: 0;
++      min-height: 100vh;
++      display: grid;
++      place-items: start center;
++      background: var(--page-bg);
++      font-family: Arial, Helvetica, sans-serif;
++      color: var(--ink);
++    }
++    .workspace {
++      display: grid;
++      grid-template-columns: max-content;
++      gap: 12px;
++      padding: 20px;
++    }
++    .toolbar {
++      display: flex;
++      align-items: center;
++      gap: 16px;
++      font-size: 13px;
++      color: var(--muted);
++    }
++    .toolbar label {
++      display: inline-flex;
++      align-items: center;
++      gap: 6px;
++      user-select: none;
++    }
++    .stage {
++      display: grid;
++      grid-template-columns: max-content;
++      gap: 14px;
++      align-items: start;
++    }
++    .stage.show-reference {
++      grid-template-columns: max-content max-content;
++    }
++    figure {
++      margin: 0;
++    }
++    .candidate,
++    .reference {
++      width: 464px;
++    }
++    .candidate svg {
++      display: block;
++      width: 464px;
++      height: 512px;
++      background: #fff;
++      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.16);
++    }
++    .reference {
++      display: none;
++    }
++    .stage.show-reference .reference {
++      display: block;
++    }
++    .reference img {
++      display: block;
++      width: 464px;
++      height: 512px;
++      object-fit: contain;
++      background: #fff;
++      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.16);
++    }
++    figcaption {
++      margin-top: 6px;
++      font-size: 12px;
++      color: var(--muted);
++    }
++    text {
++      font-family: Arial, Helvetica, sans-serif;
++      dominant-baseline: alphabetic;
++    }
++    .axis-line,
++    .tick-line,
++    .reference-line,
++    .series-line,
++    .error-bar {
++      vector-effect: non-scaling-stroke;
++      shape-rendering: crispEdges;
++    }
++  </style>
++</head>
++<body>
++  <main class="workspace">
++    <div class="toolbar">
++      <strong>Generated editable reconstruction</strong>
++      <label><input id="toggle-reference" type="checkbox"> Show labeled QA/reference source</label>
++    </div>
++    <div id="stage" class="stage">
++      <figure class="candidate">
++        <svg id="figure" role="img" aria-label="Generated reconstruction of panel E"></svg>
++        <figcaption>Candidate: generated from JSON with SVG axes, text, paired traces, markers, and summary point.</figcaption>
++      </figure>
++      <figure class="reference">
++        <img id="reference-img" alt="QA/reference source raster, not part of the generated candidate">
++        <figcaption>QA/reference only: original source raster.</figcaption>
++      </figure>
++    </div>
++  </main>
++  <script>
++    const fallbackSpec = null;
++    const SVG_NS = "http://www.w3.org/2000/svg";
++
++    function svgEl(name, attrs = {}, parent) {
++      const node = document.createElementNS(SVG_NS, name);
++      for (const [key, value] of Object.entries(attrs)) {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      }
++      if (parent) parent.appendChild(node);
++      return node;
++    }
++
++    function yScale(plot, value) {
++      const domain = plot.coordinateSystem.y.domain;
++      const range = plot.coordinateSystem.y.range;
++      return range[0] + ((value - domain[0]) / (domain[1] - domain[0])) * (range[1] - range[0]);
++    }
++
++    function xScale(plot, value) {
++      return plot.coordinateSystem.x.positions[value];
++    }
++
++    function drawText(parent, text, attrs = {}) {
++      const node = svgEl("text", attrs, parent);
++      if (Array.isArray(text)) {
++        const x = attrs.x || 0;
++        const lineHeight = attrs["data-line-height"] || 18;
++        text.forEach((line, index) => {
++          const span = svgEl("tspan", {x, dy: index === 0 ? 0 : lineHeight}, node);
++          span.textContent = line;
++        });
++      } else {
++        node.textContent = text;
++      }
++      return node;
++    }
++
++    function pathFor(categories, values, plot) {
++      return categories.map((category, index) => {
++        const command = index === 0 ? "M" : "L";
++        return `${command}${xScale(plot, category).toFixed(2)},${yScale(plot, values[index]).toFixed(2)}`;
++      }).join(" ");
++    }
++
++    function renderAxes(svg, spec, panel) {
++      const plot = panel.plot;
++      const axes = plot.axes;
++      const axisLayer = svgEl("g", {id: "axis-layer"}, svg);
++
++      for (const referenceLine of plot.referenceLines) {
++        if (referenceLine.type === "horizontal") {
++          svgEl("line", {
++            id: referenceLine.id,
++            class: "reference-line",
++            x1: referenceLine.x1,
++            y1: yScale(plot, referenceLine.value),
++            x2: referenceLine.x2,
++            y2: yScale(plot, referenceLine.value),
++            stroke: referenceLine.stroke,
++            "stroke-width": referenceLine.strokeWidth,
++            "stroke-dasharray": referenceLine.dasharray
++          }, axisLayer);
++        } else if (referenceLine.type === "vertical") {
++          svgEl("line", {
++            id: referenceLine.id,
++            class: "reference-line",
++            x1: referenceLine.x,
++            y1: referenceLine.y1,
++            x2: referenceLine.x,
++            y2: referenceLine.y2,
++            stroke: referenceLine.stroke,
++            "stroke-width": referenceLine.strokeWidth,
++            "stroke-dasharray": referenceLine.dasharray
++          }, axisLayer);
++        }
++      }
++
++      svgEl("line", {
++        id: axes.xAxis.id,
++        class: "axis-line",
++        x1: axes.xAxis.line.x1,
++        y1: axes.xAxis.line.y1,
++        x2: axes.xAxis.line.x2,
++        y2: axes.xAxis.line.y2,
++        stroke: "#111",
++        "stroke-width": 1.2
++      }, axisLayer);
++      svgEl("line", {
++        id: axes.yAxis.id,
++        class: "axis-line",
++        x1: axes.yAxis.line.x1,
++        y1: axes.yAxis.line.y1,
++        x2: axes.yAxis.line.x2,
++        y2: axes.yAxis.line.y2,
++        stroke: "#111",
++        "stroke-width": 1.2
++      }, axisLayer);
++
++      for (const tick of axes.yAxis.ticks) {
++        const y = yScale(plot, tick.value);
++        svgEl("line", {
++          id: `${axes.yAxis.id}-tick-${tick.value}`,
++          class: "tick-line",
++          x1: axes.yAxis.line.x1 - axes.yAxis.tickLength,
++          y1: y,
++          x2: axes.yAxis.line.x1,
++          y2: y,
++          stroke: "#111",
++          "stroke-width": 1
++        }, axisLayer);
++        drawText(axisLayer, tick.label, {
++          id: `${axes.yAxis.id}-label-${tick.value}`,
++          x: axes.yAxis.line.x1 - 9,
++          y: y + 5,
++          "font-size": 14,
++          "text-anchor": "end",
++          fill: spec.typography.color
++        });
++      }
++
++      for (const tick of axes.xAxis.ticks) {
++        const x = xScale(plot, tick.value);
++        drawText(axisLayer, tick.label, {
++          id: `${axes.xAxis.id}-label-${tick.value}`,
++          x,
++          y: axes.xAxis.line.y1 + 27,
++          "font-size": 16,
++          "text-anchor": "middle",
++          fill: spec.typography.color
++        });
++      }
++
++      const xLabel = axes.xAxis.label;
++      drawText(axisLayer, xLabel.text, {
++        id: xLabel.id,
++        x: xLabel.anchor.x,
++        y: xLabel.anchor.y,
++        "font-size": xLabel.fontSize,
++        "text-anchor": xLabel.textAnchor,
++        fill: spec.typography.color
++      });
++
++      const yLabel = axes.yAxis.label;
++      drawText(axisLayer, yLabel.text, {
++        id: yLabel.id,
++        x: yLabel.anchor.x,
++        y: yLabel.anchor.y,
++        "font-size": yLabel.fontSize,
++        "text-anchor": yLabel.textAnchor,
++        "data-line-height": yLabel.lineHeight,
++        transform: `rotate(${yLabel.rotation} ${yLabel.anchor.x} ${yLabel.anchor.y})`,
++        fill: spec.typography.color
++      });
++    }
++
++    function renderData(svg, panel) {
++      const plot = panel.plot;
++      const dataLayer = svgEl("g", {id: "data-layer"}, svg);
++      const controlMark = panel.marks.find(mark => mark.id === "control-lines");
++      const optoMark = panel.marks.find(mark => mark.id === "opto-lines");
++
++      for (const series of panel.data.series) {
++        svgEl("path", {
++          id: `${series.id}-control-path`,
++          class: "series-line",
++          d: pathFor(controlMark.categories, series.control, plot),
++          fill: "none",
++          stroke: controlMark.stroke,
++          "stroke-width": controlMark.strokeWidth,
++          "stroke-linejoin": "round",
++          "data-series": series.id,
++          "data-role": "control"
++        }, dataLayer);
++        svgEl("path", {
++          id: `${series.id}-opto-path`,
++          class: "series-line",
++          d: pathFor(optoMark.categories, series.opto, plot),
++          fill: "none",
++          stroke: optoMark.stroke,
++          "stroke-width": optoMark.strokeWidth,
++          "stroke-linejoin": "round",
++          "data-series": series.id,
++          "data-role": "opto"
++        }, dataLayer);
++      }
++
++      for (const series of panel.data.series) {
++        controlMark.categories.forEach((category, index) => {
++          svgEl("circle", {
++            id: `${series.id}-control-${category}`,
++            cx: xScale(plot, category),
++            cy: yScale(plot, series.control[index]),
++            r: controlMark.markerRadius,
++            fill: controlMark.fill,
++            stroke: "#000",
++            "stroke-width": 0.8,
++            "data-series": series.id,
++            "data-category": category,
++            "data-role": "control"
++          }, dataLayer);
++          svgEl("circle", {
++            id: `${series.id}-opto-${category}`,
++            cx: xScale(plot, category),
++            cy: yScale(plot, series.opto[index]),
++            r: optoMark.markerRadius,
++            fill: optoMark.fill,
++            stroke: optoMark.stroke,
++            "stroke-width": 1.2,
++            "data-series": series.id,
++            "data-category": category,
++            "data-role": "opto"
++          }, dataLayer);
++        });
++      }
++
++      const summaryMark = panel.marks.find(mark => mark.id === "summary-point");
++      const summary = panel.data.summary;
++      const x = xScale(plot, summary.category);
++      const y = yScale(plot, summary.mean);
++      const yTop = yScale(plot, summary.mean + summary.errorPlus);
++      const yBottom = yScale(plot, summary.mean - summary.errorMinus);
++      svgEl("line", {
++        id: "summary-error-line",
++        class: "error-bar",
++        x1: x,
++        y1: yTop,
++        x2: x,
++        y2: yBottom,
++        stroke: "#111",
++        "stroke-width": summaryMark.strokeWidth
++      }, dataLayer);
++      svgEl("line", {
++        id: "summary-error-top",
++        class: "error-bar",
++        x1: x - summaryMark.capWidth / 2,
++        y1: yTop,
++        x2: x + summaryMark.capWidth / 2,
++        y2: yTop,
++        stroke: "#111",
++        "stroke-width": summaryMark.strokeWidth
++      }, dataLayer);
++      svgEl("line", {
++        id: "summary-error-bottom",
++        class: "error-bar",
++        x1: x - summaryMark.capWidth / 2,
++        y1: yBottom,
++        x2: x + summaryMark.capWidth / 2,
++        y2: yBottom,
++        stroke: "#111",
++        "stroke-width": summaryMark.strokeWidth
++      }, dataLayer);
++      svgEl("circle", {
++        id: summary.id,
++        cx: x,
++        cy: y,
++        r: summaryMark.radius,
++        fill: summary.color,
++        stroke: summary.stroke,
++        "stroke-width": 1,
++        "data-category": summary.category
++      }, dataLayer);
++    }
++
++    function renderAnnotation(svg, spec, panel) {
++      const ann = panel.annotation;
++      const layer = svgEl("g", {id: "annotation-layer"}, svg);
++      const text = svgEl("text", {
++        id: ann.id,
++        x: ann.x,
++        y: ann.y,
++        "font-size": ann.fontSize,
++        "font-style": ann.fontStyle,
++        "text-anchor": ann.textAnchor,
++        fill: spec.typography.color
++      }, layer);
++      const italic = svgEl("tspan", {"font-style": "italic"}, text);
++      italic.textContent = "Paired t-test: P";
++      text.append(" = 3.1 x 10");
++      const sup = svgEl("tspan", {"font-size": 10, dy: -7}, text);
++      sup.textContent = "-5";
++      text.appendChild(svgEl("tspan", {dy: 7}, text));
++    }
++
++    function render(spec) {
++      const svg = document.getElementById("figure");
++      svg.replaceChildren();
++      svg.setAttribute("viewBox", `0 0 ${spec.canvas.width} ${spec.canvas.height}`);
++      svg.setAttribute("width", spec.canvas.width);
++      svg.setAttribute("height", spec.canvas.height);
++      svgEl("rect", {id: "canvas-background", x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}, svg);
++
++      const panel = spec.panels[0];
++      drawText(svg, panel.label.text, {
++        id: panel.label.id,
++        x: panel.label.x,
++        y: panel.label.y + panel.label.fontSize,
++        "font-size": panel.label.fontSize,
++        "font-weight": panel.label.fontWeight,
++        fill: spec.typography.color
++      });
++      drawText(svg, panel.title.text, {
++        id: panel.title.id,
++        x: panel.title.x,
++        y: panel.title.y + panel.title.fontSize - 1,
++        "font-size": panel.title.fontSize,
++        "font-weight": panel.title.fontWeight,
++        fill: spec.typography.color
++      });
++
++      renderAnnotation(svg, spec, panel);
++      renderAxes(svg, spec, panel);
++      renderData(svg, panel);
++
++      const reference = document.getElementById("reference-img");
++      reference.src = spec.source.path;
++      document.title = `${spec.id} reconstruction`;
++    }
++
++    async function loadSpec() {
++      try {
++        const response = await fetch("reference-01-place-code-opto-E.json", {cache: "no-store"});
++        if (!response.ok) throw new Error(`HTTP ${response.status}`);
++        return await response.json();
++      } catch (error) {
++        if (fallbackSpec) return fallbackSpec;
++        throw error;
++      }
++    }
++
++    document.getElementById("toggle-reference").addEventListener("change", event => {
++      document.getElementById("stage").classList.toggle("show-reference", event.target.checked);
++    });
++
++    loadSpec().then(render).catch(error => {
++      document.body.innerHTML = `<pre style="padding:20px;color:#900">Failed to load reconstruction JSON: ${error.message}</pre>`;
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.json b/outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..3c10de3e1c54e12fd5982f0429bd65ad6ff9c3ba
+--- /dev/null
++++ b/outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.json
+@@ -0,0 +1,198 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-01-place-code-opto-E",
++  "source": {
++    "path": "../../assets/reference/reference-01-place-code-opto-E-reference.png",
++    "usage": "QA-only; not used as a generated visual layer.",
++    "nativeWidth": 464,
++    "nativeHeight": 512,
++    "notes": "Single cropped panel E showing paired animal-level decoding accuracy reduction across M1-M8 and an All summary point. Values are approximate visual reconstruction from the raster."
++  },
++  "canvas": {"width": 464, "height": 512, "background": "#ffffff"},
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 16,
++    "color": "#111111",
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "Arial/Helvetica approximates the cropped publication text. Anchors and font sizes were visually matched for a first-pass reconstruction."
++    }
++  },
++  "panels": [
++    {
++      "id": "panel-e",
++      "bbox": {"x": 0, "y": 0, "width": 464, "height": 512},
++      "label": {
++        "id": "panel-e-label",
++        "text": "E",
++        "x": 0,
++        "y": 8,
++        "fontSize": 23,
++        "fontWeight": 700,
++        "sourceBox": {"x": 0, "y": 8, "width": 18, "height": 23},
++        "fit": "source-calibrated anchor"
++      },
++      "title": {
++        "id": "panel-e-title",
++        "text": "Decoding accuracy reduction (0-2 s)",
++        "x": 35,
++        "y": 14,
++        "fontSize": 18,
++        "fontWeight": 700,
++        "sourceBox": {"x": 35, "y": 13, "width": 285, "height": 20},
++        "fit": "source-calibrated anchor"
++      },
++      "annotation": {
++        "id": "panel-e-p-value",
++        "type": "text",
++        "text": "Paired t-test: P = 3.1 x 10^-5",
++        "x": 119,
++        "y": 74,
++        "fontSize": 16,
++        "fontStyle": "normal",
++        "textAnchor": "start",
++        "sourceBox": {"x": 119, "y": 62, "width": 176, "height": 17},
++        "notes": "Rendered with a superscript exponent rather than raw caret text."
++      },
++      "plot": {
++        "id": "panel-e-plot",
++        "dataBbox": {"x": 84, "y": 65, "width": 267, "height": 303},
++        "axisBbox": {"x": 63, "y": 65, "width": 359, "height": 327},
++        "coordinateSystem": {
++          "id": "panel-e.xy",
++          "type": "cartesian2d",
++          "x": {
++            "scale": "categorical",
++            "categories": ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "All"],
++            "positions": {"M1": 84, "M2": 122, "M3": 160, "M4": 199, "M5": 237, "M6": 275, "M7": 313, "M8": 351, "All": 405}
++          },
++          "y": {"domain": [-20, 100], "range": [368, 65]}
++        },
++        "axes": {
++          "xAxis": {
++            "id": "panel-e-x-axis",
++            "line": {"x1": 67, "y1": 392, "x2": 422, "y2": 392},
++            "tickLength": 0,
++            "ticks": [
++              {"value": "M1", "label": "M1"},
++              {"value": "M2", "label": "M2"},
++              {"value": "M3", "label": "M3"},
++              {"value": "M4", "label": "M4"},
++              {"value": "M5", "label": "M5"},
++              {"value": "M6", "label": "M6"},
++              {"value": "M7", "label": "M7"},
++              {"value": "M8", "label": "M8"},
++              {"value": "All", "label": "All"}
++            ],
++            "label": {"id": "panel-e-x-label", "text": "Animal", "anchor": {"x": 212, "y": 448}, "fontSize": 18, "textAnchor": "middle"}
++          },
++          "yAxis": {
++            "id": "panel-e-y-axis",
++            "line": {"x1": 63, "y1": 65, "x2": 63, "y2": 368},
++            "tickLength": 5,
++            "ticks": [
++              {"value": -20, "label": "-20"},
++              {"value": 0, "label": "0"},
++              {"value": 20, "label": "20"},
++              {"value": 40, "label": "40"},
++              {"value": 60, "label": "60"},
++              {"value": 80, "label": "80"},
++              {"value": 100, "label": "100"}
++            ],
++            "label": {
++              "id": "panel-e-y-label",
++              "text": ["Delta Accuracy (% points)", "(control - opto)"],
++              "anchor": {"x": 15, "y": 216},
++              "fontSize": 18,
++              "rotation": -90,
++              "textAnchor": "middle",
++              "lineHeight": 21
++            }
++          }
++        },
++        "referenceLines": [
++          {"id": "panel-e-zero-line", "type": "horizontal", "value": 0, "x1": 63, "x2": 422, "stroke": "#8a8a8a", "strokeWidth": 1.2, "dasharray": "4 4"},
++          {"id": "panel-e-all-separator", "type": "vertical", "x": 374, "y1": 54, "y2": 392, "stroke": "#7b7b7b", "strokeWidth": 1.2, "dasharray": "5 5"}
++        ]
++      },
++      "data": {
++        "series": [
++          {
++            "id": "pair-01",
++            "label": "paired animal/session 1",
++            "control": [78, 43, 28, -6, 8, 12, 30, 67],
++            "opto": [20, -6, 20, -12, 0, -7, -20, 27],
++            "summary": 16
++          },
++          {
++            "id": "pair-02",
++            "label": "paired animal/session 2",
++            "control": [69, 29, 63, 28, 27, 22, 12, 57],
++            "opto": [20, -3, 42, -5, 11, 3, -12, 18],
++            "summary": 19
++          },
++          {
++            "id": "pair-03",
++            "label": "paired animal/session 3",
++            "control": [58, 16, 49, 15, 15, 24, 38, 51],
++            "opto": [20, -4, 44, -3, 6, 3, 18, 20],
++            "summary": 18
++          },
++          {
++            "id": "pair-04",
++            "label": "paired animal/session 4",
++            "control": [46, 25, 45, -2, 14, 37, -1, 45],
++            "opto": [20, -6, 3, -5, 0, 3, -12, 18],
++            "summary": 19
++          },
++          {
++            "id": "pair-05",
++            "label": "paired animal/session 5",
++            "control": [33, 10, 47, 3, 21, -2, 22, 63],
++            "opto": [20, -3, 42, -12, 8, 3, -12, 27],
++            "summary": 18
++          }
++        ],
++        "summary": {
++          "id": "all-summary",
++          "category": "All",
++          "mean": 16,
++          "errorMinus": 9,
++          "errorPlus": 9,
++          "color": "#1596a1",
++          "stroke": "#1596a1"
++        }
++      },
++      "marks": [
++        {"id": "control-lines", "type": "lineSeries", "seriesRole": "control", "categories": ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8"], "stroke": "#222222", "strokeWidth": 1.05, "markerRadius": 3.5, "fill": "#000000", "renderer": "svg"},
++        {"id": "opto-lines", "type": "lineSeries", "seriesRole": "opto", "categories": ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8"], "stroke": "#1495a0", "strokeWidth": 1.05, "markerRadius": 3.5, "fill": "#ffffff", "renderer": "svg"},
++        {"id": "summary-point", "type": "summaryPointWithError", "summary": "all-summary", "renderer": "svg", "radius": 6.2, "capWidth": 12, "strokeWidth": 1.15}
++      ],
++      "provenance": [
++        {"field": "plot.dataBbox", "confidence": "medium", "note": "Axis and category anchors were measured visually from the 464 x 512 crop."},
++        {"field": "data.series", "confidence": "low-medium", "note": "Subject trajectories were approximated from visible points; occluded or partially cropped points are inferred."},
++        {"field": "data.summary", "confidence": "medium", "note": "All summary point and error bar were visually estimated from the right-side aggregate marker."},
++        {"field": "annotation.text", "confidence": "medium-high", "note": "P-value text was read directly from the source crop and rendered as editable SVG text."}
++      ]
++    }
++  ],
++  "constraints": [
++    {"id": "source-not-generated-layer", "description": "Source raster may only appear in a labeled QA/reference view."},
++    {"id": "paired-series-linked", "description": "Each paired control and opto trajectory uses the same M1-M8 categorical transform."},
++    {"id": "axis-ticks-linked", "description": "Tick labels and reference lines are generated from shared semantic axis values."}
++  ],
++  "validation": {
++    "expectedCanvas": {"width": 464, "height": 512},
++    "expectedXTicks": 9,
++    "expectedYTicks": 7,
++    "expectedPairs": 5,
++    "sourceReusePolicy": "Generated candidate is SVG/DOM only; the raster source is limited to the labeled QA/reference image."
++  },
++  "confidence": [
++    {"aspect": "layout", "value": "medium-high"},
++    {"aspect": "subject trajectories", "value": "low-medium"},
++    {"aspect": "summary point", "value": "medium"},
++    {"aspect": "typography", "value": "medium"}
++  ]
++}
+
+diff --git a/outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.html b/outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..e2972fa3aa2b211eec153317751813b37c6c7ce3
+--- /dev/null
++++ b/outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.html
+@@ -0,0 +1,454 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-01-place-code-opto-E reconstruction</title>
++  <style>
++    :root {
++      color-scheme: light;
++      --page-bg: #f3f4f6;
++      --ink: #111;
++      --muted: #555;
++    }
++    body {
++      margin: 0;
++      min-height: 100vh;
++      display: grid;
++      place-items: start center;
++      background: var(--page-bg);
++      font-family: Arial, Helvetica, sans-serif;
++      color: var(--ink);
++    }
++    .workspace {
++      display: grid;
++      grid-template-columns: max-content;
++      gap: 12px;
++      padding: 20px;
++    }
++    .toolbar {
++      display: flex;
++      align-items: center;
++      gap: 16px;
++      font-size: 13px;
++      color: var(--muted);
++    }
++    .toolbar label {
++      display: inline-flex;
++      align-items: center;
++      gap: 6px;
++      user-select: none;
++    }
++    .stage {
++      display: grid;
++      grid-template-columns: max-content;
++      gap: 14px;
++      align-items: start;
++    }
++    .stage.show-reference {
++      grid-template-columns: max-content max-content;
++    }
++    figure {
++      margin: 0;
++    }
++    .candidate,
++    .reference {
++      width: 464px;
++    }
++    .candidate svg {
++      display: block;
++      width: 464px;
++      height: 512px;
++      background: #fff;
++      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.16);
++    }
++    .reference {
++      display: none;
++    }
++    .stage.show-reference .reference {
++      display: block;
++    }
++    .reference img {
++      display: block;
++      width: 464px;
++      height: 512px;
++      object-fit: contain;
++      background: #fff;
++      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.16);
++    }
++    figcaption {
++      margin-top: 6px;
++      font-size: 12px;
++      color: var(--muted);
++    }
++    text {
++      font-family: Arial, Helvetica, sans-serif;
++      dominant-baseline: alphabetic;
++    }
++    .axis-line,
++    .tick-line,
++    .reference-line,
++    .series-line,
++    .error-bar {
++      vector-effect: non-scaling-stroke;
++      shape-rendering: crispEdges;
++    }
++  </style>
++</head>
++<body>
++  <main class="workspace">
++    <div class="toolbar">
++      <strong>Generated editable reconstruction</strong>
++      <label><input id="toggle-reference" type="checkbox"> Show labeled QA/reference source</label>
++    </div>
++    <div id="stage" class="stage">
++      <figure class="candidate">
++        <svg id="figure" role="img" aria-label="Generated reconstruction of panel E"></svg>
++        <figcaption>Candidate: generated from JSON with SVG axes, text, paired traces, markers, and summary point.</figcaption>
++      </figure>
++      <figure class="reference">
++        <img id="reference-img" alt="QA/reference source raster, not part of the generated candidate">
++        <figcaption>QA/reference only: original source raster.</figcaption>
++      </figure>
++    </div>
++  </main>
++  <script>
++    const fallbackSpec = null;
++    const SVG_NS = "http://www.w3.org/2000/svg";
++
++    function svgEl(name, attrs = {}, parent) {
++      const node = document.createElementNS(SVG_NS, name);
++      for (const [key, value] of Object.entries(attrs)) {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      }
++      if (parent) parent.appendChild(node);
++      return node;
++    }
++
++    function yScale(plot, value) {
++      const domain = plot.coordinateSystem.y.domain;
++      const range = plot.coordinateSystem.y.range;
++      return range[0] + ((value - domain[0]) / (domain[1] - domain[0])) * (range[1] - range[0]);
++    }
++
++    function xScale(plot, value) {
++      return plot.coordinateSystem.x.positions[value];
++    }
++
++    function drawText(parent, text, attrs = {}) {
++      const node = svgEl("text", attrs, parent);
++      if (Array.isArray(text)) {
++        const x = attrs.x || 0;
++        const lineHeight = attrs["data-line-height"] || 18;
++        text.forEach((line, index) => {
++          const span = svgEl("tspan", {x, dy: index === 0 ? 0 : lineHeight}, node);
++          span.textContent = line;
++        });
++      } else {
++        node.textContent = text;
++      }
++      return node;
++    }
++
++    function pathFor(categories, values, plot) {
++      return categories.map((category, index) => {
++        const command = index === 0 ? "M" : "L";
++        return `${command}${xScale(plot, category).toFixed(2)},${yScale(plot, values[index]).toFixed(2)}`;
++      }).join(" ");
++    }
++
++    function renderAxes(svg, spec, panel) {
++      const plot = panel.plot;
++      const axes = plot.axes;
++      const axisLayer = svgEl("g", {id: "axis-layer"}, svg);
++
++      for (const referenceLine of plot.referenceLines) {
++        if (referenceLine.type === "horizontal") {
++          svgEl("line", {
++            id: referenceLine.id,
++            class: "reference-line",
++            x1: referenceLine.x1,
++            y1: yScale(plot, referenceLine.value),
++            x2: referenceLine.x2,
++            y2: yScale(plot, referenceLine.value),
++            stroke: referenceLine.stroke,
++            "stroke-width": referenceLine.strokeWidth,
++            "stroke-dasharray": referenceLine.dasharray
++          }, axisLayer);
++        } else if (referenceLine.type === "vertical") {
++          svgEl("line", {
++            id: referenceLine.id,
++            class: "reference-line",
++            x1: referenceLine.x,
++            y1: referenceLine.y1,
++            x2: referenceLine.x,
++            y2: referenceLine.y2,
++            stroke: referenceLine.stroke,
++            "stroke-width": referenceLine.strokeWidth,
++            "stroke-dasharray": referenceLine.dasharray
++          }, axisLayer);
++        }
++      }
++
++      svgEl("line", {
++        id: axes.xAxis.id,
++        class: "axis-line",
++        x1: axes.xAxis.line.x1,
++        y1: axes.xAxis.line.y1,
++        x2: axes.xAxis.line.x2,
++        y2: axes.xAxis.line.y2,
++        stroke: "#111",
++        "stroke-width": 1.2
++      }, axisLayer);
++      svgEl("line", {
++        id: axes.yAxis.id,
++        class: "axis-line",
++        x1: axes.yAxis.line.x1,
++        y1: axes.yAxis.line.y1,
++        x2: axes.yAxis.line.x2,
++        y2: axes.yAxis.line.y2,
++        stroke: "#111",
++        "stroke-width": 1.2
++      }, axisLayer);
++
++      for (const tick of axes.yAxis.ticks) {
++        const y = yScale(plot, tick.value);
++        svgEl("line", {
++          id: `${axes.yAxis.id}-tick-${tick.value}`,
++          class: "tick-line",
++          x1: axes.yAxis.line.x1 - axes.yAxis.tickLength,
++          y1: y,
++          x2: axes.yAxis.line.x1,
++          y2: y,
++          stroke: "#111",
++          "stroke-width": 1
++        }, axisLayer);
++        drawText(axisLayer, tick.label, {
++          id: `${axes.yAxis.id}-label-${tick.value}`,
++          x: axes.yAxis.line.x1 - 9,
++          y: y + 5,
++          "font-size": 14,
++          "text-anchor": "end",
++          fill: spec.typography.color
++        });
++      }
++
++      for (const tick of axes.xAxis.ticks) {
++        const x = xScale(plot, tick.value);
++        drawText(axisLayer, tick.label, {
++          id: `${axes.xAxis.id}-label-${tick.value}`,
++          x,
++          y: axes.xAxis.line.y1 + 27,
++          "font-size": 16,
++          "text-anchor": "middle",
++          fill: spec.typography.color
++        });
++      }
++
++      const xLabel = axes.xAxis.label;
++      drawText(axisLayer, xLabel.text, {
++        id: xLabel.id,
++        x: xLabel.anchor.x,
++        y: xLabel.anchor.y,
++        "font-size": xLabel.fontSize,
++        "text-anchor": xLabel.textAnchor,
++        fill: spec.typography.color
++      });
++
++      const yLabel = axes.yAxis.label;
++      drawText(axisLayer, yLabel.text, {
++        id: yLabel.id,
++        x: yLabel.anchor.x,
++        y: yLabel.anchor.y,
++        "font-size": yLabel.fontSize,
++        "text-anchor": yLabel.textAnchor,
++        "data-line-height": yLabel.lineHeight,
++        transform: `rotate(${yLabel.rotation} ${yLabel.anchor.x} ${yLabel.anchor.y})`,
++        fill: spec.typography.color
++      });
++    }
++
++    function renderData(svg, panel) {
++      const plot = panel.plot;
++      const dataLayer = svgEl("g", {id: "data-layer"}, svg);
++      const controlMark = panel.marks.find(mark => mark.id === "control-lines");
++      const optoMark = panel.marks.find(mark => mark.id === "opto-lines");
++
++      for (const series of panel.data.series) {
++        svgEl("path", {
++          id: `${series.id}-control-path`,
++          class: "series-line",
++          d: pathFor(controlMark.categories, series.control, plot),
++          fill: "none",
++          stroke: controlMark.stroke,
++          "stroke-width": controlMark.strokeWidth,
++          "stroke-linejoin": "round",
++          "data-series": series.id,
++          "data-role": "control"
++        }, dataLayer);
++        svgEl("path", {
++          id: `${series.id}-opto-path`,
++          class: "series-line",
++          d: pathFor(optoMark.categories, series.opto, plot),
++          fill: "none",
++          stroke: optoMark.stroke,
++          "stroke-width": optoMark.strokeWidth,
++          "stroke-linejoin": "round",
++          "data-series": series.id,
++          "data-role": "opto"
++        }, dataLayer);
++      }
++
++      for (const series of panel.data.series) {
++        controlMark.categories.forEach((category, index) => {
++          svgEl("circle", {
++            id: `${series.id}-control-${category}`,
++            cx: xScale(plot, category),
++            cy: yScale(plot, series.control[index]),
++            r: controlMark.markerRadius,
++            fill: controlMark.fill,
++            stroke: "#000",
++            "stroke-width": 0.8,
++            "data-series": series.id,
++            "data-category": category,
++            "data-role": "control"
++          }, dataLayer);
++          svgEl("circle", {
++            id: `${series.id}-opto-${category}`,
++            cx: xScale(plot, category),
++            cy: yScale(plot, series.opto[index]),
++            r: optoMark.markerRadius,
++            fill: optoMark.fill,
++            stroke: optoMark.stroke,
++            "stroke-width": 1.2,
++            "data-series": series.id,
++            "data-category": category,
++            "data-role": "opto"
++          }, dataLayer);
++        });
++      }
++
++      const summaryMark = panel.marks.find(mark => mark.id === "summary-point");
++      const summary = panel.data.summary;
++      const x = xScale(plot, summary.category);
++      const y = yScale(plot, summary.mean);
++      const yTop = yScale(plot, summary.mean + summary.errorPlus);
++      const yBottom = yScale(plot, summary.mean - summary.errorMinus);
++      svgEl("line", {
++        id: "summary-error-line",
++        class: "error-bar",
++        x1: x,
++        y1: yTop,
++        x2: x,
++        y2: yBottom,
++        stroke: "#111",
++        "stroke-width": summaryMark.strokeWidth
++      }, dataLayer);
++      svgEl("line", {
++        id: "summary-error-top",
++        class: "error-bar",
++        x1: x - summaryMark.capWidth / 2,
++        y1: yTop,
++        x2: x + summaryMark.capWidth / 2,
++        y2: yTop,
++        stroke: "#111",
++        "stroke-width": summaryMark.strokeWidth
++      }, dataLayer);
++      svgEl("line", {
++        id: "summary-error-bottom",
++        class: "error-bar",
++        x1: x - summaryMark.capWidth / 2,
++        y1: yBottom,
++        x2: x + summaryMark.capWidth / 2,
++        y2: yBottom,
++        stroke: "#111",
++        "stroke-width": summaryMark.strokeWidth
++      }, dataLayer);
++      svgEl("circle", {
++        id: summary.id,
++        cx: x,
++        cy: y,
++        r: summaryMark.radius,
++        fill: summary.color,
++        stroke: summary.stroke,
++        "stroke-width": 1,
++        "data-category": summary.category
++      }, dataLayer);
++    }
++
++    function renderAnnotation(svg, spec, panel) {
++      const ann = panel.annotation;
++      const layer = svgEl("g", {id: "annotation-layer"}, svg);
++      const text = svgEl("text", {
++        id: ann.id,
++        x: ann.x,
++        y: ann.y,
++        "font-size": ann.fontSize,
++        "font-style": ann.fontStyle,
++        "text-anchor": ann.textAnchor,
++        fill: spec.typography.color
++      }, layer);
++      const italic = svgEl("tspan", {"font-style": "italic"}, text);
++      italic.textContent = "Paired t-test: P";
++      text.append(" = 3.1 x 10");
++      const sup = svgEl("tspan", {"font-size": 10, dy: -7}, text);
++      sup.textContent = "-5";
++      text.appendChild(svgEl("tspan", {dy: 7}, text));
++    }
++
++    function render(spec) {
++      const svg = document.getElementById("figure");
++      svg.replaceChildren();
++      svg.setAttribute("viewBox", `0 0 ${spec.canvas.width} ${spec.canvas.height}`);
++      svg.setAttribute("width", spec.canvas.width);
++      svg.setAttribute("height", spec.canvas.height);
++      svgEl("rect", {id: "canvas-background", x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}, svg);
++
++      const panel = spec.panels[0];
++      drawText(svg, panel.label.text, {
++        id: panel.label.id,
++        x: panel.label.x,
++        y: panel.label.y + panel.label.fontSize,
++        "font-size": panel.label.fontSize,
++        "font-weight": panel.label.fontWeight,
++        fill: spec.typography.color
++      });
++      drawText(svg, panel.title.text, {
++        id: panel.title.id,
++        x: panel.title.x,
++        y: panel.title.y + panel.title.fontSize - 1,
++        "font-size": panel.title.fontSize,
++        "font-weight": panel.title.fontWeight,
++        fill: spec.typography.color
++      });
++
++      renderAnnotation(svg, spec, panel);
++      renderAxes(svg, spec, panel);
++      renderData(svg, panel);
++
++      const reference = document.getElementById("reference-img");
++      reference.src = spec.source.path;
++      document.title = `${spec.id} reconstruction`;
++    }
++
++    async function loadSpec() {
++      try {
++        const response = await fetch("reference-01-place-code-opto-E.json", {cache: "no-store"});
++        if (!response.ok) throw new Error(`HTTP ${response.status}`);
++        return await response.json();
++      } catch (error) {
++        if (fallbackSpec) return fallbackSpec;
++        throw error;
++      }
++    }
++
++    document.getElementById("toggle-reference").addEventListener("change", event => {
++      document.getElementById("stage").classList.toggle("show-reference", event.target.checked);
++    });
++
++    loadSpec().then(render).catch(error => {
++      document.body.innerHTML = `<pre style="padding:20px;color:#900">Failed to load reconstruction JSON: ${error.message}</pre>`;
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.json b/outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..3c10de3e1c54e12fd5982f0429bd65ad6ff9c3ba
+--- /dev/null
++++ b/outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.json
+@@ -0,0 +1,198 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-01-place-code-opto-E",
++  "source": {
++    "path": "../../assets/reference/reference-01-place-code-opto-E-reference.png",
++    "usage": "QA-only; not used as a generated visual layer.",
++    "nativeWidth": 464,
++    "nativeHeight": 512,
++    "notes": "Single cropped panel E showing paired animal-level decoding accuracy reduction across M1-M8 and an All summary point. Values are approximate visual reconstruction from the raster."
++  },
++  "canvas": {"width": 464, "height": 512, "background": "#ffffff"},
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 16,
++    "color": "#111111",
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "Arial/Helvetica approximates the cropped publication text. Anchors and font sizes were visually matched for a first-pass reconstruction."
++    }
++  },
++  "panels": [
++    {
++      "id": "panel-e",
++      "bbox": {"x": 0, "y": 0, "width": 464, "height": 512},
++      "label": {
++        "id": "panel-e-label",
++        "text": "E",
++        "x": 0,
++        "y": 8,
++        "fontSize": 23,
++        "fontWeight": 700,
++        "sourceBox": {"x": 0, "y": 8, "width": 18, "height": 23},
++        "fit": "source-calibrated anchor"
++      },
++      "title": {
++        "id": "panel-e-title",
++        "text": "Decoding accuracy reduction (0-2 s)",
++        "x": 35,
++        "y": 14,
++        "fontSize": 18,
++        "fontWeight": 700,
++        "sourceBox": {"x": 35, "y": 13, "width": 285, "height": 20},
++        "fit": "source-calibrated anchor"
++      },
++      "annotation": {
++        "id": "panel-e-p-value",
++        "type": "text",
++        "text": "Paired t-test: P = 3.1 x 10^-5",
++        "x": 119,
++        "y": 74,
++        "fontSize": 16,
++        "fontStyle": "normal",
++        "textAnchor": "start",
++        "sourceBox": {"x": 119, "y": 62, "width": 176, "height": 17},
++        "notes": "Rendered with a superscript exponent rather than raw caret text."
++      },
++      "plot": {
++        "id": "panel-e-plot",
++        "dataBbox": {"x": 84, "y": 65, "width": 267, "height": 303},
++        "axisBbox": {"x": 63, "y": 65, "width": 359, "height": 327},
++        "coordinateSystem": {
++          "id": "panel-e.xy",
++          "type": "cartesian2d",
++          "x": {
++            "scale": "categorical",
++            "categories": ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "All"],
++            "positions": {"M1": 84, "M2": 122, "M3": 160, "M4": 199, "M5": 237, "M6": 275, "M7": 313, "M8": 351, "All": 405}
++          },
++          "y": {"domain": [-20, 100], "range": [368, 65]}
++        },
++        "axes": {
++          "xAxis": {
++            "id": "panel-e-x-axis",
++            "line": {"x1": 67, "y1": 392, "x2": 422, "y2": 392},
++            "tickLength": 0,
++            "ticks": [
++              {"value": "M1", "label": "M1"},
++              {"value": "M2", "label": "M2"},
++              {"value": "M3", "label": "M3"},
++              {"value": "M4", "label": "M4"},
++              {"value": "M5", "label": "M5"},
++              {"value": "M6", "label": "M6"},
++              {"value": "M7", "label": "M7"},
++              {"value": "M8", "label": "M8"},
++              {"value": "All", "label": "All"}
++            ],
++            "label": {"id": "panel-e-x-label", "text": "Animal", "anchor": {"x": 212, "y": 448}, "fontSize": 18, "textAnchor": "middle"}
++          },
++          "yAxis": {
++            "id": "panel-e-y-axis",
++            "line": {"x1": 63, "y1": 65, "x2": 63, "y2": 368},
++            "tickLength": 5,
++            "ticks": [
++              {"value": -20, "label": "-20"},
++              {"value": 0, "label": "0"},
++              {"value": 20, "label": "20"},
++              {"value": 40, "label": "40"},
++              {"value": 60, "label": "60"},
++              {"value": 80, "label": "80"},
++              {"value": 100, "label": "100"}
++            ],
++            "label": {
++              "id": "panel-e-y-label",
++              "text": ["Delta Accuracy (% points)", "(control - opto)"],
++              "anchor": {"x": 15, "y": 216},
++              "fontSize": 18,
++              "rotation": -90,
++              "textAnchor": "middle",
++              "lineHeight": 21
++            }
++          }
++        },
++        "referenceLines": [
++          {"id": "panel-e-zero-line", "type": "horizontal", "value": 0, "x1": 63, "x2": 422, "stroke": "#8a8a8a", "strokeWidth": 1.2, "dasharray": "4 4"},
++          {"id": "panel-e-all-separator", "type": "vertical", "x": 374, "y1": 54, "y2": 392, "stroke": "#7b7b7b", "strokeWidth": 1.2, "dasharray": "5 5"}
++        ]
++      },
++      "data": {
++        "series": [
++          {
++            "id": "pair-01",
++            "label": "paired animal/session 1",
++            "control": [78, 43, 28, -6, 8, 12, 30, 67],
++            "opto": [20, -6, 20, -12, 0, -7, -20, 27],
++            "summary": 16
++          },
++          {
++            "id": "pair-02",
++            "label": "paired animal/session 2",
++            "control": [69, 29, 63, 28, 27, 22, 12, 57],
++            "opto": [20, -3, 42, -5, 11, 3, -12, 18],
++            "summary": 19
++          },
++          {
++            "id": "pair-03",
++            "label": "paired animal/session 3",
++            "control": [58, 16, 49, 15, 15, 24, 38, 51],
++            "opto": [20, -4, 44, -3, 6, 3, 18, 20],
++            "summary": 18
++          },
++          {
++            "id": "pair-04",
++            "label": "paired animal/session 4",
++            "control": [46, 25, 45, -2, 14, 37, -1, 45],
++            "opto": [20, -6, 3, -5, 0, 3, -12, 18],
++            "summary": 19
++          },
++          {
++            "id": "pair-05",
++            "label": "paired animal/session 5",
++            "control": [33, 10, 47, 3, 21, -2, 22, 63],
++            "opto": [20, -3, 42, -12, 8, 3, -12, 27],
++            "summary": 18
++          }
++        ],
++        "summary": {
++          "id": "all-summary",
++          "category": "All",
++          "mean": 16,
++          "errorMinus": 9,
++          "errorPlus": 9,
++          "color": "#1596a1",
++          "stroke": "#1596a1"
++        }
++      },
++      "marks": [
++        {"id": "control-lines", "type": "lineSeries", "seriesRole": "control", "categories": ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8"], "stroke": "#222222", "strokeWidth": 1.05, "markerRadius": 3.5, "fill": "#000000", "renderer": "svg"},
++        {"id": "opto-lines", "type": "lineSeries", "seriesRole": "opto", "categories": ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8"], "stroke": "#1495a0", "strokeWidth": 1.05, "markerRadius": 3.5, "fill": "#ffffff", "renderer": "svg"},
++        {"id": "summary-point", "type": "summaryPointWithError", "summary": "all-summary", "renderer": "svg", "radius": 6.2, "capWidth": 12, "strokeWidth": 1.15}
++      ],
++      "provenance": [
++        {"field": "plot.dataBbox", "confidence": "medium", "note": "Axis and category anchors were measured visually from the 464 x 512 crop."},
++        {"field": "data.series", "confidence": "low-medium", "note": "Subject trajectories were approximated from visible points; occluded or partially cropped points are inferred."},
++        {"field": "data.summary", "confidence": "medium", "note": "All summary point and error bar were visually estimated from the right-side aggregate marker."},
++        {"field": "annotation.text", "confidence": "medium-high", "note": "P-value text was read directly from the source crop and rendered as editable SVG text."}
++      ]
++    }
++  ],
++  "constraints": [
++    {"id": "source-not-generated-layer", "description": "Source raster may only appear in a labeled QA/reference view."},
++    {"id": "paired-series-linked", "description": "Each paired control and opto trajectory uses the same M1-M8 categorical transform."},
++    {"id": "axis-ticks-linked", "description": "Tick labels and reference lines are generated from shared semantic axis values."}
++  ],
++  "validation": {
++    "expectedCanvas": {"width": 464, "height": 512},
++    "expectedXTicks": 9,
++    "expectedYTicks": 7,
++    "expectedPairs": 5,
++    "sourceReusePolicy": "Generated candidate is SVG/DOM only; the raster source is limited to the labeled QA/reference image."
++  },
++  "confidence": [
++    {"aspect": "layout", "value": "medium-high"},
++    {"aspect": "subject trajectories", "value": "low-medium"},
++    {"aspect": "summary point", "value": "medium"},
++    {"aspect": "typography", "value": "medium"}
++  ]
++}
+
+codex
+The files are in place. I’m validating the JSON and scanning the generated outputs for forbidden source-raster rendering patterns before I do a final pass on any renderer issues.
+exec
+/bin/zsh -lc 'python -m json.tool outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.json >/tmp/reference-01-place-code-opto-E.validated.json' in /Users/alex/Code/scientific-figure-reconstruction
+ exited 127 in 0ms:
+zsh:1: command not found: python
+
+exec
+/bin/zsh -lc 'rg -n "drawImage|background[''^:;]*:.*reference|background-image|url'"\\(|reference-01-place-code-opto-E-reference|<image|canvas\" outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.json outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.html" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.html:402:      svg.setAttribute("viewBox", `0 0 ${spec.canvas.width} ${spec.canvas.height}`);
+outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.html:403:      svg.setAttribute("width", spec.canvas.width);
+outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.html:404:      svg.setAttribute("height", spec.canvas.height);
+outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.html:405:      svgEl("rect", {id: "canvas-background", x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}, svg);
+outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.json:5:    "path": "../../assets/reference/reference-01-place-code-opto-E-reference.png",
+outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.json:11:  "canvas": {"width": 464, "height": 512, "background": "#ffffff"},
+
+exec
+/bin/zsh -lc 'git status --short outputs/reference-01-place-code-opto-E-make-figure-batch' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+?? outputs/reference-01-place-code-opto-E-make-figure-batch/
+
+diff --git a/outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.html b/outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..e2972fa3aa2b211eec153317751813b37c6c7ce3
+--- /dev/null
++++ b/outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.html
+@@ -0,0 +1,454 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-01-place-code-opto-E reconstruction</title>
++  <style>
++    :root {
++      color-scheme: light;
++      --page-bg: #f3f4f6;
++      --ink: #111;
++      --muted: #555;
++    }
++    body {
++      margin: 0;
++      min-height: 100vh;
++      display: grid;
++      place-items: start center;
++      background: var(--page-bg);
++      font-family: Arial, Helvetica, sans-serif;
++      color: var(--ink);
++    }
++    .workspace {
++      display: grid;
++      grid-template-columns: max-content;
++      gap: 12px;
++      padding: 20px;
++    }
++    .toolbar {
++      display: flex;
++      align-items: center;
++      gap: 16px;
++      font-size: 13px;
++      color: var(--muted);
++    }
++    .toolbar label {
++      display: inline-flex;
++      align-items: center;
++      gap: 6px;
++      user-select: none;
++    }
++    .stage {
++      display: grid;
++      grid-template-columns: max-content;
++      gap: 14px;
++      align-items: start;
++    }
++    .stage.show-reference {
++      grid-template-columns: max-content max-content;
++    }
++    figure {
++      margin: 0;
++    }
++    .candidate,
++    .reference {
++      width: 464px;
++    }
++    .candidate svg {
++      display: block;
++      width: 464px;
++      height: 512px;
++      background: #fff;
++      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.16);
++    }
++    .reference {
++      display: none;
++    }
++    .stage.show-reference .reference {
++      display: block;
++    }
++    .reference img {
++      display: block;
++      width: 464px;
++      height: 512px;
++      object-fit: contain;
++      background: #fff;
++      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.16);
++    }
++    figcaption {
++      margin-top: 6px;
++      font-size: 12px;
++      color: var(--muted);
++    }
++    text {
++      font-family: Arial, Helvetica, sans-serif;
++      dominant-baseline: alphabetic;
++    }
++    .axis-line,
++    .tick-line,
++    .reference-line,
++    .series-line,
++    .error-bar {
++      vector-effect: non-scaling-stroke;
++      shape-rendering: crispEdges;
++    }
++  </style>
++</head>
++<body>
++  <main class="workspace">
++    <div class="toolbar">
++      <strong>Generated editable reconstruction</strong>
++      <label><input id="toggle-reference" type="checkbox"> Show labeled QA/reference source</label>
++    </div>
++    <div id="stage" class="stage">
++      <figure class="candidate">
++        <svg id="figure" role="img" aria-label="Generated reconstruction of panel E"></svg>
++        <figcaption>Candidate: generated from JSON with SVG axes, text, paired traces, markers, and summary point.</figcaption>
++      </figure>
++      <figure class="reference">
++        <img id="reference-img" alt="QA/reference source raster, not part of the generated candidate">
++        <figcaption>QA/reference only: original source raster.</figcaption>
++      </figure>
++    </div>
++  </main>
++  <script>
++    const fallbackSpec = null;
++    const SVG_NS = "http://www.w3.org/2000/svg";
++
++    function svgEl(name, attrs = {}, parent) {
++      const node = document.createElementNS(SVG_NS, name);
++      for (const [key, value] of Object.entries(attrs)) {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      }
++      if (parent) parent.appendChild(node);
++      return node;
++    }
++
++    function yScale(plot, value) {
++      const domain = plot.coordinateSystem.y.domain;
++      const range = plot.coordinateSystem.y.range;
++      return range[0] + ((value - domain[0]) / (domain[1] - domain[0])) * (range[1] - range[0]);
++    }
++
++    function xScale(plot, value) {
++      return plot.coordinateSystem.x.positions[value];
++    }
++
++    function drawText(parent, text, attrs = {}) {
++      const node = svgEl("text", attrs, parent);
++      if (Array.isArray(text)) {
++        const x = attrs.x || 0;
++        const lineHeight = attrs["data-line-height"] || 18;
++        text.forEach((line, index) => {
++          const span = svgEl("tspan", {x, dy: index === 0 ? 0 : lineHeight}, node);
++          span.textContent = line;
++        });
++      } else {
++        node.textContent = text;
++      }
++      return node;
++    }
++
++    function pathFor(categories, values, plot) {
++      return categories.map((category, index) => {
++        const command = index === 0 ? "M" : "L";
++        return `${command}${xScale(plot, category).toFixed(2)},${yScale(plot, values[index]).toFixed(2)}`;
++      }).join(" ");
++    }
++
++    function renderAxes(svg, spec, panel) {
++      const plot = panel.plot;
++      const axes = plot.axes;
++      const axisLayer = svgEl("g", {id: "axis-layer"}, svg);
++
++      for (const referenceLine of plot.referenceLines) {
++        if (referenceLine.type === "horizontal") {
++          svgEl("line", {
++            id: referenceLine.id,
++            class: "reference-line",
++            x1: referenceLine.x1,
++            y1: yScale(plot, referenceLine.value),
++            x2: referenceLine.x2,
++            y2: yScale(plot, referenceLine.value),
++            stroke: referenceLine.stroke,
++            "stroke-width": referenceLine.strokeWidth,
++            "stroke-dasharray": referenceLine.dasharray
++          }, axisLayer);
++        } else if (referenceLine.type === "vertical") {
++          svgEl("line", {
++            id: referenceLine.id,
++            class: "reference-line",
++            x1: referenceLine.x,
++            y1: referenceLine.y1,
++            x2: referenceLine.x,
++            y2: referenceLine.y2,
++            stroke: referenceLine.stroke,
++            "stroke-width": referenceLine.strokeWidth,
++            "stroke-dasharray": referenceLine.dasharray
++          }, axisLayer);
++        }
++      }
++
++      svgEl("line", {
++        id: axes.xAxis.id,
++        class: "axis-line",
++        x1: axes.xAxis.line.x1,
++        y1: axes.xAxis.line.y1,
++        x2: axes.xAxis.line.x2,
++        y2: axes.xAxis.line.y2,
++        stroke: "#111",
++        "stroke-width": 1.2
++      }, axisLayer);
++      svgEl("line", {
++        id: axes.yAxis.id,
++        class: "axis-line",
++        x1: axes.yAxis.line.x1,
++        y1: axes.yAxis.line.y1,
++        x2: axes.yAxis.line.x2,
++        y2: axes.yAxis.line.y2,
++        stroke: "#111",
++        "stroke-width": 1.2
++      }, axisLayer);
++
++      for (const tick of axes.yAxis.ticks) {
++        const y = yScale(plot, tick.value);
++        svgEl("line", {
++          id: `${axes.yAxis.id}-tick-${tick.value}`,
++          class: "tick-line",
++          x1: axes.yAxis.line.x1 - axes.yAxis.tickLength,
++          y1: y,
++          x2: axes.yAxis.line.x1,
++          y2: y,
++          stroke: "#111",
++          "stroke-width": 1
++        }, axisLayer);
++        drawText(axisLayer, tick.label, {
++          id: `${axes.yAxis.id}-label-${tick.value}`,
++          x: axes.yAxis.line.x1 - 9,
++          y: y + 5,
++          "font-size": 14,
++          "text-anchor": "end",
++          fill: spec.typography.color
++        });
++      }
++
++      for (const tick of axes.xAxis.ticks) {
++        const x = xScale(plot, tick.value);
++        drawText(axisLayer, tick.label, {
++          id: `${axes.xAxis.id}-label-${tick.value}`,
++          x,
++          y: axes.xAxis.line.y1 + 27,
++          "font-size": 16,
++          "text-anchor": "middle",
++          fill: spec.typography.color
++        });
++      }
++
++      const xLabel = axes.xAxis.label;
++      drawText(axisLayer, xLabel.text, {
++        id: xLabel.id,
++        x: xLabel.anchor.x,
++        y: xLabel.anchor.y,
++        "font-size": xLabel.fontSize,
++        "text-anchor": xLabel.textAnchor,
++        fill: spec.typography.color
++      });
++
++      const yLabel = axes.yAxis.label;
++      drawText(axisLayer, yLabel.text, {
++        id: yLabel.id,
++        x: yLabel.anchor.x,
++        y: yLabel.anchor.y,
++        "font-size": yLabel.fontSize,
++        "text-anchor": yLabel.textAnchor,
++        "data-line-height": yLabel.lineHeight,
++        transform: `rotate(${yLabel.rotation} ${yLabel.anchor.x} ${yLabel.anchor.y})`,
++        fill: spec.typography.color
++      });
++    }
++
++    function renderData(svg, panel) {
++      const plot = panel.plot;
++      const dataLayer = svgEl("g", {id: "data-layer"}, svg);
++      const controlMark = panel.marks.find(mark => mark.id === "control-lines");
++      const optoMark = panel.marks.find(mark => mark.id === "opto-lines");
++
++      for (const series of panel.data.series) {
++        svgEl("path", {
++          id: `${series.id}-control-path`,
++          class: "series-line",
++          d: pathFor(controlMark.categories, series.control, plot),
++          fill: "none",
++          stroke: controlMark.stroke,
++          "stroke-width": controlMark.strokeWidth,
++          "stroke-linejoin": "round",
++          "data-series": series.id,
++          "data-role": "control"
++        }, dataLayer);
++        svgEl("path", {
++          id: `${series.id}-opto-path`,
++          class: "series-line",
++          d: pathFor(optoMark.categories, series.opto, plot),
++          fill: "none",
++          stroke: optoMark.stroke,
++          "stroke-width": optoMark.strokeWidth,
++          "stroke-linejoin": "round",
++          "data-series": series.id,
++          "data-role": "opto"
++        }, dataLayer);
++      }
++
++      for (const series of panel.data.series) {
++        controlMark.categories.forEach((category, index) => {
++          svgEl("circle", {
++            id: `${series.id}-control-${category}`,
++            cx: xScale(plot, category),
++            cy: yScale(plot, series.control[index]),
++            r: controlMark.markerRadius,
++            fill: controlMark.fill,
++            stroke: "#000",
++            "stroke-width": 0.8,
++            "data-series": series.id,
++            "data-category": category,
++            "data-role": "control"
++          }, dataLayer);
++          svgEl("circle", {
++            id: `${series.id}-opto-${category}`,
++            cx: xScale(plot, category),
++            cy: yScale(plot, series.opto[index]),
++            r: optoMark.markerRadius,
++            fill: optoMark.fill,
++            stroke: optoMark.stroke,
++            "stroke-width": 1.2,
++            "data-series": series.id,
++            "data-category": category,
++            "data-role": "opto"
++          }, dataLayer);
++        });
++      }
++
++      const summaryMark = panel.marks.find(mark => mark.id === "summary-point");
++      const summary = panel.data.summary;
++      const x = xScale(plot, summary.category);
++      const y = yScale(plot, summary.mean);
++      const yTop = yScale(plot, summary.mean + summary.errorPlus);
++      const yBottom = yScale(plot, summary.mean - summary.errorMinus);
++      svgEl("line", {
++        id: "summary-error-line",
++        class: "error-bar",
++        x1: x,
++        y1: yTop,
++        x2: x,
++        y2: yBottom,
++        stroke: "#111",
++        "stroke-width": summaryMark.strokeWidth
++      }, dataLayer);
++      svgEl("line", {
++        id: "summary-error-top",
++        class: "error-bar",
++        x1: x - summaryMark.capWidth / 2,
++        y1: yTop,
++        x2: x + summaryMark.capWidth / 2,
++        y2: yTop,
++        stroke: "#111",
++        "stroke-width": summaryMark.strokeWidth
++      }, dataLayer);
++      svgEl("line", {
++        id: "summary-error-bottom",
++        class: "error-bar",
++        x1: x - summaryMark.capWidth / 2,
++        y1: yBottom,
++        x2: x + summaryMark.capWidth / 2,
++        y2: yBottom,
++        stroke: "#111",
++        "stroke-width": summaryMark.strokeWidth
++      }, dataLayer);
++      svgEl("circle", {
++        id: summary.id,
++        cx: x,
++        cy: y,
++        r: summaryMark.radius,
++        fill: summary.color,
++        stroke: summary.stroke,
++        "stroke-width": 1,
++        "data-category": summary.category
++      }, dataLayer);
++    }
++
++    function renderAnnotation(svg, spec, panel) {
++      const ann = panel.annotation;
++      const layer = svgEl("g", {id: "annotation-layer"}, svg);
++      const text = svgEl("text", {
++        id: ann.id,
++        x: ann.x,
++        y: ann.y,
++        "font-size": ann.fontSize,
++        "font-style": ann.fontStyle,
++        "text-anchor": ann.textAnchor,
++        fill: spec.typography.color
++      }, layer);
++      const italic = svgEl("tspan", {"font-style": "italic"}, text);
++      italic.textContent = "Paired t-test: P";
++      text.append(" = 3.1 x 10");
++      const sup = svgEl("tspan", {"font-size": 10, dy: -7}, text);
++      sup.textContent = "-5";
++      text.appendChild(svgEl("tspan", {dy: 7}, text));
++    }
++
++    function render(spec) {
++      const svg = document.getElementById("figure");
++      svg.replaceChildren();
++      svg.setAttribute("viewBox", `0 0 ${spec.canvas.width} ${spec.canvas.height}`);
++      svg.setAttribute("width", spec.canvas.width);
++      svg.setAttribute("height", spec.canvas.height);
++      svgEl("rect", {id: "canvas-background", x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}, svg);
++
++      const panel = spec.panels[0];
++      drawText(svg, panel.label.text, {
++        id: panel.label.id,
++        x: panel.label.x,
++        y: panel.label.y + panel.label.fontSize,
++        "font-size": panel.label.fontSize,
++        "font-weight": panel.label.fontWeight,
++        fill: spec.typography.color
++      });
++      drawText(svg, panel.title.text, {
++        id: panel.title.id,
++        x: panel.title.x,
++        y: panel.title.y + panel.title.fontSize - 1,
++        "font-size": panel.title.fontSize,
++        "font-weight": panel.title.fontWeight,
++        fill: spec.typography.color
++      });
++
++      renderAnnotation(svg, spec, panel);
++      renderAxes(svg, spec, panel);
++      renderData(svg, panel);
++
++      const reference = document.getElementById("reference-img");
++      reference.src = spec.source.path;
++      document.title = `${spec.id} reconstruction`;
++    }
++
++    async function loadSpec() {
++      try {
++        const response = await fetch("reference-01-place-code-opto-E.json", {cache: "no-store"});
++        if (!response.ok) throw new Error(`HTTP ${response.status}`);
++        return await response.json();
++      } catch (error) {
++        if (fallbackSpec) return fallbackSpec;
++        throw error;
++      }
++    }
++
++    document.getElementById("toggle-reference").addEventListener("change", event => {
++      document.getElementById("stage").classList.toggle("show-reference", event.target.checked);
++    });
++
++    loadSpec().then(render).catch(error => {
++      document.body.innerHTML = `<pre style="padding:20px;color:#900">Failed to load reconstruction JSON: ${error.message}</pre>`;
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.json b/outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..3c10de3e1c54e12fd5982f0429bd65ad6ff9c3ba
+--- /dev/null
++++ b/outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.json
+@@ -0,0 +1,198 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-01-place-code-opto-E",
++  "source": {
++    "path": "../../assets/reference/reference-01-place-code-opto-E-reference.png",
++    "usage": "QA-only; not used as a generated visual layer.",
++    "nativeWidth": 464,
++    "nativeHeight": 512,
++    "notes": "Single cropped panel E showing paired animal-level decoding accuracy reduction across M1-M8 and an All summary point. Values are approximate visual reconstruction from the raster."
++  },
++  "canvas": {"width": 464, "height": 512, "background": "#ffffff"},
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 16,
++    "color": "#111111",
++    "calibration": {
++      "letterSpacing": 0,
++      "lineHeight": 1.08,
++      "notes": "Arial/Helvetica approximates the cropped publication text. Anchors and font sizes were visually matched for a first-pass reconstruction."
++    }
++  },
++  "panels": [
++    {
++      "id": "panel-e",
++      "bbox": {"x": 0, "y": 0, "width": 464, "height": 512},
++      "label": {
++        "id": "panel-e-label",
++        "text": "E",
++        "x": 0,
++        "y": 8,
++        "fontSize": 23,
++        "fontWeight": 700,
++        "sourceBox": {"x": 0, "y": 8, "width": 18, "height": 23},
++        "fit": "source-calibrated anchor"
++      },
++      "title": {
++        "id": "panel-e-title",
++        "text": "Decoding accuracy reduction (0-2 s)",
++        "x": 35,
++        "y": 14,
++        "fontSize": 18,
++        "fontWeight": 700,
++        "sourceBox": {"x": 35, "y": 13, "width": 285, "height": 20},
++        "fit": "source-calibrated anchor"
++      },
++      "annotation": {
++        "id": "panel-e-p-value",
++        "type": "text",
++        "text": "Paired t-test: P = 3.1 x 10^-5",
++        "x": 119,
++        "y": 74,
++        "fontSize": 16,
++        "fontStyle": "normal",
++        "textAnchor": "start",
++        "sourceBox": {"x": 119, "y": 62, "width": 176, "height": 17},
++        "notes": "Rendered with a superscript exponent rather than raw caret text."
++      },
++      "plot": {
++        "id": "panel-e-plot",
++        "dataBbox": {"x": 84, "y": 65, "width": 267, "height": 303},
++        "axisBbox": {"x": 63, "y": 65, "width": 359, "height": 327},
++        "coordinateSystem": {
++          "id": "panel-e.xy",
++          "type": "cartesian2d",
++          "x": {
++            "scale": "categorical",
++            "categories": ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "All"],
++            "positions": {"M1": 84, "M2": 122, "M3": 160, "M4": 199, "M5": 237, "M6": 275, "M7": 313, "M8": 351, "All": 405}
++          },
++          "y": {"domain": [-20, 100], "range": [368, 65]}
++        },
++        "axes": {
++          "xAxis": {
++            "id": "panel-e-x-axis",
++            "line": {"x1": 67, "y1": 392, "x2": 422, "y2": 392},
++            "tickLength": 0,
++            "ticks": [
++              {"value": "M1", "label": "M1"},
++              {"value": "M2", "label": "M2"},
++              {"value": "M3", "label": "M3"},
++              {"value": "M4", "label": "M4"},
++              {"value": "M5", "label": "M5"},
++              {"value": "M6", "label": "M6"},
++              {"value": "M7", "label": "M7"},
++              {"value": "M8", "label": "M8"},
++              {"value": "All", "label": "All"}
++            ],
++            "label": {"id": "panel-e-x-label", "text": "Animal", "anchor": {"x": 212, "y": 448}, "fontSize": 18, "textAnchor": "middle"}
++          },
++          "yAxis": {
++            "id": "panel-e-y-axis",
++            "line": {"x1": 63, "y1": 65, "x2": 63, "y2": 368},
++            "tickLength": 5,
++            "ticks": [
++              {"value": -20, "label": "-20"},
++              {"value": 0, "label": "0"},
++              {"value": 20, "label": "20"},
++              {"value": 40, "label": "40"},
++              {"value": 60, "label": "60"},
++              {"value": 80, "label": "80"},
++              {"value": 100, "label": "100"}
++            ],
++            "label": {
++              "id": "panel-e-y-label",
++              "text": ["Delta Accuracy (% points)", "(control - opto)"],
++              "anchor": {"x": 15, "y": 216},
++              "fontSize": 18,
++              "rotation": -90,
++              "textAnchor": "middle",
++              "lineHeight": 21
++            }
++          }
++        },
++        "referenceLines": [
++          {"id": "panel-e-zero-line", "type": "horizontal", "value": 0, "x1": 63, "x2": 422, "stroke": "#8a8a8a", "strokeWidth": 1.2, "dasharray": "4 4"},
++          {"id": "panel-e-all-separator", "type": "vertical", "x": 374, "y1": 54, "y2": 392, "stroke": "#7b7b7b", "strokeWidth": 1.2, "dasharray": "5 5"}
++        ]
++      },
++      "data": {
++        "series": [
++          {
++            "id": "pair-01",
++            "label": "paired animal/session 1",
++            "control": [78, 43, 28, -6, 8, 12, 30, 67],
++            "opto": [20, -6, 20, -12, 0, -7, -20, 27],
++            "summary": 16
++          },
++          {
++            "id": "pair-02",
++            "label": "paired animal/session 2",
++            "control": [69, 29, 63, 28, 27, 22, 12, 57],
++            "opto": [20, -3, 42, -5, 11, 3, -12, 18],
++            "summary": 19
++          },
++          {
++            "id": "pair-03",
++            "label": "paired animal/session 3",
++            "control": [58, 16, 49, 15, 15, 24, 38, 51],
++            "opto": [20, -4, 44, -3, 6, 3, 18, 20],
++            "summary": 18
++          },
++          {
++            "id": "pair-04",
++            "label": "paired animal/session 4",
++            "control": [46, 25, 45, -2, 14, 37, -1, 45],
++            "opto": [20, -6, 3, -5, 0, 3, -12, 18],
++            "summary": 19
++          },
++          {
++            "id": "pair-05",
++            "label": "paired animal/session 5",
++            "control": [33, 10, 47, 3, 21, -2, 22, 63],
++            "opto": [20, -3, 42, -12, 8, 3, -12, 27],
++            "summary": 18
++          }
++        ],
++        "summary": {
++          "id": "all-summary",
++          "category": "All",
++          "mean": 16,
++          "errorMinus": 9,
++          "errorPlus": 9,
++          "color": "#1596a1",
++          "stroke": "#1596a1"
++        }
++      },
++      "marks": [
++        {"id": "control-lines", "type": "lineSeries", "seriesRole": "control", "categories": ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8"], "stroke": "#222222", "strokeWidth": 1.05, "markerRadius": 3.5, "fill": "#000000", "renderer": "svg"},
++        {"id": "opto-lines", "type": "lineSeries", "seriesRole": "opto", "categories": ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8"], "stroke": "#1495a0", "strokeWidth": 1.05, "markerRadius": 3.5, "fill": "#ffffff", "renderer": "svg"},
++        {"id": "summary-point", "type": "summaryPointWithError", "summary": "all-summary", "renderer": "svg", "radius": 6.2, "capWidth": 12, "strokeWidth": 1.15}
++      ],
++      "provenance": [
++        {"field": "plot.dataBbox", "confidence": "medium", "note": "Axis and category anchors were measured visually from the 464 x 512 crop."},
++        {"field": "data.series", "confidence": "low-medium", "note": "Subject trajectories were approximated from visible points; occluded or partially cropped points are inferred."},
++        {"field": "data.summary", "confidence": "medium", "note": "All summary point and error bar were visually estimated from the right-side aggregate marker."},
++        {"field": "annotation.text", "confidence": "medium-high", "note": "P-value text was read directly from the source crop and rendered as editable SVG text."}
++      ]
++    }
++  ],
++  "constraints": [
++    {"id": "source-not-generated-layer", "description": "Source raster may only appear in a labeled QA/reference view."},
++    {"id": "paired-series-linked", "description": "Each paired control and opto trajectory uses the same M1-M8 categorical transform."},
++    {"id": "axis-ticks-linked", "description": "Tick labels and reference lines are generated from shared semantic axis values."}
++  ],
++  "validation": {
++    "expectedCanvas": {"width": 464, "height": 512},
++    "expectedXTicks": 9,
++    "expectedYTicks": 7,
++    "expectedPairs": 5,
++    "sourceReusePolicy": "Generated candidate is SVG/DOM only; the raster source is limited to the labeled QA/reference image."
++  },
++  "confidence": [
++    {"aspect": "layout", "value": "medium-high"},
++    {"aspect": "subject trajectories", "value": "low-medium"},
++    {"aspect": "summary point", "value": "medium"},
++    {"aspect": "typography", "value": "medium"}
++  ]
++}
+

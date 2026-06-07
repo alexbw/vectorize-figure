@@ -1,0 +1,208 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-01-place-code-opto-C-ocr-text-targets",
+  "source": {
+    "path": "/assets/reference/reference-01-place-code-opto-C-reference.png",
+    "usage": "QA-only OCR text target extraction for typography calibration."
+  },
+  "canvas": {
+    "width": 560,
+    "height": 512,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Helvetica, Arial, sans-serif",
+    "defaultSize": 13,
+    "color": "#111111"
+  },
+  "panels": [
+    {
+      "id": "ocr-text-targets",
+      "marks": [
+        {
+          "id": "ocr-01",
+          "type": "text",
+          "text": "C Event-aligned responses to light onset",
+          "x": 0,
+          "y": 39,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 21.6,
+          "fontWeight": 700,
+          "anchor": "start",
+          "fill": "#009da3",
+          "sourceBox": {
+            "x": 0,
+            "y": 15,
+            "width": 317,
+            "height": 24
+          },
+          "targetWidth": 317,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 93.5
+        },
+        {
+          "id": "ocr-02",
+          "type": "text",
+          "text": "532 nm light ON",
+          "x": 262.5,
+          "y": 73,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 20.7,
+          "fontWeight": 700,
+          "anchor": "middle",
+          "fill": "#009da3",
+          "sourceBox": {
+            "x": 211,
+            "y": 50,
+            "width": 103,
+            "height": 23
+          },
+          "targetWidth": 103,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 88.4
+        },
+        {
+          "id": "ocr-03",
+          "type": "text",
+          "text": "Optogenetic Sy",
+          "x": 7,
+          "y": 198,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 13.5,
+          "fontWeight": 400,
+          "anchor": "start",
+          "fill": "#009da3",
+          "sourceBox": {
+            "x": 7,
+            "y": 183,
+            "width": 487,
+            "height": 15
+          },
+          "targetWidth": 487,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 67.5
+        },
+        {
+          "id": "ocr-04",
+          "type": "text",
+          "text": "Time from light onset (s)",
+          "x": 289,
+          "y": 305,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 14.4,
+          "fontWeight": 400,
+          "anchor": "middle",
+          "fill": "#009da3",
+          "sourceBox": {
+            "x": 211,
+            "y": 289,
+            "width": 156,
+            "height": 16
+          },
+          "targetWidth": 156,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 94.8
+        },
+        {
+          "id": "ocr-05",
+          "type": "text",
+          "text": "130 i (no light)",
+          "x": 56,
+          "y": 334,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 25.2,
+          "fontWeight": 400,
+          "anchor": "start",
+          "fill": "#009da3",
+          "sourceBox": {
+            "x": 56,
+            "y": 306,
+            "width": 420,
+            "height": 28
+          },
+          "targetWidth": 420,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 62.8
+        },
+        {
+          "id": "ocr-06",
+          "type": "text",
+          "text": "og 20 Opto inhibition (ArchT)",
+          "x": 7,
+          "y": 362,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 26.1,
+          "fontWeight": 400,
+          "anchor": "start",
+          "fill": "#009da3",
+          "sourceBox": {
+            "x": 7,
+            "y": 333,
+            "width": 503,
+            "height": 29
+          },
+          "targetWidth": 503,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 78.7
+        },
+        {
+          "id": "ocr-07",
+          "type": "text",
+          "text": "Light ON",
+          "x": 316.5,
+          "y": 485,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 27.900000000000002,
+          "fontWeight": 400,
+          "anchor": "middle",
+          "fill": "#009da3",
+          "sourceBox": {
+            "x": 287,
+            "y": 454,
+            "width": 59,
+            "height": 31
+          },
+          "targetWidth": 59,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 96.8
+        },
+        {
+          "id": "ocr-08",
+          "type": "text",
+          "text": "Time from light onset (s)",
+          "x": 291,
+          "y": 499,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 16.2,
+          "fontWeight": 400,
+          "anchor": "middle",
+          "fill": "#009da3",
+          "sourceBox": {
+            "x": 214,
+            "y": 481,
+            "width": 154,
+            "height": 18
+          },
+          "targetWidth": 154,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 95.3
+        }
+      ]
+    }
+  ],
+  "confidence": [
+    {
+      "target": "ocr-text-targets",
+      "confidence": "medium",
+      "note": "Generated from Tesseract line OCR; noisy lines should be ignored in visual QA."
+    }
+  ]
+}

@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Font Calibration Runner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Arimo:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const specUrl = params.get('spec') || '/tmp/font-qa/reference-01-place-code-opto-C-text.json';
+
+    function lines(text) {
+      return String(text || '').split('\n');
+    }
+
+    function textItems(spec) {
+      const items = [];
+      for (const panel of spec.panels || []) {
+        for (const item of [panel.label, panel.title, ...(panel.marks || [])]) {
+          if (item && item.text && (item.sourceBox || item.source_box)) items.push(item);
+        }
+      }
+      return items;
+    }
+
+    function colorMode(item) {
+      const fill = String(item.fill || item.color || '').toLowerCase();
+      return fill.includes('009') || fill.includes('teal') ? 'teal' : 'dark';
+    }
+
+    function sourceMask(imageData, mode) {
+      const data = imageData.data;
+      const mask = new Float32Array(imageData.width * imageData.height);
+      for (let i = 0, p = 0; i < data.length; i += 4, p += 1) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const darkness = 1 - (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        const tealness = Math.max(0, (g + b) / 2 - r) / 255;
+        const value = mode === 'teal'
+          ? Math.max(0, tealness * 1.8 + darkness * 0.25 - 0.12)
+          : Math.max(0, darkness * 1.45 - tealness * 0.5 - 0.08);
+        mask[p] = Math.min(1, value);
+      }
+      return mask;
+    }
+
+    function renderMask(width, height, item, candidate, crop) {
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = '#000000';
+      ctx.textBaseline = 'alphabetic';
+      ctx.textAlign = candidate.anchor === 'middle' ? 'center' : 'left';
+      ctx.font = `${candidate.weight} ${candidate.size}px ${candidate.family}`;
+      ctx.save();
+      const x = candidate.x - crop.x;
+      const y = candidate.y - crop.y;
+      ctx.translate(x, y);
+      ctx.scale(candidate.scaleX, 1);
+      const textLines = lines(item.text);
+      textLines.forEach((line, index) => {
+        ctx.fillText(line, 0, index * candidate.size * candidate.lineHeight);
+      });
+      ctx.restore();
+
+      const data = ctx.getImageData(0, 0, width, height).data;
+      const mask = new Float32Array(width * height);
+      for (let i = 3, p = 0; i < data.length; i += 4, p += 1) {
+        mask[p] = data[i] / 255;
+      }
+      return mask;
+    }
+
+    function scoreMasks(source, generated) {
+      let intersection = 0;
+      let sourceSum = 0;
+      let generatedSum = 0;
+      let abs = 0;
+      for (let i = 0; i < source.length; i += 1) {
+        const s = source[i];
+        const g = generated[i];
+        intersection += Math.min(s, g);
+        sourceSum += s;
+        generatedSum += g;
+        abs += Math.abs(s - g);
+      }
+      const dice = (2 * intersection + 1) / (sourceSum + generatedSum + 1);
+      const densityPenalty = Math.abs(generatedSum - sourceSum) / Math.max(1, sourceSum);
+      return abs / source.length + (1 - dice) * 0.85 + densityPenalty * 0.18;
+    }
+
+    const measureCanvas = document.createElement('canvas');
+    const measureCtx = measureCanvas.getContext('2d');
+
+    function naturalTextWidth(item, candidate) {
+      measureCtx.font = `${candidate.weight} ${candidate.size}px ${candidate.family}`;
+      return Math.max(...lines(item.text).map(line => measureCtx.measureText(line).width));
+    }
+
+    function geometryPenalty(item, candidate) {
+      const box = item.sourceBox || item.source_box;
+      const width = naturalTextWidth(item, candidate) * candidate.scaleX;
+      const left = candidate.anchor === 'middle' ? candidate.x - width / 2 : candidate.x;
+      const widthPenalty = Math.abs(width - box.width) / Math.max(1, box.width);
+      const xPenalty = Math.abs(left - box.x) / Math.max(1, box.width);
+      return widthPenalty * 0.9 + xPenalty * 0.45;
+    }
+
+    function bboxDefaults(item) {
+      const box = item.sourceBox || item.source_box;
+      const anchor = item.anchor || 'start';
+      const parts = lines(item.text);
+      const size = item.fontSize || item.font_size || 13;
+      return {
+        x: anchor === 'middle' ? box.x + box.width / 2 : box.x,
+        y: box.y + size,
+        anchor,
+        lineHeight: item.lineHeight || item.line_height || (parts.length > 1 ? 1.0 : 1.08)
+      };
+    }
+
+    function ranges(item) {
+      const box = item.sourceBox || item.source_box;
+      const base = bboxDefaults(item);
+      const currentSize = item.fontSize || item.font_size || Math.max(8, box.height * 0.75);
+      const isBold = (item.fontWeight || item.font_weight || 400) >= 650 || item.id === 'panel-title' || item.id === 'panel-label';
+      return {
+        families: ['Helvetica', 'Arial', 'Arial Narrow', 'Helvetica Neue', 'Arimo', 'Roboto', 'Source Sans 3'],
+        weights: isBold ? [600, 700, 800] : [300, 400, 500],
+        sizes: Array.from({length: 9}, (_, i) => +(currentSize * 0.72 + i * currentSize * 0.07).toFixed(2)),
+        xOffsets: [-5, -2.5, 0, 2.5, 5],
+        yOffsets: [-7, -4, -2, 0, 2, 4, 7],
+        scaleXs: [0.78, 0.88, 0.98, 1.08, 1.2],
+        lineHeights: lines(item.text).length > 1 ? [0.86, 0.94, 1.02, 1.1] : [1],
+        base
+      };
+    }
+
+    function cropFor(item, canvasSpec) {
+      const box = item.sourceBox || item.source_box;
+      const pad = lines(item.text).length > 1 ? 6 : 4;
+      const x = Math.max(0, Math.floor(box.x - pad));
+      const y = Math.max(0, Math.floor(box.y - pad));
+      return {
+        x,
+        y,
+        width: Math.min(canvasSpec.width - x, Math.ceil(box.width + pad * 2)),
+        height: Math.min(canvasSpec.height - y, Math.ceil(box.height + pad * 2))
+      };
+    }
+
+    function refine(item, crop, source) {
+      const r = ranges(item);
+      let best = null;
+      const evaluate = candidate => {
+        const generated = renderMask(crop.width, crop.height, item, candidate, crop);
+        const score = scoreMasks(source, generated) + geometryPenalty(item, candidate);
+        if (!best || score < best.score) best = {...candidate, score};
+      };
+
+      const candidates = [];
+      for (const family of r.families) {
+        for (const weight of r.weights) {
+          for (const size of r.sizes) {
+            for (const lineHeight of r.lineHeights) {
+              const candidate = {
+                family,
+                weight,
+                size,
+                lineHeight,
+                scaleX: 1,
+                x: r.base.x,
+                y: r.base.y,
+                anchor: r.base.anchor
+              };
+              const generated = renderMask(crop.width, crop.height, item, candidate, crop);
+              const score = scoreMasks(source, generated) + geometryPenalty(item, candidate);
+              candidates.push({...candidate, score});
+            }
+          }
+        }
+      }
+
+      for (const coarse of candidates.sort((a, b) => a.score - b.score).slice(0, 16)) {
+        for (const dx of r.xOffsets) {
+          for (const dy of r.yOffsets) {
+            evaluate({...coarse, x: r.base.x + dx, y: r.base.y + dy});
+          }
+        }
+      }
+
+      const positionBest = best;
+      for (const scaleX of r.scaleXs) {
+        for (const lineHeight of r.lineHeights) {
+          evaluate({...positionBest, scaleX, lineHeight});
+        }
+      }
+
+      const fine = best;
+      for (const size of [-0.8, -0.4, 0, 0.4, 0.8].map(v => +(fine.size + v).toFixed(2))) {
+        for (const scaleX of [-0.05, -0.025, 0, 0.025, 0.05].map(v => +(fine.scaleX + v).toFixed(3))) {
+          for (const dx of [-0.75, 0, 0.75]) {
+            for (const dy of [-0.75, 0, 0.75]) {
+              for (const lineHeight of r.lineHeights) {
+                evaluate({
+                  ...fine,
+                  size,
+                  lineHeight,
+                  scaleX: Math.max(0.5, Math.min(1.5, scaleX)),
+                  x: fine.x + dx,
+                  y: fine.y + dy
+                });
+              }
+            }
+          }
+        }
+      }
+
+      return best;
+    }
+
+    async function loadImage(src) {
+      return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+        image.src = src;
+      });
+    }
+
+    function updateSpec(spec, calibration) {
+      const byId = Object.fromEntries(calibration.map(row => [row.id, row]));
+      for (const panel of spec.panels || []) {
+        for (const item of [panel.label, panel.title, ...(panel.marks || [])]) {
+          if (!item || !byId[item.id]) continue;
+          const row = byId[item.id];
+          item.fontFamily = `${row.family}, Helvetica, Arial, sans-serif`;
+          item.fontSize = row.size;
+          item.fontWeight = row.weight;
+          item.lineHeight = row.lineHeight;
+          item.overlayX = row.x;
+          item.overlayY = row.y;
+          item.fit = 'scaleX';
+          item.targetWidth = +(row.naturalWidth * row.scaleX).toFixed(2);
+          item.minScale = row.scaleX;
+          item.maxScale = row.scaleX;
+          item.calibrationScore = row.score;
+        }
+      }
+      return spec;
+    }
+
+    async function main() {
+      const spec = await fetch(specUrl).then(response => response.json());
+      await document.fonts.ready;
+      const image = await loadImage(spec.source.path);
+      const sourceCanvas = document.createElement('canvas');
+      sourceCanvas.width = spec.canvas.width;
+      sourceCanvas.height = spec.canvas.height;
+      const sourceCtx = sourceCanvas.getContext('2d', {willReadFrequently: true});
+      sourceCtx.drawImage(image, 0, 0, spec.canvas.width, spec.canvas.height);
+
+      const calibration = [];
+      for (const item of textItems(spec)) {
+        const crop = cropFor(item, spec.canvas);
+        const source = sourceMask(sourceCtx.getImageData(crop.x, crop.y, crop.width, crop.height), colorMode(item));
+        const best = refine(item, crop, source);
+        const naturalMask = renderMask(crop.width, crop.height, item, {...best, scaleX: 1}, crop);
+        let naturalWidth = item.targetWidth || (item.sourceBox || item.source_box).width;
+        const naturalCanvas = document.createElement('canvas');
+        const naturalCtx = naturalCanvas.getContext('2d');
+        naturalCtx.font = `${best.weight} ${best.size}px ${best.family}`;
+        naturalWidth = Math.max(...lines(item.text).map(line => naturalCtx.measureText(line).width));
+        calibration.push({
+          id: item.id,
+          text: item.text,
+          family: best.family,
+          size: +best.size.toFixed(2),
+          weight: best.weight,
+          lineHeight: +best.lineHeight.toFixed(3),
+          scaleX: +best.scaleX.toFixed(4),
+          naturalWidth: +naturalWidth.toFixed(2),
+          x: +best.x.toFixed(2),
+          y: +best.y.toFixed(2),
+          score: +best.score.toFixed(5),
+          crop
+        });
+      }
+
+      const output = {calibration, spec: updateSpec(JSON.parse(JSON.stringify(spec)), calibration)};
+      const node = document.createElement('script');
+      node.id = 'calibration-output';
+      node.type = 'application/json';
+      node.textContent = JSON.stringify(output);
+      document.body.appendChild(node);
+    }
+
+    main().catch(error => {
+      const pre = document.createElement('pre');
+      pre.textContent = error.stack || String(error);
+      document.body.appendChild(pre);
+    });
+  </script>
+</body>
+</html>

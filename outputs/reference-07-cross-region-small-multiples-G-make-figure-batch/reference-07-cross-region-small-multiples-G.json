@@ -1,0 +1,212 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-07-cross-region-small-multiples-G",
+  "source": {
+    "path": "../../assets/reference/reference-07-cross-region-small-multiples-G-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Single cropped forest-plot panel G. Source is visible only through the labeled reference view in the HTML."
+  },
+  "canvas": {
+    "width": 344,
+    "height": 330,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Source Sans 3", "Roboto", "Noto Sans"],
+    "calibration": {
+      "fontStretch": "condensed visually approximated with Arial Narrow fallback",
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "Panel resembles condensed bold sans-serif text. First-pass uses Arial Narrow/Arial with explicit source boxes for important labels."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "panel-g.fit-x",
+      "type": "linear",
+      "domain": [-0.5, 1.0],
+      "range": [53, 302],
+      "orientation": "x",
+      "notes": "Mapped from visible bottom axis ticks and point/error-bar locations."
+    },
+    {
+      "id": "panel-g.rows",
+      "type": "categorical",
+      "categories": ["CA1", "CA3", "DG", "PFC", "RSC"],
+      "positions": {
+        "CA1": 99,
+        "CA3": 146,
+        "DG": 193,
+        "PFC": 241,
+        "RSC": 289
+      }
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-g",
+      "label": {
+        "id": "panel-g-label",
+        "text": "G",
+        "x": 37,
+        "y": 52,
+        "fontSize": 20,
+        "fontWeight": 700,
+        "sourceBox": {"x": 36, "y": 36, "width": 15, "height": 19},
+        "fit": "source-calibrated position"
+      },
+      "title": {
+        "id": "panel-g-title",
+        "text": "Model fit (variance explained)",
+        "x": 67,
+        "y": 51,
+        "fontSize": 17,
+        "fontWeight": 700,
+        "sourceBox": {"x": 67, "y": 37, "width": 228, "height": 19},
+        "fit": "source-calibrated position"
+      },
+      "bbox": {"x": 0, "y": 0, "width": 344, "height": 330},
+      "plot": {
+        "dataBbox": {"x": 53, "y": 81, "width": 249, "height": 240},
+        "x": {
+          "scale": "linear",
+          "domain": [-0.5, 1.0],
+          "ticks": [
+            {"value": -0.5, "label": "-0.50"},
+            {"value": 0.0, "label": "0.0"},
+            {"value": 0.3, "label": "0.3"},
+            {"value": 0.6, "label": "0.6"},
+            {"value": 0.9, "label": "0.9"}
+          ],
+          "axisLine": {"x1": 53, "y1": 321, "x2": 302, "y2": 321},
+          "tickLength": 4,
+          "label": {
+            "text": "Time (s)",
+            "x": 206,
+            "y": 10,
+            "fontSize": 13,
+            "anchor": "middle",
+            "sourceBox": {"x": 181, "y": 0, "width": 53, "height": 13},
+            "provenance": {"confidence": "low", "note": "Top label is clipped remnant from adjacent panel and retained for visual match."}
+          }
+        },
+        "referenceLines": [
+          {
+            "id": "panel-g-zero-line",
+            "value": 0.55,
+            "x": 177,
+            "y1": 81,
+            "y2": 321,
+            "stroke": "#cfcfcf",
+            "strokeWidth": 1,
+            "dasharray": "4 3",
+            "provenance": {"confidence": "medium", "note": "Vertical dashed line measured visually; semantic value is approximate."}
+          }
+        ]
+      },
+      "layoutObjects": [
+        {
+          "id": "left-clipped-neighbor-remnants",
+          "type": "adjacentPanelFragments",
+          "description": "Thin cropped axes/tick remnants at far left from neighboring small multiples.",
+          "fragments": [
+            {"x": 0, "y": 73, "width": 6, "height": 47},
+            {"x": 0, "y": 121, "width": 6, "height": 46},
+            {"x": 0, "y": 168, "width": 6, "height": 46},
+            {"x": 0, "y": 216, "width": 6, "height": 46},
+            {"x": 0, "y": 263, "width": 6, "height": 47}
+          ]
+        }
+      ],
+      "data": {
+        "series": [
+          {
+            "id": "region-model-fit",
+            "type": "forestEstimate",
+            "xUnits": "variance explained",
+            "rows": [
+              {"region": "CA1", "estimate": 0.71, "ciLow": 0.66, "ciHigh": 0.82, "color": "#0839b7", "labelText": "0.71 (0.66,"},
+              {"region": "CA3", "estimate": 0.63, "ciLow": 0.57, "ciHigh": 0.73, "color": "#0b79c9", "labelText": "0.63 (0.57,"},
+              {"region": "DG", "estimate": 0.58, "ciLow": 0.51, "ciHigh": 0.68, "color": "#0a8f3d", "labelText": "0.58 (0.51,"},
+              {"region": "PFC", "estimate": 0.42, "ciLow": 0.35, "ciHigh": 0.50, "color": "#ff5a10", "labelText": "0.42 (0.35,"},
+              {"region": "RSC", "estimate": 0.49, "ciLow": 0.42, "ciHigh": 0.60, "color": "#f01616", "labelText": "0.49 (0.42,"}
+            ]
+          }
+        ]
+      },
+      "marks": [
+        {
+          "id": "region-model-fit-marks",
+          "type": "forestPlot",
+          "usesTransform": ["panel-g.fit-x", "panel-g.rows"],
+          "dataRef": "region-model-fit",
+          "errorBar": {"strokeWidth": 1.1, "capHeight": 6},
+          "point": {"shape": "circle", "radius": 4}
+        }
+      ],
+      "annotations": [
+        {
+          "id": "region-labels",
+          "type": "rowLabels",
+          "x": 38,
+          "fontSize": 16,
+          "fontWeight": 400,
+          "anchor": "start",
+          "sourceBoxes": [
+            {"text": "CA1", "x": 38, "y": 90, "width": 27, "height": 15},
+            {"text": "CA3", "x": 38, "y": 138, "width": 27, "height": 15},
+            {"text": "DG", "x": 38, "y": 185, "width": 20, "height": 15},
+            {"text": "PFC", "x": 38, "y": 233, "width": 27, "height": 15},
+            {"text": "RSC", "x": 38, "y": 280, "width": 29, "height": 15}
+          ]
+        },
+        {
+          "id": "estimate-text",
+          "type": "estimateLabels",
+          "x": 286,
+          "fontSize": 13,
+          "fontWeight": 700,
+          "anchor": "start",
+          "provenance": {"confidence": "medium", "note": "Right labels are clipped by crop; visible leading text is represented."}
+        }
+      ],
+      "provenance": [
+        {"target": "axis", "confidence": "medium", "note": "Bottom axis labels are partly cropped; tick values inferred from visible fragments and neighboring small-multiple convention."},
+        {"target": "points-and-cis", "confidence": "medium", "note": "Locations and intervals are reconstructed from visible marks and visible text; interval highs are approximate when clipped."},
+        {"target": "typography", "confidence": "medium", "note": "First-pass font match only; no automated font calibration was run."}
+      ]
+    }
+  ],
+  "rendering": {
+    "renderer": "svg",
+    "layerOrder": ["background", "clipped-neighbor-remnants", "title", "axis", "reference-lines", "row-labels", "forest-marks", "estimate-labels"],
+    "styleTokens": {
+      "axisStroke": "#111111",
+      "tickStroke": "#111111",
+      "fragmentStroke": "#555555",
+      "referenceLine": "#cfcfcf"
+    }
+  },
+  "validation": {
+    "expectedCounts": {
+      "regionRows": 5,
+      "forestIntervals": 5,
+      "forestPoints": 5,
+      "xTicks": 5,
+      "referenceLines": 1
+    },
+    "constraints": [
+      "Generated candidate must not render source image as a visual layer.",
+      "All interval lines and point estimates use panel-g.fit-x and panel-g.rows transforms.",
+      "Region labels and estimate labels remain separate editable text objects."
+    ]
+  },
+  "confidence": [
+    {"target": "overall", "confidence": "medium", "note": "Independent first-pass reconstruction intended for visual inspection, not a pixel-perfect final."}
+  ]
+}

@@ -1,0 +1,477 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-08-neuropixels-central-heatmap-F",
+  "source": {
+    "path": "../../assets/reference/reference-08-neuropixels-central-heatmap-F-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "nativeSize": {
+      "width": 440,
+      "height": 210
+    },
+    "notes": "Single cropped panel showing region comparison decoding accuracy. Geometry, text, and data values were visually inferred from the raster crop."
+  },
+  "canvas": {
+    "width": 440,
+    "height": 210,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": [
+      "Arial",
+      "Helvetica",
+      "Arimo",
+      "Source Sans 3",
+      "Roboto",
+      "Noto Sans"
+    ],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "First-pass typography chosen to match the compact sans-serif appearance in the source crop."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "panel-f.xy",
+      "type": "cartesian",
+      "plotBbox": {
+        "x": 101,
+        "y": 52,
+        "width": 315,
+        "height": 149
+      },
+      "x": {
+        "scale": "categorical",
+        "categories": [
+          "L1",
+          "L2",
+          "L3",
+          "R1",
+          "R2"
+        ],
+        "positions": [
+          130,
+          185,
+          240,
+          315,
+          385
+        ]
+      },
+      "y": {
+        "scale": "linear",
+        "domain": [
+          0,
+          1
+        ],
+        "rangePixels": [
+          201,
+          52
+        ]
+      }
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-f",
+      "label": {
+        "id": "panel-f-label",
+        "text": "F",
+        "x": 42,
+        "y": 35,
+        "fontSize": 23,
+        "fontWeight": 700,
+        "anchor": "middle",
+        "sourceBox": {
+          "x": 35,
+          "y": 16,
+          "width": 17,
+          "height": 23
+        }
+      },
+      "title": {
+        "id": "panel-f-title",
+        "text": "Region comparison (decoding accuracy)",
+        "x": 70,
+        "y": 35,
+        "fontSize": 17,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {
+          "x": 70,
+          "y": 21,
+          "width": 284,
+          "height": 17
+        }
+      },
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 440,
+        "height": 210
+      },
+      "plot": {
+        "id": "panel-f-plot",
+        "dataBbox": {
+          "x": 101,
+          "y": 52,
+          "width": 315,
+          "height": 149
+        },
+        "axes": {
+          "xAxis": {
+            "id": "panel-f-x-axis",
+            "line": {
+              "x1": 101,
+              "y1": 201,
+              "x2": 416,
+              "y2": 201
+            },
+            "tickLength": 0,
+            "stroke": "#111111",
+            "strokeWidth": 1.2
+          },
+          "yAxis": {
+            "id": "panel-f-y-axis",
+            "line": {
+              "x1": 101,
+              "y1": 52,
+              "x2": 101,
+              "y2": 201
+            },
+            "tickLength": 6,
+            "stroke": "#111111",
+            "strokeWidth": 1.2
+          }
+        },
+        "x": {
+          "scale": "categorical",
+          "categories": [
+            {
+              "id": "L1",
+              "label": "A1",
+              "x": 130,
+              "colorGroup": "teal",
+              "visibleLabel": false
+            },
+            {
+              "id": "L2",
+              "label": "A2",
+              "x": 185,
+              "colorGroup": "teal",
+              "visibleLabel": false
+            },
+            {
+              "id": "L3",
+              "label": "A3",
+              "x": 240,
+              "colorGroup": "teal",
+              "visibleLabel": false
+            },
+            {
+              "id": "R1",
+              "label": "B1",
+              "x": 315,
+              "colorGroup": "orange",
+              "visibleLabel": false
+            },
+            {
+              "id": "R2",
+              "label": "B2",
+              "x": 385,
+              "colorGroup": "orange",
+              "visibleLabel": false
+            }
+          ],
+          "label": null
+        },
+        "y": {
+          "scale": "linear",
+          "domain": [
+            0,
+            1
+          ],
+          "ticks": [
+            {
+              "value": 0,
+              "label": "0.0"
+            },
+            {
+              "value": 0.2,
+              "label": "0.2"
+            },
+            {
+              "value": 0.4,
+              "label": "0.4"
+            },
+            {
+              "value": 0.6,
+              "label": "0.6"
+            },
+            {
+              "value": 0.8,
+              "label": "0.8"
+            },
+            {
+              "value": 1,
+              "label": "1.0"
+            }
+          ],
+          "label": {
+            "id": "panel-f-y-label",
+            "text": "Decoding accuracy",
+            "x": 54,
+            "y": 126,
+            "rotation": -90,
+            "fontSize": 15,
+            "fontWeight": 400,
+            "anchor": "middle",
+            "sourceBox": {
+              "x": 47,
+              "y": 63,
+              "width": 15,
+              "height": 118
+            }
+          }
+        }
+      },
+      "data": [
+        {
+          "id": "region-decoding-estimates",
+          "type": "pointEstimates",
+          "coordinateSystem": "panel-f.xy",
+          "values": [
+            {
+              "id": "L1",
+              "category": "L1",
+              "mean": 0.46,
+              "low": 0.37,
+              "high": 0.54,
+              "group": "teal"
+            },
+            {
+              "id": "L2",
+              "category": "L2",
+              "mean": 0.43,
+              "low": 0.35,
+              "high": 0.51,
+              "group": "teal"
+            },
+            {
+              "id": "L3",
+              "category": "L3",
+              "mean": 0.47,
+              "low": 0.43,
+              "high": 0.52,
+              "group": "teal"
+            },
+            {
+              "id": "R1",
+              "category": "R1",
+              "mean": 0.69,
+              "low": 0.61,
+              "high": 0.77,
+              "group": "orange"
+            },
+            {
+              "id": "R2",
+              "category": "R2",
+              "mean": 0.48,
+              "low": 0.36,
+              "high": 0.6,
+              "group": "orange"
+            }
+          ],
+          "provenance": {
+            "confidence": "medium",
+            "note": "Means and vertical intervals estimated from source pixel positions against the 0.0-1.0 y-axis."
+          }
+        }
+      ],
+      "marks": [
+        {
+          "id": "teal-estimates",
+          "type": "pointEstimateSeries",
+          "data": "region-decoding-estimates",
+          "filter": {
+            "group": "teal"
+          },
+          "meanLine": {
+            "halfWidth": 24,
+            "strokeWidth": 1.4
+          },
+          "errorBar": {
+            "capWidth": 13,
+            "strokeWidth": 1.2
+          },
+          "marker": {
+            "shape": "circle",
+            "radius": 5.5,
+            "fill": "#147c78",
+            "stroke": "#111111",
+            "strokeWidth": 0.6
+          },
+          "stroke": "#147c78"
+        },
+        {
+          "id": "orange-estimates",
+          "type": "pointEstimateSeries",
+          "data": "region-decoding-estimates",
+          "filter": {
+            "group": "orange"
+          },
+          "meanLine": {
+            "halfWidth": 24,
+            "strokeWidth": 1.4
+          },
+          "errorBar": {
+            "capWidth": 13,
+            "strokeWidth": 1.2
+          },
+          "marker": {
+            "shape": "circle",
+            "radius": 6,
+            "fill": "#ee981c",
+            "stroke": "#111111",
+            "strokeWidth": 0.6
+          },
+          "stroke": "#ee981c"
+        },
+        {
+          "id": "region-divider",
+          "type": "line",
+          "x1": 273,
+          "y1": 79,
+          "x2": 273,
+          "y2": 201,
+          "stroke": "#777777",
+          "strokeWidth": 1,
+          "dasharray": "5 5"
+        }
+      ],
+      "annotations": [
+        {
+          "id": "bracket-left",
+          "type": "bracket",
+          "x1": 133,
+          "x2": 199,
+          "y": 88,
+          "height": 6,
+          "label": {
+            "text": "**",
+            "x": 166,
+            "y": 83,
+            "fontSize": 16,
+            "fontWeight": 700,
+            "anchor": "middle"
+          }
+        },
+        {
+          "id": "bracket-center",
+          "type": "bracket",
+          "x1": 200,
+          "x2": 311,
+          "y": 68,
+          "height": 6,
+          "label": {
+            "text": "***",
+            "x": 256,
+            "y": 63,
+            "fontSize": 15,
+            "fontWeight": 700,
+            "anchor": "middle"
+          }
+        },
+        {
+          "id": "bracket-right",
+          "type": "bracket",
+          "x1": 314,
+          "x2": 388,
+          "y": 74,
+          "height": 6,
+          "label": {
+            "text": "*",
+            "x": 351,
+            "y": 69,
+            "fontSize": 16,
+            "fontWeight": 700,
+            "anchor": "middle"
+          }
+        }
+      ],
+      "provenance": [
+        {
+          "target": "axis",
+          "confidence": "high",
+          "note": "Axis positions and y ticks are visible and pixel-aligned."
+        },
+        {
+          "target": "x categories",
+          "confidence": "low",
+          "note": "Bottom category labels are mostly clipped in the provided crop, so semantic category names are placeholders."
+        },
+        {
+          "target": "significance brackets",
+          "confidence": "medium",
+          "note": "Bracket spans and labels were measured approximately from the visible source marks."
+        }
+      ]
+    }
+  ],
+  "rendering": {
+    "strategy": "SVG for all generated figure layers; optional QA image is separate.",
+    "layerOrder": [
+      "background",
+      "title",
+      "axes",
+      "ticks",
+      "divider",
+      "marks",
+      "annotations"
+    ],
+    "styleTokens": {
+      "axisStroke": "#111111",
+      "teal": "#147c78",
+      "orange": "#ee981c",
+      "divider": "#777777"
+    }
+  },
+  "validation": [
+    {
+      "id": "native-size",
+      "type": "canvasSize",
+      "expected": {
+        "width": 440,
+        "height": 210
+      }
+    },
+    {
+      "id": "point-count",
+      "type": "markCount",
+      "selector": "[data-mark-type='point-estimate']",
+      "expected": 5
+    },
+    {
+      "id": "bracket-count",
+      "type": "markCount",
+      "selector": "[data-mark-type='bracket']",
+      "expected": 3
+    },
+    {
+      "id": "qa-source-is-separate",
+      "type": "sourceUsage",
+      "rule": "Source raster may appear only in the reference-only image element, never as a generated SVG/canvas layer."
+    }
+  ],
+  "confidence": [
+    {
+      "target": "overall",
+      "confidence": "medium",
+      "note": "First-pass independent reconstruction emphasizing editable chart grammar over pixel-perfect source matching."
+    }
+  ]
+}

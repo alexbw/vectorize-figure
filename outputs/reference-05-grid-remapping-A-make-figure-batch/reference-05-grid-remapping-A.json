@@ -1,0 +1,186 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-05-grid-remapping-A",
+  "source": {
+    "path": "../../assets/reference/reference-05-grid-remapping-A-reference.png",
+    "usage": "QA-only reference image; not used by generated candidate layers.",
+    "notes": "Single cropped panel A showing phase precession: dense black spike points over a sloped orange spike-density ridge, cyan regression/reference lines, editable axes, correlation annotation, and log10 density colorbar."
+  },
+  "canvas": {"width": 514, "height": 500, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 16,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Roboto", "Noto Sans"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "First-pass manual typography. Source resembles bold publication sans for labels/title and regular sans for ticks."
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-a",
+      "bbox": {"x": 0, "y": 0, "width": 514, "height": 500},
+      "label": {
+        "id": "panel-label",
+        "text": "A",
+        "x": 24,
+        "y": 92,
+        "fontSize": 30,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 24, "y": 70, "width": 20, "height": 27},
+        "fit": "manual"
+      },
+      "title": {
+        "id": "panel-title",
+        "text": "Phase precession",
+        "x": 78,
+        "y": 94,
+        "fontSize": 23,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 78, "y": 77, "width": 179, "height": 23},
+        "fit": "manual"
+      },
+      "plot": {
+        "id": "phase-precession-plot",
+        "dataBbox": {"x": 82, "y": 122, "width": 325, "height": 318},
+        "axisBbox": {"x": 82, "y": 122, "width": 325, "height": 318},
+        "x": {
+          "scale": "linear",
+          "domain": [0, 200],
+          "ticks": [
+            {"value": 0, "label": "0"},
+            {"value": 50, "label": "50"},
+            {"value": 100, "label": "100"},
+            {"value": 150, "label": "150"},
+            {"value": 200, "label": "200"}
+          ],
+          "label": {"text": "Position on track (cm)", "x": 244, "y": 498, "fontSize": 19, "fontWeight": 400, "anchor": "middle"}
+        },
+        "y": {
+          "scale": "linear",
+          "domain": [0, 360],
+          "ticks": [
+            {"value": 0, "label": "0"},
+            {"value": 90, "label": "90"},
+            {"value": 180, "label": "180"},
+            {"value": 270, "label": "270"},
+            {"value": 360, "label": "360"}
+          ],
+          "label": {"text": "Spike phase (deg)", "x": 25, "y": 281, "fontSize": 20, "fontWeight": 400, "rotation": -90, "anchor": "middle"}
+        }
+      },
+      "data": {
+        "phaseField": {
+          "id": "phase-precession-cloud",
+          "seed": 72015,
+          "count": 9300,
+          "recipe": "correlated-mixture-scatter",
+          "xDomain": [0, 200],
+          "yDomain": [0, 360],
+          "mean": [96, 178],
+          "sd": [42, 72],
+          "correlation": -0.72,
+          "clipToPlot": true,
+          "uniformNoiseFraction": 0.14,
+          "centralRidge": {
+            "slopeDegPerCm": -1.52,
+            "interceptDeg": 330,
+            "phaseSd": 31,
+            "weight": 0.68
+          },
+          "densityGrid": {
+            "cols": 190,
+            "rows": 170,
+            "kernelX": 8.5,
+            "kernelY": 17,
+            "threshold": 0.18,
+            "opacity": 0.88
+          }
+        }
+      },
+      "marks": [
+        {
+          "id": "density-ridge",
+          "type": "imageRecipe",
+          "renderer": "canvas",
+          "sourceData": "phase-precession-cloud",
+          "colorScale": {
+            "id": "spike-density-log",
+            "type": "log10",
+            "domain": [1, 100],
+            "stops": [
+              {"value": 1, "color": "#fff7cf"},
+              {"value": 10, "color": "#c97922"},
+              {"value": 100, "color": "#1b0b05"}
+            ]
+          }
+        },
+        {
+          "id": "spike-scatter",
+          "type": "scatter",
+          "renderer": "canvas",
+          "sourceData": "phase-precession-cloud",
+          "radius": 1.35,
+          "fill": "#111111",
+          "opacity": 0.86
+        },
+        {
+          "id": "phase-regression-line",
+          "type": "line",
+          "renderer": "svg",
+          "coordinates": "data",
+          "points": [[6, 318], [195, 22]],
+          "stroke": "#37c7d3",
+          "strokeWidth": 3.1,
+          "opacity": 0.94
+        },
+        {
+          "id": "phase-dashed-guide",
+          "type": "line",
+          "renderer": "svg",
+          "coordinates": "data",
+          "points": [[0, 306], [200, 36]],
+          "stroke": "#37c7d3",
+          "strokeWidth": 1.6,
+          "dasharray": "6 7",
+          "opacity": 0.82
+        }
+      ],
+      "annotations": [
+        {"id": "corr-r", "type": "text", "text": "r = -0.72", "x": 342, "y": 143, "fontSize": 18, "fontStyle": "italic", "anchor": "start"},
+        {"id": "corr-p", "type": "text", "text": "p < 10^-6", "x": 342, "y": 163, "fontSize": 18, "fontStyle": "italic", "anchor": "start", "superscript": {"text": "-6", "start": 6}},
+        {
+          "id": "colorbar",
+          "type": "colorbar",
+          "x": 439,
+          "y": 231,
+          "width": 15,
+          "height": 160,
+          "scale": "spike-density-log",
+          "title": {"text": "Spike\ndensity", "x": 456, "y": 215, "fontSize": 14, "anchor": "middle"},
+          "ticks": [
+            {"value": 1, "label": "10^0"},
+            {"value": 10, "label": "10^1"},
+            {"value": 100, "label": "10^2"}
+          ]
+        }
+      ],
+      "provenance": [
+        "Axes and tick positions estimated from visible spines in the source crop.",
+        "Spike cloud and density ridge are synthetic, seeded recipes fitted to the visible negative phase-position relationship; individual source dots are not extracted.",
+        "The top page heading is cropped in the reference image and intentionally omitted from the reconstructed panel."
+      ],
+      "confidence": [
+        {"item": "axis geometry", "score": 0.82},
+        {"item": "density/scatter distribution", "score": 0.62},
+        {"item": "typography", "score": 0.7}
+      ]
+    }
+  ]
+}

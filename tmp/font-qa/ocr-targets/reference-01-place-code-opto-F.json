@@ -1,0 +1,274 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-01-place-code-opto-F-ocr-text-targets",
+  "source": {
+    "path": "/assets/reference/reference-01-place-code-opto-F-reference.png",
+    "usage": "QA-only OCR text target extraction for typography calibration."
+  },
+  "canvas": {
+    "width": 560,
+    "height": 512,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Helvetica, Arial, sans-serif",
+    "defaultSize": 13,
+    "color": "#111111"
+  },
+  "panels": [
+    {
+      "id": "ocr-text-targets",
+      "marks": [
+        {
+          "id": "ocr-01",
+          "type": "text",
+          "text": "F Example spatial rate map (same session)",
+          "x": 1,
+          "y": 33,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 22.5,
+          "fontWeight": 700,
+          "anchor": "start",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 1,
+            "y": 8,
+            "width": 343,
+            "height": 25
+          },
+          "targetWidth": 343,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 89.4
+        },
+        {
+          "id": "ocr-02",
+          "type": "text",
+          "text": "Optogenetic inhibition Rate",
+          "x": 307,
+          "y": 66,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 15.3,
+          "fontWeight": 700,
+          "anchor": "start",
+          "fill": "#009da3",
+          "sourceBox": {
+            "x": 307,
+            "y": 49,
+            "width": 216,
+            "height": 17
+          },
+          "targetWidth": 216,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 91.2
+        },
+        {
+          "id": "ocr-03",
+          "type": "text",
+          "text": "Control (no light) (ArchT, 532 nm) (H2)",
+          "x": 89,
+          "y": 88,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 16.2,
+          "fontWeight": 400,
+          "anchor": "start",
+          "fill": "#009da3",
+          "sourceBox": {
+            "x": 89,
+            "y": 70,
+            "width": 431,
+            "height": 18
+          },
+          "targetWidth": 431,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 90.4
+        },
+        {
+          "id": "ocr-04",
+          "type": "text",
+          "text": "5 Be. I 1",
+          "x": 0,
+          "y": 255,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 20.7,
+          "fontWeight": 400,
+          "anchor": "start",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 0,
+            "y": 232,
+            "width": 525,
+            "height": 23
+          },
+          "targetWidth": 525,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 68.6
+        },
+        {
+          "id": "ocr-05",
+          "type": "text",
+          "text": "4 i",
+          "x": 35,
+          "y": 270,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 18,
+          "fontWeight": 400,
+          "anchor": "middle",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 0,
+            "y": 250,
+            "width": 70,
+            "height": 20
+          },
+          "targetWidth": 70,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 55.4
+        },
+        {
+          "id": "ocr-06",
+          "type": "text",
+          "text": "> V\\ Se LP 05",
+          "x": 0,
+          "y": 291,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 17.1,
+          "fontWeight": 400,
+          "anchor": "start",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 0,
+            "y": 272,
+            "width": 539,
+            "height": 19
+          },
+          "targetWidth": 539,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 58.9
+        },
+        {
+          "id": "ocr-07",
+          "type": "text",
+          "text": "[leo 1",
+          "x": 149,
+          "y": 356,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 25.2,
+          "fontWeight": 400,
+          "anchor": "middle",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 64,
+            "y": 328,
+            "width": 170,
+            "height": 28
+          },
+          "targetWidth": 170,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 44.9
+        },
+        {
+          "id": "ocr-08",
+          "type": "text",
+          "text": "TT 04",
+          "x": 288,
+          "y": 366,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 13.5,
+          "fontWeight": 400,
+          "anchor": "start",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 288,
+            "y": 351,
+            "width": 249,
+            "height": 15
+          },
+          "targetWidth": 249,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 62.2
+        },
+        {
+          "id": "ocr-09",
+          "type": "text",
+          "text": "eee",
+          "x": 34,
+          "y": 386,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 18,
+          "fontWeight": 400,
+          "anchor": "start",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 34,
+            "y": 366,
+            "width": 215,
+            "height": 20
+          },
+          "targetWidth": 215,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 46.7
+        },
+        {
+          "id": "ocr-10",
+          "type": "text",
+          "text": "X position (cm) X position (cm)",
+          "x": 99,
+          "y": 435,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 18,
+          "fontWeight": 400,
+          "anchor": "start",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 99,
+            "y": 415,
+            "width": 320,
+            "height": 20
+          },
+          "targetWidth": 320,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 94.3
+        },
+        {
+          "id": "ocr-11",
+          "type": "text",
+          "text": "---- Arena boundary Example trajectory",
+          "x": 76,
+          "y": 474,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 24.3,
+          "fontWeight": 700,
+          "anchor": "start",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 76,
+            "y": 447,
+            "width": 360,
+            "height": 27
+          },
+          "targetWidth": 360,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 81.9
+        }
+      ]
+    }
+  ],
+  "confidence": [
+    {
+      "target": "ocr-text-targets",
+      "confidence": "medium",
+      "note": "Generated from Tesseract line OCR; noisy lines should be ignored in visual QA."
+    }
+  ]
+}

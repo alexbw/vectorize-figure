@@ -268,8 +268,27 @@
       return parts.length ? parts.join(' ') : undefined;
     }
 
+    function isProtectedTextRole(role) {
+      return [
+        'panel-label',
+        'panel-title',
+        'tick-label',
+        'x-axis-label',
+        'y-axis-label',
+        'axis-label',
+        'colorbar-label',
+        'colorbar-title',
+        'legend-label',
+        'phase-label',
+        'region-label',
+        'table-header',
+        'table-cell'
+      ].includes(role);
+    }
+
     function textNode(spec, defaults = {}) {
       const type = resolveTypography(spec, defaults);
+      const role = spec.role || 'text';
       const node = make('text', {
         x: spec.x,
         y: spec.y,
@@ -284,10 +303,13 @@
         'text-anchor': spec.anchor || (spec.align === 'center' ? 'middle' : 'start'),
         'dominant-baseline': spec.baseline || 'alphabetic',
         transform: composeTransform(spec),
-        'data-role': spec.role || 'text',
+        'data-role': role,
+        'data-protected-text': spec.protectedText || spec.protected_text || isProtectedTextRole(role) ? 'true' : undefined,
         'data-text-id': spec.id || undefined,
         'data-axis': spec.axis || undefined,
         'data-value': spec.value ?? undefined,
+        'data-label-offset-x': spec.labelOffsetX ?? spec.label_offset_x,
+        'data-label-offset-y': spec.labelOffsetY ?? spec.label_offset_y,
         'data-anchor-to': spec.anchorTo || spec.anchor_to || undefined,
         'data-fit': spec.fit || undefined,
         'data-target-width': spec.targetWidth ?? spec.target_width,
@@ -414,6 +436,205 @@
       if (rows.length) console.table(rows.map(row => ({id: row.id, ...row.delta})));
     }
 
+    function paddedBox(box, padding = 0) {
+      return {
+        x: box.x - padding,
+        y: box.y - padding,
+        width: box.width + padding * 2,
+        height: box.height + padding * 2
+      };
+    }
+
+    function boxesIntersect(a, b) {
+      return a.x < b.x + b.width &&
+        a.x + a.width > b.x &&
+        a.y < b.y + b.height &&
+        a.y + a.height > b.y;
+    }
+
+    function collectProtectedTextCollisions(svg, spec) {
+      const nodes = Array.from(svg.querySelectorAll('text[data-protected-text="true"]'));
+      const boxes = nodes.map(node => ({
+        node,
+        id: node.dataset.textId || node.textContent,
+        role: node.dataset.role || node.getAttribute('data-role') || 'text',
+        box: measuredBox(node)
+      })).filter(item => item.box && item.box.width && item.box.height);
+      const collisions = [];
+      for (let i = 0; i < boxes.length; i += 1) {
+        for (let j = i + 1; j < boxes.length; j += 1) {
+          const a = boxes[i];
+          const b = boxes[j];
+          if (boxesIntersect(paddedBox(a.box, 1.5), paddedBox(b.box, 1.5))) {
+            collisions.push({
+              a: {id: a.id, role: a.role, box: a.box},
+              b: {id: b.id, role: b.role, box: b.box}
+            });
+          }
+        }
+      }
+
+      const canvas = spec.canvas || {};
+      const clipped = [];
+      if (canvas.width && canvas.height) {
+        for (const item of boxes) {
+          const box = item.box;
+          if (box.x < -0.5 || box.y < -0.5 || box.x + box.width > canvas.width + 0.5 || box.y + box.height > canvas.height + 0.5) {
+            clipped.push({id: item.id, role: item.role, box});
+          }
+        }
+      }
+
+      svg.setAttribute('data-protected-text-validation', collisions.length || clipped.length ? 'mismatch' : 'ok');
+      if (collisions.length || clipped.length) {
+        console.warn('Protected text layout failure', {collisions, clipped});
+      }
+      return {collisions, clipped};
+    }
+
+    function normalizedBox(box) {
+      if (!box) return null;
+      const x = Number(box.x);
+      const y = Number(box.y);
+      const width = Number(box.width);
+      const height = Number(box.height);
+      if (![x, y, width, height].every(Number.isFinite)) return null;
+      return {x, y, width, height};
+    }
+
+    function collectExclusionZones(spec) {
+      const zones = [];
+      const zoneTypes = new Set(['plot', 'heatmapPlot', 'colorbar', 'orientationKey', 'legend', 'helperStrip', 'regionBand', 'phaseBand']);
+      function addZone(id, type, box, padding = 0, allow = []) {
+        const normalized = normalizedBox(box);
+        if (!normalized) return;
+        zones.push({
+          id,
+          type,
+          box: paddedBox(normalized, padding),
+          allow: new Set(allow)
+        });
+      }
+
+      for (const panel of spec.panels || []) {
+        if (panel.plot && panel.plot.bbox) {
+          addZone(`${panel.id || 'panel'}.plot`, 'plot', panel.plot.bbox, panel.plot.exclusionPaddingPx || panel.plot.exclusion_padding_px || 0, panel.plot.exclusionAllowTextIds || panel.plot.exclusion_allow_text_ids || []);
+        }
+        for (const item of panel.layoutObjects || []) {
+          const exclusion = item.exclusionZone || item.exclusion_zone;
+          if (exclusion || zoneTypes.has(item.type)) {
+            addZone(item.id || item.type, item.type, item.bbox || item.box, (exclusion && (exclusion.paddingPx || exclusion.padding_px)) || 0, (exclusion && (exclusion.allowTextIds || exclusion.allow_text_ids)) || []);
+          }
+        }
+        if (panel.colorbar) {
+          const exclusion = panel.colorbar.exclusionZone || panel.colorbar.exclusion_zone;
+          addZone(panel.colorbar.id || `${panel.id || 'panel'}.colorbar`, 'colorbar', panel.colorbar.bbox, (exclusion && (exclusion.paddingPx || exclusion.padding_px)) || 0, (exclusion && (exclusion.allowTextIds || exclusion.allow_text_ids)) || []);
+        }
+      }
+      return zones;
+    }
+
+    function collectTextExclusionCollisions(svg, spec) {
+      const zones = collectExclusionZones(spec);
+      const nodes = Array.from(svg.querySelectorAll('text[data-protected-text="true"]'));
+      const collisions = [];
+      for (const node of nodes) {
+        const box = measuredBox(node);
+        if (!box || !box.width || !box.height) continue;
+        const textId = node.dataset.textId || node.textContent;
+        for (const zone of zones) {
+          if (zone.allow.has(textId)) continue;
+          if (boxesIntersect(paddedBox(box, 1), zone.box)) {
+            collisions.push({
+              text: {id: textId, role: node.dataset.role || node.getAttribute('data-role') || 'text', box},
+              zone: {id: zone.id, type: zone.type, box: zone.box}
+            });
+          }
+        }
+      }
+      if (collisions.length) console.warn('Protected text intersects exclusion zone', collisions);
+      return collisions;
+    }
+
+    function pointInsideBox(x, y, box, epsilon = 0.5) {
+      return x >= box.x - epsilon &&
+        x <= box.x + box.width + epsilon &&
+        y >= box.y - epsilon &&
+        y <= box.y + box.height + epsilon;
+    }
+
+    function collectBoundedMarkEscapes(svg) {
+      const escapes = [];
+      for (const node of svg.querySelectorAll('[data-owner-box]')) {
+        if (node.dataset.clippedToOwner === 'true') continue;
+        let owner;
+        try {
+          owner = normalizedBox(JSON.parse(node.dataset.ownerBox));
+        } catch (error) {
+          owner = null;
+        }
+        if (!owner) {
+          escapes.push({id: node.dataset.markId || node.dataset.objectId || node.id || node.tagName, reason: 'missing-owner-box'});
+          continue;
+        }
+        const points = [];
+        if (node.tagName.toLowerCase() === 'line') {
+          points.push([Number(node.getAttribute('x1')), Number(node.getAttribute('y1'))]);
+          points.push([Number(node.getAttribute('x2')), Number(node.getAttribute('y2'))]);
+        } else {
+          const box = measuredBox(node);
+          if (box) {
+            points.push([box.x, box.y], [box.x + box.width, box.y], [box.x + box.width, box.y + box.height], [box.x, box.y + box.height]);
+          }
+        }
+        const outside = points.filter(([x, y]) => Number.isFinite(x) && Number.isFinite(y) && !pointInsideBox(x, y, owner));
+        if (outside.length) {
+          escapes.push({
+            id: node.dataset.markId || node.dataset.objectId || node.id || node.tagName,
+            ownerBox: owner,
+            outside
+          });
+        }
+      }
+      if (escapes.length) console.warn('Bounded mark escaped owner box', escapes);
+      return escapes;
+    }
+
+    function validateColorbarMetadata(spec) {
+      const missing = [];
+      for (const panel of spec.panels || []) {
+        for (const item of panel.layoutObjects || []) {
+          if (item.type !== 'colorbar') continue;
+          for (const field of ['orientation', 'tickSide']) {
+            if (!item[field]) missing.push({id: item.id, field});
+          }
+        }
+        if (panel.colorbar) {
+          for (const field of ['orientation', 'tickSide']) {
+            if (!panel.colorbar[field]) missing.push({id: panel.colorbar.id || `${panel.id}.colorbar`, field});
+          }
+        }
+      }
+      return {missing};
+    }
+
+    function collectLayoutQa(svg, spec) {
+      const protectedText = collectProtectedTextCollisions(svg, spec);
+      const textExclusionCollisions = collectTextExclusionCollisions(svg, spec);
+      const boundedMarkEscapes = collectBoundedMarkEscapes(svg);
+      const colorbars = validateColorbarMetadata(spec);
+      window.figureLayoutQa = {
+        id: spec.id,
+        protectedTextCollisions: protectedText.collisions,
+        clippedProtectedText: protectedText.clipped,
+        protectedTextExclusionCollisions: textExclusionCollisions,
+        boundedMarkEscapes,
+        colorbarMetadataMissing: colorbars.missing
+      };
+      svg.setAttribute('data-layout-validation', protectedText.collisions.length || protectedText.clipped.length || textExclusionCollisions.length || boundedMarkEscapes.length ? 'mismatch' : 'ok');
+      return window.figureLayoutQa;
+    }
+
     function drawQaOverlay(svg) {
       if (new URLSearchParams(window.location.search).get('qaOverlay') !== '1') return;
       const existing = svg.querySelector('[data-role="text-qa-overlay"]');
@@ -515,7 +736,8 @@
       node.type = 'application/json';
       node.textContent = JSON.stringify({
         textQa: window.figureTextQa || null,
-        fontQa: window.figureFontQa || null
+        fontQa: window.figureFontQa || null,
+        layoutQa: window.figureLayoutQa || null
       });
       document.body.appendChild(node);
     }
@@ -531,16 +753,31 @@
       svg.appendChild(make('line', {...axisStyle, x1: box.x, y1: box.y, x2: box.x, y2: box.y + box.height, 'data-role': 'y-axis'}));
 
       for (const tick of plot.x.ticks || []) {
-        const x = scales.x(tick.value);
-        const axisId = plot.x.id || 'x';
-        svg.appendChild(make('line', {...axisStyle, x1: x, y1: box.y + box.height, x2: x, y2: box.y + box.height + 6, 'data-role': 'axis-tick-mark', 'data-axis': axisId, 'data-value': tick.value}));
-        svg.appendChild(textNode({...tick, text: tick.label ?? String(tick.value), x, y: tick.y ?? box.y + box.height + 20, fontSize: tick.fontSize || tick.font_size || 12, anchor: tick.anchor || 'middle', role: 'tick-label', axis: axisId, value: tick.value}, defaults));
+          const x = scales.x(tick.value);
+          const axisId = plot.x.id || 'x';
+        const tickLength = tick.tickLength ?? tick.tick_length ?? plot.x.tickLength ?? plot.x.tick_length ?? 6;
+        const tickDirection = tick.tickDirection || tick.tick_direction || plot.x.tickDirection || plot.x.tick_direction || 'out';
+        const edgePolicy = tick.edgePolicy || tick.edge_policy || plot.x.edgeTickPolicy || plot.x.edge_tick_policy;
+        let labelX = tick.x ?? x;
+        let anchor = tick.anchor || 'middle';
+        if (edgePolicy === 'inside' && tick.value === plot.x.domain[0]) {
+          labelX = tick.x ?? x + 2;
+          anchor = tick.anchor || 'start';
+        } else if (edgePolicy === 'inside' && tick.value === plot.x.domain[1]) {
+          labelX = tick.x ?? x - 2;
+          anchor = tick.anchor || 'end';
+        }
+        const axisY = box.y + box.height;
+        svg.appendChild(make('line', {...axisStyle, x1: x, y1: axisY, x2: x, y2: axisY + (tickDirection === 'in' ? -tickLength : tickLength), 'data-role': 'axis-tick-mark', 'data-axis': axisId, 'data-value': tick.value, 'data-source-x': x, 'data-source-y': axisY}));
+        svg.appendChild(textNode({...tick, text: tick.label ?? String(tick.value), x: labelX, y: tick.y ?? axisY + 20, fontSize: tick.fontSize || tick.font_size || 12, anchor, role: 'tick-label', axis: axisId, value: tick.value, labelOffsetX: +(labelX - x).toFixed(3)}, defaults));
       }
 
       for (const tick of plot.y.ticks || []) {
         const y = scales.y(tick.value);
         const axisId = plot.y.id || 'y';
-        svg.appendChild(make('line', {...axisStyle, x1: box.x - 6, y1: y, x2: box.x, y2: y, 'data-role': 'axis-tick-mark', 'data-axis': axisId, 'data-value': tick.value}));
+        const tickLength = tick.tickLength ?? tick.tick_length ?? plot.y.tickLength ?? plot.y.tick_length ?? 6;
+        const tickDirection = tick.tickDirection || tick.tick_direction || plot.y.tickDirection || plot.y.tick_direction || 'out';
+        svg.appendChild(make('line', {...axisStyle, x1: box.x + (tickDirection === 'in' ? tickLength : -tickLength), y1: y, x2: box.x, y2: y, 'data-role': 'axis-tick-mark', 'data-axis': axisId, 'data-value': tick.value, 'data-source-x': box.x, 'data-source-y': y}));
         svg.appendChild(textNode({...tick, text: tick.label ?? String(tick.value), x: tick.x ?? box.x - 10, y: tick.y ?? y + 4, fontSize: tick.fontSize || tick.font_size || 12, anchor: tick.anchor || 'end', role: 'tick-label', axis: axisId, value: tick.value}, defaults));
       }
 
@@ -682,6 +919,7 @@
       }
       applyTextFitting(svg);
       collectTextQa(svg, spec);
+      collectLayoutQa(svg, spec);
       drawQaOverlay(svg);
       publishQaDom();
     });

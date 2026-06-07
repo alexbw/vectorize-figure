@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-07-cross-region-small-multiples-C reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+    h1 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #999999;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+    .surface, .reference {
+      position: absolute;
+      inset: 0;
+    }
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+    }
+    .reference-label {
+      display: none;
+      position: absolute;
+      left: 8px;
+      bottom: 8px;
+      padding: 3px 6px;
+      border: 1px solid #999999;
+      background: rgba(255, 255, 255, 0.9);
+      font-size: 11px;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    .show-reference .surface {
+      display: none;
+    }
+    .show-reference .reference,
+    .show-reference .reference-label {
+      display: block;
+    }
+    svg {
+      position: absolute;
+      inset: 0;
+      overflow: visible;
+    }
+    text {
+      dominant-baseline: alphabetic;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-07-cross-region-small-multiples-C</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA/reference-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA reference source image">
+      <div class="reference-label">QA reference only: source raster</div>
+    </div>
+  </main>
+
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function $(id) {
+      return document.getElementById(id);
+    }
+
+    function make(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function scale(domain, range, value) {
+      return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+    }
+
+    function transforms(plot) {
+      const box = plot.dataBbox;
+      return {
+        x: value => scale(plot.x.domain, [box.x, box.x + box.width], value),
+        y: value => scale(plot.y.domain, [box.y + box.height, box.y], value)
+      };
+    }
+
+    function smoothNoise(index, seriesIndex) {
+      return Math.sin(index * 1.73 + seriesIndex * 0.91) * 0.012 +
+        Math.sin(index * 4.41 + seriesIndex * 1.37) * 0.008;
+    }
+
+    function interpolate(points, x) {
+      for (let i = 0; i < points.length - 1; i++) {
+        const a = points[i];
+        const b = points[i + 1];
+        if (x >= a[0] && x <= b[0]) {
+          const t = (x - a[0]) / (b[0] - a[0]);
+          return a[1] + (b[1] - a[1]) * t;
+        }
+      }
+      return points[points.length - 1][1];
+    }
+
+    function sampledSeries(mark, seriesIndex) {
+      const result = [];
+      for (let x = 0; x <= 1000; x += 20) {
+        const base = interpolate(mark.points, x);
+        const taper = Math.min(1, Math.max(0, x / 120));
+        result.push([x, base + smoothNoise(result.length, seriesIndex) * taper]);
+      }
+      return result;
+    }
+
+    function pathFromPoints(points, map) {
+      return points.map((point, index) => {
+        const command = index === 0 ? 'M' : 'L';
+        return `${command}${map.x(point[0]).toFixed(1)},${map.y(point[1]).toFixed(1)}`;
+      }).join(' ');
+    }
+
+    function bandPath(points, halfWidth, map) {
+      const upper = points.map(point => [point[0], point[1] + halfWidth]);
+      const lower = points.slice().reverse().map(point => [point[0], point[1] - halfWidth]);
+      const top = upper.map((point, index) => `${index === 0 ? 'M' : 'L'}${map.x(point[0]).toFixed(1)},${map.y(point[1]).toFixed(1)}`).join(' ');
+      const bottom = lower.map(point => `L${map.x(point[0]).toFixed(1)},${map.y(point[1]).toFixed(1)}`).join(' ');
+      return `${top} ${bottom} Z`;
+    }
+
+    function addText(svg, textSpec, extra = {}) {
+      const attrs = {
+        id: textSpec.id,
+        x: textSpec.x,
+        y: textSpec.y,
+        'font-size': textSpec.fontSize || extra.fontSize || 12,
+        'font-weight': textSpec.fontWeight || extra.fontWeight || 400,
+        fill: textSpec.fill || extra.fill || '#111111',
+        'text-anchor': textSpec.anchor || extra.anchor || 'start',
+        'letter-spacing': 0
+      };
+      if (textSpec.rotate) {
+        attrs.transform = `rotate(${textSpec.rotate} ${textSpec.x} ${textSpec.y})`;
+      }
+      const text = make('text', attrs);
+      text.textContent = textSpec.text;
+      svg.appendChild(text);
+      return text;
+    }
+
+    function renderAxes(svg, panel) {
+      const plot = panel.plot;
+      const map = transforms(plot);
+      const axisGroup = make('g', {'data-layer': 'axes'});
+      svg.appendChild(axisGroup);
+
+      axisGroup.appendChild(make('line', {
+        id: plot.axes.yAxis.id,
+        x1: plot.axes.yAxis.line.x1,
+        y1: plot.axes.yAxis.line.y1,
+        x2: plot.axes.yAxis.line.x2,
+        y2: plot.axes.yAxis.line.y2,
+        stroke: '#202020',
+        'stroke-width': 1.1
+      }));
+      axisGroup.appendChild(make('line', {
+        id: plot.axes.xAxis.id,
+        x1: plot.axes.xAxis.line.x1,
+        y1: plot.axes.xAxis.line.y1,
+        x2: plot.axes.xAxis.line.x2,
+        y2: plot.axes.xAxis.line.y2,
+        stroke: '#202020',
+        'stroke-width': 1.1
+      }));
+
+      for (const tick of plot.y.ticks) {
+        const y = map.y(tick.value);
+        axisGroup.appendChild(make('line', {
+          class: 'tick y-tick',
+          'data-axis': 'y',
+          'data-value': tick.value,
+          x1: plot.axes.yAxis.line.x1 - plot.axes.yAxis.tickLength,
+          y1: y,
+          x2: plot.axes.yAxis.line.x1,
+          y2: y,
+          stroke: '#202020',
+          'stroke-width': 1
+        }));
+        const label = make('text', {
+          class: 'tick-label y-tick-label',
+          'data-axis': 'y',
+          'data-value': tick.value,
+          x: plot.axes.yAxis.line.x1 - 9,
+          y: y + 4,
+          'font-size': 12,
+          fill: '#111111',
+          'text-anchor': 'end'
+        });
+        label.textContent = tick.label;
+        axisGroup.appendChild(label);
+      }
+
+      for (const tick of plot.x.ticks) {
+        const x = map.x(tick.value);
+        axisGroup.appendChild(make('line', {
+          class: 'tick x-tick',
+          'data-axis': 'x',
+          'data-value': tick.value,
+          x1: x,
+          y1: plot.axes.xAxis.line.y1,
+          x2: x,
+          y2: plot.axes.xAxis.line.y1 + plot.axes.xAxis.tickLength,
+          stroke: '#202020',
+          'stroke-width': 1
+        }));
+        const label = make('text', {
+          class: 'tick-label x-tick-label',
+          'data-axis': 'x',
+          'data-value': tick.value,
+          x,
+          y: plot.axes.xAxis.line.y1 + 19,
+          'font-size': 12,
+          fill: '#111111',
+          'text-anchor': 'middle'
+        });
+        label.textContent = tick.label;
+        axisGroup.appendChild(label);
+      }
+
+      addText(svg, plot.x.label);
+      addText(svg, plot.y.label);
+
+      for (const ref of plot.referenceLines || []) {
+        if (ref.type === 'text') {
+          addText(svg, ref);
+        } else if (ref.axis === 'y') {
+          const y = map.y(ref.value);
+          svg.appendChild(make('line', {
+            id: ref.id,
+            x1: plot.dataBbox.x,
+            y1: y,
+            x2: plot.dataBbox.x + plot.dataBbox.width,
+            y2: y,
+            stroke: ref.stroke,
+            'stroke-width': ref.strokeWidth,
+            'stroke-dasharray': ref.dasharray
+          }));
+        }
+      }
+    }
+
+    function renderMarks(svg, panel) {
+      const map = transforms(panel.plot);
+      const group = make('g', {'data-layer': 'series'});
+      svg.appendChild(group);
+      panel.marks.forEach((mark, index) => {
+        const points = sampledSeries(mark, index);
+        if (mark.band) {
+          group.appendChild(make('path', {
+            id: `${mark.id}-band`,
+            'data-series': mark.id,
+            d: bandPath(points, mark.band.halfWidth, map),
+            fill: mark.band.fill,
+            opacity: mark.band.opacity,
+            stroke: mark.band.stroke
+          }));
+        }
+        group.appendChild(make('path', {
+          id: `${mark.id}-line`,
+          'data-series': mark.id,
+          d: pathFromPoints(points, map),
+          fill: 'none',
+          stroke: mark.stroke,
+          'stroke-width': mark.strokeWidth,
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round'
+        }));
+      });
+    }
+
+    function renderLegend(svg, panel) {
+      const legend = panel.legend;
+      const seriesById = Object.fromEntries(panel.marks.map(mark => [mark.id, mark]));
+      const group = make('g', {id: legend.id, 'data-layer': 'legend'});
+      svg.appendChild(group);
+      legend.items.forEach((item, index) => {
+        const mark = seriesById[item.series];
+        const y = legend.y + index * legend.rowHeight;
+        group.appendChild(make('line', {
+          x1: legend.x,
+          y1: y,
+          x2: legend.x + legend.lineLength,
+          y2: y,
+          stroke: mark.stroke,
+          'stroke-width': 1.3
+        }));
+        const label = make('text', {
+          x: legend.x + legend.lineLength + 6,
+          y: y + 4,
+          fill: mark.stroke,
+          'font-size': legend.fontSize,
+          'text-anchor': 'start'
+        });
+        label.textContent = item.label;
+        group.appendChild(label);
+      });
+    }
+
+    function render(spec) {
+      $('title').textContent = spec.id;
+      $('frame').style.width = `${spec.canvas.width}px`;
+      $('frame').style.height = `${spec.canvas.height}px`;
+      $('reference').src = spec.source.path;
+
+      const surface = $('surface');
+      surface.replaceChildren();
+      const svg = make('svg', {
+        xmlns: SVG_NS,
+        width: spec.canvas.width,
+        height: spec.canvas.height,
+        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
+        role: 'img',
+        'aria-label': `${spec.id} generated reconstruction`
+      });
+      svg.style.background = spec.canvas.background;
+      svg.style.fontFamily = spec.typography.fontFamily;
+      surface.appendChild(svg);
+
+      const panel = spec.panels[0];
+      addText(svg, panel.label);
+      addText(svg, panel.title);
+      renderAxes(svg, panel);
+      renderMarks(svg, panel);
+      renderLegend(svg, panel);
+    }
+
+    async function loadSpec() {
+      const response = await fetch('reference-07-cross-region-small-multiples-C.json');
+      if (!response.ok) throw new Error(`Unable to load JSON spec: ${response.status}`);
+      return response.json();
+    }
+
+    function setMode(mode) {
+      const reference = mode === 'reference';
+      $('frame').classList.toggle('show-reference', reference);
+      $('referenceButton').classList.toggle('active', reference);
+      $('generatedButton').classList.toggle('active', !reference);
+    }
+
+    $('generatedButton').addEventListener('click', () => setMode('generated'));
+    $('referenceButton').addEventListener('click', () => setMode('reference'));
+    loadSpec().then(render).catch(error => {
+      console.error(error);
+      $('surface').textContent = error.message;
+    });
+  </script>
+</body>
+</html>

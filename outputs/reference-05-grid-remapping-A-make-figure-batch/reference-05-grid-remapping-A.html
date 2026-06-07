@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-05-grid-remapping-A reconstruction</title>
+  <style>
+    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #cfcfcf; }
+    h1 { margin: 0; font-size: 16px; font-weight: 700; }
+    .note { margin-top: 3px; font-size: 12px; color: #555555; }
+    .toggle { display: inline-flex; border: 1px solid #aaaaaa; border-radius: 4px; overflow: hidden; }
+    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
+    .toggle button.active { background: #111111; color: #ffffff; }
+    main { min-height: calc(100vh - 48px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
+    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
+    .surface, .reference { position: absolute; inset: 0; }
+    .reference { display: none; width: 100%; height: 100%; object-fit: contain; background: #ffffff; }
+    .show-reference .surface { display: none; }
+    .show-reference .reference { display: block; }
+    svg, canvas { position: absolute; inset: 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-05-grid-remapping-A</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA reference source image">
+    </div>
+  </main>
+  <script>
+    const SVG_NS = "http://www.w3.org/2000/svg";
+    const JSON_PATH = "reference-05-grid-remapping-A.json";
+    function $(id) { return document.getElementById(id); }
+    function make(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) if (value !== undefined && value !== null) node.setAttribute(key, value);
+      return node;
+    }
+    function mulberry32(seed) {
+      return function() {
+        seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+        let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+    function normal(rand) {
+      const u = Math.max(rand(), 1e-9);
+      const v = Math.max(rand(), 1e-9);
+      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+    function xScale(plot, value) {
+      const [min, max] = plot.x.domain;
+      return plot.dataBbox.x + ((value - min) / (max - min)) * plot.dataBbox.width;
+    }
+    function yScale(plot, value) {
+      const [min, max] = plot.y.domain;
+      return plot.dataBbox.y + plot.dataBbox.height - ((value - min) / (max - min)) * plot.dataBbox.height;
+    }
+    function text(svg, obj) {
+      if (obj.superscript) return richSupText(svg, obj);
+      const node = make("text", {
+        x: obj.x, y: obj.y, fill: obj.fill || "#111111", "font-size": obj.fontSize,
+        "font-weight": obj.fontWeight || 400, "font-style": obj.fontStyle || "normal",
+        "text-anchor": obj.anchor || "start", "dominant-baseline": obj.baseline || "alphabetic",
+        transform: obj.rotation ? `rotate(${obj.rotation} ${obj.x} ${obj.y})` : null
+      });
+      node.textContent = obj.text;
+      svg.appendChild(node);
+      return node;
+    }
+    function richSupText(svg, obj) {
+      const node = make("text", {
+        x: obj.x, y: obj.y, fill: obj.fill || "#111111", "font-size": obj.fontSize,
+        "font-weight": obj.fontWeight || 400, "font-style": obj.fontStyle || "normal",
+        "text-anchor": obj.anchor || "start"
+      });
+      const caret = obj.text.indexOf("^");
+      const base = caret >= 0 ? obj.text.slice(0, caret) : obj.text;
+      const supText = caret >= 0 ? obj.text.slice(caret + 1) : obj.superscript.text;
+      node.append(base);
+      const sup = make("tspan", {"baseline-shift": "super", "font-size": Math.round(obj.fontSize * 0.62)});
+      sup.textContent = supText;
+      node.appendChild(sup);
+      svg.appendChild(node);
+      return node;
+    }
+    function linePath(plot, points) {
+      return points.map((pt, i) => `${i ? "L" : "M"} ${xScale(plot, pt[0]).toFixed(2)} ${yScale(plot, pt[1]).toFixed(2)}`).join(" ");
+    }
+    function interpolateColor(stops, t) {
+      const hexToRgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+      const rgbToHex = (rgb) => "#" + rgb.map((v) => clamp(Math.round(v), 0, 255).toString(16).padStart(2, "0")).join("");
+      const scaled = t * (stops.length - 1);
+      const i = Math.min(stops.length - 2, Math.floor(scaled));
+      const local = scaled - i;
+      const a = hexToRgb(stops[i].color);
+      const b = hexToRgb(stops[i + 1].color);
+      return rgbToHex(a.map((v, idx) => v + (b[idx] - v) * local));
+    }
+    function generatePoints(field) {
+      const rand = mulberry32(field.seed);
+      const points = [];
+      const covTerm = Math.sqrt(1 - field.correlation * field.correlation);
+      for (let i = 0; i < field.count; i++) {
+        let x;
+        let y;
+        if (rand() < field.uniformNoiseFraction) {
+          x = field.xDomain[0] + rand() * (field.xDomain[1] - field.xDomain[0]);
+          y = field.yDomain[0] + rand() * (field.yDomain[1] - field.yDomain[0]);
+        } else if (rand() < field.centralRidge.weight) {
+          x = field.mean[0] + field.sd[0] * normal(rand);
+          y = field.centralRidge.interceptDeg + field.centralRidge.slopeDegPerCm * x + field.centralRidge.phaseSd * normal(rand);
+        } else {
+          const zx = normal(rand);
+          const zy = field.correlation * zx + covTerm * normal(rand);
+          x = field.mean[0] + field.sd[0] * zx;
+          y = field.mean[1] + field.sd[1] * zy;
+        }
+        if (field.clipToPlot && x >= field.xDomain[0] && x <= field.xDomain[1] && y >= field.yDomain[0] && y <= field.yDomain[1]) points.push({x, y});
+      }
+      return points;
+    }
+    function renderDensity(ctx, spec, panel, plot, field, colorScale) {
+      const grid = field.densityGrid;
+      const counts = new Float32Array(grid.cols * grid.rows);
+      const points = generatePoints(field);
+      for (const p of points) {
+        const gx = Math.floor((p.x - field.xDomain[0]) / (field.xDomain[1] - field.xDomain[0]) * (grid.cols - 1));
+        const gy = Math.floor((field.yDomain[1] - p.y) / (field.yDomain[1] - field.yDomain[0]) * (grid.rows - 1));
+        const rx = Math.ceil(grid.kernelX / (plot.dataBbox.width / grid.cols));
+        const ry = Math.ceil(grid.kernelY / (plot.dataBbox.height / grid.rows));
+        for (let yy = -ry; yy <= ry; yy++) {
+          for (let xx = -rx; xx <= rx; xx++) {
+            const x = gx + xx;
+            const y = gy + yy;
+            if (x < 0 || y < 0 || x >= grid.cols || y >= grid.rows) continue;
+            const weight = Math.exp(-0.5 * ((xx / rx) ** 2 + (yy / ry) ** 2) * 5.2);
+            counts[y * grid.cols + x] += weight;
+          }
+        }
+      }
+      let max = 0;
+      for (const v of counts) max = Math.max(max, v);
+      const cellW = plot.dataBbox.width / grid.cols;
+      const cellH = plot.dataBbox.height / grid.rows;
+      ctx.save();
+      ctx.globalAlpha = grid.opacity;
+      for (let y = 0; y < grid.rows; y++) {
+        for (let x = 0; x < grid.cols; x++) {
+          const v = counts[y * grid.cols + x] / max;
+          if (v < grid.threshold) continue;
+          ctx.fillStyle = interpolateColor(colorScale.stops, clamp((Math.log10(1 + 99 * v) / 2), 0, 1));
+          ctx.fillRect(plot.dataBbox.x + x * cellW, plot.dataBbox.y + y * cellH, cellW + 0.8, cellH + 0.8);
+        }
+      }
+      ctx.restore();
+      return points;
+    }
+    function drawScatter(ctx, plot, points, mark) {
+      ctx.save();
+      ctx.fillStyle = mark.fill;
+      ctx.globalAlpha = mark.opacity;
+      for (const p of points) {
+        ctx.beginPath();
+        ctx.arc(xScale(plot, p.x), yScale(plot, p.y), mark.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+    function renderColorbar(svg, ann, colorScale) {
+      const defs = make("defs");
+      const grad = make("linearGradient", {id: "colorbar-gradient", x1: "0%", y1: "100%", x2: "0%", y2: "0%"});
+      colorScale.stops.forEach((stop, i) => grad.appendChild(make("stop", {offset: `${i / (colorScale.stops.length - 1) * 100}%`, "stop-color": stop.color})));
+      defs.appendChild(grad);
+      svg.appendChild(defs);
+      svg.appendChild(make("rect", {x: ann.x, y: ann.y, width: ann.width, height: ann.height, fill: "url(#colorbar-gradient)", stroke: "#111111", "stroke-width": 0.8}));
+      const lines = ann.title.text.split("\n");
+      lines.forEach((line, i) => text(svg, {text: line, x: ann.title.x, y: ann.title.y - 14 + i * 16, fontSize: ann.title.fontSize, anchor: ann.title.anchor}));
+      for (const tick of ann.ticks) {
+        const t = (Math.log10(tick.value) - Math.log10(colorScale.domain[0])) / (Math.log10(colorScale.domain[1]) - Math.log10(colorScale.domain[0]));
+        const y = ann.y + ann.height - t * ann.height;
+        svg.appendChild(make("line", {x1: ann.x + ann.width, y1: y, x2: ann.x + ann.width + 5, y2: y, stroke: "#111111", "stroke-width": 1}));
+        const node = make("text", {x: ann.x + ann.width + 10, y: y + 5, "font-size": 16, fill: "#111111"});
+        node.append("10");
+        const sup = make("tspan", {"baseline-shift": "super", "font-size": 10});
+        sup.textContent = tick.label.slice(3);
+        node.appendChild(sup);
+        svg.appendChild(node);
+      }
+    }
+    function render(spec) {
+      $("title").textContent = spec.id;
+      const frame = $("frame");
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      $("reference").src = spec.source.path;
+      const surface = $("surface");
+      surface.innerHTML = "";
+      const canvas = document.createElement("canvas");
+      canvas.width = spec.canvas.width;
+      canvas.height = spec.canvas.height;
+      surface.appendChild(canvas);
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = spec.canvas.background;
+      ctx.fillRect(0, 0, spec.canvas.width, spec.canvas.height);
+      const svg = make("svg", {width: spec.canvas.width, height: spec.canvas.height, viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`});
+      svg.style.fontFamily = spec.typography.fontFamily;
+      surface.appendChild(svg);
+      const panel = spec.panels[0];
+      const plot = panel.plot;
+      const field = panel.data.phaseField;
+      const densityMark = panel.marks.find((m) => m.id === "density-ridge");
+      const scatterMark = panel.marks.find((m) => m.id === "spike-scatter");
+      const points = renderDensity(ctx, spec, panel, plot, field, densityMark.colorScale);
+      drawScatter(ctx, plot, points, scatterMark);
+      text(svg, panel.label);
+      text(svg, panel.title);
+      const axis = plot.axisBbox;
+      svg.appendChild(make("line", {x1: axis.x, y1: axis.y + axis.height, x2: axis.x + axis.width, y2: axis.y + axis.height, stroke: "#111111", "stroke-width": 1.4, "data-axis": "x"}));
+      svg.appendChild(make("line", {x1: axis.x, y1: axis.y, x2: axis.x, y2: axis.y + axis.height, stroke: "#111111", "stroke-width": 1.4, "data-axis": "y"}));
+      for (const tick of plot.x.ticks) {
+        const x = xScale(plot, tick.value);
+        svg.appendChild(make("line", {x1: x, y1: axis.y + axis.height, x2: x, y2: axis.y + axis.height + 7, stroke: "#111111", "stroke-width": 1.2, "data-axis": "x", "data-value": tick.value}));
+        text(svg, {text: tick.label, x, y: axis.y + axis.height + 28, fontSize: 18, anchor: "middle"});
+      }
+      for (const tick of plot.y.ticks) {
+        const y = yScale(plot, tick.value);
+        svg.appendChild(make("line", {x1: axis.x - 7, y1: y, x2: axis.x, y2: y, stroke: "#111111", "stroke-width": 1.2, "data-axis": "y", "data-value": tick.value}));
+        text(svg, {text: tick.label, x: axis.x - 13, y: y + 6, fontSize: 18, anchor: "end"});
+      }
+      text(svg, plot.x.label);
+      text(svg, plot.y.label);
+      for (const mark of panel.marks.filter((m) => m.type === "line")) {
+        svg.appendChild(make("path", {d: linePath(plot, mark.points), fill: "none", stroke: mark.stroke, "stroke-width": mark.strokeWidth, "stroke-dasharray": mark.dasharray, opacity: mark.opacity, "data-mark-id": mark.id}));
+      }
+      for (const ann of panel.annotations) {
+        if (ann.type === "colorbar") renderColorbar(svg, ann, densityMark.colorScale);
+        else text(svg, ann);
+      }
+    }
+    async function init() {
+      const response = await fetch(JSON_PATH);
+      render(await response.json());
+      $("generatedButton").addEventListener("click", () => {
+        $("frame").classList.remove("show-reference");
+        $("generatedButton").classList.add("active");
+        $("referenceButton").classList.remove("active");
+      });
+      $("referenceButton").addEventListener("click", () => {
+        $("frame").classList.add("show-reference");
+        $("referenceButton").classList.add("active");
+        $("generatedButton").classList.remove("active");
+      });
+    }
+    init().catch((error) => {
+      document.body.append(`Failed to render reconstruction: ${error.message}`);
+      throw error;
+    });
+  </script>
+</body>
+</html>

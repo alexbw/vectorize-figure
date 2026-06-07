@@ -1,0 +1,250 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-07-cross-region-small-multiples-I",
+  "source": {
+    "path": "../../assets/reference/reference-07-cross-region-small-multiples-I-reference.png",
+    "usage": "QA reference only; not used by the generated candidate layer.",
+    "nativeWidth": 991,
+    "nativeHeight": 319,
+    "notes": "Cropped panel I with five cross-region residual heatmaps. Upper edge contains clipped remnants from neighboring panels."
+  },
+  "canvas": {
+    "width": 991,
+    "height": 319,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial Narrow, Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial Narrow", "Arial", "Helvetica", "Roboto Condensed", "Noto Sans"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "First-pass uses condensed system sans-serif sizing. Source text boxes were estimated visually from the native crop."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "residual-position-scale",
+      "type": "linear",
+      "domain": [0, 300],
+      "orientation": "x",
+      "notes": "Shared horizontal position scale for all five residual heatmaps."
+    },
+    {
+      "id": "sorted-cell-scale",
+      "type": "ordinalRows",
+      "domain": ["1", "N"],
+      "orientation": "y",
+      "notes": "Rows represent sorted cells; row count is procedural and region-specific."
+    },
+    {
+      "id": "residual-color-scale",
+      "type": "divergingColorScale",
+      "domain": [-1, 0, 1],
+      "range": ["#1547ff", "#ffffff", "#ff4a24"],
+      "meaning": "data minus model residual"
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-i",
+      "bbox": {"x": 0, "y": 0, "width": 991, "height": 319},
+      "label": {
+        "id": "panel-i-label",
+        "text": "I",
+        "x": 8,
+        "y": 62,
+        "fontSize": 22,
+        "fontWeight": 700,
+        "sourceBox": {"x": 7, "y": 45, "width": 8, "height": 19},
+        "fit": "source-calibrated position"
+      },
+      "title": {
+        "id": "panel-i-title",
+        "text": "Model residuals (data - model)",
+        "x": 32,
+        "y": 62,
+        "fontSize": 18,
+        "fontWeight": 700,
+        "targetWidth": 230,
+        "sourceBox": {"x": 32, "y": 48, "width": 230, "height": 18},
+        "fit": "source-calibrated position"
+      },
+      "plot": {
+        "x": {
+          "scale": "linear",
+          "domain": [0, 300],
+          "ticks": [
+            {"value": 0, "label": "0"},
+            {"value": 150, "label": "150"},
+            {"value": 300, "label": "300"}
+          ],
+          "label": {"text": "Position (cm)", "fontSize": 14}
+        },
+        "y": {
+          "scale": "sortedRows",
+          "ticks": [
+            {"value": "top", "label": "1"},
+            {"value": "bottom", "label": "N"}
+          ],
+          "label": {
+            "text": "Cells (sorted)",
+            "x": 18,
+            "y": 155,
+            "fontSize": 14,
+            "rotation": -90,
+            "textAnchor": "middle",
+            "sourceBox": {"x": 8, "y": 109, "width": 15, "height": 92}
+          }
+        }
+      },
+      "layoutObjects": [
+        {
+          "id": "top-clipped-neighbor-axis-fragments",
+          "type": "adjacentPanelFragments",
+          "description": "Cropped labels and ticks from panels above the crop; retained as editable text fragments for first-pass visual context.",
+          "texts": [
+            {"text": "-1.0", "x": 26, "y": 3, "fontSize": 13},
+            {"text": "-0.5", "x": 91, "y": 3, "fontSize": 13},
+            {"text": "0.5", "x": 226, "y": 3, "fontSize": 13},
+            {"text": "1.0", "x": 291, "y": 3, "fontSize": 13},
+            {"text": "Cohen's d", "x": 165, "y": 25, "fontSize": 14, "textAnchor": "middle"},
+            {"text": "Time (s)", "x": 645, "y": 25, "fontSize": 14, "textAnchor": "middle"},
+            {"text": "0", "x": 849, "y": 9, "fontSize": 13, "textAnchor": "middle"},
+            {"text": "0.2", "x": 900, "y": 9, "fontSize": 13, "textAnchor": "middle"},
+            {"text": "0.4", "x": 950, "y": 9, "fontSize": 13, "textAnchor": "middle"},
+            {"text": "Variance explained", "x": 948, "y": 31, "fontSize": 13, "textAnchor": "middle"}
+          ]
+        },
+        {
+          "id": "region-small-multiples",
+          "type": "smallMultipleResidualHeatmaps",
+          "sharedAxes": ["residual-position-scale", "sorted-cell-scale"],
+          "panels": [
+            {
+              "id": "ca1-residuals",
+              "region": "CA1",
+              "title": {"text": "CA1", "x": 121, "y": 89, "fontSize": 16, "color": "#0047bd", "textAnchor": "middle"},
+              "plotBbox": {"x": 42, "y": 100, "width": 157, "height": 112},
+              "rowCount": 92,
+              "recipe": {"seed": 1101, "dominantSign": -0.12, "centerPeak": 0.56, "verticalFrequency": 7.2, "noise": 0.42, "speckleDensity": 0.14}
+            },
+            {
+              "id": "ca3-residuals",
+              "region": "CA3",
+              "title": {"text": "CA3", "x": 315, "y": 89, "fontSize": 16, "color": "#0047bd", "textAnchor": "middle"},
+              "plotBbox": {"x": 227, "y": 100, "width": 164, "height": 112},
+              "rowCount": 88,
+              "recipe": {"seed": 1303, "dominantSign": -0.34, "centerPeak": -0.38, "verticalFrequency": 6.7, "noise": 0.39, "speckleDensity": 0.15}
+            },
+            {
+              "id": "dg-residuals",
+              "region": "DG",
+              "title": {"text": "DG", "x": 507, "y": 89, "fontSize": 16, "color": "#11852b", "textAnchor": "middle"},
+              "plotBbox": {"x": 422, "y": 100, "width": 166, "height": 112},
+              "rowCount": 82,
+              "recipe": {"seed": 1707, "dominantSign": -0.05, "centerPeak": 0.16, "verticalFrequency": 8.8, "noise": 0.47, "speckleDensity": 0.18}
+            },
+            {
+              "id": "pfc-residuals",
+              "region": "PFC",
+              "title": {"text": "PFC", "x": 706, "y": 89, "fontSize": 16, "color": "#ff5a10", "textAnchor": "middle"},
+              "plotBbox": {"x": 617, "y": 100, "width": 166, "height": 112},
+              "rowCount": 94,
+              "recipe": {"seed": 1909, "dominantSign": 0.03, "centerPeak": 0.48, "verticalFrequency": 6.1, "noise": 0.44, "speckleDensity": 0.16}
+            },
+            {
+              "id": "rsc-residuals",
+              "region": "RSC",
+              "title": {"text": "RSC", "x": 889, "y": 89, "fontSize": 16, "color": "#ff0000", "textAnchor": "middle"},
+              "plotBbox": {"x": 812, "y": 100, "width": 165, "height": 112},
+              "rowCount": 78,
+              "recipe": {"seed": 2303, "dominantSign": 0.05, "centerPeak": 0.25, "verticalFrequency": 7.7, "noise": 0.38, "speckleDensity": 0.13}
+            }
+          ]
+        }
+      ],
+      "marks": [
+        {
+          "id": "residual-heatmap-fields",
+          "type": "heatmap",
+          "renderer": "canvas",
+          "usesTransform": ["residual-position-scale", "sorted-cell-scale"],
+          "colorScaleRef": "residual-color-scale",
+          "dataRecipeRef": "region-small-multiples.panels[].recipe",
+          "interpolation": "none",
+          "cellShape": "irregular horizontal residual streaks",
+          "editableParameters": ["seed", "dominantSign", "centerPeak", "verticalFrequency", "noise", "speckleDensity", "rowCount"]
+        },
+        {
+          "id": "small-multiple-axes",
+          "type": "axes",
+          "renderer": "svg",
+          "usesTransform": ["residual-position-scale", "sorted-cell-scale"],
+          "xTicks": [0, 150, 300],
+          "yTicks": ["1", "N"],
+          "axisStroke": "#111111",
+          "frameStroke": "#333333"
+        }
+      ],
+      "annotations": [
+        {
+          "id": "region-titles",
+          "type": "panelTitles",
+          "dataRef": "region-small-multiples.panels[].title"
+        },
+        {
+          "id": "shared-y-axis-label",
+          "type": "axisLabel",
+          "axis": "sorted-cell-scale",
+          "textRef": "panel-i.plot.y.label"
+        }
+      ],
+      "provenance": [
+        {"target": "heatmap fields", "confidence": "medium", "note": "Generated from seeded semantic residual recipes matching visible density, streak direction, and red/blue balance; no source pixels are rendered."},
+        {"target": "panel geometry", "confidence": "medium", "note": "Plot boxes, tick labels, and titles were source-calibrated by visual inspection of the 991 by 319 crop."},
+        {"target": "row counts", "confidence": "low", "note": "The source shows many sorted cells but exact counts are not recoverable from the raster; row counts are editable approximations."}
+      ]
+    }
+  ],
+  "rendering": {
+    "strategy": "hybrid-canvas-svg-dom",
+    "generatedLayers": ["background", "procedural-canvas-heatmaps", "svg-axes", "svg-text", "qa-reference-toggle"],
+    "styleTokens": {
+      "axisStroke": "#111111",
+      "frameStroke": "#333333",
+      "blueResidual": "#1547ff",
+      "redResidual": "#ff4a24",
+      "neutralResidual": "#ffffff"
+    },
+    "qaReference": {
+      "enabled": true,
+      "separateFromCandidate": true,
+      "label": "QA reference image (source raster, not part of generated candidate)"
+    }
+  },
+  "validation": {
+    "expectedCounts": {
+      "smallMultiples": 5,
+      "xTicksPerPanel": 3,
+      "yTickLabelsOnFirstPanel": 2,
+      "regionTitles": 5,
+      "positionAxisLabels": 5
+    },
+    "constraints": [
+      "Generated candidate must not render the source image as a visual layer.",
+      "Each small multiple uses the same 0 to 300 position scale.",
+      "Axes and labels are editable SVG text/line objects.",
+      "Residual fields are procedural and parameterized by region recipe objects."
+    ],
+    "forbiddenGeneratedSourceReuse": ["drawImage", "background-image", "source raster as candidate layer"]
+  },
+  "confidence": [
+    {"target": "overall", "confidence": "medium", "note": "Independent first-pass reconstruction for visual inspection, tuned to layout and visual grammar rather than exact pixel data."},
+    {"target": "top clipped fragments", "confidence": "low", "note": "Only the visible cropped remnants are approximated; they are not part of the main panel I grammar."}
+  ]
+}

@@ -142,20 +142,60 @@
       return node;
     }
 
-    function textNode(spec, defaults = {}) {
+    function textNode(rawSpec, defaults = {}) {
+      const spec = calibratedText(rawSpec);
+      const fontSize = spec.fontSize || defaults.defaultSize || 14;
+      const x = spec.overlayX !== undefined ? spec.overlayX : spec.x;
+      const y = spec.overlayY !== undefined ? spec.overlayY : spec.y;
       const node = svgNode('text', {
-        x: spec.x,
-        y: spec.y,
+        x,
+        y,
         fill: spec.fill || spec.color || defaults.color || '#111111',
-        'font-size': spec.fontSize || defaults.defaultSize || 14,
+        'font-family': spec.fontFamily || defaults.fontFamily || 'Arial, Helvetica, sans-serif',
+        'font-size': fontSize,
         'font-weight': spec.fontWeight || 400,
         'text-anchor': spec.anchor || 'start',
         'dominant-baseline': spec.baseline || 'alphabetic',
-        transform: spec.rotation ? `rotate(${spec.rotation} ${spec.x} ${spec.y})` : undefined,
-        'data-role': spec.role || 'text'
+        transform: spec.rotation ? `rotate(${spec.rotation} ${x} ${y})` : undefined,
+        'data-role': spec.role || 'text',
+        'data-text-id': spec.id,
+        'data-fit': spec.fit,
+        'data-target-width': spec.targetWidth,
+        'data-min-scale': spec.minScale,
+        'data-max-scale': spec.maxScale
       });
       node.textContent = spec.text || '';
       return node;
+    }
+
+    let activeTextCalibration = {};
+
+    function calibratedText(spec = {}) {
+      if (!spec.id || !activeTextCalibration[spec.id]) return spec;
+      return {...spec, ...activeTextCalibration[spec.id]};
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function applyTextFits(svg) {
+      for (const node of svg.querySelectorAll('text[data-fit="scaleX"]')) {
+        const targetWidth = Number(node.dataset.targetWidth || 0);
+        if (!targetWidth) continue;
+        const box = node.getBBox();
+        if (!box.width) continue;
+        const scale = clamp(
+          targetWidth / box.width,
+          Number(node.dataset.minScale || 0.4),
+          Number(node.dataset.maxScale || 1.45)
+        );
+        const x = Number(node.getAttribute('x') || 0);
+        const y = Number(node.getAttribute('y') || 0);
+        const existing = node.getAttribute('transform') || '';
+        const fitTransform = `translate(${x} ${y}) scale(${scale} 1) translate(${-x} ${-y})`;
+        node.setAttribute('transform', [existing, fitTransform].filter(Boolean).join(' '));
+      }
     }
 
     function line(svg, attrs) {
@@ -274,17 +314,17 @@
       for (const tick of plot.x.ticks) {
         const x = xScale(plot, tick.value);
         line(svg, {x1: x, y1: box.y + box.height, x2: x, y2: box.y + box.height + 7, strokeWidth: 1.2, role: 'x-tick'});
-        svg.appendChild(textNode({text: tick.label, x, y: box.y + box.height + 23, fontSize: 16, anchor: 'middle'}, defaults));
+        svg.appendChild(textNode({id: `x-tick-${tick.label}`, text: tick.label, x, y: box.y + box.height + 23, fontSize: 16, anchor: 'middle'}, defaults));
       }
 
       for (const tick of plot.y.ticks) {
         const y = yScale(plot, tick.value);
         line(svg, {x1: box.x - 7, y1: y, x2: box.x, y2: y, strokeWidth: 1.2, role: 'y-tick'});
-        svg.appendChild(textNode({text: tick.label, x: box.x - 10, y: y + 5, fontSize: 16, anchor: 'end'}, defaults));
+        svg.appendChild(textNode({id: `y-tick-${tick.label}`, text: tick.label, x: box.x - 10, y: y + 5, fontSize: 16, anchor: 'end'}, defaults));
       }
 
-      svg.appendChild(textNode(plot.x.label, defaults));
-      svg.appendChild(textNode(plot.y.label, defaults));
+      svg.appendChild(textNode({...plot.x.label, id: 'x-label'}, defaults));
+      svg.appendChild(textNode({...plot.y.label, id: 'y-label'}, defaults));
     }
 
     function renderMarks(svg, panel) {
@@ -363,6 +403,7 @@
           role: 'legend-line'
         });
         svg.appendChild(textNode({
+          id: series.id === 'control-mean' ? 'legend-control' : 'legend-opto',
           text: series.label,
           x: item.textX,
           y: item.textY,
@@ -378,6 +419,7 @@
       const reference = byId('reference');
       const canvasSpec = spec.canvas;
       const defaults = spec.typography || {};
+      activeTextCalibration = Object.assign({}, ...(spec.panels || []).map(panel => panel.textCalibration || {}));
 
       byId('title').textContent = spec.id;
       document.title = `${spec.id} reconstruction`;
@@ -399,12 +441,15 @@
       for (const panel of spec.panels) {
         const group = svgNode('g', {'data-panel-id': panel.id, 'data-role': panel.type});
         svg.appendChild(group);
-        group.appendChild(textNode(panel.label, defaults));
-        group.appendChild(textNode(panel.title, defaults));
+        group.appendChild(textNode({...panel.label, id: 'panel-label'}, defaults));
+        group.appendChild(textNode({...panel.title, id: 'panel-title'}, defaults));
         renderMarks(group, panel);
         renderAxes(group, panel, defaults);
         renderLegend(group, panel, defaults);
       }
+
+      const afterFonts = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+      afterFonts.then(() => applyTextFits(svg));
     }
 
     byId('generatedButton').onclick = () => {

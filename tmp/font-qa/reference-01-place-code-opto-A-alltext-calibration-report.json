@@ -1,0 +1,443 @@
+[
+  {
+    "id": "panel-label",
+    "text": "A",
+    "family": "Arial Narrow",
+    "size": 27.42,
+    "weight": 600,
+    "lineHeight": 1,
+    "scaleX": 1.05,
+    "naturalWidth": 16.23,
+    "x": 19,
+    "y": 35,
+    "score": 0.11122,
+    "baselineScore": 0.95059,
+    "improvement": 0.83938,
+    "crop": {
+      "x": 15,
+      "y": 12,
+      "width": 25,
+      "height": 27
+    }
+  },
+  {
+    "id": "panel-title",
+    "text": "Hippocampal CA1 place cells (n = 162)",
+    "family": "Arial Narrow",
+    "size": 19.26,
+    "weight": 600,
+    "lineHeight": 1,
+    "scaleX": 1,
+    "naturalWidth": 288.36,
+    "x": 56.25,
+    "y": 34.75,
+    "score": 0.25959,
+    "baselineScore": 0.98123,
+    "improvement": 0.72164,
+    "crop": {
+      "x": 54,
+      "y": 16,
+      "width": 295,
+      "height": 27
+    }
+  },
+  {
+    "id": "control-title",
+    "text": "Control (no light)",
+    "family": "Helvetica Neue",
+    "size": 14,
+    "weight": 500,
+    "lineHeight": 1,
+    "scaleX": 1,
+    "naturalWidth": 107.11,
+    "x": 155.75,
+    "y": 73,
+    "score": 0.34455,
+    "baselineScore": 0.76006,
+    "improvement": 0.41551,
+    "crop": {
+      "x": 100,
+      "y": 57,
+      "width": 113,
+      "height": 24
+    }
+  },
+  {
+    "id": "opto-title",
+    "text": "Optogenetic inhibition\n(ArchT, 532 nm)",
+    "family": "Arial Narrow",
+    "size": 17.52,
+    "weight": 300,
+    "lineHeight": 1.02,
+    "scaleX": 1,
+    "naturalWidth": 138.19,
+    "x": 344.25,
+    "y": 65.25,
+    "score": 0.50846,
+    "baselineScore": 0.94116,
+    "improvement": 0.4327,
+    "crop": {
+      "x": 270,
+      "y": 46,
+      "width": 152,
+      "height": 46
+    }
+  },
+  {
+    "id": "y-tick-1",
+    "text": "1",
+    "family": "Helvetica Neue",
+    "size": 14.56,
+    "weight": 500,
+    "lineHeight": 1,
+    "scaleX": 0.93,
+    "naturalWidth": 8.1,
+    "x": 47.75,
+    "y": 95.75,
+    "score": 0.54326,
+    "baselineScore": 1.08562,
+    "improvement": 0.54236,
+    "crop": {
+      "x": 47,
+      "y": 82,
+      "width": 16,
+      "height": 21
+    }
+  },
+  {
+    "id": "y-tick-162",
+    "text": "162",
+    "family": "Arial Narrow",
+    "size": 17.92,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 0.975,
+    "naturalWidth": 24.52,
+    "x": 30.25,
+    "y": 449.75,
+    "score": 0.32244,
+    "baselineScore": 1.07024,
+    "improvement": 0.7478,
+    "crop": {
+      "x": 27,
+      "y": 433,
+      "width": 31,
+      "height": 21
+    }
+  },
+  {
+    "id": "y-label",
+    "text": "Neurons (sorted by peak position)",
+    "family": "Arial Narrow",
+    "size": 11.44,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 0.73,
+    "naturalWidth": 140.8,
+    "x": 39.25,
+    "y": 175.75,
+    "score": 5.87738,
+    "baselineScore": 14.92013,
+    "improvement": 9.04275,
+    "crop": {
+      "x": 20,
+      "y": 147,
+      "width": 27,
+      "height": 232
+    }
+  },
+  {
+    "id": "control-x-tick-0",
+    "text": "0",
+    "family": "Arial Narrow",
+    "size": 16.8,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1.025,
+    "naturalWidth": 7.66,
+    "x": 71.25,
+    "y": 467.75,
+    "score": 0.44216,
+    "baselineScore": 1.08167,
+    "improvement": 0.63951,
+    "crop": {
+      "x": 63,
+      "y": 451,
+      "width": 15,
+      "height": 21
+    }
+  },
+  {
+    "id": "control-x-tick-100",
+    "text": "100",
+    "family": "Arial Narrow",
+    "size": 17.84,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1.025,
+    "naturalWidth": 24.41,
+    "x": 154.5,
+    "y": 468.25,
+    "score": 0.31408,
+    "baselineScore": 0.94202,
+    "improvement": 0.62794,
+    "crop": {
+      "x": 139,
+      "y": 451,
+      "width": 31,
+      "height": 21
+    }
+  },
+  {
+    "id": "control-x-tick-200",
+    "text": "200",
+    "family": "Arial Narrow",
+    "size": 17.84,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1.025,
+    "naturalWidth": 24.41,
+    "x": 229,
+    "y": 468.25,
+    "score": 0.22737,
+    "baselineScore": 0.99129,
+    "improvement": 0.76392,
+    "crop": {
+      "x": 213,
+      "y": 451,
+      "width": 32,
+      "height": 21
+    }
+  },
+  {
+    "id": "control-x-label",
+    "text": "Position (cm)",
+    "family": "Helvetica Neue",
+    "size": 15.42,
+    "weight": 400,
+    "lineHeight": 1,
+    "scaleX": 0.93,
+    "naturalWidth": 89.39,
+    "x": 157,
+    "y": 488,
+    "score": 0.41574,
+    "baselineScore": 1.10681,
+    "improvement": 0.69107,
+    "crop": {
+      "x": 112,
+      "y": 471,
+      "width": 90,
+      "height": 27
+    }
+  },
+  {
+    "id": "opto-x-tick-0",
+    "text": "0",
+    "family": "Arial Narrow",
+    "size": 17.84,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1.005,
+    "naturalWidth": 8.14,
+    "x": 259,
+    "y": 468.25,
+    "score": 0.15538,
+    "baselineScore": 0.85555,
+    "improvement": 0.70017,
+    "crop": {
+      "x": 251,
+      "y": 451,
+      "width": 16,
+      "height": 21
+    }
+  },
+  {
+    "id": "opto-x-tick-100",
+    "text": "100",
+    "family": "Arimo",
+    "size": 16.8,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1,
+    "naturalWidth": 25.18,
+    "x": 339.75,
+    "y": 467,
+    "score": 0.44446,
+    "baselineScore": 0.97843,
+    "improvement": 0.53397,
+    "crop": {
+      "x": 325,
+      "y": 451,
+      "width": 31,
+      "height": 21
+    }
+  },
+  {
+    "id": "opto-x-tick-200",
+    "text": "200",
+    "family": "Arial Narrow",
+    "size": 17.84,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1.025,
+    "naturalWidth": 24.41,
+    "x": 415,
+    "y": 468.25,
+    "score": 0.19543,
+    "baselineScore": 1.01119,
+    "improvement": 0.81577,
+    "crop": {
+      "x": 399,
+      "y": 451,
+      "width": 32,
+      "height": 21
+    }
+  },
+  {
+    "id": "opto-x-label",
+    "text": "Position (cm)",
+    "family": "Arial Narrow",
+    "size": 18.59,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 0.955,
+    "naturalWidth": 88.95,
+    "x": 342,
+    "y": 490,
+    "score": 0.27962,
+    "baselineScore": 1.05796,
+    "improvement": 0.77834,
+    "crop": {
+      "x": 297,
+      "y": 471,
+      "width": 90,
+      "height": 27
+    }
+  },
+  {
+    "id": "colorbar-label",
+    "text": "Firing rate\n(z-scored)",
+    "family": "Arial Narrow",
+    "size": 16.85,
+    "weight": 300,
+    "lineHeight": 1.1,
+    "scaleX": 0.95,
+    "naturalWidth": 62.2,
+    "x": 433,
+    "y": 221,
+    "score": 0.40013,
+    "baselineScore": 0.92004,
+    "improvement": 0.51991,
+    "crop": {
+      "x": 427,
+      "y": 202,
+      "width": 71,
+      "height": 49
+    }
+  },
+  {
+    "id": "colorbar-tick-2",
+    "text": "2",
+    "family": "Arial Narrow",
+    "size": 17.5,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 0.88,
+    "naturalWidth": 7.98,
+    "x": 470,
+    "y": 270,
+    "score": 0.15771,
+    "baselineScore": 1.04453,
+    "improvement": 0.88681,
+    "crop": {
+      "x": 466,
+      "y": 253,
+      "width": 15,
+      "height": 21
+    }
+  },
+  {
+    "id": "colorbar-tick-1",
+    "text": "1",
+    "family": "Arial Narrow",
+    "size": 10.8,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 0.83,
+    "naturalWidth": 4.93,
+    "x": 471,
+    "y": 307,
+    "score": 0.64328,
+    "baselineScore": 1.84046,
+    "improvement": 1.19718,
+    "crop": {
+      "x": 467,
+      "y": 295,
+      "width": 12,
+      "height": 20
+    }
+  },
+  {
+    "id": "colorbar-tick-0",
+    "text": "0",
+    "family": "Arial Narrow",
+    "size": 16.85,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 0.93,
+    "naturalWidth": 7.68,
+    "x": 470,
+    "y": 351.75,
+    "score": 0.16133,
+    "baselineScore": 0.9696,
+    "improvement": 0.80826,
+    "crop": {
+      "x": 466,
+      "y": 336,
+      "width": 15,
+      "height": 20
+    }
+  },
+  {
+    "id": "colorbar-tick-minus-1",
+    "text": "-1",
+    "family": "Helvetica Neue",
+    "size": 16.85,
+    "weight": 500,
+    "lineHeight": 1,
+    "scaleX": 1,
+    "naturalWidth": 15.92,
+    "x": 470.25,
+    "y": 392.75,
+    "score": 0.49207,
+    "baselineScore": 1.01233,
+    "improvement": 0.52026,
+    "crop": {
+      "x": 462,
+      "y": 377,
+      "width": 24,
+      "height": 21
+    }
+  },
+  {
+    "id": "colorbar-tick-minus-2",
+    "text": "-2",
+    "family": "Arial",
+    "size": 16.3,
+    "weight": 300,
+    "lineHeight": 1,
+    "scaleX": 1.05,
+    "naturalWidth": 14.48,
+    "x": 470.75,
+    "y": 434.25,
+    "score": 0.32452,
+    "baselineScore": 0.90666,
+    "improvement": 0.58214,
+    "crop": {
+      "x": 466,
+      "y": 418,
+      "width": 23,
+      "height": 20
+    }
+  }
+]

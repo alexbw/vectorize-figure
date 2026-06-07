@@ -1,0 +1,85 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-04-motor-manifold-C",
+  "source": {
+    "path": "../../assets/reference/reference-04-motor-manifold-C-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "nativeSize": {"width": 583, "height": 365},
+    "notes": "Single cropped panel with eight polar velocity tuning curves during reach epoch. Curves are approximate editable polar point series inferred visually from the source raster."
+  },
+  "canvas": {"width": 583, "height": 365, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Source Sans 3"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "First-pass visual font match only; labels use condensed placement and bold title weights to approximate the printed figure."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "polar-rate",
+      "type": "polar",
+      "angleDegrees": {"zeroAt": "east", "positiveDirection": "counterclockwise"},
+      "radiusDomain": [0, 1],
+      "radialTicks": [
+        {"value": 0.2, "label": "0.2"},
+        {"value": 0.5, "label": "0.5"},
+        {"value": 1.0, "label": "1.0"}
+      ],
+      "angleTicks": [
+        {"value": 0, "label": "0°"},
+        {"value": 90, "label": "90°"},
+        {"value": 180, "label": "180°"},
+        {"value": 270, "label": "270°"}
+      ]
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-c",
+      "label": {"id": "panel-label", "text": "C", "x": 4, "y": 28, "fontSize": 21, "fontWeight": 700, "sourceBox": {"x": 3, "y": 10, "width": 14, "height": 22}, "fit": "visual"},
+      "title": {"id": "panel-title", "text": "Velocity tuning (reach epoch)", "x": 29, "y": 27, "fontSize": 16, "fontWeight": 700, "sourceBox": {"x": 29, "y": 13, "width": 213, "height": 19}, "fit": "visual"},
+      "yAxisLabel": {"id": "firing-rate-label", "text": "Firing rate (a.u.)", "x": 14, "y": 191, "rotation": -90, "fontSize": 16, "fontWeight": 400, "anchor": "middle"},
+      "bbox": {"x": 0, "y": 0, "width": 583, "height": 365},
+      "polarPlots": [
+        {"id": "unit-1", "n": 1, "center": {"x": 93, "y": 126}, "radius": 36, "label": {"text": "N = 1", "x": 92, "y": 68}, "showRadialLabels": true, "marker": {"angle": 307, "radius": 0.48}, "curve": [[0, 0.52], [30, 0.70], [60, 0.92], [90, 0.78], [120, 0.42], [150, 0.31], [180, 0.28], [210, 0.54], [240, 0.64], [270, 0.48], [300, 0.40], [330, 0.43]]},
+        {"id": "unit-2", "n": 2, "center": {"x": 199, "y": 126}, "radius": 36, "label": {"text": "N = 2", "x": 199, "y": 68}, "marker": {"angle": 270, "radius": 0.12}, "curve": [[0, 0.38], [30, 0.42], [60, 0.66], [90, 0.78], [120, 0.63], [150, 0.40], [180, 0.50], [210, 0.42], [240, 0.30], [270, 0.24], [300, 0.30], [330, 0.35]]},
+        {"id": "unit-3", "n": 3, "center": {"x": 306, "y": 126}, "radius": 36, "label": {"text": "N = 3", "x": 306, "y": 68}, "marker": {"angle": 226, "radius": 0.43}, "curve": [[0, 0.55], [30, 0.72], [60, 1.00], [90, 0.83], [120, 0.48], [150, 0.25], [180, 0.21], [210, 0.58], [240, 0.66], [270, 0.50], [300, 0.40], [330, 0.45]]},
+        {"id": "unit-4", "n": 4, "center": {"x": 413, "y": 126}, "radius": 36, "label": {"text": "N = 4", "x": 413, "y": 68}, "marker": {"angle": 330, "radius": 0.22}, "curve": [[0, 0.52], [30, 0.62], [60, 0.83], [90, 0.71], [120, 0.52], [150, 0.28], [180, 0.22], [210, 0.32], [240, 0.48], [270, 0.37], [300, 0.33], [330, 0.43]]},
+        {"id": "unit-5", "n": 5, "center": {"x": 93, "y": 265}, "radius": 36, "label": {"text": "N = 5", "x": 92, "y": 205}, "marker": {"angle": 155, "radius": 0.16}, "curve": [[0, 0.42], [30, 0.54], [60, 0.75], [90, 0.80], [120, 0.60], [150, 0.44], [180, 0.35], [210, 0.42], [240, 0.65], [270, 0.72], [300, 0.57], [330, 0.47]]},
+        {"id": "unit-6", "n": 6, "center": {"x": 199, "y": 265}, "radius": 36, "label": {"text": "N = 6", "x": 199, "y": 205}, "marker": {"angle": 252, "radius": 0.10}, "curve": [[0, 0.43], [30, 0.52], [60, 0.70], [90, 0.74], [120, 0.64], [150, 0.46], [180, 0.37], [210, 0.34], [240, 0.43], [270, 0.58], [300, 0.55], [330, 0.48]]},
+        {"id": "unit-7", "n": 7, "center": {"x": 306, "y": 265}, "radius": 36, "label": {"text": "N = 7", "x": 306, "y": 205}, "marker": {"angle": 300, "radius": 0.09}, "curve": [[0, 0.32], [30, 0.36], [60, 0.72], [90, 0.94], [120, 0.67], [150, 0.33], [180, 0.26], [210, 0.26], [240, 0.32], [270, 0.52], [300, 0.55], [330, 0.41]]},
+        {"id": "unit-8", "n": 8, "center": {"x": 413, "y": 265}, "radius": 36, "label": {"text": "N = 8", "x": 413, "y": 205}, "marker": {"angle": 305, "radius": 0.12}, "curve": [[0, 0.35], [30, 0.42], [60, 0.67], [90, 0.75], [120, 0.55], [150, 0.36], [180, 0.32], [210, 0.34], [240, 0.45], [270, 0.67], [300, 0.63], [330, 0.43]]}
+      ],
+      "legend": {
+        "id": "fr-legend",
+        "title": {"text": "FR (a.u.)", "x": 493, "y": 210, "fontSize": 14, "anchor": "start"},
+        "items": [
+          {"label": "1.0", "x": 492, "y": 230, "length": 24, "strokeWidth": 4},
+          {"label": "0.5", "x": 492, "y": 253, "length": 24, "strokeWidth": 2.2},
+          {"label": "0.2", "x": 492, "y": 275, "length": 24, "strokeWidth": 1}
+        ]
+      },
+      "provenance": [
+        {"target": "polarPlots", "confidence": "medium", "note": "Plot centers, labels, and grids were measured visually from the 583x365 source crop."},
+        {"target": "curve", "confidence": "low-medium", "note": "Tuning curves are hand-approximated from the source outlines and should be treated as editable first-pass reconstructions, not extracted measurements."}
+      ]
+    }
+  ],
+  "validation": {
+    "expectedPolarPlotCount": 8,
+    "expectedLegendItems": 3,
+    "generatedLayerSourceRasterReuse": false,
+    "qaReferenceAllowed": true
+  },
+  "confidence": [
+    {"target": "layout", "confidence": "medium", "note": "Overall layout and text hierarchy visually matched at native crop dimensions."},
+    {"target": "radialLabels", "confidence": "medium", "note": "Only the first polar plot carries visible numeric radial labels as in the source."}
+  ]
+}

@@ -1,0 +1,14 @@
+Created the independent first-pass reconstruction:
+
+- [reference-04-motor-manifold-I.json](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-04-motor-manifold-I-make-figure-batch/reference-04-motor-manifold-I.json)
+- [reference-04-motor-manifold-I.html](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-04-motor-manifold-I-make-figure-batch/reference-04-motor-manifold-I.html)
+
+Verification completed:
+- `jq empty` passed for JSON validity.
+- Output directory contains only the two requested files.
+- Search found no generated-layer `drawImage`, `background-image`, `url(...)`, or source-raster CSS reuse.
+- Source raster appears only as JSON source metadata and the QA reference `<img>` assignment.
+- HTML script syntax check passed.
+- JSON render inventory checks: 587x363 canvas, 4 plots, 5 series, 5 legend items, and 5 distribution groups per plot.
+
+I attempted a local HTTP render smoke test, but the sandbox refused binding `python3 -m http.server` with `PermissionError: [Errno 1] Operation not permitted`, so I could not do live browser rendering from here.

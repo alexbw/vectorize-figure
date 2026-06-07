@@ -1,0 +1,58 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-01-place-code-opto-A-alltext",
+  "source": {
+    "path": "/assets/reference/reference-01-place-code-opto-A-reference.png",
+    "usage": "QA-only text calibration target."
+  },
+  "canvas": {"width": 512, "height": 512, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Helvetica, Arial, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111"
+  },
+  "panels": [
+    {
+      "id": "panel-a-text",
+      "label": {
+        "id": "panel-label",
+        "text": "A",
+        "x": 17,
+        "y": 35,
+        "fontSize": 26,
+        "fontWeight": 700,
+        "sourceBox": {"x": 19, "y": 16, "width": 17, "height": 19}
+      },
+      "title": {
+        "id": "panel-title",
+        "text": "Hippocampal CA1 place cells (n = 162)",
+        "x": 58,
+        "y": 34,
+        "fontSize": 18,
+        "fontWeight": 700,
+        "sourceBox": {"x": 58, "y": 20, "width": 287, "height": 19}
+      },
+      "marks": [
+        {"id": "control-title", "type": "text", "text": "Control (no light)", "x": 155, "y": 73, "fontSize": 14, "anchor": "middle", "sourceBox": {"x": 104, "y": 61, "width": 105, "height": 16}},
+        {"id": "opto-title", "type": "text", "text": "Optogenetic inhibition\n(ArchT, 532 nm)", "x": 343, "y": 65, "fontSize": 14, "anchor": "middle", "lineHeight": 1.12, "sourceBox": {"x": 276, "y": 52, "width": 140, "height": 34}},
+        {"id": "y-tick-1", "type": "text", "text": "1", "x": 54, "y": 96, "fontSize": 16, "anchor": "end", "sourceBox": {"x": 51, "y": 86, "width": 8, "height": 13}},
+        {"id": "y-tick-162", "type": "text", "text": "162", "x": 54, "y": 450, "fontSize": 16, "anchor": "end", "sourceBox": {"x": 31, "y": 437, "width": 23, "height": 13}},
+        {"id": "y-label", "type": "text", "text": "Neurons (sorted by peak position)", "x": 38, "y": 267, "fontSize": 17, "anchor": "middle", "rotation": -90, "sourceBox": {"x": 24, "y": 151, "width": 19, "height": 224}},
+        {"id": "control-x-tick-0", "type": "text", "text": "0", "x": 70, "y": 467, "fontSize": 16, "anchor": "middle", "sourceBox": {"x": 67, "y": 455, "width": 7, "height": 13}},
+        {"id": "control-x-tick-100", "type": "text", "text": "100", "x": 151, "y": 467, "fontSize": 16, "anchor": "middle", "sourceBox": {"x": 143, "y": 455, "width": 23, "height": 13}},
+        {"id": "control-x-tick-200", "type": "text", "text": "200", "x": 232, "y": 467, "fontSize": 16, "anchor": "middle", "sourceBox": {"x": 217, "y": 455, "width": 24, "height": 13}},
+        {"id": "control-x-label", "type": "text", "text": "Position (cm)", "x": 155, "y": 489, "fontSize": 17, "anchor": "middle", "sourceBox": {"x": 116, "y": 475, "width": 82, "height": 19}},
+        {"id": "opto-x-tick-0", "type": "text", "text": "0", "x": 258, "y": 467, "fontSize": 16, "anchor": "middle", "sourceBox": {"x": 255, "y": 455, "width": 8, "height": 13}},
+        {"id": "opto-x-tick-100", "type": "text", "text": "100", "x": 338, "y": 467, "fontSize": 16, "anchor": "middle", "sourceBox": {"x": 329, "y": 455, "width": 23, "height": 13}},
+        {"id": "opto-x-tick-200", "type": "text", "text": "200", "x": 418, "y": 467, "fontSize": 16, "anchor": "middle", "sourceBox": {"x": 403, "y": 455, "width": 24, "height": 13}},
+        {"id": "opto-x-label", "type": "text", "text": "Position (cm)", "x": 342, "y": 489, "fontSize": 17, "anchor": "middle", "sourceBox": {"x": 301, "y": 475, "width": 82, "height": 19}},
+        {"id": "colorbar-label", "type": "text", "text": "Firing rate\n(z-scored)", "x": 432, "y": 209, "fontSize": 15, "anchor": "start", "baseline": "hanging", "lineHeight": 1.03, "sourceBox": {"x": 433, "y": 208, "width": 59, "height": 37}},
+        {"id": "colorbar-tick-2", "type": "text", "text": "2", "x": 472, "y": 269, "fontSize": 15, "anchor": "start", "sourceBox": {"x": 470, "y": 257, "width": 7, "height": 13}},
+        {"id": "colorbar-tick-1", "type": "text", "text": "1", "x": 472, "y": 312, "fontSize": 15, "anchor": "start", "sourceBox": {"x": 471, "y": 299, "width": 4, "height": 12}},
+        {"id": "colorbar-tick-0", "type": "text", "text": "0", "x": 472, "y": 354, "fontSize": 15, "anchor": "start", "sourceBox": {"x": 470, "y": 340, "width": 7, "height": 12}},
+        {"id": "colorbar-tick-minus-1", "type": "text", "text": "-1", "x": 472, "y": 397, "fontSize": 15, "anchor": "start", "sourceBox": {"x": 466, "y": 381, "width": 16, "height": 13}},
+        {"id": "colorbar-tick-minus-2", "type": "text", "text": "-2", "x": 472, "y": 440, "fontSize": 15, "anchor": "start", "sourceBox": {"x": 470, "y": 422, "width": 15, "height": 12}}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-01-place-code-opto-E reconstruction</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --page-bg: #f3f4f6;
+      --ink: #111;
+      --muted: #555;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: start center;
+      background: var(--page-bg);
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--ink);
+    }
+    .workspace {
+      display: grid;
+      grid-template-columns: max-content;
+      gap: 12px;
+      padding: 20px;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .toolbar label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      user-select: none;
+    }
+    .stage {
+      display: grid;
+      grid-template-columns: max-content;
+      gap: 14px;
+      align-items: start;
+    }
+    .stage.show-reference {
+      grid-template-columns: max-content max-content;
+    }
+    figure {
+      margin: 0;
+    }
+    .candidate,
+    .reference {
+      width: 464px;
+    }
+    .candidate svg {
+      display: block;
+      width: 464px;
+      height: 512px;
+      background: #fff;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.16);
+    }
+    .reference {
+      display: none;
+    }
+    .stage.show-reference .reference {
+      display: block;
+    }
+    .reference img {
+      display: block;
+      width: 464px;
+      height: 512px;
+      object-fit: contain;
+      background: #fff;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.16);
+    }
+    figcaption {
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    text {
+      font-family: Arial, Helvetica, sans-serif;
+      dominant-baseline: alphabetic;
+    }
+    .axis-line,
+    .tick-line,
+    .reference-line,
+    .series-line,
+    .error-bar {
+      vector-effect: non-scaling-stroke;
+      shape-rendering: crispEdges;
+    }
+  </style>
+</head>
+<body>
+  <main class="workspace">
+    <div class="toolbar">
+      <strong>Generated editable reconstruction</strong>
+      <label><input id="toggle-reference" type="checkbox"> Show labeled QA/reference source</label>
+    </div>
+    <div id="stage" class="stage">
+      <figure class="candidate">
+        <svg id="figure" role="img" aria-label="Generated reconstruction of panel E"></svg>
+        <figcaption>Candidate: generated from JSON with SVG axes, text, paired traces, markers, and summary point.</figcaption>
+      </figure>
+      <figure class="reference">
+        <img id="reference-img" alt="QA/reference source raster, not part of the generated candidate">
+        <figcaption>QA/reference only: original source raster.</figcaption>
+      </figure>
+    </div>
+  </main>
+  <script>
+    const fallbackSpec = null;
+    const SVG_NS = "http://www.w3.org/2000/svg";
+
+    function svgEl(name, attrs = {}, parent) {
+      const node = document.createElementNS(SVG_NS, name);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      if (parent) parent.appendChild(node);
+      return node;
+    }
+
+    function yScale(plot, value) {
+      const domain = plot.coordinateSystem.y.domain;
+      const range = plot.coordinateSystem.y.range;
+      return range[0] + ((value - domain[0]) / (domain[1] - domain[0])) * (range[1] - range[0]);
+    }
+
+    function xScale(plot, value) {
+      return plot.coordinateSystem.x.positions[value];
+    }
+
+    function drawText(parent, text, attrs = {}) {
+      const node = svgEl("text", attrs, parent);
+      if (Array.isArray(text)) {
+        const x = attrs.x || 0;
+        const lineHeight = attrs["data-line-height"] || 18;
+        text.forEach((line, index) => {
+          const span = svgEl("tspan", {x, dy: index === 0 ? 0 : lineHeight}, node);
+          span.textContent = line;
+        });
+      } else {
+        node.textContent = text;
+      }
+      return node;
+    }
+
+    function pathFor(categories, values, plot) {
+      return categories.map((category, index) => {
+        const command = index === 0 ? "M" : "L";
+        return `${command}${xScale(plot, category).toFixed(2)},${yScale(plot, values[index]).toFixed(2)}`;
+      }).join(" ");
+    }
+
+    function renderAxes(svg, spec, panel) {
+      const plot = panel.plot;
+      const axes = plot.axes;
+      const axisLayer = svgEl("g", {id: "axis-layer"}, svg);
+
+      for (const referenceLine of plot.referenceLines) {
+        if (referenceLine.type === "horizontal") {
+          svgEl("line", {
+            id: referenceLine.id,
+            class: "reference-line",
+            x1: referenceLine.x1,
+            y1: yScale(plot, referenceLine.value),
+            x2: referenceLine.x2,
+            y2: yScale(plot, referenceLine.value),
+            stroke: referenceLine.stroke,
+            "stroke-width": referenceLine.strokeWidth,
+            "stroke-dasharray": referenceLine.dasharray
+          }, axisLayer);
+        } else if (referenceLine.type === "vertical") {
+          svgEl("line", {
+            id: referenceLine.id,
+            class: "reference-line",
+            x1: referenceLine.x,
+            y1: referenceLine.y1,
+            x2: referenceLine.x,
+            y2: referenceLine.y2,
+            stroke: referenceLine.stroke,
+            "stroke-width": referenceLine.strokeWidth,
+            "stroke-dasharray": referenceLine.dasharray
+          }, axisLayer);
+        }
+      }
+
+      svgEl("line", {
+        id: axes.xAxis.id,
+        class: "axis-line",
+        x1: axes.xAxis.line.x1,
+        y1: axes.xAxis.line.y1,
+        x2: axes.xAxis.line.x2,
+        y2: axes.xAxis.line.y2,
+        stroke: "#111",
+        "stroke-width": 1.2
+      }, axisLayer);
+      svgEl("line", {
+        id: axes.yAxis.id,
+        class: "axis-line",
+        x1: axes.yAxis.line.x1,
+        y1: axes.yAxis.line.y1,
+        x2: axes.yAxis.line.x2,
+        y2: axes.yAxis.line.y2,
+        stroke: "#111",
+        "stroke-width": 1.2
+      }, axisLayer);
+
+      for (const tick of axes.yAxis.ticks) {
+        const y = yScale(plot, tick.value);
+        svgEl("line", {
+          id: `${axes.yAxis.id}-tick-${tick.value}`,
+          class: "tick-line",
+          x1: axes.yAxis.line.x1 - axes.yAxis.tickLength,
+          y1: y,
+          x2: axes.yAxis.line.x1,
+          y2: y,
+          stroke: "#111",
+          "stroke-width": 1
+        }, axisLayer);
+        drawText(axisLayer, tick.label, {
+          id: `${axes.yAxis.id}-label-${tick.value}`,
+          x: axes.yAxis.line.x1 - 9,
+          y: y + 5,
+          "font-size": 14,
+          "text-anchor": "end",
+          fill: spec.typography.color
+        });
+      }
+
+      for (const tick of axes.xAxis.ticks) {
+        const x = xScale(plot, tick.value);
+        drawText(axisLayer, tick.label, {
+          id: `${axes.xAxis.id}-label-${tick.value}`,
+          x,
+          y: axes.xAxis.line.y1 + 27,
+          "font-size": 16,
+          "text-anchor": "middle",
+          fill: spec.typography.color
+        });
+      }
+
+      const xLabel = axes.xAxis.label;
+      drawText(axisLayer, xLabel.text, {
+        id: xLabel.id,
+        x: xLabel.anchor.x,
+        y: xLabel.anchor.y,
+        "font-size": xLabel.fontSize,
+        "text-anchor": xLabel.textAnchor,
+        fill: spec.typography.color
+      });
+
+      const yLabel = axes.yAxis.label;
+      drawText(axisLayer, yLabel.text, {
+        id: yLabel.id,
+        x: yLabel.anchor.x,
+        y: yLabel.anchor.y,
+        "font-size": yLabel.fontSize,
+        "text-anchor": yLabel.textAnchor,
+        "data-line-height": yLabel.lineHeight,
+        transform: `rotate(${yLabel.rotation} ${yLabel.anchor.x} ${yLabel.anchor.y})`,
+        fill: spec.typography.color
+      });
+    }
+
+    function renderData(svg, panel) {
+      const plot = panel.plot;
+      const dataLayer = svgEl("g", {id: "data-layer"}, svg);
+      const controlMark = panel.marks.find(mark => mark.id === "control-lines");
+      const optoMark = panel.marks.find(mark => mark.id === "opto-lines");
+
+      for (const series of panel.data.series) {
+        svgEl("path", {
+          id: `${series.id}-control-path`,
+          class: "series-line",
+          d: pathFor(controlMark.categories, series.control, plot),
+          fill: "none",
+          stroke: controlMark.stroke,
+          "stroke-width": controlMark.strokeWidth,
+          "stroke-linejoin": "round",
+          "data-series": series.id,
+          "data-role": "control"
+        }, dataLayer);
+        svgEl("path", {
+          id: `${series.id}-opto-path`,
+          class: "series-line",
+          d: pathFor(optoMark.categories, series.opto, plot),
+          fill: "none",
+          stroke: optoMark.stroke,
+          "stroke-width": optoMark.strokeWidth,
+          "stroke-linejoin": "round",
+          "data-series": series.id,
+          "data-role": "opto"
+        }, dataLayer);
+      }
+
+      for (const series of panel.data.series) {
+        controlMark.categories.forEach((category, index) => {
+          svgEl("circle", {
+            id: `${series.id}-control-${category}`,
+            cx: xScale(plot, category),
+            cy: yScale(plot, series.control[index]),
+            r: controlMark.markerRadius,
+            fill: controlMark.fill,
+            stroke: "#000",
+            "stroke-width": 0.8,
+            "data-series": series.id,
+            "data-category": category,
+            "data-role": "control"
+          }, dataLayer);
+          svgEl("circle", {
+            id: `${series.id}-opto-${category}`,
+            cx: xScale(plot, category),
+            cy: yScale(plot, series.opto[index]),
+            r: optoMark.markerRadius,
+            fill: optoMark.fill,
+            stroke: optoMark.stroke,
+            "stroke-width": 1.2,
+            "data-series": series.id,
+            "data-category": category,
+            "data-role": "opto"
+          }, dataLayer);
+        });
+      }
+
+      const summaryMark = panel.marks.find(mark => mark.id === "summary-point");
+      const summary = panel.data.summary;
+      const x = xScale(plot, summary.category);
+      const y = yScale(plot, summary.mean);
+      const yTop = yScale(plot, summary.mean + summary.errorPlus);
+      const yBottom = yScale(plot, summary.mean - summary.errorMinus);
+      svgEl("line", {
+        id: "summary-error-line",
+        class: "error-bar",
+        x1: x,
+        y1: yTop,
+        x2: x,
+        y2: yBottom,
+        stroke: "#111",
+        "stroke-width": summaryMark.strokeWidth
+      }, dataLayer);
+      svgEl("line", {
+        id: "summary-error-top",
+        class: "error-bar",
+        x1: x - summaryMark.capWidth / 2,
+        y1: yTop,
+        x2: x + summaryMark.capWidth / 2,
+        y2: yTop,
+        stroke: "#111",
+        "stroke-width": summaryMark.strokeWidth
+      }, dataLayer);
+      svgEl("line", {
+        id: "summary-error-bottom",
+        class: "error-bar",
+        x1: x - summaryMark.capWidth / 2,
+        y1: yBottom,
+        x2: x + summaryMark.capWidth / 2,
+        y2: yBottom,
+        stroke: "#111",
+        "stroke-width": summaryMark.strokeWidth
+      }, dataLayer);
+      svgEl("circle", {
+        id: summary.id,
+        cx: x,
+        cy: y,
+        r: summaryMark.radius,
+        fill: summary.color,
+        stroke: summary.stroke,
+        "stroke-width": 1,
+        "data-category": summary.category
+      }, dataLayer);
+    }
+
+    function renderAnnotation(svg, spec, panel) {
+      const ann = panel.annotation;
+      const layer = svgEl("g", {id: "annotation-layer"}, svg);
+      const text = svgEl("text", {
+        id: ann.id,
+        x: ann.x,
+        y: ann.y,
+        "font-size": ann.fontSize,
+        "font-style": ann.fontStyle,
+        "text-anchor": ann.textAnchor,
+        fill: spec.typography.color
+      }, layer);
+      const italic = svgEl("tspan", {"font-style": "italic"}, text);
+      italic.textContent = "Paired t-test: P";
+      text.append(" = 3.1 x 10");
+      const sup = svgEl("tspan", {"font-size": 10, dy: -7}, text);
+      sup.textContent = "-5";
+      text.appendChild(svgEl("tspan", {dy: 7}, text));
+    }
+
+    function render(spec) {
+      const svg = document.getElementById("figure");
+      svg.replaceChildren();
+      svg.setAttribute("viewBox", `0 0 ${spec.canvas.width} ${spec.canvas.height}`);
+      svg.setAttribute("width", spec.canvas.width);
+      svg.setAttribute("height", spec.canvas.height);
+      svgEl("rect", {id: "canvas-background", x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}, svg);
+
+      const panel = spec.panels[0];
+      drawText(svg, panel.label.text, {
+        id: panel.label.id,
+        x: panel.label.x,
+        y: panel.label.y + panel.label.fontSize,
+        "font-size": panel.label.fontSize,
+        "font-weight": panel.label.fontWeight,
+        fill: spec.typography.color
+      });
+      drawText(svg, panel.title.text, {
+        id: panel.title.id,
+        x: panel.title.x,
+        y: panel.title.y + panel.title.fontSize - 1,
+        "font-size": panel.title.fontSize,
+        "font-weight": panel.title.fontWeight,
+        fill: spec.typography.color
+      });
+
+      renderAnnotation(svg, spec, panel);
+      renderAxes(svg, spec, panel);
+      renderData(svg, panel);
+
+      const reference = document.getElementById("reference-img");
+      reference.src = spec.source.path;
+      document.title = `${spec.id} reconstruction`;
+    }
+
+    async function loadSpec() {
+      try {
+        const response = await fetch("reference-01-place-code-opto-E.json", {cache: "no-store"});
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return await response.json();
+      } catch (error) {
+        if (fallbackSpec) return fallbackSpec;
+        throw error;
+      }
+    }
+
+    document.getElementById("toggle-reference").addEventListener("change", event => {
+      document.getElementById("stage").classList.toggle("show-reference", event.target.checked);
+    });
+
+    loadSpec().then(render).catch(error => {
+      document.body.innerHTML = `<pre style="padding:20px;color:#900">Failed to load reconstruction JSON: ${error.message}</pre>`;
+    });
+  </script>
+</body>
+</html>

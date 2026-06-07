@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-04-motor-manifold-D reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    main {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    #frame {
+      position: relative;
+      width: 382px;
+      height: 296px;
+      background: #ffffff;
+      overflow: hidden;
+    }
+    canvas, svg {
+      position: absolute;
+      inset: 0;
+    }
+    text {
+      dominant-baseline: alphabetic;
+      fill: #111111;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div id="frame" aria-label="Generated reconstruction from semantic JSON"></div>
+  </main>
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function makeSvg(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function mulberry32(seed) {
+      return function random() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function gaussian(x, center, width) {
+      const z = (x - center) / width;
+      return Math.exp(-0.5 * z * z);
+    }
+
+    function scale(domain, range, value) {
+      return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+    }
+
+    function colorForZ(z, colorScale) {
+      const clamped = Math.max(colorScale.domain[0], Math.min(colorScale.domain[2], z));
+      const neg = [25, 69, 216];
+      const mid = [243, 243, 243];
+      const pos = [215, 25, 28];
+      const t = clamped < 0 ? Math.abs(clamped / colorScale.domain[0]) : clamped / colorScale.domain[2];
+      const from = mid;
+      const to = clamped < 0 ? neg : pos;
+      const mix = Math.pow(t, 0.72);
+      return [
+        Math.round(from[0] + (to[0] - from[0]) * mix),
+        Math.round(from[1] + (to[1] - from[1]) * mix),
+        Math.round(from[2] + (to[2] - from[2]) * mix)
+      ];
+    }
+
+    function heatValue(time, row, recipe, randomValue) {
+      let z = (randomValue - 0.5) * 2 * recipe.backgroundNoise;
+      z += 0.18 * Math.sin(row * 0.41 + time * 13.0);
+      z += 0.12 * Math.sin(row * 0.13 - time * 21.0);
+      for (const f of recipe.features) {
+        if (f.kind === 'blueDelayBand') {
+          z += f.amplitude * gaussian(time, f.centerTime, f.width) * gaussian(row, f.rowCenter, f.rowWidth);
+        } else if (f.kind === 'redMoveRidge') {
+          const ridge = f.centerTime + (row - f.rowCenter) * f.slope;
+          z += f.amplitude * gaussian(time, ridge, f.width) * gaussian(row, f.rowCenter, f.rowWidth);
+        } else if (f.kind === 'bluePostMoveBand') {
+          z += f.amplitude * gaussian(time, f.centerTime, f.width) * gaussian(row, f.rowCenter, f.rowWidth);
+        } else if (f.kind === 'redHoldPatch') {
+          z += f.amplitude * gaussian(time, f.centerTime, f.width) * gaussian(row, f.rowCenter, f.rowWidth);
+        } else if (f.kind === 'earlyMixedStripes') {
+          z += f.amplitude * gaussian(time, f.centerTime, f.width) * Math.sin(row / f.rowPeriod * Math.PI * 2);
+        }
+      }
+      return z;
+    }
+
+    function renderHeatmap(ctx, panel, colorScale) {
+      const mark = panel.marks.find(item => item.type === 'heatmap');
+      const box = panel.plot.bbox;
+      const rows = mark.matrix.rows;
+      const cols = mark.matrix.cols;
+      const image = ctx.createImageData(cols, rows);
+      const random = mulberry32(mark.recipe.seed);
+      const rowOffsets = Array.from({length: rows}, () => (random() - 0.5) * 0.55);
+      const noise = Array.from({length: rows}, () => Array.from({length: cols}, () => random()));
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const time = scale([0, cols - 1], panel.plot.x.domain, c);
+          const neuron = scale([0, rows - 1], panel.plot.y.domain, r);
+          const smoothedNoise = (
+            noise[r][c] +
+            noise[Math.max(0, r - 1)][c] +
+            noise[Math.min(rows - 1, r + 1)][c] +
+            noise[r][Math.max(0, c - 1)] +
+            noise[r][Math.min(cols - 1, c + 1)]
+          ) / 5;
+          const z = heatValue(time, neuron, mark.recipe, smoothedNoise) + rowOffsets[r];
+          const rgb = colorForZ(z, colorScale);
+          const i = (r * cols + c) * 4;
+          image.data[i] = rgb[0];
+          image.data[i + 1] = rgb[1];
+          image.data[i + 2] = rgb[2];
+          image.data[i + 3] = 230;
+        }
+      }
+      const offscreen = document.createElement('canvas');
+      offscreen.width = cols;
+      offscreen.height = rows;
+      const offscreenContext = offscreen.getContext('2d');
+      offscreenContext.putImageData(image, 0, 0);
+      const sourceData = offscreenContext.getImageData(0, 0, cols, rows);
+      const scaled = ctx.createImageData(box.width, box.height);
+      for (let y = 0; y < box.height; y++) {
+        const sy = Math.min(rows - 1, Math.floor(y / box.height * rows));
+        for (let x = 0; x < box.width; x++) {
+          const sx = Math.min(cols - 1, Math.floor(x / box.width * cols));
+          const src = (sy * cols + sx) * 4;
+          const dst = (y * box.width + x) * 4;
+          scaled.data[dst] = sourceData.data[src];
+          scaled.data[dst + 1] = sourceData.data[src + 1];
+          scaled.data[dst + 2] = sourceData.data[src + 2];
+          scaled.data[dst + 3] = sourceData.data[src + 3];
+        }
+      }
+      ctx.putImageData(scaled, box.x, box.y);
+    }
+
+    function renderText(svg, item, typography, extra = {}) {
+      const text = makeSvg('text', {
+        x: item.x,
+        y: item.y,
+        'font-family': item.fontFamily || typography.fontFamily,
+        'font-size': item.fontSize || typography.defaultSize,
+        'font-weight': item.fontWeight || 400,
+        'text-anchor': item.anchor || 'start',
+        transform: item.rotation ? `rotate(${item.rotation} ${item.x} ${item.y})` : undefined,
+        id: item.id,
+        ...extra
+      });
+      text.textContent = item.text;
+      svg.appendChild(text);
+    }
+
+    function renderAxes(svg, panel, typography, tokens) {
+      const plot = panel.plot;
+      const box = plot.bbox;
+      const xScale = value => scale(plot.x.domain, [box.x, box.x + box.width], value);
+      const yScale = value => scale(plot.y.domain, [box.y, box.y + box.height], value);
+      svg.appendChild(makeSvg('rect', {x: box.x, y: box.y, width: box.width, height: box.height, fill: 'none', stroke: tokens.axisStroke, 'stroke-width': tokens.axisWidth}));
+      for (const tick of plot.x.ticks) {
+        const x = xScale(tick.value);
+        svg.appendChild(makeSvg('line', {x1: x, y1: box.y + box.height, x2: x, y2: box.y + box.height + 4, stroke: tokens.axisStroke, 'stroke-width': 1, 'data-axis': 'x', 'data-value': tick.value}));
+        renderText(svg, {text: tick.label, x, y: box.y + box.height + 21, fontSize: tokens.tickFontSize, anchor: 'middle'}, typography);
+      }
+      for (const tick of plot.y.ticks) {
+        const y = yScale(tick.value);
+        svg.appendChild(makeSvg('line', {x1: box.x - 4, y1: y, x2: box.x, y2: y, stroke: tokens.axisStroke, 'stroke-width': 1, 'data-axis': 'y', 'data-value': tick.value}));
+        renderText(svg, {text: tick.label, x: box.x - 9, y: y + 5, fontSize: tokens.tickFontSize, anchor: 'end'}, typography);
+      }
+      renderText(svg, plot.x.label, typography);
+      renderText(svg, plot.y.label, typography);
+    }
+
+    function renderEventLine(svg, panel) {
+      const box = panel.plot.bbox;
+      const mark = panel.marks.find(item => item.type === 'eventLine');
+      const x = scale(panel.plot.x.domain, [box.x, box.x + box.width], mark.xValue);
+      svg.appendChild(makeSvg('line', {id: mark.id, x1: x, y1: mark.y1, x2: x, y2: mark.y2, stroke: mark.stroke, 'stroke-width': mark.strokeWidth, 'data-anchor': mark.anchorTo}));
+    }
+
+    function renderColorbar(ctx, svg, panel, colorScale, typography) {
+      const object = panel.layoutObjects.find(item => item.type === 'colorbar');
+      const box = object.bbox;
+      const image = ctx.createImageData(box.width, box.height);
+      for (let y = 0; y < box.height; y++) {
+        const z = scale([0, box.height - 1], [colorScale.domain[2], colorScale.domain[0]], y);
+        const rgb = colorForZ(z, colorScale);
+        for (let x = 0; x < box.width; x++) {
+          const i = (y * box.width + x) * 4;
+          image.data[i] = rgb[0];
+          image.data[i + 1] = rgb[1];
+          image.data[i + 2] = rgb[2];
+          image.data[i + 3] = 255;
+        }
+      }
+      ctx.putImageData(image, box.x, box.y);
+      svg.appendChild(makeSvg('rect', {x: box.x, y: box.y, width: box.width, height: box.height, fill: 'none', stroke: '#333333', 'stroke-width': 0.7}));
+      renderText(svg, object.label, typography);
+    }
+
+    async function loadSpec() {
+      const response = await fetch('reference-04-motor-manifold-D.json');
+      if (!response.ok) throw new Error(`Unable to load JSON spec: ${response.status}`);
+      return response.json();
+    }
+
+    async function render() {
+      const spec = await loadSpec();
+      const frame = document.getElementById('frame');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      frame.style.background = spec.canvas.background;
+      const canvas = document.createElement('canvas');
+      canvas.width = spec.canvas.width;
+      canvas.height = spec.canvas.height;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = spec.canvas.background;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const svg = makeSvg('svg', {width: spec.canvas.width, height: spec.canvas.height, viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, role: 'img'});
+      frame.appendChild(canvas);
+      frame.appendChild(svg);
+      const panel = spec.panels[0];
+      const colorScale = spec.coordinateSystems.find(item => item.id === 'panel-d.z');
+      renderHeatmap(ctx, panel, colorScale);
+      renderColorbar(ctx, svg, panel, colorScale, spec.typography);
+      renderAxes(svg, panel, spec.typography, spec.rendering.styleTokens);
+      renderEventLine(svg, panel);
+      renderText(svg, panel.label, spec.typography);
+      renderText(svg, panel.title, spec.typography);
+      const phases = panel.layoutObjects.find(item => item.type === 'phaseLabels');
+      for (const item of phases.items) renderText(svg, item, spec.typography);
+    }
+
+    render().catch(error => {
+      document.body.textContent = error.message;
+      console.error(error);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Font Overlay Results</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #e9e9e9;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    main {
+      display: grid;
+      gap: 18px;
+      padding: 18px;
+    }
+
+    .stage {
+      position: relative;
+      width: min(100%, var(--w));
+      aspect-ratio: var(--aspect);
+      background: #ffffff;
+      border: 1px solid #bbbbbb;
+      overflow: hidden;
+    }
+
+    img,
+    svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .snippets {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+      max-width: 920px;
+    }
+
+    .snippet {
+      background: #ffffff;
+      border: 1px solid #bbbbbb;
+      overflow: hidden;
+    }
+
+    .snippet svg {
+      position: static;
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .source-text {
+      fill: #111111;
+      opacity: 0.62;
+    }
+
+    .attempt {
+      fill: #d0008b;
+      opacity: 0.64;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="snippets"></div>
+  </main>
+
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const params = new URLSearchParams(window.location.search);
+    const specParam = params.get('spec') || '/tmp/font-qa/reference-01-place-code-opto-C-calibrated.json';
+
+    function make(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function lines(text) {
+      return String(text || '').split('\n');
+    }
+
+    function textItems(spec) {
+      const items = [];
+      for (const panel of spec.panels || []) {
+        for (const item of [panel.label, panel.title, ...(panel.marks || [])]) {
+          if (item && item.text) items.push(item);
+        }
+      }
+      return items;
+    }
+
+    function sourcePosition(item) {
+      const box = item.sourceBox || item.source_box;
+      if (!box) return item;
+      const fontSize = item.fontSize || item.font_size || 13;
+      const parts = lines(item.text);
+      const lineHeight = item.lineHeight || item.line_height || 1.08;
+      const textHeight = parts.length * fontSize * lineHeight;
+      const y = box.y + Math.max(fontSize, (box.height - textHeight) / 2 + fontSize);
+      if (item.overlayX !== undefined || item.overlayY !== undefined) {
+        return {
+          ...item,
+          x: item.overlayX !== undefined ? item.overlayX : item.x,
+          y: item.overlayY !== undefined ? item.overlayY : y
+        };
+      }
+      if ((item.anchor || 'start') === 'middle') {
+        return {...item, x: box.x + box.width / 2, y};
+      }
+      return {...item, x: box.x, y};
+    }
+
+    function textNode(item, className) {
+      const fontSize = item.fontSize || item.font_size || 13;
+      const node = make('text', {
+        x: item.x,
+        y: item.y,
+        class: className,
+        'font-family': item.fontFamily || 'Arial, Helvetica, sans-serif',
+        'font-size': fontSize,
+        'font-weight': item.fontWeight || item.font_weight || 400,
+        'text-anchor': item.anchor || 'start',
+        'dominant-baseline': item.baseline || 'alphabetic',
+        transform: item.rotation ? `rotate(${item.rotation} ${item.x} ${item.y})` : undefined
+      });
+      const parts = lines(item.text);
+      if (parts.length > 1) {
+        parts.forEach((line, index) => {
+          const tspan = make('tspan', {
+            x: item.x,
+            dy: index === 0 ? 0 : fontSize * (item.lineHeight || item.line_height || 1.08)
+          });
+          tspan.textContent = line;
+          node.appendChild(tspan);
+        });
+      } else {
+        node.textContent = parts[0];
+      }
+      return node;
+    }
+
+    function fitText(node, item) {
+      const targetWidth = item.targetWidth || item.target_width || (item.sourceBox && item.sourceBox.width) || (item.source_box && item.source_box.width);
+      if (!targetWidth) return;
+      if (item.fit === 'textLength') {
+        node.setAttribute('textLength', targetWidth);
+        node.setAttribute('lengthAdjust', 'spacingAndGlyphs');
+        return;
+      }
+      const box = node.getBBox();
+      if (!box.width) return;
+      const scale = clamp(targetWidth / box.width, item.minScale || item.min_scale || 0.4, item.maxScale || item.max_scale || 1.45);
+      const x = Number(node.getAttribute('x') || 0);
+      const y = Number(node.getAttribute('y') || 0);
+      const existing = node.getAttribute('transform') || '';
+      node.setAttribute('transform', [existing, `translate(${x} ${y}) scale(${scale} 1) translate(${-x} ${-y})`].filter(Boolean).join(' '));
+    }
+
+    async function renderStage(stage) {
+      const spec = await fetch(stage.dataset.spec).then(response => response.json());
+      const canvas = spec.canvas;
+      const svg = make('svg', {viewBox: `0 0 ${canvas.width} ${canvas.height}`});
+
+      if (stage.dataset.reference && spec.source && spec.source.path) {
+        const img = document.createElement('img');
+        img.src = spec.source.path;
+        img.alt = '';
+        stage.appendChild(img);
+      }
+
+      stage.appendChild(svg);
+      const items = textItems(spec);
+
+      if (stage.dataset.synthetic) {
+        for (const item of items) {
+          const source = sourcePosition(item);
+          const node = textNode(source, 'source-text');
+          svg.appendChild(node);
+          fitText(node, source);
+        }
+      }
+
+      const attempts = [];
+      for (const item of items) {
+        const placed = stage.dataset.reference ? sourcePosition(item) : sourcePosition(item);
+        const node = textNode(placed, 'attempt');
+        svg.appendChild(node);
+        attempts.push([node, placed]);
+      }
+
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      for (const [node, item] of attempts) fitText(node, item);
+    }
+
+    async function renderSnippets(root) {
+      const spec = await fetch(root.dataset.spec).then(response => response.json());
+      const canvas = spec.canvas;
+      const items = textItems(spec);
+      for (const item of items) {
+        const box = item.sourceBox || item.source_box;
+        if (!box) continue;
+        const pad = item.id === 'panel-title' ? 8 : 12;
+        const crop = {
+          x: Math.max(0, box.x - pad),
+          y: Math.max(0, box.y - pad),
+          width: Math.min(canvas.width - Math.max(0, box.x - pad), box.width + pad * 2),
+          height: Math.min(canvas.height - Math.max(0, box.y - pad), box.height + pad * 2)
+        };
+        const wrap = document.createElement('div');
+        wrap.className = 'snippet';
+        const svg = make('svg', {
+          viewBox: `${crop.x} ${crop.y} ${crop.width} ${crop.height}`
+        });
+        svg.appendChild(make('image', {
+          href: spec.source.path,
+          x: 0,
+          y: 0,
+          width: canvas.width,
+          height: canvas.height
+        }));
+        const placed = sourcePosition(item);
+        const attempt = textNode(placed, 'attempt');
+        svg.appendChild(attempt);
+        wrap.appendChild(svg);
+        root.appendChild(wrap);
+        if (document.fonts && document.fonts.ready) await document.fonts.ready;
+        fitText(attempt, placed);
+      }
+    }
+
+    document.querySelectorAll('.stage').forEach(stage => {
+      stage.dataset.spec = stage.dataset.spec || specParam;
+      renderStage(stage);
+    });
+    document.querySelectorAll('.snippets').forEach(root => {
+      root.dataset.spec = root.dataset.spec || specParam;
+      renderSnippets(root);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,207 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-06-replay-stimulation-B",
+  "source": {
+    "path": "../../assets/reference/reference-06-replay-stimulation-B-reference.png",
+    "usage": "QA-only reference image; not used by generated candidate layers.",
+    "notes": "Cropped panel B titled Sequence score heatmap. Two stacked position-bin heatmaps compare Pre-stim and Stim sequence score fields with a shared diverging colorbar."
+  },
+  "canvas": {"width": 374, "height": 500, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Roboto", "Noto Sans"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "First-pass manual fit to the cropped raster; title appears as condensed bold publication sans, ticks and labels regular sans."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "position-bin-linear",
+      "type": "cartesian",
+      "x": {"domain": [1, 220], "label": "Position bin (end)"},
+      "y": {"domain": [1, 200], "label": "Position bin (start)"}
+    },
+    {
+      "id": "sequence-score-z",
+      "type": "colorScale",
+      "scale": "diverging",
+      "domain": [-3, 0, 3],
+      "stops": [
+        {"value": -3, "color": "#0b7f79"},
+        {"value": 0, "color": "#f6f6f1"},
+        {"value": 3, "color": "#f36b00"}
+      ]
+    }
+  ],
+  "layoutObjects": [
+    {
+      "id": "score-colorbar",
+      "type": "colorbar",
+      "orientation": "horizontal",
+      "x": 104,
+      "y": 67,
+      "width": 130,
+      "height": 11,
+      "scale": "sequence-score-z",
+      "title": {
+        "id": "score-colorbar-title",
+        "text": "Sequence score (z)",
+        "x": 169,
+        "y": 58,
+        "fontSize": 14,
+        "fontWeight": 400,
+        "anchor": "middle",
+        "sourceBox": {"x": 112, "y": 48, "width": 113, "height": 16},
+        "fit": "manual"
+      },
+      "ticks": [
+        {"value": -3, "label": "-3"},
+        {"value": 0, "label": "0"},
+        {"value": 3, "label": "3"}
+      ]
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-b",
+      "bbox": {"x": 0, "y": 0, "width": 374, "height": 500},
+      "label": {
+        "id": "panel-label",
+        "text": "B",
+        "x": 10,
+        "y": 27,
+        "fontSize": 24,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 10, "y": 7, "width": 15, "height": 25},
+        "fit": "manual"
+      },
+      "title": {
+        "id": "panel-title",
+        "text": "Sequence score heatmap",
+        "x": 38,
+        "y": 28,
+        "fontSize": 22,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 39, "y": 10, "width": 217, "height": 24},
+        "fit": "manual"
+      },
+      "plotGroups": [
+        {
+          "id": "pre-stim-heatmap",
+          "groupLabel": {"text": "Pre-stim", "x": 44, "y": 164, "rotation": -90, "fontSize": 16, "fill": "#008b87", "anchor": "middle"},
+          "dataBbox": {"x": 86, "y": 108, "width": 252, "height": 149},
+          "domain": {"x": [1, 220], "y": [1, 200], "z": [-3, 3]},
+          "axes": {
+            "x": {"visible": false, "ticks": []},
+            "y": {"visible": true, "ticks": [{"value": 1, "label": "1"}, {"value": 100, "label": "100"}, {"value": 200, "label": "200"}]}
+          },
+          "data": {
+            "id": "pre-stim-sequence-score-field",
+            "type": "heatmapRecipe",
+            "seed": 60621,
+            "cols": 220,
+            "rows": 200,
+            "diagonal": {"slope": 0.92, "intercept": 3, "amplitude": 2.25, "sigma": 5.4},
+            "verticalBanding": {"count": 54, "amplitude": 0.5, "width": 1.4},
+            "horizontalBanding": {"count": 42, "amplitude": 0.25, "width": 1.8},
+            "backgroundBias": -0.2,
+            "noise": 0.42,
+            "offDiagonalPatches": [
+              {"x": 188, "y": 115, "amplitude": 1.0, "sigmaX": 18, "sigmaY": 8},
+              {"x": 136, "y": 86, "amplitude": -0.7, "sigmaX": 12, "sigmaY": 19}
+            ]
+          },
+          "marks": [
+            {"id": "pre-stim-heatmap-mark", "type": "heatmap", "renderer": "canvas", "sourceData": "pre-stim-sequence-score-field", "colorScale": "sequence-score-z", "interpolation": "nearest"}
+          ]
+        },
+        {
+          "id": "stim-heatmap",
+          "groupLabel": {"text": "Stim", "x": 44, "y": 351, "rotation": -90, "fontSize": 16, "fill": "#f05a00", "anchor": "middle"},
+          "dataBbox": {"x": 86, "y": 265, "width": 252, "height": 151},
+          "domain": {"x": [1, 220], "y": [1, 200], "z": [-3, 3]},
+          "axes": {
+            "x": {"visible": true, "ticks": [{"value": 1, "label": "1"}, {"value": 100, "label": "100"}, {"value": 200, "label": "200"}], "label": {"text": "Position bin (end)", "x": 211, "y": 462, "fontSize": 18, "fontWeight": 400, "anchor": "middle"}},
+            "y": {"visible": true, "ticks": [{"value": 1, "label": "1"}, {"value": 100, "label": "100"}]}
+          },
+          "data": {
+            "id": "stim-sequence-score-field",
+            "type": "heatmapRecipe",
+            "seed": 60622,
+            "cols": 220,
+            "rows": 200,
+            "diagonal": {"slope": 0.9, "intercept": 9, "amplitude": 2.75, "sigma": 8.5},
+            "verticalBanding": {"count": 65, "amplitude": 0.72, "width": 1.6},
+            "horizontalBanding": {"count": 57, "amplitude": 0.42, "width": 2.2},
+            "backgroundBias": 0.42,
+            "noise": 0.55,
+            "offDiagonalPatches": [
+              {"x": 58, "y": 58, "amplitude": 1.25, "sigmaX": 17, "sigmaY": 11},
+              {"x": 182, "y": 138, "amplitude": 1.15, "sigmaX": 24, "sigmaY": 10},
+              {"x": 126, "y": 92, "amplitude": -0.58, "sigmaX": 16, "sigmaY": 16}
+            ]
+          },
+          "marks": [
+            {"id": "stim-heatmap-mark", "type": "heatmap", "renderer": "canvas", "sourceData": "stim-sequence-score-field", "colorScale": "sequence-score-z", "interpolation": "nearest"}
+          ]
+        }
+      ],
+      "annotations": [
+        {
+          "id": "shared-y-label",
+          "type": "text",
+          "text": "Position bin (start)",
+          "x": 20,
+          "y": 256,
+          "rotation": -90,
+          "fontSize": 18,
+          "fontWeight": 400,
+          "anchor": "middle"
+        },
+        {
+          "id": "right-cropped-y-label",
+          "type": "text",
+          "text": "Posterior (position)",
+          "x": 371,
+          "y": 277,
+          "rotation": -90,
+          "fontSize": 16,
+          "fontWeight": 400,
+          "anchor": "middle",
+          "opacity": 0.95,
+          "provenance": "Visible as a cropped neighboring panel axis label at the right edge of the source crop."
+        }
+      ],
+      "provenance": [
+        "Heatmap values are synthetic seeded recipes approximating the diagonal high-score structure and fine vertical/horizontal banding; no source matrix pixels were reused.",
+        "Plot boxes and tick anchors were estimated visually from the raster at 374 x 500 px.",
+        "Right-edge rotated text appears to belong to an adjacent cropped panel and is represented as a page annotation rather than part of the heatmap coordinate system."
+      ],
+      "confidence": [
+        {"item": "layout geometry", "score": 0.78},
+        {"item": "heatmap texture and intensity", "score": 0.58},
+        {"item": "typography", "score": 0.68}
+      ]
+    }
+  ],
+  "validation": {
+    "expectedGeneratedLayers": ["canvas heatmap texture", "svg axes and labels", "svg colorbar"],
+    "forbiddenGeneratedReuse": ["source raster as generated layer", "canvas source-raster blit", "CSS background using source path"],
+    "checks": [
+      {"id": "json-valid", "description": "Spec parses as JSON."},
+      {"id": "two-heatmap-groups", "description": "Renderer creates two canvas heatmap groups with editable axes."},
+      {"id": "qa-reference-only", "description": "Reference image is only displayed through the labeled QA toggle."}
+    ]
+  },
+  "confidence": [
+    {"target": "overall", "confidence": "medium-low", "note": "Independent first pass intended for visual inspection, not a measured pixel reconstruction."}
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "font-qa-scale-fit",
+  "source": {
+    "path": "",
+    "usage": "QA-only; sourceBox is synthetic for renderer verification."
+  },
+  "canvas": {"width": 360, "height": 140, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 16,
+    "color": "#111111",
+    "fontCandidates": ["Arial", "Courier New", "Times New Roman"]
+  },
+  "panels": [
+    {
+      "id": "scale-panel",
+      "marks": [
+        {
+          "id": "scale-target",
+          "type": "text",
+          "text": "ScaleX fitting example",
+          "x": 40,
+          "y": 72,
+          "fontSize": 20,
+          "fontWeight": 400,
+          "anchor": "start",
+          "targetWidth": 110,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.2,
+          "minScale": 0.4,
+          "sourceBox": {"x": 40, "y": 50, "width": 110, "height": 24}
+        }
+      ]
+    }
+  ],
+  "confidence": []
+}

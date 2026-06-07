@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Actual Panel Viewer</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #e4e4e4;
+      --panel: #ffffff;
+      --ink: #111111;
+      --line: #b8b8b8;
+      --accent: #111111;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 52px;
+      padding: 10px 14px;
+      background: #f6f6f6;
+      border-bottom: 1px solid var(--line);
+    }
+
+    select,
+    button {
+      height: 32px;
+      border: 1px solid #8f8f8f;
+      background: #ffffff;
+      color: var(--ink);
+      font: inherit;
+    }
+
+    select {
+      min-width: 310px;
+      padding: 0 10px;
+    }
+
+    .mode {
+      display: inline-flex;
+      border: 1px solid #8f8f8f;
+      background: #ffffff;
+    }
+
+    .mode button {
+      min-width: 98px;
+      border: 0;
+      border-right: 1px solid #8f8f8f;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .mode button:last-child {
+      border-right: 0;
+    }
+
+    .mode button.active {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .spacer {
+      flex: 1;
+    }
+
+    .viewport {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-height: 0;
+      padding: 18px;
+      overflow: hidden;
+    }
+
+    .stage {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      background: var(--panel);
+      border: 1px solid #c8c8c8;
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .content-box {
+      position: relative;
+      transform-origin: center center;
+      background: #ffffff;
+      outline: 1px solid #d0d0d0;
+    }
+
+    iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: transparent;
+    }
+
+    .reference {
+      position: absolute;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      background: #ffffff;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .stage.overlay-mode iframe {
+      z-index: 2;
+    }
+
+    .stage.overlay-mode .reference {
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <select id="panelSelect" aria-label="Subpanel"></select>
+    <div class="mode" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+      <button id="overlayButton" type="button">Overlay</button>
+      <button id="geometryButton" type="button">Geometry</button>
+    </div>
+    <div class="spacer"></div>
+  </div>
+
+  <main class="viewport">
+    <div class="stage">
+      <div id="contentBox" class="content-box">
+        <iframe id="generatedFrame" title="Generated panel"></iframe>
+        <img id="referenceImage" class="reference hidden" alt="">
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const panels = [
+      {
+        id: 'reference-01-place-code-opto-A',
+        label: 'reference-01-place-code-opto-A',
+        width: 512,
+        height: 512,
+        generated: '/outputs/reference-01-place-code-opto-A-make-figure/reference-01-place-code-opto-A.html',
+        reference: '/assets/reference/reference-01-place-code-opto-A-reference.png'
+      },
+      {
+        id: 'reference-01-place-code-opto-B',
+        label: 'reference-01-place-code-opto-B',
+        width: 464,
+        height: 512,
+        generated: '/outputs/reference-01-place-code-opto-B-make-figure/reference-01-place-code-opto-B.html',
+        reference: '/assets/reference/reference-01-place-code-opto-B-reference.png'
+      },
+      {
+        id: 'reference-01-place-code-opto-C',
+        label: 'reference-01-place-code-opto-C',
+        width: 560,
+        height: 512,
+        generated: '/outputs/reference-01-place-code-opto-C-make-figure/reference-01-place-code-opto-C.html',
+        reference: '/assets/reference/reference-01-place-code-opto-C-reference.png'
+      },
+      {
+        id: 'reference-01-place-code-opto-F',
+        label: 'reference-01-place-code-opto-F',
+        width: 560,
+        height: 512,
+        generated: '/outputs/reference-01-place-code-opto-F-make-figure/reference-01-place-code-opto-F.html',
+        reference: '/assets/reference/reference-01-place-code-opto-F-reference.png'
+      },
+      {
+        id: 'reference-02-decision-dynamics-A',
+        label: 'reference-02-decision-dynamics-A',
+        width: 430,
+        height: 514,
+        generated: '/outputs/reference-02-decision-dynamics-A-make-figure/reference-02-decision-dynamics-A.html',
+        reference: '/assets/reference/reference-02-decision-dynamics-A-reference.png'
+      },
+      {
+        id: 'reference-02-decision-dynamics-B',
+        label: 'reference-02-decision-dynamics-B',
+        width: 356,
+        height: 514,
+        generated: '/outputs/reference-02-decision-dynamics-B-make-figure/reference-02-decision-dynamics-B.html',
+        reference: '/assets/reference/reference-02-decision-dynamics-B-reference.png'
+      }
+    ];
+
+    const select = document.getElementById('panelSelect');
+    const generatedButton = document.getElementById('generatedButton');
+    const referenceButton = document.getElementById('referenceButton');
+    const overlayButton = document.getElementById('overlayButton');
+    const geometryButton = document.getElementById('geometryButton');
+    const stage = document.querySelector('.stage');
+    const contentBox = document.getElementById('contentBox');
+    const frame = document.getElementById('generatedFrame');
+    const reference = document.getElementById('referenceImage');
+    const params = new URLSearchParams(window.location.search);
+    let mode = ['generated', 'reference', 'overlay', 'geometry'].includes(params.get('mode')) ? params.get('mode') : 'generated';
+
+    for (const panel of panels) {
+      const option = document.createElement('option');
+      option.value = panel.id;
+      option.textContent = panel.label;
+      select.appendChild(option);
+    }
+
+    function activePanel() {
+      return panels.find(panel => panel.id === select.value) || panels[0];
+    }
+
+    function fitContentBox() {
+      const panel = activePanel();
+      contentBox.style.width = `${panel.width}px`;
+      contentBox.style.height = `${panel.height}px`;
+      const availableWidth = stage.clientWidth - 36;
+      const availableHeight = stage.clientHeight - 36;
+      const scale = Math.min(availableWidth / panel.width, availableHeight / panel.height, 1.9);
+      contentBox.style.transform = `scale(${Math.max(0.1, scale)})`;
+    }
+
+    function fitGeneratedFrame() {
+      const doc = frame.contentDocument;
+      if (!doc) return;
+      const panel = activePanel();
+
+      const style = doc.createElement('style');
+      style.textContent = `
+        html, body {
+          width: ${panel.width}px !important;
+          height: ${panel.height}px !important;
+          margin: 0 !important;
+          overflow: hidden !important;
+          background: #ffffff !important;
+        }
+
+        header {
+          display: none !important;
+        }
+
+        main {
+          width: ${panel.width}px !important;
+          height: ${panel.height}px !important;
+          min-height: 0 !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          display: block !important;
+          background: #ffffff !important;
+        }
+
+        .frame {
+          position: relative !important;
+          width: ${panel.width}px !important;
+          height: ${panel.height}px !important;
+          margin: 0 !important;
+          box-shadow: none !important;
+          border: 0 !important;
+          transform: none !important;
+          transform-origin: top left !important;
+          overflow: hidden !important;
+        }
+
+        .surface {
+          position: absolute !important;
+          inset: 0 !important;
+          display: block !important;
+          width: ${panel.width}px !important;
+          height: ${panel.height}px !important;
+          background: #ffffff !important;
+        }
+
+        .frame > .reference {
+          display: none !important;
+        }
+
+        canvas,
+        svg {
+          position: absolute !important;
+          inset: 0 !important;
+          width: ${panel.width}px !important;
+          height: ${panel.height}px !important;
+          max-width: none !important;
+          max-height: none !important;
+        }
+
+        html.codex-text-overlay,
+        body.codex-text-overlay {
+          background: transparent !important;
+        }
+
+        body.codex-text-overlay main,
+        body.codex-text-overlay .frame,
+        body.codex-text-overlay .surface {
+          background: transparent !important;
+        }
+
+        body.codex-text-overlay canvas {
+          display: none !important;
+        }
+
+        body.codex-text-overlay svg > * {
+          visibility: hidden !important;
+        }
+
+        body.codex-text-overlay svg text,
+        body.codex-text-overlay svg text * {
+          visibility: visible !important;
+        }
+
+        body.codex-text-overlay svg text {
+          fill: rgba(228, 0, 150, 0.86) !important;
+          paint-order: stroke fill !important;
+          stroke: rgba(255, 255, 255, 0.55) !important;
+          stroke-width: 0.45px !important;
+        }
+
+        html.codex-geometry-overlay,
+        body.codex-geometry-overlay,
+        body.codex-geometry-overlay main,
+        body.codex-geometry-overlay .frame,
+        body.codex-geometry-overlay .surface {
+          background: transparent !important;
+        }
+
+        body.codex-geometry-overlay canvas,
+        body.codex-geometry-overlay svg text,
+        body.codex-geometry-overlay svg path,
+        body.codex-geometry-overlay svg circle,
+        body.codex-geometry-overlay svg polygon {
+          display: none !important;
+        }
+
+        body.codex-geometry-overlay svg [data-role="grid-layer"],
+        body.codex-geometry-overlay svg [data-role="box-layer"],
+        body.codex-geometry-overlay svg [data-role="axis-ticks"],
+        body.codex-geometry-overlay svg line[data-role^="grid-line"],
+        body.codex-geometry-overlay svg line[data-role="box-edge"],
+        body.codex-geometry-overlay svg line[data-role="axis-tick-mark"] {
+          display: inline !important;
+          visibility: visible !important;
+        }
+
+        body.codex-geometry-overlay svg line[data-role^="grid-line"] {
+          stroke: rgba(228, 0, 150, 0.92) !important;
+          stroke-width: 1.6px !important;
+          stroke-dasharray: none !important;
+        }
+
+        body.codex-geometry-overlay svg line[data-role="box-edge"],
+        body.codex-geometry-overlay svg line[data-role="axis-tick-mark"] {
+          stroke: rgba(255, 178, 0, 0.98) !important;
+          stroke-width: 2.4px !important;
+        }
+      `;
+      doc.head.appendChild(style);
+      setGeneratedOverlay(mode);
+      fitContentBox();
+    }
+
+    function setGeneratedOverlay(nextMode) {
+      const doc = frame.contentDocument;
+      if (!doc || !doc.body) return;
+      const textOverlay = nextMode === 'overlay';
+      const geometryOverlay = nextMode === 'geometry';
+      doc.documentElement.classList.toggle('codex-text-overlay', textOverlay);
+      doc.body.classList.toggle('codex-text-overlay', textOverlay);
+      doc.documentElement.classList.toggle('codex-geometry-overlay', geometryOverlay);
+      doc.body.classList.toggle('codex-geometry-overlay', geometryOverlay);
+      frame.style.backgroundColor = 'transparent';
+    }
+
+    function render() {
+      const panel = activePanel();
+      fitContentBox();
+      reference.src = panel.reference;
+      reference.alt = `${panel.label} reference`;
+      if (frame.src !== new URL(panel.generated, window.location.href).href) {
+        frame.src = panel.generated;
+      }
+
+      const showGenerated = mode === 'generated';
+      const showReference = mode === 'reference';
+      const showOverlay = mode === 'overlay';
+      const showGeometry = mode === 'geometry';
+      frame.classList.toggle('hidden', showReference);
+      reference.classList.toggle('hidden', showGenerated);
+      stage.classList.toggle('overlay-mode', showOverlay || showGeometry);
+      generatedButton.classList.toggle('active', showGenerated);
+      referenceButton.classList.toggle('active', showReference);
+      overlayButton.classList.toggle('active', showOverlay);
+      geometryButton.classList.toggle('active', showGeometry);
+      setGeneratedOverlay(mode);
+    }
+
+    select.addEventListener('change', () => {
+      const next = new URL(window.location.href);
+      next.searchParams.set('panel', select.value);
+      next.searchParams.set('mode', mode);
+      window.history.replaceState(null, '', next);
+      render();
+    });
+    generatedButton.addEventListener('click', () => {
+      mode = 'generated';
+      const next = new URL(window.location.href);
+      next.searchParams.set('mode', mode);
+      window.history.replaceState(null, '', next);
+      render();
+    });
+    referenceButton.addEventListener('click', () => {
+      mode = 'reference';
+      const next = new URL(window.location.href);
+      next.searchParams.set('mode', mode);
+      window.history.replaceState(null, '', next);
+      render();
+    });
+    overlayButton.addEventListener('click', () => {
+      mode = 'overlay';
+      const next = new URL(window.location.href);
+      next.searchParams.set('mode', mode);
+      window.history.replaceState(null, '', next);
+      render();
+    });
+    geometryButton.addEventListener('click', () => {
+      mode = 'geometry';
+      const next = new URL(window.location.href);
+      next.searchParams.set('mode', mode);
+      window.history.replaceState(null, '', next);
+      render();
+    });
+    frame.addEventListener('load', fitGeneratedFrame);
+    window.addEventListener('resize', fitContentBox);
+
+    select.value = panels.some(panel => panel.id === params.get('panel')) ? params.get('panel') : panels[0].id;
+    render();
+  </script>
+</body>
+</html>

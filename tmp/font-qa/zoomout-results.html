@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zoomed Out Font Calibration Results</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #e8e8e8;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 16px;
+      padding: 16px;
+      align-items: start;
+    }
+
+    figure {
+      margin: 0;
+      background: #ffffff;
+      border: 1px solid #bbbbbb;
+      padding: 10px;
+    }
+
+    figcaption {
+      margin: 0 0 8px;
+      font-size: 12px;
+      color: #333333;
+    }
+
+    .stage {
+      position: relative;
+      width: 100%;
+      aspect-ratio: var(--aspect);
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    img,
+    svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    text {
+      fill: #d0008b;
+      opacity: 0.64;
+    }
+  </style>
+</head>
+<body>
+  <main id="root"></main>
+
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const specs = [
+      '/tmp/font-qa/ocr-targets/reference-01-place-code-opto-A-calibrated.json',
+      '/tmp/font-qa/ocr-targets/reference-01-place-code-opto-B-calibrated.json',
+      '/tmp/font-qa/ocr-targets/reference-01-place-code-opto-C-calibrated.json',
+      '/tmp/font-qa/ocr-targets/reference-01-place-code-opto-F-calibrated.json',
+      '/tmp/font-qa/ocr-targets/reference-02-decision-dynamics-A-calibrated.json',
+      '/tmp/font-qa/ocr-targets/reference-02-decision-dynamics-B-calibrated.json'
+    ];
+
+    function make(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function lines(text) {
+      return String(text || '').split('\n');
+    }
+
+    function textItems(spec) {
+      const items = [];
+      for (const panel of spec.panels || []) {
+        for (const item of [panel.label, panel.title, ...(panel.marks || [])]) {
+          const score = item?.calibrationScore ?? 999;
+          const confidence = item?.ocrConfidence ?? 0;
+          const noisyText = /[\\_=—]{2,}|\\bRn\\b|\\bSA\\b|\\d+\\s*[A-Za-z]*\\s+Om|\\bog\\b/i.test(item?.text || '');
+          if (item && item.text && score <= 0.85 && confidence >= 85 && !noisyText) items.push(item);
+        }
+      }
+      return items;
+    }
+
+    function textNode(item) {
+      const fontSize = item.fontSize || item.font_size || 13;
+      const node = make('text', {
+        x: item.overlayX ?? item.x,
+        y: item.overlayY ?? item.y,
+        'font-family': item.fontFamily || 'Arial, Helvetica, sans-serif',
+        'font-size': fontSize,
+        'font-weight': item.fontWeight || item.font_weight || 400,
+        'text-anchor': item.anchor || 'start',
+        'dominant-baseline': item.baseline || 'alphabetic'
+      });
+      const parts = lines(item.text);
+      if (parts.length > 1) {
+        parts.forEach((line, index) => {
+          const tspan = make('tspan', {
+            x: item.overlayX ?? item.x,
+            dy: index === 0 ? 0 : fontSize * (item.lineHeight || item.line_height || 1.08)
+          });
+          tspan.textContent = line;
+          node.appendChild(tspan);
+        });
+      } else {
+        node.textContent = parts[0];
+      }
+      return node;
+    }
+
+    function fitText(node, item) {
+      const targetWidth = item.targetWidth || item.target_width;
+      if (!targetWidth) return;
+      const box = node.getBBox();
+      if (!box.width) return;
+      const scale = clamp(targetWidth / box.width, item.minScale || item.min_scale || 0.5, item.maxScale || item.max_scale || 1.5);
+      const x = Number(node.getAttribute('x') || 0);
+      const y = Number(node.getAttribute('y') || 0);
+      node.setAttribute('transform', `translate(${x} ${y}) scale(${scale} 1) translate(${-x} ${-y})`);
+    }
+
+    async function render(specUrl) {
+      const spec = await fetch(specUrl).then(response => response.json());
+      const figure = document.createElement('figure');
+      figure.innerHTML = `
+        <figcaption>${spec.id.replace('-ocr-text-targets', '')}</figcaption>
+        <div class="stage" style="--aspect:${spec.canvas.width / spec.canvas.height}">
+          <img src="${spec.source.path}" alt="">
+        </div>
+      `;
+      const stage = figure.querySelector('.stage');
+      const svg = make('svg', {viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`});
+      stage.appendChild(svg);
+      const nodes = [];
+      for (const item of textItems(spec)) {
+        const node = textNode(item);
+        svg.appendChild(node);
+        nodes.push([node, item]);
+      }
+      document.getElementById('root').appendChild(figure);
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      for (const [node, item] of nodes) fitText(node, item);
+    }
+
+    specs.forEach(render);
+  </script>
+</body>
+</html>

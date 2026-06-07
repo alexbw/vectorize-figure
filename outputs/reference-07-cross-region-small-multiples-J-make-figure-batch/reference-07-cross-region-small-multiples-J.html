@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-07-cross-region-small-multiples-J reconstruction</title>
+  <style>
+    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #cccccc; }
+    h1 { margin: 0; font-size: 15px; font-weight: 700; }
+    .note { margin-top: 3px; font-size: 12px; color: #555555; }
+    .toggle { display: inline-flex; border: 1px solid #999999; border-radius: 4px; overflow: hidden; }
+    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
+    .toggle button.active { background: #111111; color: #ffffff; }
+    main { min-height: calc(100vh - 48px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
+    .frame { position: relative; background: #ffffff; box-shadow: 0 1px 5px rgba(0,0,0,0.12); overflow: hidden; }
+    .surface, .referenceWrap { position: absolute; inset: 0; }
+    .referenceWrap { display: none; background: #ffffff; }
+    .referenceWrap img { display: block; width: 100%; height: 100%; object-fit: contain; }
+    .referenceLabel { position: absolute; top: 8px; left: 8px; padding: 3px 6px; background: rgba(255,255,255,0.88); border: 1px solid #888888; font-size: 11px; font-weight: 700; }
+    .show-reference .surface { display: none; }
+    .show-reference .referenceWrap { display: block; }
+    svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Reference 07 panel J reconstruction</h1>
+      <div class="note">Generated candidate is rendered from editable JSON. Source image is QA/reference only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <div class="referenceWrap">
+        <img id="reference" alt="QA reference source image">
+        <div class="referenceLabel">QA reference source</div>
+      </div>
+    </div>
+  </main>
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const specUrl = 'reference-07-cross-region-small-multiples-J.json';
+    const $ = id => document.getElementById(id);
+    const make = (tag, attrs = {}) => {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    };
+    const scale = (domain, range, value) => range[0] + ((value - domain[0]) / (domain[1] - domain[0])) * (range[1] - range[0]);
+
+    function text(svg, attrs) {
+      const node = make('text', {
+        x: attrs.x,
+        y: attrs.y,
+        fill: attrs.fill || '#111111',
+        'font-size': attrs.fontSize,
+        'font-weight': attrs.fontWeight || 400,
+        'text-anchor': attrs.anchor || 'start',
+        'dominant-baseline': attrs.baseline || 'alphabetic'
+      });
+      if (attrs.family) node.setAttribute('font-family', attrs.family);
+      String(attrs.value).split('\n').forEach((line, index) => {
+        const span = make('tspan', {x: attrs.x, dy: index ? attrs.fontSize * 1.08 : 0});
+        span.textContent = line;
+        node.appendChild(span);
+      });
+      svg.appendChild(node);
+      return node;
+    }
+
+    function renderColorbar(svg, colorbar, typography) {
+      const box = colorbar.bbox;
+      const defs = make('defs');
+      const grad = make('linearGradient', {id: 'residual-gradient', x1: '0%', y1: '100%', x2: '0%', y2: '0%'});
+      [['0%', '#003bd1'], ['50%', '#ffffff'], ['100%', '#ee1c25']].forEach(([offset, color]) => grad.appendChild(make('stop', {offset, 'stop-color': color})));
+      defs.appendChild(grad);
+      svg.appendChild(defs);
+      svg.appendChild(make('rect', {x: box.x, y: box.y, width: box.width, height: box.height, fill: 'url(#residual-gradient)', stroke: '#111111', 'stroke-width': 1}));
+      const yFor = value => scale([-2, 2], [box.y + box.height, box.y], value);
+      colorbar.ticks.forEach(tick => text(svg, {x: box.x + box.width + 12, y: yFor(tick.value) + 4, value: tick.label, fontSize: 12, family: typography.fontFamily}));
+      text(svg, {x: colorbar.label.anchor.x, y: colorbar.label.anchor.y - 8, value: colorbar.label.text, fontSize: colorbar.label.fontSize, family: typography.fontFamily});
+    }
+
+    function render(spec) {
+      $('frame').style.width = `${spec.canvas.width}px`;
+      $('frame').style.height = `${spec.canvas.height}px`;
+      $('reference').src = spec.source.path;
+      const surface = $('surface');
+      surface.innerHTML = '';
+      const svg = make('svg', {viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, role: 'img', 'aria-label': spec.id});
+      svg.style.background = spec.canvas.background;
+      surface.appendChild(svg);
+
+      const typography = spec.typography;
+      svg.setAttribute('font-family', typography.fontFamily);
+      const coord = spec.coordinateSystems.find(item => item.id === 'panel-j.autocorrelation');
+      const regions = spec.data.regions;
+      const yStep = (coord.y.range[1] - coord.y.range[0]) / (coord.y.categories.length - 1);
+      const yFor = label => coord.y.range[0] + coord.y.categories.indexOf(label) * yStep;
+      const xFor = value => scale(coord.x.domain, coord.x.range, value);
+
+      renderColorbar(svg, spec.layoutObjects.find(item => item.id === 'residual-colorbar'), typography);
+      const panelLabel = spec.layoutObjects.find(item => item.id === 'panel-j-label');
+      text(svg, {x: panelLabel.anchor.x, y: panelLabel.anchor.y, value: panelLabel.text, fontSize: panelLabel.fontSize, fontWeight: panelLabel.fontWeight, family: typography.fontFamily});
+      const title = spec.layoutObjects.find(item => item.id === 'panel-j-title');
+      text(svg, {x: title.anchor.x, y: title.anchor.y, value: title.text, fontSize: title.fontSize, fontWeight: title.fontWeight, family: typography.fontFamily});
+
+      const zero = spec.layoutObjects.find(item => item.id === 'panel-j-zero-line');
+      svg.appendChild(make('line', {x1: xFor(zero.xValue), y1: zero.y1, x2: xFor(zero.xValue), y2: zero.y2, stroke: zero.style.stroke, 'stroke-width': zero.style.strokeWidth}));
+      const axis = spec.layoutObjects.find(item => item.id === 'panel-j-x-axis');
+      svg.appendChild(make('line', {x1: axis.line.x1, y1: axis.line.y1, x2: axis.line.x2, y2: axis.line.y2, stroke: '#222222', 'stroke-width': 1}));
+      axis.ticks.forEach(tick => {
+        const x = xFor(tick.value);
+        svg.appendChild(make('line', {x1: x, y1: axis.line.y1, x2: x, y2: axis.line.y1 + axis.tickLength, stroke: '#222222', 'stroke-width': 1}));
+        text(svg, {x, y: axis.line.y1 + 17, value: tick.label, fontSize: 12, anchor: 'middle', family: typography.fontFamily});
+      });
+      text(svg, {x: axis.label.anchor.x, y: axis.label.anchor.y, value: axis.label.text, fontSize: axis.label.fontSize, anchor: 'middle', family: typography.fontFamily});
+
+      regions.forEach(region => {
+        const y = yFor(region.label);
+        text(svg, {x: 165, y: y + 4, value: region.label, fontSize: 14, fill: region.color, family: typography.fontFamily});
+        const x1 = xFor(region.ciLow);
+        const x2 = xFor(region.ciHigh);
+        const xm = xFor(region.mean);
+        svg.appendChild(make('line', {x1, y1: y, x2, y2: y, stroke: region.color, 'stroke-width': 1}));
+        svg.appendChild(make('line', {x1, y1: y - 2.5, x2: x1, y2: y + 2.5, stroke: region.color, 'stroke-width': 1}));
+        svg.appendChild(make('line', {x1: x2, y1: y - 2.5, x2, y2: y + 2.5, stroke: region.color, 'stroke-width': 1}));
+        svg.appendChild(make('circle', {cx: xm, cy: y, r: 3.4, fill: region.color}));
+        text(svg, {x: 431, y: y + 4, value: region.display, fontSize: 12, family: typography.fontFamily});
+      });
+    }
+
+    $('generatedButton').addEventListener('click', () => {
+      $('frame').classList.remove('show-reference');
+      $('generatedButton').classList.add('active');
+      $('referenceButton').classList.remove('active');
+    });
+    $('referenceButton').addEventListener('click', () => {
+      $('frame').classList.add('show-reference');
+      $('referenceButton').classList.add('active');
+      $('generatedButton').classList.remove('active');
+    });
+
+    fetch(specUrl).then(response => response.json()).then(render).catch(error => {
+      document.body.insertAdjacentHTML('beforeend', `<pre>${String(error)}</pre>`);
+    });
+  </script>
+</body>
+</html>

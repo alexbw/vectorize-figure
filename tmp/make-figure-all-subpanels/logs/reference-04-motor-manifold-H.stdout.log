@@ -1,0 +1,2196 @@
+Reading additional input from stdin...
+OpenAI Codex v0.137.0
+--------
+workdir: /Users/alex/Code/scientific-figure-reconstruction
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: low
+reasoning summaries: none
+session id: 019e9e73-0b0e-7a63-8595-9734b503d486
+--------
+user
+$make-figure assets/reference/reference-04-motor-manifold-H-reference.png. Generate an independent first-pass reconstruction for visual inspection. Write outputs only to outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.json and outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.html. Use the make-figure skill contract and the repository command/skill code: generated visual layers must not reuse the source raster; the source may appear only as a clearly labeled QA/reference view. Keep the JSON semantic and editable. Verify JSON validity and search the output for accidental drawImage/background source reuse. Do not modify existing output directories, docs, skills, plugins, source assets, or unrelated files.
+codex
+Using the `make-figure` skill now. I’ll inspect the reference dimensions and existing project patterns, then write only the requested JSON/HTML outputs and run the required validity/source-reuse checks.
+exec
+/bin/zsh -lc "sed -n '1,220p' skills/make-figure/references/semantic-figure-ir.md" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+# Semantic Figure IR
+
+Use this document with `reconstruction-contract.md`. The reconstruction output
+is a semantic figure intermediate representation, not a collection of detected
+bounding boxes.
+
+## Core Model
+
+A scientific figure reconstruction is a typed scene graph:
+
+```text
+source evidence
+  -> semantic figure objects
+  -> named coordinate systems and transforms
+  -> derived layout objects
+  -> renderable marks and text
+  -> validation constraints
+```
+
+Bounding boxes, OCR text, detected line segments, and color samples are source
+evidence. They help infer the graph, but they are not the graph itself.
+
+## Common Object Fields
+
+Any semantic object may use these fields:
+
+```json
+{
+  "id": "panel-a-x-tick-0",
+  "type": "axisTick",
+  "parent": "panel-a-x-axis",
+  "children": ["panel-a-x-tick-0-mark", "panel-a-x-tick-0-label"],
+  "usesTransform": "panel-a.xy",
+  "anchorTo": "panel-a-x-axis",
+  "derivesFrom": "panel-a.x.ticks[0]",
+  "sourceEvidence": ["bbox-17", "line-04"],
+  "provenance": {"confidence": "medium", "note": "Tick position measured from source."}
+}
+```
+
+Prefer stable ids and explicit relationships over free-floating pixel objects.
+When an object needs source-calibrated coordinates, keep those coordinates on
+the semantic object as measured anchors instead of detaching the rendered mark
+or text.
+
+## Top-Level IR Concepts
+
+- `sourceEvidence`: source bboxes, OCR snippets, measured line segments, color
+  samples, and notes. These are evidence records, not render instructions.
+- `coordinateSystems`: named transforms such as Cartesian data scales,
+  categorical scales, event anchors, color scales, image/matrix ranges, and
+  projected 3D scenes.
+- `layoutObjects`: axes, tick-label bands, legends, colorbars, tables, insets,
+  panel titles, scale bars, and other objects that reserve space or anchor text.
+- `data`: exact data, approximate data, or generation recipes.
+- `marks`: visual encodings derived from data or layout objects.
+- `annotations`: labels, arrows, brackets, callouts, and event labels anchored
+  to data points, marks, or layout objects.
+- `constraints`: relationship and layout invariants that must survive rendering.
+- `rendering`: renderer hints, layer order, and style tokens.
+- `validation`: renderer- or harness-readable checks and expected counts.
+- `provenance`: object-level confidence and unresolved inferences.
+
+Panel-specific schemas may organize these concepts differently, but they should
+preserve the same relationships.
+
+## Required Relationship Invariants
+
+Renderers and validation scripts should enforce these when the source shows the
+corresponding objects:
+
+- Labeled ticks render one tick mark and one tick label with matching
+  `axis`/`value` metadata.
+- Axis titles anchor to an axis, tick-label band, or measured source anchor;
+  they are not independent guessed text.
+- Event-aligned ticks, event lines, brackets, and annotations share a named
+  event anchor or explicit measured visual anchor.
+- Grid lines belong to named grid planes and families; grid lines must not be
+  confused with solid box edges.
+- Legends reference real series, marker classes, or mark groups.
+- Colorbars reference a color scale and own their ticks and title.
+- Table cell text, row rules, separators, and highlights remain separate
+  objects when their visual styles differ.
+- Annotations anchor to data coordinates, generated marks, or layout objects
+  unless they are explicitly page-positioned.
+- Generated visuals never reuse the source raster as a generated layer.
+
+## Relationship Inventory Step
+
+Before writing the final JSON for a nontrivial panel, produce a short inventory:
+
+- plot type and renderer strategy
+- coordinate systems and named anchors
+- layout objects and their children
+- data-driven marks and their series/group ownership
+- annotations and what each one anchors to
+- source-calibrated overrides and why the transform alone is insufficient
+- validation constraints that should be checked in the rendered DOM
+
+Do this before visual tuning. If a generated object looks wrong, first ask which
+relationship or transform is missing before changing pixels.
+
+
+exec
+/bin/zsh -lc "sed -n '1,220p' skills/make-figure/references/reconstruction-contract.md" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+# Reconstruction Contract
+
+Use this contract when converting a raster scientific figure into configurable HTML and JSON.
+
+Read `semantic-figure-ir.md` alongside this contract. The JSON may be
+panel-specific, but it must preserve semantic relationships between data,
+transforms, layout objects, marks, labels, and validation constraints.
+
+## JSON Shape
+
+Minimum top-level fields:
+
+```json
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "figure-id",
+  "source": {
+    "path": "./source.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "What was inferred visually."
+  },
+  "canvas": {
+    "width": 800,
+    "height": 600,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [
+      "https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&display=swap"
+    ],
+    "fontFaces": [
+      {"family": "FigureSans", "weight": 400, "src": "./fonts/FigureSans-Regular.woff2"},
+      {"family": "FigureSans", "weight": 700, "src": "./fonts/FigureSans-Bold.woff2"}
+    ],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Source Sans 3", "Roboto", "Noto Sans"],
+    "calibration": {
+      "fontStretch": "normal",
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Use measured source text boxes to tune font family, stretch, size, and line height."
+    }
+  },
+  "panels": [],
+  "confidence": []
+}
+```
+
+`fontImports` is for lightweight browser-based experimentation with external
+CSS font providers such as Google Fonts. `fontFaces` is for reproducible local
+or adjacent font files when a typeface has been selected. Do not introduce a
+build system only to test fonts; use browser-native font loading and SVG text
+measurement first.
+
+## Panel Shape
+
+Represent each subpanel explicitly. For a single cropped panel, use one item in `panels`.
+
+```json
+{
+  "id": "panel-a",
+  "label": {"text": "A", "x": 16, "y": 20, "fontSize": 24, "fontWeight": 700},
+  "title": {"text": "Panel title", "x": 56, "y": 24, "fontSize": 16, "fontWeight": 700},
+  "bbox": {"x": 0, "y": 0, "width": 400, "height": 300},
+  "plot": {
+    "dataBbox": {"x": 64, "y": 48, "width": 300, "height": 210},
+    "axes": {
+      "xAxis": {"id": "panel-a-x-axis", "line": {"x1": 64, "y1": 258, "x2": 364, "y2": 258}, "tickLength": 6},
+      "yAxis": {"id": "panel-a-y-axis", "line": {"x1": 64, "y1": 48, "x2": 64, "y2": 258}, "tickLength": 6}
+    },
+    "x": {
+      "scale": "linear",
+      "domain": [0, 10],
+      "ticks": [{"value": 0, "label": "0"}, {"value": 5, "label": "5"}, {"value": 10, "label": "10"}],
+      "label": {"text": "Time (s)"}
+    },
+    "y": {
+      "scale": "linear",
+      "domain": [0, 1],
+      "ticks": [{"value": 0, "label": "0"}, {"value": 0.5, "label": "0.5"}, {"value": 1, "label": "1"}],
+      "label": {"text": "Response"}
+    }
+  },
+  "marks": [],
+  "annotations": [],
+  "provenance": []
+}
+```
+
+## Mark Types
+
+Use semantic mark objects. Add fields as needed, but keep the meaning explicit.
+
+- `lineSeries`: data points plus stroke, width, optional uncertainty band.
+- `scatter`: points, marker shape, size, fill, stroke, opacity.
+- `bar`: categorical or numeric bars with baseline, fill, stroke.
+- `heatmap`: matrix, color scale, bounds, interpolation flag.
+- `raster`: event times by row or a generation recipe with seed and density.
+- `violin`: category, outline path or generated KDE recipe, median/quantile marks.
+- `path`: editable SVG path data for contours, arrows, outlines, or schematic curves.
+- `rect`, `circle`, `ellipse`, `text`, `bracket`, `arrow`: annotations and schematics.
+- `imageRecipe`: generated texture or synthetic field; never point this at the source raster.
+
+## Coordinate Systems
+
+Define named transforms before rendering marks:
+
+- `plot.dataBbox` maps data to pixels.
+- For charts where the visual data rectangle is offset from axes, split
+  `dataBbox` from `axisBbox` or explicit axis anchors such as `yAxisX` and
+  `xAxisY`. Do not force source axis offsets into the data transform.
+- `x.domain` and `y.domain` map quantitative axes.
+- `categories` map categorical positions.
+- `eventAnchor` maps event-aligned plots.
+- `colorScale.domain` maps heatmaps and colorbars.
+
+Avoid mixing hard-coded pixel marks with data-space marks unless the mark is truly an annotation. Ticks, event lines, and data marks should share the same transform.
+
+### 3D Scientific Plots
+
+Recognize 3D plots from visual cues such as three nonparallel labeled axes,
+isometric or perspective box frames, oblique grid planes, tick labels attached
+to multiple axis directions, and data paths or markers that overlap within a
+projected volume. Do not require the user to identify a panel as 3D.
+
+For static publication-style 3D plots made of axes, grid lines, trajectories,
+markers, and labels, prefer semantic 3D data rendered into SVG through an
+explicit projection function. Reserve WebGL or Three.js for genuinely complex
+surfaces, dense point clouds, lighting, meshes, or interactive rotation.
+
+Represent 3D scenes with explicit camera or projection metadata:
+
+```json
+{
+  "scene": {
+    "projection": {
+      "type": "orthographicBasis",
+      "corner": {"x": 58, "y": 327},
+      "domainCorner": {"pc1": -2, "pc2": -2, "pc3": -2},
+      "basis": {
+        "pc1": {"x": 258, "y": 30},
+        "pc2": {"x": 145, "y": 90},
+        "pc3": {"x": 0, "y": -184}
+      }
+    },
+    "domains": {"pc1": [-2, 2], "pc2": [-2, 2], "pc3": [-2, 2]},
+    "trajectories": [{"points": [[-1.5, -1.6, -0.3], [0.7, -1.1, 1.8]]}]
+  }
+}
+```
+
+`fontImports` is for lightweight browser-based experimentation with external
+CSS font providers such as Google Fonts. `fontFaces` is for reproducible local
+or adjacent font files when a typeface has been selected. Do not introduce a
+build system only to test fonts; use browser-native font loading and SVG text
+measurement first.
+
+Axes, grid planes, trajectories, markers, and annotations must use the same
+3D-to-2D projection. Depth-sort generated marks when overlap matters: back grid
+and box edges first, faint trial clouds, mean trajectories, timepoint markers,
+then text labels. Labels should anchor to projected 3D points or axis objects
+and then participate in the normal text-collision pass.
+
+When using source-calibrated projected grid segments, avoid segments that
+duplicate solid box edges or accidentally close into polygons. Grid lines should
+read as independent faint plane guides unless the source explicitly shows a
+closed projected face.
+
+Prefer named 3D grid planes over a flat list of projected line segments. For
+example, encode separate `floor`, `backWall`, and `sideWall` grid groups so each
+axis pair has its own Cartesian grid. Inventory the source grid before tuning:
+for every plane, count visible interior guides separately from boundary-aligned
+guides that are merged with or hidden under box edges. Encode grid lines as
+per-family values, such as independent `pc1`, `pc2`, and `pc3` guide families,
+instead of one shared plane-level value list. Each family should state whether
+domain-boundary values are included, and generated SVG lines should expose
+stable plane/family attributes so count validation can catch drift. A 3D
+state-space panel with PC1, PC2, and PC3 axes should not collapse into one wall
+plus a triangular base.
+
+If the source uses faint face shading, encode plane fills separately from grid
+lines and generate the fill polygon from the same 3D projection. Do not bake the
+shading into arbitrary background shapes. Tick labels in 3D plots are layout
+text: allow source-calibrated text positions or offsets from projected ticks so
+labels do not collide with each other, axis titles, or spines.
+
+3D tick labels should be placed by semantic layout rules, not by one-shot
+coordinates alone. Treat axis spines and tick marks as protected geometry with
+padded hit zones. Treat faint grid lines and trajectory clouds as non-protected
+unless the source clearly reserves label space around them. Tick labels may use
+source-calibrated initial positions, but renderers should measure the final text
+box and apply a constrained outward nudge if it intersects protected axis
+geometry:
+
+```json
+{
+  "axis": {
+    "id": "pc1",
+    "tickLabelPlacement": {
+      "avoid": ["axis-spine"],
+      "minGap": 5,
+      "nudge": {"x": 8, "y": 7},
+      "maxSteps": 6
+    }
+  }
+}
+```
+
+3D axes with visible tick labels should also render visible tick marks unless
+the source suppresses them. Store tick geometry as a projected tick anchor, a
+short `markVector`, and a label offset or outward normal. The label should be
+placed from the tick mark first; collision correction is a secondary adjustment,
+not the primary placement mechanism.
+
+When a source-fitted frame or projection still does not reproduce the source's
+tick text positions, keep the numeric tick `value` semantic but add separate
+source-calibrated `markAnchor` and/or `labelAnchor` fields. Do not force tick
+labels through one shared offset vector if the source clearly uses
+
+exec
+/bin/zsh -lc "file assets/reference/reference-04-motor-manifold-H-reference.png && identify -verbose assets/reference/reference-04-motor-manifold-H-reference.png | sed -n '1,80p'" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+assets/reference/reference-04-motor-manifold-H-reference.png: PNG image data, 619 x 363, 8-bit/color RGB, non-interlaced
+Image:
+  Filename: assets/reference/reference-04-motor-manifold-H-reference.png
+  Permissions: rw-r--r--
+  Format: PNG (Portable Network Graphics)
+  Mime type: image/png
+  Class: DirectClass
+  Geometry: 619x363+0+0
+  Units: Undefined
+  Colorspace: sRGB
+  Type: TrueColor
+  Endianness: Undefined
+  Depth: 8-bit
+  Channels: 3.0
+  Channel depth:
+    Red: 8-bit
+    Green: 8-bit
+    Blue: 8-bit
+  Channel statistics:
+    Pixels: 224697
+    Red:
+      min: 0  (0)
+      max: 255 (1)
+      mean: 244.709 (0.959645)
+      median: 254 (0.996078)
+      standard deviation: 33.2668 (0.130458)
+      kurtosis: 22.7779
+      skewness: -4.70119
+      entropy: 0.422485
+    Green:
+      min: 0  (0)
+      max: 255 (1)
+      mean: 244.458 (0.958659)
+      median: 254 (0.996078)
+      standard deviation: 33.2354 (0.130335)
+      kurtosis: 21.9165
+      skewness: -4.61379
+      entropy: 0.427365
+    Blue:
+      min: 0  (0)
+      max: 255 (1)
+      mean: 244.669 (0.959485)
+      median: 254 (0.996078)
+      standard deviation: 33.4971 (0.131361)
+      kurtosis: 22.8728
+      skewness: -4.7108
+      entropy: 0.418321
+  Image statistics:
+    Overall:
+      min: 0  (0)
+      max: 255 (1)
+      mean: 244.612 (0.959263)
+      median: 254 (0.996078)
+      standard deviation: 33.3331 (0.130718)
+      kurtosis: 22.5224
+      skewness: -4.67526
+      entropy: 0.422724
+  Rendering intent: Perceptual
+  Gamma: 0.454545
+  Chromaticity:
+    red primary: (0.64,0.33,0.03)
+    green primary: (0.3,0.6,0.1)
+    blue primary: (0.15,0.06,0.79)
+    white point: (0.3127,0.329,0.3583)
+  Matte color: grey74
+  Background color: white
+  Border color: srgb(223,223,223)
+  Transparent color: black
+  Interlace: None
+  Intensity: Undefined
+  Compose: Over
+  Page geometry: 619x363+0+0
+  Dispose: Undefined
+  Iterations: 0
+  Compression: Zip
+  Orientation: Undefined
+  Properties:
+    date:create: 2026-06-04T09:38:12+00:00
+    date:modify: 2026-06-04T09:38:12+00:00
+    date:timestamp: 2026-06-06T19:40:12+00:00
+    png:IHDR.bit-depth-orig: 8
+
+exec
+/bin/zsh -lc 'ls -la outputs || true && rg --files outputs | head -80' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+total 16
+drwxr-xr-x  44 alex  staff  1408 Jun  6 15:40 .
+drwxr-xr-x  15 alex  staff   480 Jun  6 05:13 ..
+-rw-r--r--@  1 alex  staff  6148 Jun  4 05:39 .DS_Store
+drwxr-xr-x   8 alex  staff   256 Jun  6 05:15 _regression-baselines
+drwxr-xr-x   4 alex  staff   128 Jun  5 05:51 reference-01-place-code-opto-A-make-figure
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:24 reference-01-place-code-opto-A-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  4 06:23 reference-01-place-code-opto-B-make-figure
+drwxr-xr-x   4 alex  staff   128 Jun  6 14:59 reference-01-place-code-opto-B-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  3 04:11 reference-01-place-code-opto-C-make-figure
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:22 reference-01-place-code-opto-C-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:24 reference-01-place-code-opto-D-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 14:26 reference-01-place-code-opto-D-make-figure-test
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:24 reference-01-place-code-opto-E-make-figure-batch
+drwxr-xr-x   2 alex  staff    64 Jun  6 14:45 reference-01-place-code-opto-E-make-figure-test
+drwxr-xr-x   4 alex  staff   128 Jun  5 07:51 reference-01-place-code-opto-F-make-figure
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:23 reference-01-place-code-opto-F-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  5 08:20 reference-02-decision-dynamics-A-make-figure
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:26 reference-02-decision-dynamics-A-make-figure-batch
+drwxr-xr-x   5 alex  staff   160 Jun  6 04:30 reference-02-decision-dynamics-B-make-figure
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:27 reference-02-decision-dynamics-B-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:27 reference-02-decision-dynamics-C-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:27 reference-02-decision-dynamics-D-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:29 reference-02-decision-dynamics-E-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:29 reference-02-decision-dynamics-F-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:30 reference-02-decision-dynamics-G-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:30 reference-02-decision-dynamics-H-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:31 reference-03-learning-remapping-A-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:32 reference-03-learning-remapping-B-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:33 reference-03-learning-remapping-C-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:33 reference-03-learning-remapping-D-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:34 reference-03-learning-remapping-E-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:36 reference-03-learning-remapping-F-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:35 reference-03-learning-remapping-G-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:36 reference-04-motor-manifold-A-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:37 reference-04-motor-manifold-B-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:38 reference-04-motor-manifold-C-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:39 reference-04-motor-manifold-D-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:39 reference-04-motor-manifold-E-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 15:39 reference-04-motor-manifold-F-make-figure-batch
+drwxr-xr-x   2 alex  staff    64 Jun  6 15:38 reference-04-motor-manifold-G-make-figure-batch
+drwxr-xr-x   2 alex  staff    64 Jun  6 15:39 reference-04-motor-manifold-H-make-figure-batch
+drwxr-xr-x   2 alex  staff    64 Jun  6 15:40 reference-04-motor-manifold-I-make-figure-batch
+drwxr-xr-x   4 alex  staff   128 Jun  6 14:30 reference-05-grid-remapping-C-make-figure-test
+drwxr-xr-x   4 alex  staff   128 Jun  6 14:41 reference-05-grid-remapping-D-make-figure-test
+outputs/reference-02-decision-dynamics-A-make-figure-batch/reference-02-decision-dynamics-A.html
+outputs/reference-02-decision-dynamics-A-make-figure-batch/reference-02-decision-dynamics-A.json
+outputs/reference-01-place-code-opto-B-make-figure-batch/reference-01-place-code-opto-B.json
+outputs/reference-01-place-code-opto-B-make-figure-batch/reference-01-place-code-opto-B.html
+outputs/reference-02-decision-dynamics-A-make-figure/reference-02-decision-dynamics-A.html
+outputs/reference-02-decision-dynamics-A-make-figure/reference-02-decision-dynamics-A.json
+outputs/reference-02-decision-dynamics-D-make-figure-batch/reference-02-decision-dynamics-D.json
+outputs/reference-02-decision-dynamics-D-make-figure-batch/reference-02-decision-dynamics-D.html
+outputs/reference-01-place-code-opto-D-make-figure-test/reference-01-place-code-opto-D.json
+outputs/reference-01-place-code-opto-D-make-figure-test/reference-01-place-code-opto-D.html
+outputs/reference-01-place-code-opto-C-make-figure-batch/reference-01-place-code-opto-C.json
+outputs/reference-01-place-code-opto-C-make-figure-batch/reference-01-place-code-opto-C.html
+outputs/reference-02-decision-dynamics-E-make-figure-batch/reference-02-decision-dynamics-E.json
+outputs/reference-02-decision-dynamics-E-make-figure-batch/reference-02-decision-dynamics-E.html
+outputs/reference-01-place-code-opto-F-make-figure-batch/reference-01-place-code-opto-F.html
+outputs/reference-01-place-code-opto-F-make-figure-batch/reference-01-place-code-opto-F.json
+outputs/reference-02-decision-dynamics-C-make-figure-batch/reference-02-decision-dynamics-C.json
+outputs/reference-02-decision-dynamics-C-make-figure-batch/reference-02-decision-dynamics-C.html
+outputs/reference-01-place-code-opto-F-make-figure/reference-01-place-code-opto-F.html
+outputs/reference-01-place-code-opto-F-make-figure/reference-01-place-code-opto-F.json
+outputs/reference-02-decision-dynamics-F-make-figure-batch/reference-02-decision-dynamics-F.html
+outputs/reference-02-decision-dynamics-F-make-figure-batch/reference-02-decision-dynamics-F.json
+outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.json
+outputs/reference-01-place-code-opto-E-make-figure-batch/reference-01-place-code-opto-E.html
+outputs/reference-05-grid-remapping-D-make-figure-test/reference-05-grid-remapping-D.json
+outputs/reference-05-grid-remapping-D-make-figure-test/reference-05-grid-remapping-D.html
+outputs/reference-02-decision-dynamics-B-make-figure-batch/reference-02-decision-dynamics-B.json
+outputs/reference-02-decision-dynamics-B-make-figure-batch/reference-02-decision-dynamics-B.html
+outputs/_regression-baselines/reference-01-place-code-opto-A.png
+outputs/_regression-baselines/reference-01-place-code-opto-C.png
+outputs/_regression-baselines/reference-01-place-code-opto-B.png
+outputs/_regression-baselines/reference-01-place-code-opto-F.png
+outputs/_regression-baselines/reference-02-decision-dynamics-A.png
+outputs/_regression-baselines/reference-02-decision-dynamics-B.png
+outputs/reference-01-place-code-opto-A-make-figure-batch/reference-01-place-code-opto-A.html
+outputs/reference-01-place-code-opto-A-make-figure-batch/reference-01-place-code-opto-A.json
+outputs/reference-02-decision-dynamics-B-make-figure/reference-02-decision-dynamics-B.json
+outputs/reference-02-decision-dynamics-B-make-figure/reference-02-decision-dynamics-B-current.png
+outputs/reference-02-decision-dynamics-B-make-figure/reference-02-decision-dynamics-B.html
+outputs/reference-01-place-code-opto-C-make-figure/reference-01-place-code-opto-C.json
+outputs/reference-01-place-code-opto-C-make-figure/reference-01-place-code-opto-C.html
+outputs/reference-02-decision-dynamics-G-make-figure-batch/reference-02-decision-dynamics-G.html
+outputs/reference-02-decision-dynamics-G-make-figure-batch/reference-02-decision-dynamics-G.json
+outputs/reference-01-place-code-opto-D-make-figure-batch/reference-01-place-code-opto-D.json
+outputs/reference-01-place-code-opto-D-make-figure-batch/reference-01-place-code-opto-D.html
+outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.html
+outputs/reference-04-motor-manifold-D-make-figure-batch/reference-04-motor-manifold-D.json
+outputs/reference-05-grid-remapping-C-make-figure-test/reference-05-grid-remapping-C.json
+outputs/reference-05-grid-remapping-C-make-figure-test/reference-05-grid-remapping-C.html
+outputs/reference-03-learning-remapping-D-make-figure-batch/reference-03-learning-remapping-D.html
+outputs/reference-03-learning-remapping-D-make-figure-batch/reference-03-learning-remapping-D.json
+outputs/reference-04-motor-manifold-A-make-figure-batch/reference-04-motor-manifold-A.json
+outputs/reference-04-motor-manifold-A-make-figure-batch/reference-04-motor-manifold-A.html
+outputs/reference-03-learning-remapping-A-make-figure-batch/reference-03-learning-remapping-A.json
+outputs/reference-03-learning-remapping-A-make-figure-batch/reference-03-learning-remapping-A.html
+outputs/reference-04-motor-manifold-E-make-figure-batch/reference-04-motor-manifold-E.html
+outputs/reference-04-motor-manifold-E-make-figure-batch/reference-04-motor-manifold-E.json
+outputs/reference-03-learning-remapping-E-make-figure-batch/reference-03-learning-remapping-E.html
+outputs/reference-03-learning-remapping-E-make-figure-batch/reference-03-learning-remapping-E.json
+outputs/reference-01-place-code-opto-A-make-figure/reference-01-place-code-opto-A.html
+outputs/reference-01-place-code-opto-A-make-figure/reference-01-place-code-opto-A.json
+outputs/reference-01-place-code-opto-B-make-figure/reference-01-place-code-opto-B.json
+outputs/reference-01-place-code-opto-B-make-figure/reference-01-place-code-opto-B.html
+outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json
+outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html
+outputs/reference-03-learning-remapping-F-make-figure-batch/reference-03-learning-remapping-F.json
+outputs/reference-03-learning-remapping-F-make-figure-batch/reference-03-learning-remapping-F.html
+outputs/reference-04-motor-manifold-C-make-figure-batch/reference-04-motor-manifold-C.html
+outputs/reference-04-motor-manifold-C-make-figure-batch/reference-04-motor-manifold-C.json
+outputs/reference-04-motor-manifold-B-make-figure-batch/reference-04-motor-manifold-B.html
+outputs/reference-04-motor-manifold-B-make-figure-batch/reference-04-motor-manifold-B.json
+outputs/reference-03-learning-remapping-B-make-figure-batch/reference-03-learning-remapping-B.json
+outputs/reference-03-learning-remapping-B-make-figure-batch/reference-03-learning-remapping-B.html
+outputs/reference-03-learning-remapping-C-make-figure-batch/reference-03-learning-remapping-C.html
+outputs/reference-03-learning-remapping-C-make-figure-batch/reference-03-learning-remapping-C.json
+outputs/reference-03-learning-remapping-G-make-figure-batch/reference-03-learning-remapping-G.json
+outputs/reference-03-learning-remapping-G-make-figure-batch/reference-03-learning-remapping-G.html
+outputs/reference-02-decision-dynamics-H-make-figure-batch/reference-02-decision-dynamics-H.html
+outputs/reference-02-decision-dynamics-H-make-figure-batch/reference-02-decision-dynamics-H.json
+
+codex
+I’ve confirmed the crop is 619 x 363 and the target output directory already exists but is empty. I’m going to mirror the repo’s adjacent batch-output style while keeping this reconstruction self-contained and semantic.
+exec
+/bin/zsh -lc "sed -n '1,220p' outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.json" in /Users/alex/Code/scientific-figure-reconstruction
+exec
+/bin/zsh -lc "sed -n '1,220p' outputs/reference-04-motor-manifold-F-make-figure-batch/reference-04-motor-manifold-F.html" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-04-motor-manifold-F reconstruction</title>
+  <style>
+    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #d0d0d0; }
+    h1 { margin: 0; font-size: 15px; font-weight: 700; }
+    .note { margin-top: 3px; font-size: 12px; color: #555555; }
+    .toggle { display: inline-flex; overflow: hidden; border: 1px solid #999999; border-radius: 4px; }
+    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
+    .toggle button.active { background: #111111; color: #ffffff; }
+    main { min-height: calc(100vh - 50px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
+    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
+    .surface, .reference-wrap { position: absolute; inset: 0; }
+    .heatmap-layer, svg { position: absolute; inset: 0; }
+    .reference-wrap { display: none; }
+    .reference-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .qa-label { position: absolute; left: 8px; bottom: 8px; padding: 3px 6px; border: 1px solid #777777; background: rgba(255,255,255,0.92); font-size: 11px; font-weight: 700; }
+    .show-reference .surface { display: none; }
+    .show-reference .reference-wrap { display: block; }
+    svg { overflow: visible; }
+    text { paint-order: stroke; stroke: #ffffff; stroke-width: 2px; stroke-linejoin: round; }
+    .panel-label, .figure-title, .matrix-title, .axis-title { stroke-width: 2.4px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-04-motor-manifold-F</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <div id="referenceWrap" class="reference-wrap">
+        <img id="reference" alt="QA reference source image">
+        <div class="qa-label">QA reference only: source raster</div>
+      </div>
+    </div>
+  </main>
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const SPEC_PATH = 'reference-04-motor-manifold-F.json';
+
+    function el(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function addText(parent, text, x, y, attrs = {}) {
+      const node = el('text', {
+        x, y,
+        fill: attrs.fill || '#111111',
+        'font-size': attrs.size || 13,
+        'font-weight': attrs.weight || 400,
+        'font-family': attrs.family || 'Arial, Helvetica, sans-serif',
+        'text-anchor': attrs.anchor || 'start',
+        'dominant-baseline': attrs.baseline || 'auto',
+        class: attrs.class || ''
+      });
+      if (attrs.rotate) node.setAttribute('transform', `rotate(${attrs.rotate} ${x} ${y})`);
+      node.textContent = text;
+      parent.appendChild(node);
+      return node;
+    }
+
+    function mulberry32(seed) {
+      return function random() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    function clamp(value, lo, hi) {
+      return Math.max(lo, Math.min(hi, value));
+    }
+
+    function blue(value) {
+      const v = clamp(value, 0, 1);
+      const stops = [
+        [0.00, [247, 251, 255]],
+        [0.18, [222, 235, 247]],
+        [0.36, [198, 219, 239]],
+        [0.56, [107, 174, 214]],
+        [0.76, [33, 113, 181]],
+        [1.00, [8, 48, 107]]
+      ];
+      for (let i = 0; i < stops.length - 1; i++) {
+        const a = stops[i];
+        const b = stops[i + 1];
+        if (v >= a[0] && v <= b[0]) {
+          const t = (v - a[0]) / (b[0] - a[0]);
+          const rgb = a[1].map((channel, j) => Math.round(channel + (b[1][j] - channel) * t));
+          return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+        }
+      }
+      return 'rgb(8, 48, 107)';
+    }
+
+    function matrixValues(panel) {
+      const size = 8;
+      const random = mulberry32(panel.seed);
+      const values = [];
+      for (let r = 0; r < size; r++) {
+        const row = [];
+        for (let c = 0; c < size; c++) {
+          const distance = Math.min(Math.abs(r - c), size - Math.abs(r - c));
+          let value = panel.offDiagonalStrength * Math.exp(-distance * 0.9) + random() * 0.045;
+          if (distance === 0) value = panel.diagonalStrength + (random() - 0.5) * 0.11;
+          if (distance === 1) value += 0.09 + random() * 0.04;
+          row.push(clamp(value, 0, 1));
+        }
+        values.push(row);
+      }
+      return values;
+    }
+
+    function renderHeatmaps(spec, canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const panel of spec.panels) {
+        const box = panel.plot.matrixBbox;
+        const values = matrixValues(panel);
+        const cellW = box.width / 8;
+        const cellH = box.height / 8;
+        for (let r = 0; r < 8; r++) {
+          for (let c = 0; c < 8; c++) {
+            ctx.fillStyle = blue(values[r][c]);
+            ctx.fillRect(box.x + c * cellW, box.y + r * cellH, Math.ceil(cellW) + 0.3, Math.ceil(cellH) + 0.3);
+          }
+        }
+      }
+    }
+
+    function renderLegend(svg, spec) {
+      const legend = spec.layoutObjects.find(item => item.id === 'series-legend');
+      for (const item of legend.items) {
+        svg.appendChild(el('line', {
+          x1: legend.bbox.x, y1: item.y, x2: legend.bbox.x + 22, y2: item.y,
+          stroke: item.color, 'stroke-width': spec.rendering.styles.legendStrokeWidth,
+          'data-legend-item': item.id
+        }));
+        addText(svg, item.label, legend.bbox.x + 36, item.y + 5, {size: 14});
+      }
+      addText(svg, legend.chanceText.text, legend.chanceText.anchor.x, legend.chanceText.anchor.y, {size: 14});
+    }
+
+    function renderMatrixAxes(svg, spec, panel, panelIndex) {
+      const outer = panel.plot.bbox;
+      const matrix = panel.plot.matrixBbox;
+      svg.appendChild(el('rect', {
+        x: outer.x, y: outer.y, width: outer.width, height: outer.height,
+        fill: 'none', stroke: spec.rendering.styles.matrixBorder, 'stroke-width': 1,
+        'data-panel': panel.id, 'data-role': 'matrix-frame'
+      }));
+      addText(svg, panel.title.text, outer.x + outer.width / 2, outer.y - 9, {size: 14, anchor: 'middle', class: 'matrix-title'});
+      const tickValues = [0, 90, 180, 270];
+      for (const value of tickValues) {
+        const center = value / 315 * 7 + 0.5;
+        const x = matrix.x + center * matrix.width / 8;
+        const y = matrix.y + center * matrix.height / 8;
+        if (panelIndex < 2) {
+          svg.appendChild(el('line', {x1: x, y1: outer.y + outer.height, x2: x, y2: outer.y + outer.height + 4, stroke: '#222222', 'stroke-width': 1, 'data-axis': 'predictedDirectionDegrees', 'data-value': value}));
+          addText(svg, String(value), x, outer.y + outer.height + 18, {size: 13, anchor: 'middle'});
+        }
+        if (panelIndex === 0) {
+          svg.appendChild(el('line', {x1: outer.x - 4, y1: y, x2: outer.x, y2: y, stroke: '#222222', 'stroke-width': 1, 'data-axis': 'trueDirectionDegrees', 'data-value': value}));
+          addText(svg, String(value), outer.x - 10, y + 5, {size: 13, anchor: 'end'});
+        }
+      }
+    }
+
+    function renderColorbar(svg, spec) {
+      const bar = spec.layoutObjects.find(item => item.id === 'probability-colorbar');
+      const defs = svg.querySelector('defs');
+      const gradient = el('linearGradient', {id: 'probabilityGradient', x1: '0%', y1: '100%', x2: '0%', y2: '0%'});
+      gradient.appendChild(el('stop', {offset: '0%', 'stop-color': blue(0)}));
+      gradient.appendChild(el('stop', {offset: '50%', 'stop-color': blue(0.5)}));
+      gradient.appendChild(el('stop', {offset: '100%', 'stop-color': blue(1)}));
+      defs.appendChild(gradient);
+      addText(svg, bar.title.text, bar.title.anchor.x, bar.title.anchor.y, {size: 13});
+      svg.appendChild(el('rect', {x: bar.bbox.x, y: bar.bbox.y, width: bar.bbox.width, height: bar.bbox.height, fill: 'url(#probabilityGradient)', stroke: '#777777', 'stroke-width': 0.6}));
+      for (const tick of bar.ticks) {
+        const y = bar.bbox.y + (1 - tick.value) * bar.bbox.height;
+        svg.appendChild(el('line', {x1: bar.bbox.x + bar.bbox.width, y1: y, x2: bar.bbox.x + bar.bbox.width + 4, y2: y, stroke: '#333333', 'stroke-width': 0.8, 'data-colorbar-tick': tick.value}));
+        addText(svg, tick.label, bar.bbox.x + bar.bbox.width + 9, y + 4, {size: 12});
+      }
+    }
+
+    function render(spec) {
+      document.getElementById('title').textContent = spec.id;
+      const frame = document.getElementById('frame');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      document.getElementById('reference').src = spec.source.path;
+
+      const surface = document.getElementById('surface');
+      surface.innerHTML = '';
+      const canvas = document.createElement('canvas');
+      canvas.className = 'heatmap-layer';
+      canvas.width = spec.canvas.width;
+      canvas.height = spec.canvas.height;
+      surface.appendChild(canvas);
+      renderHeatmaps(spec, canvas);
+
+      const svg = el('svg', {viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, width: spec.canvas.width, height: spec.canvas.height, role: 'img', 'aria-label': spec.id});
+      svg.style.backgroundColor = 'transparent';
+
+ succeeded in 0ms:
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-04-motor-manifold-F",
+  "source": {
+    "path": "../../assets/reference/reference-04-motor-manifold-F-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "First-pass reconstruction inferred visually from the raster crop. Generated visual layers are canvas heatmaps plus SVG text, axes, legend swatches, and colorbar; the source raster is only available in the labeled QA/reference view."
+  },
+  "canvas": {
+    "width": 745,
+    "height": 296,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 13,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Liberation Sans", "Roboto Condensed"],
+    "calibration": {
+      "fontStretch": "condensed",
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "Approximate compact sans-serif typography from visual inspection; no OCR/font calibration run for this first pass."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "direction-matrix",
+      "type": "matrix",
+      "domain": {
+        "trueDirectionDegrees": [0, 45, 90, 135, 180, 225, 270, 315],
+        "predictedDirectionDegrees": [0, 45, 90, 135, 180, 225, 270, 315]
+      },
+      "cellCount": 8,
+      "directionTickLabels": [
+        {"value": 0, "label": "0"},
+        {"value": 90, "label": "90"},
+        {"value": 180, "label": "180"},
+        {"value": 270, "label": "270"}
+      ],
+      "notes": "Rows encode true movement direction and columns encode predicted movement direction; shared 8 x 8 matrix scale."
+    },
+    {
+      "id": "probability-blue",
+      "type": "colorScale",
+      "domain": [0, 1],
+      "range": ["#f7fbff", "#08306b"],
+      "interpolation": "linearRgb"
+    }
+  ],
+  "layoutObjects": [
+    {"id": "panel-label", "type": "panelLabel", "text": "F", "anchor": {"x": 160, "y": 32}},
+    {"id": "figure-title", "type": "title", "text": "Crosss-validated confusion matrices (movement epoch)", "anchor": {"x": 192, "y": 31}},
+    {
+      "id": "series-legend",
+      "type": "lineLegend",
+      "bbox": {"x": 30, "y": 91, "width": 116, "height": 121},
+      "items": [
+        {"id": "legend-pca10", "label": "PCA (10D)", "color": "#7f32d8", "y": 96},
+        {"id": "legend-pca20", "label": "PCA (20D)", "color": "#006de5", "y": 121},
+        {"id": "legend-pls", "label": "PLS", "color": "#249000", "y": 145},
+        {"id": "legend-lda", "label": "LDA", "color": "#ff5a00", "y": 170},
+        {"id": "legend-ridge", "label": "Ridge", "color": "#e90000", "y": 195}
+      ],
+      "chanceText": {"text": "Chance (12.5%)", "anchor": {"x": 6, "y": 232}}
+    },
+    {
+      "id": "shared-y-axis-title",
+      "type": "axisTitle",
+      "text": "True dir. (deg)",
+      "anchor": {"x": 171, "y": 147},
+      "rotation": -90,
+      "axis": "trueDirectionDegrees"
+    },
+    {
+      "id": "shared-x-axis-title",
+      "type": "axisTitle",
+      "text": "Predicted dir. (deg)",
+      "anchor": {"x": 405, "y": 255},
+      "axis": "predictedDirectionDegrees"
+    },
+    {
+      "id": "probability-colorbar",
+      "type": "colorbar",
+      "colorScale": "probability-blue",
+      "bbox": {"x": 701, "y": 134, "width": 11, "height": 86},
+      "ticks": [
+        {"value": 1, "label": "1.0"},
+        {"value": 0.5, "label": "0.5"},
+        {"value": 0, "label": "0"}
+      ],
+      "title": {"text": "Prob.", "anchor": {"x": 700, "y": 119}}
+    }
+  ],
+  "panels": [
+    {"id": "matrix-pca-10d", "decoder": "PCA (10D)", "title": {"text": "PCA (10D)"}, "plot": {"bbox": {"x": 208, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 209, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.86, "offDiagonalStrength": 0.18, "seed": 4101},
+    {"id": "matrix-pca-20d", "decoder": "PCA (20D)", "title": {"text": "PCA (20D)"}, "plot": {"bbox": {"x": 304, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 305, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.91, "offDiagonalStrength": 0.13, "seed": 4102},
+    {"id": "matrix-pls", "decoder": "PLS", "title": {"text": "PLS"}, "plot": {"bbox": {"x": 400, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 401, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.92, "offDiagonalStrength": 0.10, "seed": 4103},
+    {"id": "matrix-lda", "decoder": "LDA", "title": {"text": "LDA"}, "plot": {"bbox": {"x": 495, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 496, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.94, "offDiagonalStrength": 0.08, "seed": 4104},
+    {"id": "matrix-ridge", "decoder": "Ridge", "title": {"text": "Ridge"}, "plot": {"bbox": {"x": 592, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 593, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.93, "offDiagonalStrength": 0.07, "seed": 4105}
+  ],
+  "data": {
+    "matrixRecipe": {
+      "type": "generatedConfusionMatrix",
+      "size": 8,
+      "description": "Editable recipe creates strong diagonal probabilities with faint adjacent confusions and low-amplitude deterministic texture. Values are visual approximations, not digitized measurements."
+    }
+  },
+  "rendering": {
+    "renderer": "hybrid",
+    "layers": ["legend", "heatmapCells", "matrixAxes", "titles", "sharedAxisTitles", "colorbar"],
+    "styles": {
+      "axisStroke": "#222222",
+      "axisStrokeWidth": 1,
+      "tickStrokeWidth": 1,
+      "matrixBorder": "#222222",
+      "legendStrokeWidth": 3,
+      "heatmapCellGap": 0,
+      "heatmapLow": "#f7fbff",
+      "heatmapHigh": "#08306b"
+    }
+  },
+  "constraints": [
+    {"id": "shared-matrix-scale", "type": "sharedScale", "panels": "all", "coordinateSystem": "direction-matrix"},
+    {"id": "colorbar-uses-heatmap-scale", "type": "colorScaleReference", "colorbar": "probability-colorbar", "scale": "probability-blue"},
+    {"id": "qa-separation", "type": "sourceUsage", "rule": "Source raster appears only in labeled reference view and is not used for generated canvas/SVG layers."}
+  ],
+  "validation": {
+    "expectedMatrixCount": 5,
+    "expectedCellsPerMatrix": 64,
+    "expectedLegendItems": 5,
+    "expectedColorbarTicks": 3
+  },
+  "confidence": [
+    {"target": "matrix values", "confidence": "medium-low", "note": "Heatmap values are generated to match the visible diagonal-dominant pattern; exact probabilities were not digitized."},
+    {"target": "layout", "confidence": "medium", "note": "Panel boxes, colorbar, title, and axis labels were visually estimated from native-resolution crop."},
+    {"target": "typography", "confidence": "medium-low", "note": "The source uses compact publication typography; font metrics are approximate for this first pass."},
+    {"target": "title text", "confidence": "medium", "note": "Title is transcribed as visible in the raster, including the apparent triple-s spelling in Crosss-validated."}
+  ]
+}
+
+exec
+/bin/zsh -lc 'find outputs/reference-04-motor-manifold-H-make-figure-batch -maxdepth 1 -type f -print' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+codex
+The source is a single multi-axis residual plot: four log-scale line panels with event shading, an event line at 0 s, shared x/y labels, and a small condition legend. I’m encoding the curves as editable sampled data plus uncertainty bands rather than as raster traces.
+codex
+I’m about to write the two requested files. The HTML will load the adjacent JSON, render generated SVG paths/bands/axes/text, and keep the source path only for the labeled QA reference toggle.
+apply patch
+patch: completed
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.html
+/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.json
+diff --git a/outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.html b/outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..092904352f461eca822dafdd1bf153b216417926
+--- /dev/null
++++ b/outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.html
+@@ -0,0 +1,243 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-04-motor-manifold-H reconstruction</title>
++  <style>
++    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
++    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #d0d0d0; }
++    h1 { margin: 0; font-size: 15px; font-weight: 700; }
++    .note { margin-top: 3px; font-size: 12px; color: #555555; }
++    .toggle { display: inline-flex; overflow: hidden; border: 1px solid #999999; border-radius: 4px; }
++    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
++    .toggle button.active { background: #111111; color: #ffffff; }
++    main { min-height: calc(100vh - 50px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
++    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
++    .surface, .reference-wrap { position: absolute; inset: 0; }
++    .reference-wrap { display: none; }
++    .reference-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
++    .qa-label { position: absolute; left: 8px; bottom: 8px; padding: 3px 6px; border: 1px solid #777777; background: rgba(255,255,255,0.92); font-size: 11px; font-weight: 700; }
++    .show-reference .surface { display: none; }
++    .show-reference .reference-wrap { display: block; }
++    svg { position: absolute; inset: 0; overflow: visible; }
++    text { paint-order: stroke; stroke: #ffffff; stroke-width: 2px; stroke-linejoin: round; }
++    .panel-label, .figure-title, .panel-title, .axis-title { stroke-width: 2.4px; }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1 id="title">reference-04-motor-manifold-H</h1>
++      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">Reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <div id="referenceWrap" class="reference-wrap">
++        <img id="reference" alt="QA reference source image">
++        <div class="qa-label">QA reference only: source raster</div>
++      </div>
++    </div>
++  </main>
++  <script>
++    const SVG_NS = 'http://www.w3.org/2000/svg';
++    const SPEC_PATH = 'reference-04-motor-manifold-H.json';
++
++    function el(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
++      for (const [key, value] of Object.entries(attrs)) {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      }
++      return node;
++    }
++
++    function addText(parent, text, x, y, attrs = {}) {
++      const node = el('text', {
++        x, y,
++        fill: attrs.fill || '#111111',
++        'font-size': attrs.size || 13,
++        'font-weight': attrs.weight || 400,
++        'font-family': attrs.family || 'Arial, Helvetica, sans-serif',
++        'text-anchor': attrs.anchor || 'start',
++        'dominant-baseline': attrs.baseline || 'auto',
++        class: attrs.class || ''
++      });
++      if (attrs.rotate) node.setAttribute('transform', `rotate(${attrs.rotate} ${x} ${y})`);
++      node.textContent = text;
++      parent.appendChild(node);
++      return node;
++    }
++
++    function mulberry32(seed) {
++      return function random() {
++        let t = seed += 0x6D2B79F5;
++        t = Math.imul(t ^ t >>> 15, t | 1);
++        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
++        return ((t ^ t >>> 14) >>> 0) / 4294967296;
++      };
++    }
++
++    function densify(points, seed) {
++      const random = mulberry32(seed);
++      const out = [];
++      for (let i = 0; i < points.length - 1; i++) {
++        const a = points[i];
++        const b = points[i + 1];
++        for (let step = 0; step < 6; step++) {
++          const t = step / 6;
++          const x = a[0] + (b[0] - a[0]) * t;
++          const logA = Math.log10(a[1]);
++          const logB = Math.log10(b[1]);
++          const wave = Math.sin((x + 1.1) * 24 + seed * 0.01) * 0.018 + (random() - 0.5) * 0.018;
++          const y = Math.pow(10, logA + (logB - logA) * t + wave);
++          out.push([x, y]);
++        }
++      }
++      out.push(points[points.length - 1]);
++      return out;
++    }
++
++    function transformFor(panel, coord) {
++      const box = panel.plot.dataBbox;
++      const x0 = coord.x.domain[0];
++      const x1 = coord.x.domain[1];
++      const y0 = Math.log10(coord.y.domain[0]);
++      const y1 = Math.log10(coord.y.domain[1]);
++      return {
++        x(value) { return box.x + (value - x0) / (x1 - x0) * box.width; },
++        y(value) { return box.y + (y1 - Math.log10(value)) / (y1 - y0) * box.height; },
++        box
++      };
++    }
++
++    function linePath(points, tx) {
++      return points.map((point, index) => `${index ? 'L' : 'M'} ${tx.x(point[0]).toFixed(2)} ${tx.y(point[1]).toFixed(2)}`).join(' ');
++    }
++
++    function bandPath(points, tx, fraction) {
++      const upper = points.map(([x, y]) => [x, Math.min(1, y * (1 + fraction))]);
++      const lower = points.slice().reverse().map(([x, y]) => [x, Math.max(0.001, y * (1 - fraction))]);
++      return `${linePath(upper, tx)} ${lower.map(point => `L ${tx.x(point[0]).toFixed(2)} ${tx.y(point[1]).toFixed(2)}`).join(' ')} Z`;
++    }
++
++    function renderPanel(svg, spec, panel, coord, panelIndex) {
++      const tx = transformFor(panel, coord);
++      const box = tx.box;
++      const styles = spec.rendering.styles;
++
++      for (const epoch of spec.data.epochs) {
++        const x = tx.x(epoch.x0);
++        const width = tx.x(epoch.x1) - x;
++        svg.appendChild(el('rect', {
++          x, y: box.y, width, height: box.height, fill: epoch.fill, opacity: epoch.opacity,
++          'data-panel': panel.id, 'data-epoch': epoch.id
++        }));
++      }
++
++      svg.appendChild(el('rect', {x: box.x, y: box.y, width: box.width, height: box.height, fill: 'none', stroke: styles.frameStroke, 'stroke-width': 1, 'data-panel': panel.id, 'data-role': 'plot-frame'}));
++      const eventX = tx.x(0);
++      svg.appendChild(el('line', {x1: eventX, y1: box.y, x2: eventX, y2: box.y + box.height, stroke: styles.eventLineStroke, 'stroke-width': styles.eventLineWidth, 'data-event-anchor': 'movement-onset', 'data-panel': panel.id}));
++
++      for (const tick of coord.x.ticks) {
++        const x = tx.x(tick.value);
++        svg.appendChild(el('line', {x1: x, y1: box.y + box.height, x2: x, y2: box.y + box.height + 5, stroke: styles.axisStroke, 'stroke-width': styles.tickStrokeWidth, 'data-axis': 'x', 'data-value': tick.value}));
++        addText(svg, tick.label, x, box.y + box.height + 19, {size: 12, anchor: 'middle'});
++      }
++      for (const tick of coord.y.ticks) {
++        const y = tx.y(tick.value);
++        svg.appendChild(el('line', {x1: box.x - 5, y1: y, x2: box.x, y2: y, stroke: styles.axisStroke, 'stroke-width': styles.tickStrokeWidth, 'data-axis': 'y', 'data-value': tick.value}));
++        if (panelIndex === 0) {
++          const label = tick.label.replace('10^0', '10⁰').replace('10^-1', '10⁻¹').replace('10^-2', '10⁻²').replace('10^-3', '10⁻³');
++          addText(svg, label, box.x - 10, y + 4, {size: 12, anchor: 'end'});
++        }
++      }
++
++      const dense = densify(panel.series.points, panel.series.seed);
++      svg.appendChild(el('path', {
++        d: bandPath(dense, tx, panel.series.bandFraction),
++        fill: panel.series.uncertaintyColor,
++        opacity: styles.uncertaintyOpacity,
++        stroke: 'none',
++        'data-series': panel.series.id,
++        'data-role': 'uncertainty-band'
++      }));
++      svg.appendChild(el('path', {
++        d: linePath(dense, tx),
++        fill: 'none',
++        stroke: panel.series.color,
++        'stroke-width': styles.curveStrokeWidth,
++        'stroke-linecap': 'round',
++        'stroke-linejoin': 'round',
++        'data-series': panel.series.id,
++        'data-role': 'mean-line'
++      }));
++      addText(svg, panel.title.text, panel.title.anchor.x, panel.title.anchor.y, {size: 14, anchor: 'middle', class: 'panel-title'});
++    }
++
++    function renderLegend(svg, spec) {
++      const legend = spec.layoutObjects.find(item => item.id === 'epoch-legend');
++      for (const item of legend.items) {
++        svg.appendChild(el('rect', {x: legend.bbox.x, y: item.y, width: 20, height: 17, fill: item.fill, stroke: item.stroke, 'stroke-width': 1, 'data-legend-item': item.id}));
++        addText(svg, item.label, legend.bbox.x + 29, item.y + 13, {size: 13});
++      }
++    }
++
++    function render(spec) {
++      document.getElementById('title').textContent = spec.id;
++      const frame = document.getElementById('frame');
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      document.getElementById('reference').src = spec.source.path;
++
++      const surface = document.getElementById('surface');
++      surface.innerHTML = '';
++      const svg = el('svg', {viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, width: spec.canvas.width, height: spec.canvas.height, role: 'img', 'aria-label': spec.id});
++      svg.style.backgroundColor = spec.canvas.background;
++      surface.appendChild(svg);
++
++      const coord = spec.coordinateSystems.find(system => system.id === 'residual-time-log');
++      for (const panel of spec.panels) renderPanel(svg, spec, panel, coord, spec.panels.indexOf(panel));
++
++      const label = spec.layoutObjects.find(item => item.id === 'panel-label');
++      addText(svg, label.text, label.anchor.x, label.anchor.y, {size: label.fontSize, weight: label.fontWeight, class: 'panel-label'});
++      const title = spec.layoutObjects.find(item => item.id === 'figure-title');
++      addText(svg, title.text, title.anchor.x, title.anchor.y, {size: title.fontSize, class: 'figure-title'});
++      const yTitle = spec.layoutObjects.find(item => item.id === 'shared-y-title');
++      addText(svg, yTitle.text, yTitle.anchor.x, yTitle.anchor.y, {size: yTitle.fontSize, rotate: yTitle.rotation, anchor: 'middle', class: 'axis-title'});
++      const xTitle = spec.layoutObjects.find(item => item.id === 'shared-x-title');
++      addText(svg, xTitle.text, xTitle.anchor.x, xTitle.anchor.y, {size: xTitle.fontSize, anchor: 'middle', class: 'axis-title'});
++      renderLegend(svg, spec);
++    }
++
++    async function init() {
++      const response = await fetch(SPEC_PATH);
++      const spec = await response.json();
++      render(spec);
++    }
++
++    const frame = document.getElementById('frame');
++    const generatedButton = document.getElementById('generatedButton');
++    const referenceButton = document.getElementById('referenceButton');
++    generatedButton.addEventListener('click', () => {
++      frame.classList.remove('show-reference');
++      generatedButton.classList.add('active');
++      referenceButton.classList.remove('active');
++    });
++    referenceButton.addEventListener('click', () => {
++      frame.classList.add('show-reference');
++      referenceButton.classList.add('active');
++      generatedButton.classList.remove('active');
++    });
++
++    init().catch(error => {
++      document.getElementById('surface').textContent = `Unable to load reconstruction JSON: ${error.message}`;
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.json b/outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..52ea23e5d4b453a0d9de4f381172a174b98ea8d7
+--- /dev/null
++++ b/outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.json
+@@ -0,0 +1,152 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-04-motor-manifold-H",
++  "source": {
++    "path": "../../assets/reference/reference-04-motor-manifold-H-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "First-pass reconstruction inferred visually from the native 619 x 363 raster crop. Generated visual layers are SVG axes, labels, bands, lines, shaded epochs, and legend; the source raster is only available in a labeled QA/reference view."
++  },
++  "canvas": {
++    "width": 619,
++    "height": 363,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 14,
++    "color": "#111111",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial", "Helvetica", "Liberation Sans", "Roboto Condensed"],
++    "calibration": {
++      "fontStretch": "condensed",
++      "letterSpacing": 0,
++      "lineHeight": 1.05,
++      "notes": "Approximate compact publication typography from visual inspection; no OCR/font calibration run for this first pass."
++    }
++  },
++  "coordinateSystems": [
++    {
++      "id": "residual-time-log",
++      "type": "cartesian",
++      "x": {
++        "scale": "linear",
++        "domain": [-1.0, 1.1],
++        "ticks": [
++          {"value": -1.0, "label": "-1.0"},
++          {"value": 0, "label": "0"},
++          {"value": 1.0, "label": "1.0"}
++        ],
++        "label": "Time (s)"
++      },
++      "y": {
++        "scale": "log10",
++        "domain": [0.001, 1],
++        "ticks": [
++          {"value": 1, "label": "10^0"},
++          {"value": 0.1, "label": "10^-1"},
++          {"value": 0.01, "label": "10^-2"},
++          {"value": 0.001, "label": "10^-3"}
++        ],
++        "label": "Residual variance"
++      },
++      "eventAnchors": [
++        {"id": "movement-onset", "value": 0, "label": "0 s"}
++      ]
++    }
++  ],
++  "layoutObjects": [
++    {"id": "panel-label", "type": "panelLabel", "text": "H", "anchor": {"x": 31, "y": 45}, "fontSize": 23, "fontWeight": 700},
++    {"id": "figure-title", "type": "title", "text": "Residuals (data - reconstruction)", "anchor": {"x": 58, "y": 44}, "fontSize": 14},
++    {"id": "shared-y-title", "type": "axisTitle", "text": "Residual variance", "axis": "y", "anchor": {"x": 21, "y": 176}, "rotation": -90, "fontSize": 14},
++    {"id": "shared-x-title", "type": "axisTitle", "text": "Time (s)", "axis": "x", "anchor": {"x": 240, "y": 300}, "fontSize": 14},
++    {
++      "id": "epoch-legend",
++      "type": "legend",
++      "bbox": {"x": 564, "y": 132, "width": 54, "height": 101},
++      "items": [
++        {"id": "cue", "label": "Cue", "fill": "#f2f2f2", "stroke": "#808080", "y": 132},
++        {"id": "delay", "label": "Delay", "fill": "#e8e8e8", "stroke": "#808080", "y": 160},
++        {"id": "move", "label": "Move", "fill": "#d6d6d6", "stroke": "#808080", "y": 188},
++        {"id": "hold", "label": "Hold", "fill": "#a6a6a6", "stroke": "#808080", "y": 216}
++      ]
++    }
++  ],
++  "panels": [
++    {
++      "id": "pca-10d",
++      "title": {"text": "PCA (10D)", "anchor": {"x": 118, "y": 89}},
++      "plot": {"dataBbox": {"x": 66, "y": 99, "width": 105, "height": 154}},
++      "series": {"id": "series-pca-10d", "label": "PCA (10D)", "color": "#7e35c8", "uncertaintyColor": "#caa9ef", "seed": 4041, "bandFraction": 0.24, "points": [[-1.0,0.44],[-0.85,0.25],[-0.7,0.18],[-0.55,0.17],[-0.4,0.15],[-0.25,0.17],[-0.1,0.12],[0.0,0.065],[0.18,0.038],[0.35,0.075],[0.55,0.095],[0.78,0.125],[1.0,0.14],[1.1,0.13]]}
++    },
++    {
++      "id": "pca-20d",
++      "title": {"text": "PCA (20D)", "anchor": {"x": 241, "y": 89}},
++      "plot": {"dataBbox": {"x": 190, "y": 99, "width": 105, "height": 154}},
++      "series": {"id": "series-pca-20d", "label": "PCA (20D)", "color": "#2b83d3", "uncertaintyColor": "#a9cbee", "seed": 4042, "bandFraction": 0.28, "points": [[-1.0,0.25],[-0.84,0.15],[-0.68,0.085],[-0.5,0.06],[-0.32,0.05],[-0.12,0.032],[0.0,0.018],[0.16,0.0078],[0.33,0.012],[0.55,0.018],[0.78,0.027],[1.0,0.038],[1.1,0.047]]}
++    },
++    {
++      "id": "pls",
++      "title": {"text": "PLS", "anchor": {"x": 367, "y": 89}},
++      "plot": {"dataBbox": {"x": 315, "y": 99, "width": 105, "height": 154}},
++      "series": {"id": "series-pls", "label": "PLS", "color": "#5aa02c", "uncertaintyColor": "#b9d7a9", "seed": 4043, "bandFraction": 0.22, "points": [[-1.0,0.19],[-0.82,0.15],[-0.65,0.11],[-0.48,0.083],[-0.3,0.058],[-0.12,0.032],[0.0,0.018],[0.15,0.013],[0.34,0.017],[0.55,0.024],[0.78,0.036],[1.0,0.052],[1.1,0.062]]}
++    },
++    {
++      "id": "lda",
++      "title": {"text": "LDA", "anchor": {"x": 495, "y": 89}},
++      "plot": {"dataBbox": {"x": 442, "y": 99, "width": 100, "height": 154}},
++      "series": {"id": "series-lda", "label": "LDA", "color": "#f47a2b", "uncertaintyColor": "#f6c29c", "seed": 4044, "bandFraction": 0.22, "points": [[-1.0,0.16],[-0.82,0.105],[-0.62,0.065],[-0.42,0.055],[-0.22,0.04],[-0.08,0.024],[0.0,0.014],[0.12,0.0084],[0.26,0.014],[0.44,0.023],[0.65,0.035],[0.88,0.051],[1.1,0.067]]}
++    }
++  ],
++  "data": {
++    "curveRecipe": {
++      "type": "sampledApproximation",
++      "description": "Line points are visually sampled from the raster and rendered in data coordinates. A deterministic low-amplitude wiggle approximates jagged mean traces; uncertainty bands follow the line shape and are not rectangular boxes."
++    },
++    "epochs": [
++      {"id": "cue-window", "label": "Cue", "x0": -1.0, "x1": -0.58, "fill": "#f7f7f7", "opacity": 0.85},
++      {"id": "delay-window", "label": "Delay", "x0": -0.58, "x1": -0.05, "fill": "#eeeeee", "opacity": 0.85},
++      {"id": "move-window", "label": "Move", "x0": 0.45, "x1": 0.85, "fill": "#e3e3e3", "opacity": 0.75}
++    ]
++  },
++  "marks": [
++    {"id": "residual-curves", "type": "lineSeriesGroup", "coordinateSystem": "residual-time-log", "seriesRefs": ["series-pca-10d", "series-pca-20d", "series-pls", "series-lda"]},
++    {"id": "epoch-shading", "type": "rectGroup", "coordinateSystem": "residual-time-log", "epochRefs": ["cue-window", "delay-window", "move-window"]},
++    {"id": "movement-onset-lines", "type": "eventLineGroup", "coordinateSystem": "residual-time-log", "eventAnchor": "movement-onset"}
++  ],
++  "rendering": {
++    "renderer": "svg",
++    "layers": ["background", "epochShading", "axes", "uncertaintyBands", "lineSeries", "titles", "legend"],
++    "styles": {
++      "axisStroke": "#222222",
++      "axisStrokeWidth": 1,
++      "tickStrokeWidth": 1,
++      "eventLineStroke": "#111111",
++      "eventLineWidth": 1.25,
++      "frameStroke": "#222222",
++      "curveStrokeWidth": 2,
++      "uncertaintyOpacity": 0.42,
++      "epochOpacity": 0.72
++    }
++  },
++  "constraints": [
++    {"id": "shared-log-scale", "type": "sharedScale", "panels": "all", "coordinateSystem": "residual-time-log"},
++    {"id": "event-line-shared-anchor", "type": "eventAnchor", "event": "movement-onset", "xValue": 0},
++    {"id": "legend-items-reference-epochs", "type": "legendReference", "legend": "epoch-legend", "items": ["cue-window", "delay-window", "move-window", "hold"]},
++    {"id": "qa-separation", "type": "sourceUsage", "rule": "Source raster appears only in labeled reference view and is not used for generated candidate layers."}
++  ],
++  "validation": {
++    "expectedPanelCount": 4,
++    "expectedSeriesCount": 4,
++    "expectedEventLines": 4,
++    "expectedEpochRectsPerPanel": 3,
++    "expectedLegendItems": 4,
++    "jsonEditableFields": ["panels[].series.points", "coordinateSystems[0].x.domain", "coordinateSystems[0].y.domain", "data.epochs", "layoutObjects"]
++  },
++  "confidence": [
++    {"target": "curve values", "confidence": "medium-low", "note": "Curves are visually approximated from the raster rather than digitized."},
++    {"target": "uncertainty bands", "confidence": "medium-low", "note": "Band widths are estimated and generated to follow the mean line geometry."},
++    {"target": "layout", "confidence": "medium", "note": "Plot boxes, shared labels, legend, and event lines were measured by visual inspection at native resolution."},
++    {"target": "typography", "confidence": "medium-low", "note": "Publication typography is approximated with Arial/Helvetica-like sans-serif metrics for this first pass."}
++  ]
++}
+
+diff --git a/outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.html b/outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..092904352f461eca822dafdd1bf153b216417926
+--- /dev/null
++++ b/outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.html
+@@ -0,0 +1,243 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-04-motor-manifold-H reconstruction</title>
++  <style>
++    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
++    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #d0d0d0; }
++    h1 { margin: 0; font-size: 15px; font-weight: 700; }
++    .note { margin-top: 3px; font-size: 12px; color: #555555; }
++    .toggle { display: inline-flex; overflow: hidden; border: 1px solid #999999; border-radius: 4px; }
++    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
++    .toggle button.active { background: #111111; color: #ffffff; }
++    main { min-height: calc(100vh - 50px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
++    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
++    .surface, .reference-wrap { position: absolute; inset: 0; }
++    .reference-wrap { display: none; }
++    .reference-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
++    .qa-label { position: absolute; left: 8px; bottom: 8px; padding: 3px 6px; border: 1px solid #777777; background: rgba(255,255,255,0.92); font-size: 11px; font-weight: 700; }
++    .show-reference .surface { display: none; }
++    .show-reference .reference-wrap { display: block; }
++    svg { position: absolute; inset: 0; overflow: visible; }
++    text { paint-order: stroke; stroke: #ffffff; stroke-width: 2px; stroke-linejoin: round; }
++    .panel-label, .figure-title, .panel-title, .axis-title { stroke-width: 2.4px; }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1 id="title">reference-04-motor-manifold-H</h1>
++      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">Reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <div id="referenceWrap" class="reference-wrap">
++        <img id="reference" alt="QA reference source image">
++        <div class="qa-label">QA reference only: source raster</div>
++      </div>
++    </div>
++  </main>
++  <script>
++    const SVG_NS = 'http://www.w3.org/2000/svg';
++    const SPEC_PATH = 'reference-04-motor-manifold-H.json';
++
++    function el(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
++      for (const [key, value] of Object.entries(attrs)) {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      }
++      return node;
++    }
++
++    function addText(parent, text, x, y, attrs = {}) {
++      const node = el('text', {
++        x, y,
++        fill: attrs.fill || '#111111',
++        'font-size': attrs.size || 13,
++        'font-weight': attrs.weight || 400,
++        'font-family': attrs.family || 'Arial, Helvetica, sans-serif',
++        'text-anchor': attrs.anchor || 'start',
++        'dominant-baseline': attrs.baseline || 'auto',
++        class: attrs.class || ''
++      });
++      if (attrs.rotate) node.setAttribute('transform', `rotate(${attrs.rotate} ${x} ${y})`);
++      node.textContent = text;
++      parent.appendChild(node);
++      return node;
++    }
++
++    function mulberry32(seed) {
++      return function random() {
++        let t = seed += 0x6D2B79F5;
++        t = Math.imul(t ^ t >>> 15, t | 1);
++        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
++        return ((t ^ t >>> 14) >>> 0) / 4294967296;
++      };
++    }
++
++    function densify(points, seed) {
++      const random = mulberry32(seed);
++      const out = [];
++      for (let i = 0; i < points.length - 1; i++) {
++        const a = points[i];
++        const b = points[i + 1];
++        for (let step = 0; step < 6; step++) {
++          const t = step / 6;
++          const x = a[0] + (b[0] - a[0]) * t;
++          const logA = Math.log10(a[1]);
++          const logB = Math.log10(b[1]);
++          const wave = Math.sin((x + 1.1) * 24 + seed * 0.01) * 0.018 + (random() - 0.5) * 0.018;
++          const y = Math.pow(10, logA + (logB - logA) * t + wave);
++          out.push([x, y]);
++        }
++      }
++      out.push(points[points.length - 1]);
++      return out;
++    }
++
++    function transformFor(panel, coord) {
++      const box = panel.plot.dataBbox;
++      const x0 = coord.x.domain[0];
++      const x1 = coord.x.domain[1];
++      const y0 = Math.log10(coord.y.domain[0]);
++      const y1 = Math.log10(coord.y.domain[1]);
++      return {
++        x(value) { return box.x + (value - x0) / (x1 - x0) * box.width; },
++        y(value) { return box.y + (y1 - Math.log10(value)) / (y1 - y0) * box.height; },
++        box
++      };
++    }
++
++    function linePath(points, tx) {
++      return points.map((point, index) => `${index ? 'L' : 'M'} ${tx.x(point[0]).toFixed(2)} ${tx.y(point[1]).toFixed(2)}`).join(' ');
++    }
++
++    function bandPath(points, tx, fraction) {
++      const upper = points.map(([x, y]) => [x, Math.min(1, y * (1 + fraction))]);
++      const lower = points.slice().reverse().map(([x, y]) => [x, Math.max(0.001, y * (1 - fraction))]);
++      return `${linePath(upper, tx)} ${lower.map(point => `L ${tx.x(point[0]).toFixed(2)} ${tx.y(point[1]).toFixed(2)}`).join(' ')} Z`;
++    }
++
++    function renderPanel(svg, spec, panel, coord, panelIndex) {
++      const tx = transformFor(panel, coord);
++      const box = tx.box;
++      const styles = spec.rendering.styles;
++
++      for (const epoch of spec.data.epochs) {
++        const x = tx.x(epoch.x0);
++        const width = tx.x(epoch.x1) - x;
++        svg.appendChild(el('rect', {
++          x, y: box.y, width, height: box.height, fill: epoch.fill, opacity: epoch.opacity,
++          'data-panel': panel.id, 'data-epoch': epoch.id
++        }));
++      }
++
++      svg.appendChild(el('rect', {x: box.x, y: box.y, width: box.width, height: box.height, fill: 'none', stroke: styles.frameStroke, 'stroke-width': 1, 'data-panel': panel.id, 'data-role': 'plot-frame'}));
++      const eventX = tx.x(0);
++      svg.appendChild(el('line', {x1: eventX, y1: box.y, x2: eventX, y2: box.y + box.height, stroke: styles.eventLineStroke, 'stroke-width': styles.eventLineWidth, 'data-event-anchor': 'movement-onset', 'data-panel': panel.id}));
++
++      for (const tick of coord.x.ticks) {
++        const x = tx.x(tick.value);
++        svg.appendChild(el('line', {x1: x, y1: box.y + box.height, x2: x, y2: box.y + box.height + 5, stroke: styles.axisStroke, 'stroke-width': styles.tickStrokeWidth, 'data-axis': 'x', 'data-value': tick.value}));
++        addText(svg, tick.label, x, box.y + box.height + 19, {size: 12, anchor: 'middle'});
++      }
++      for (const tick of coord.y.ticks) {
++        const y = tx.y(tick.value);
++        svg.appendChild(el('line', {x1: box.x - 5, y1: y, x2: box.x, y2: y, stroke: styles.axisStroke, 'stroke-width': styles.tickStrokeWidth, 'data-axis': 'y', 'data-value': tick.value}));
++        if (panelIndex === 0) {
++          const label = tick.label.replace('10^0', '10⁰').replace('10^-1', '10⁻¹').replace('10^-2', '10⁻²').replace('10^-3', '10⁻³');
++          addText(svg, label, box.x - 10, y + 4, {size: 12, anchor: 'end'});
++        }
++      }
++
++      const dense = densify(panel.series.points, panel.series.seed);
++      svg.appendChild(el('path', {
++        d: bandPath(dense, tx, panel.series.bandFraction),
++        fill: panel.series.uncertaintyColor,
++        opacity: styles.uncertaintyOpacity,
++        stroke: 'none',
++        'data-series': panel.series.id,
++        'data-role': 'uncertainty-band'
++      }));
++      svg.appendChild(el('path', {
++        d: linePath(dense, tx),
++        fill: 'none',
++        stroke: panel.series.color,
++        'stroke-width': styles.curveStrokeWidth,
++        'stroke-linecap': 'round',
++        'stroke-linejoin': 'round',
++        'data-series': panel.series.id,
++        'data-role': 'mean-line'
++      }));
++      addText(svg, panel.title.text, panel.title.anchor.x, panel.title.anchor.y, {size: 14, anchor: 'middle', class: 'panel-title'});
++    }
++
++    function renderLegend(svg, spec) {
++      const legend = spec.layoutObjects.find(item => item.id === 'epoch-legend');
++      for (const item of legend.items) {
++        svg.appendChild(el('rect', {x: legend.bbox.x, y: item.y, width: 20, height: 17, fill: item.fill, stroke: item.stroke, 'stroke-width': 1, 'data-legend-item': item.id}));
++        addText(svg, item.label, legend.bbox.x + 29, item.y + 13, {size: 13});
++      }
++    }
++
++    function render(spec) {
++      document.getElementById('title').textContent = spec.id;
++      const frame = document.getElementById('frame');
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      document.getElementById('reference').src = spec.source.path;
++
++      const surface = document.getElementById('surface');
++      surface.innerHTML = '';
++      const svg = el('svg', {viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, width: spec.canvas.width, height: spec.canvas.height, role: 'img', 'aria-label': spec.id});
++      svg.style.backgroundColor = spec.canvas.background;
++      surface.appendChild(svg);
++
++      const coord = spec.coordinateSystems.find(system => system.id === 'residual-time-log');
++      for (const panel of spec.panels) renderPanel(svg, spec, panel, coord, spec.panels.indexOf(panel));
++
++      const label = spec.layoutObjects.find(item => item.id === 'panel-label');
++      addText(svg, label.text, label.anchor.x, label.anchor.y, {size: label.fontSize, weight: label.fontWeight, class: 'panel-label'});
++      const title = spec.layoutObjects.find(item => item.id === 'figure-title');
++      addText(svg, title.text, title.anchor.x, title.anchor.y, {size: title.fontSize, class: 'figure-title'});
++      const yTitle = spec.layoutObjects.find(item => item.id === 'shared-y-title');
++      addText(svg, yTitle.text, yTitle.anchor.x, yTitle.anchor.y, {size: yTitle.fontSize, rotate: yTitle.rotation, anchor: 'middle', class: 'axis-title'});
++      const xTitle = spec.layoutObjects.find(item => item.id === 'shared-x-title');
++      addText(svg, xTitle.text, xTitle.anchor.x, xTitle.anchor.y, {size: xTitle.fontSize, anchor: 'middle', class: 'axis-title'});
++      renderLegend(svg, spec);
++    }
++
++    async function init() {
++      const response = await fetch(SPEC_PATH);
++      const spec = await response.json();
++      render(spec);
++    }
++
++    const frame = document.getElementById('frame');
++    const generatedButton = document.getElementById('generatedButton');
++    const referenceButton = document.getElementById('referenceButton');
++    generatedButton.addEventListener('click', () => {
++      frame.classList.remove('show-reference');
++      generatedButton.classList.add('active');
++      referenceButton.classList.remove('active');
++    });
++    referenceButton.addEventListener('click', () => {
++      frame.classList.add('show-reference');
++      referenceButton.classList.add('active');
++      generatedButton.classList.remove('active');
++    });
++
++    init().catch(error => {
++      document.getElementById('surface').textContent = `Unable to load reconstruction JSON: ${error.message}`;
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.json b/outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..52ea23e5d4b453a0d9de4f381172a174b98ea8d7
+--- /dev/null
++++ b/outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.json
+@@ -0,0 +1,152 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-04-motor-manifold-H",
++  "source": {
++    "path": "../../assets/reference/reference-04-motor-manifold-H-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "First-pass reconstruction inferred visually from the native 619 x 363 raster crop. Generated visual layers are SVG axes, labels, bands, lines, shaded epochs, and legend; the source raster is only available in a labeled QA/reference view."
++  },
++  "canvas": {
++    "width": 619,
++    "height": 363,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 14,
++    "color": "#111111",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial", "Helvetica", "Liberation Sans", "Roboto Condensed"],
++    "calibration": {
++      "fontStretch": "condensed",
++      "letterSpacing": 0,
++      "lineHeight": 1.05,
++      "notes": "Approximate compact publication typography from visual inspection; no OCR/font calibration run for this first pass."
++    }
++  },
++  "coordinateSystems": [
++    {
++      "id": "residual-time-log",
++      "type": "cartesian",
++      "x": {
++        "scale": "linear",
++        "domain": [-1.0, 1.1],
++        "ticks": [
++          {"value": -1.0, "label": "-1.0"},
++          {"value": 0, "label": "0"},
++          {"value": 1.0, "label": "1.0"}
++        ],
++        "label": "Time (s)"
++      },
++      "y": {
++        "scale": "log10",
++        "domain": [0.001, 1],
++        "ticks": [
++          {"value": 1, "label": "10^0"},
++          {"value": 0.1, "label": "10^-1"},
++          {"value": 0.01, "label": "10^-2"},
++          {"value": 0.001, "label": "10^-3"}
++        ],
++        "label": "Residual variance"
++      },
++      "eventAnchors": [
++        {"id": "movement-onset", "value": 0, "label": "0 s"}
++      ]
++    }
++  ],
++  "layoutObjects": [
++    {"id": "panel-label", "type": "panelLabel", "text": "H", "anchor": {"x": 31, "y": 45}, "fontSize": 23, "fontWeight": 700},
++    {"id": "figure-title", "type": "title", "text": "Residuals (data - reconstruction)", "anchor": {"x": 58, "y": 44}, "fontSize": 14},
++    {"id": "shared-y-title", "type": "axisTitle", "text": "Residual variance", "axis": "y", "anchor": {"x": 21, "y": 176}, "rotation": -90, "fontSize": 14},
++    {"id": "shared-x-title", "type": "axisTitle", "text": "Time (s)", "axis": "x", "anchor": {"x": 240, "y": 300}, "fontSize": 14},
++    {
++      "id": "epoch-legend",
++      "type": "legend",
++      "bbox": {"x": 564, "y": 132, "width": 54, "height": 101},
++      "items": [
++        {"id": "cue", "label": "Cue", "fill": "#f2f2f2", "stroke": "#808080", "y": 132},
++        {"id": "delay", "label": "Delay", "fill": "#e8e8e8", "stroke": "#808080", "y": 160},
++        {"id": "move", "label": "Move", "fill": "#d6d6d6", "stroke": "#808080", "y": 188},
++        {"id": "hold", "label": "Hold", "fill": "#a6a6a6", "stroke": "#808080", "y": 216}
++      ]
++    }
++  ],
++  "panels": [
++    {
++      "id": "pca-10d",
++      "title": {"text": "PCA (10D)", "anchor": {"x": 118, "y": 89}},
++      "plot": {"dataBbox": {"x": 66, "y": 99, "width": 105, "height": 154}},
++      "series": {"id": "series-pca-10d", "label": "PCA (10D)", "color": "#7e35c8", "uncertaintyColor": "#caa9ef", "seed": 4041, "bandFraction": 0.24, "points": [[-1.0,0.44],[-0.85,0.25],[-0.7,0.18],[-0.55,0.17],[-0.4,0.15],[-0.25,0.17],[-0.1,0.12],[0.0,0.065],[0.18,0.038],[0.35,0.075],[0.55,0.095],[0.78,0.125],[1.0,0.14],[1.1,0.13]]}
++    },
++    {
++      "id": "pca-20d",
++      "title": {"text": "PCA (20D)", "anchor": {"x": 241, "y": 89}},
++      "plot": {"dataBbox": {"x": 190, "y": 99, "width": 105, "height": 154}},
++      "series": {"id": "series-pca-20d", "label": "PCA (20D)", "color": "#2b83d3", "uncertaintyColor": "#a9cbee", "seed": 4042, "bandFraction": 0.28, "points": [[-1.0,0.25],[-0.84,0.15],[-0.68,0.085],[-0.5,0.06],[-0.32,0.05],[-0.12,0.032],[0.0,0.018],[0.16,0.0078],[0.33,0.012],[0.55,0.018],[0.78,0.027],[1.0,0.038],[1.1,0.047]]}
++    },
++    {
++      "id": "pls",
++      "title": {"text": "PLS", "anchor": {"x": 367, "y": 89}},
++      "plot": {"dataBbox": {"x": 315, "y": 99, "width": 105, "height": 154}},
++      "series": {"id": "series-pls", "label": "PLS", "color": "#5aa02c", "uncertaintyColor": "#b9d7a9", "seed": 4043, "bandFraction": 0.22, "points": [[-1.0,0.19],[-0.82,0.15],[-0.65,0.11],[-0.48,0.083],[-0.3,0.058],[-0.12,0.032],[0.0,0.018],[0.15,0.013],[0.34,0.017],[0.55,0.024],[0.78,0.036],[1.0,0.052],[1.1,0.062]]}
++    },
++    {
++      "id": "lda",
++      "title": {"text": "LDA", "anchor": {"x": 495, "y": 89}},
++      "plot": {"dataBbox": {"x": 442, "y": 99, "width": 100, "height": 154}},
++      "series": {"id": "series-lda", "label": "LDA", "color": "#f47a2b", "uncertaintyColor": "#f6c29c", "seed": 4044, "bandFraction": 0.22, "points": [[-1.0,0.16],[-0.82,0.105],[-0.62,0.065],[-0.42,0.055],[-0.22,0.04],[-0.08,0.024],[0.0,0.014],[0.12,0.0084],[0.26,0.014],[0.44,0.023],[0.65,0.035],[0.88,0.051],[1.1,0.067]]}
++    }
++  ],
++  "data": {
++    "curveRecipe": {
++      "type": "sampledApproximation",
++      "description": "Line points are visually sampled from the raster and rendered in data coordinates. A deterministic low-amplitude wiggle approximates jagged mean traces; uncertainty bands follow the line shape and are not rectangular boxes."
++    },
++    "epochs": [
++      {"id": "cue-window", "label": "Cue", "x0": -1.0, "x1": -0.58, "fill": "#f7f7f7", "opacity": 0.85},
++      {"id": "delay-window", "label": "Delay", "x0": -0.58, "x1": -0.05, "fill": "#eeeeee", "opacity": 0.85},
++      {"id": "move-window", "label": "Move", "x0": 0.45, "x1": 0.85, "fill": "#e3e3e3", "opacity": 0.75}
++    ]
++  },
++  "marks": [
++    {"id": "residual-curves", "type": "lineSeriesGroup", "coordinateSystem": "residual-time-log", "seriesRefs": ["series-pca-10d", "series-pca-20d", "series-pls", "series-lda"]},
++    {"id": "epoch-shading", "type": "rectGroup", "coordinateSystem": "residual-time-log", "epochRefs": ["cue-window", "delay-window", "move-window"]},
++    {"id": "movement-onset-lines", "type": "eventLineGroup", "coordinateSystem": "residual-time-log", "eventAnchor": "movement-onset"}
++  ],
++  "rendering": {
++    "renderer": "svg",
++    "layers": ["background", "epochShading", "axes", "uncertaintyBands", "lineSeries", "titles", "legend"],
++    "styles": {
++      "axisStroke": "#222222",
++      "axisStrokeWidth": 1,
++      "tickStrokeWidth": 1,
++      "eventLineStroke": "#111111",
++      "eventLineWidth": 1.25,
++      "frameStroke": "#222222",
++      "curveStrokeWidth": 2,
++      "uncertaintyOpacity": 0.42,
++      "epochOpacity": 0.72
++    }
++  },
++  "constraints": [
++    {"id": "shared-log-scale", "type": "sharedScale", "panels": "all", "coordinateSystem": "residual-time-log"},
++    {"id": "event-line-shared-anchor", "type": "eventAnchor", "event": "movement-onset", "xValue": 0},
++    {"id": "legend-items-reference-epochs", "type": "legendReference", "legend": "epoch-legend", "items": ["cue-window", "delay-window", "move-window", "hold"]},
++    {"id": "qa-separation", "type": "sourceUsage", "rule": "Source raster appears only in labeled reference view and is not used for generated candidate layers."}
++  ],
++  "validation": {
++    "expectedPanelCount": 4,
++    "expectedSeriesCount": 4,
++    "expectedEventLines": 4,
++    "expectedEpochRectsPerPanel": 3,
++    "expectedLegendItems": 4,
++    "jsonEditableFields": ["panels[].series.points", "coordinateSystems[0].x.domain", "coordinateSystems[0].y.domain", "data.epochs", "layoutObjects"]
++  },
++  "confidence": [
++    {"target": "curve values", "confidence": "medium-low", "note": "Curves are visually approximated from the raster rather than digitized."},
++    {"target": "uncertainty bands", "confidence": "medium-low", "note": "Band widths are estimated and generated to follow the mean line geometry."},
++    {"target": "layout", "confidence": "medium", "note": "Plot boxes, shared labels, legend, and event lines were measured by visual inspection at native resolution."},
++    {"target": "typography", "confidence": "medium-low", "note": "Publication typography is approximated with Arial/Helvetica-like sans-serif metrics for this first pass."}
++  ]
++}
+
+codex
+The requested JSON and HTML are in place. I’m running the contract checks now: JSON parse validity and a targeted search for accidental raster reuse patterns such as `drawImage`, CSS backgrounds, or hidden source-layer use.
+exec
+/bin/zsh -lc 'python -m json.tool outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.json >/tmp/reference-04-motor-manifold-H-jsoncheck.txt && wc -c /tmp/reference-04-motor-manifold-H-jsoncheck.txt' in /Users/alex/Code/scientific-figure-reconstruction
+ exited 127 in 0ms:
+zsh:1: command not found: python
+
+exec
+/bin/zsh -lc "rg -n \"drawImage|background(-image)?\\s*:|url\\(|reference-04-motor-manifold-H-reference|<img|source raster|QA reference\" outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.json outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.html" in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.json:5:    "path": "../../assets/reference/reference-04-motor-manifold-H-reference.png",
+outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.json:7:    "notes": "First-pass reconstruction inferred visually from the native 619 x 363 raster crop. Generated visual layers are SVG axes, labels, bands, lines, shaded epochs, and legend; the source raster is only available in a labeled QA/reference view."
+outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.html:8:    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
+outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.html:9:    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #d0d0d0; }
+outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.html:13:    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
+outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.html:14:    .toggle button.active { background: #111111; color: #ffffff; }
+outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.html:16:    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
+outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.html:20:    .qa-label { position: absolute; left: 8px; bottom: 8px; padding: 3px 6px; border: 1px solid #777777; background: rgba(255,255,255,0.92); font-size: 11px; font-weight: 700; }
+outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.html:43:        <img id="reference" alt="QA reference source image">
+outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.html:44:        <div class="qa-label">QA reference only: source raster</div>
+
+exec
+/bin/zsh -lc 'ls -la outputs/reference-04-motor-manifold-H-make-figure-batch' in /Users/alex/Code/scientific-figure-reconstruction
+ succeeded in 0ms:
+total 40
+drwxr-xr-x   4 alex  staff    128 Jun  6 15:42 .
+drwxr-xr-x  46 alex  staff   1472 Jun  6 15:41 ..
+-rw-r--r--   1 alex  staff  11501 Jun  6 15:42 reference-04-motor-manifold-H.html
+-rw-r--r--   1 alex  staff   8152 Jun  6 15:42 reference-04-motor-manifold-H.json
+
+diff --git a/outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.html b/outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..092904352f461eca822dafdd1bf153b216417926
+--- /dev/null
++++ b/outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.html
+@@ -0,0 +1,243 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>reference-04-motor-manifold-H reconstruction</title>
++  <style>
++    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
++    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #d0d0d0; }
++    h1 { margin: 0; font-size: 15px; font-weight: 700; }
++    .note { margin-top: 3px; font-size: 12px; color: #555555; }
++    .toggle { display: inline-flex; overflow: hidden; border: 1px solid #999999; border-radius: 4px; }
++    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
++    .toggle button.active { background: #111111; color: #ffffff; }
++    main { min-height: calc(100vh - 50px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
++    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
++    .surface, .reference-wrap { position: absolute; inset: 0; }
++    .reference-wrap { display: none; }
++    .reference-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
++    .qa-label { position: absolute; left: 8px; bottom: 8px; padding: 3px 6px; border: 1px solid #777777; background: rgba(255,255,255,0.92); font-size: 11px; font-weight: 700; }
++    .show-reference .surface { display: none; }
++    .show-reference .reference-wrap { display: block; }
++    svg { position: absolute; inset: 0; overflow: visible; }
++    text { paint-order: stroke; stroke: #ffffff; stroke-width: 2px; stroke-linejoin: round; }
++    .panel-label, .figure-title, .panel-title, .axis-title { stroke-width: 2.4px; }
++  </style>
++</head>
++<body>
++  <header>
++    <div>
++      <h1 id="title">reference-04-motor-manifold-H</h1>
++      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
++    </div>
++    <div class="toggle" aria-label="View mode">
++      <button id="generatedButton" class="active" type="button">Generated</button>
++      <button id="referenceButton" type="button">Reference</button>
++    </div>
++  </header>
++  <main>
++    <div id="frame" class="frame">
++      <div id="surface" class="surface"></div>
++      <div id="referenceWrap" class="reference-wrap">
++        <img id="reference" alt="QA reference source image">
++        <div class="qa-label">QA reference only: source raster</div>
++      </div>
++    </div>
++  </main>
++  <script>
++    const SVG_NS = 'http://www.w3.org/2000/svg';
++    const SPEC_PATH = 'reference-04-motor-manifold-H.json';
++
++    function el(tag, attrs = {}) {
++      const node = document.createElementNS(SVG_NS, tag);
++      for (const [key, value] of Object.entries(attrs)) {
++        if (value !== undefined && value !== null) node.setAttribute(key, value);
++      }
++      return node;
++    }
++
++    function addText(parent, text, x, y, attrs = {}) {
++      const node = el('text', {
++        x, y,
++        fill: attrs.fill || '#111111',
++        'font-size': attrs.size || 13,
++        'font-weight': attrs.weight || 400,
++        'font-family': attrs.family || 'Arial, Helvetica, sans-serif',
++        'text-anchor': attrs.anchor || 'start',
++        'dominant-baseline': attrs.baseline || 'auto',
++        class: attrs.class || ''
++      });
++      if (attrs.rotate) node.setAttribute('transform', `rotate(${attrs.rotate} ${x} ${y})`);
++      node.textContent = text;
++      parent.appendChild(node);
++      return node;
++    }
++
++    function mulberry32(seed) {
++      return function random() {
++        let t = seed += 0x6D2B79F5;
++        t = Math.imul(t ^ t >>> 15, t | 1);
++        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
++        return ((t ^ t >>> 14) >>> 0) / 4294967296;
++      };
++    }
++
++    function densify(points, seed) {
++      const random = mulberry32(seed);
++      const out = [];
++      for (let i = 0; i < points.length - 1; i++) {
++        const a = points[i];
++        const b = points[i + 1];
++        for (let step = 0; step < 6; step++) {
++          const t = step / 6;
++          const x = a[0] + (b[0] - a[0]) * t;
++          const logA = Math.log10(a[1]);
++          const logB = Math.log10(b[1]);
++          const wave = Math.sin((x + 1.1) * 24 + seed * 0.01) * 0.018 + (random() - 0.5) * 0.018;
++          const y = Math.pow(10, logA + (logB - logA) * t + wave);
++          out.push([x, y]);
++        }
++      }
++      out.push(points[points.length - 1]);
++      return out;
++    }
++
++    function transformFor(panel, coord) {
++      const box = panel.plot.dataBbox;
++      const x0 = coord.x.domain[0];
++      const x1 = coord.x.domain[1];
++      const y0 = Math.log10(coord.y.domain[0]);
++      const y1 = Math.log10(coord.y.domain[1]);
++      return {
++        x(value) { return box.x + (value - x0) / (x1 - x0) * box.width; },
++        y(value) { return box.y + (y1 - Math.log10(value)) / (y1 - y0) * box.height; },
++        box
++      };
++    }
++
++    function linePath(points, tx) {
++      return points.map((point, index) => `${index ? 'L' : 'M'} ${tx.x(point[0]).toFixed(2)} ${tx.y(point[1]).toFixed(2)}`).join(' ');
++    }
++
++    function bandPath(points, tx, fraction) {
++      const upper = points.map(([x, y]) => [x, Math.min(1, y * (1 + fraction))]);
++      const lower = points.slice().reverse().map(([x, y]) => [x, Math.max(0.001, y * (1 - fraction))]);
++      return `${linePath(upper, tx)} ${lower.map(point => `L ${tx.x(point[0]).toFixed(2)} ${tx.y(point[1]).toFixed(2)}`).join(' ')} Z`;
++    }
++
++    function renderPanel(svg, spec, panel, coord, panelIndex) {
++      const tx = transformFor(panel, coord);
++      const box = tx.box;
++      const styles = spec.rendering.styles;
++
++      for (const epoch of spec.data.epochs) {
++        const x = tx.x(epoch.x0);
++        const width = tx.x(epoch.x1) - x;
++        svg.appendChild(el('rect', {
++          x, y: box.y, width, height: box.height, fill: epoch.fill, opacity: epoch.opacity,
++          'data-panel': panel.id, 'data-epoch': epoch.id
++        }));
++      }
++
++      svg.appendChild(el('rect', {x: box.x, y: box.y, width: box.width, height: box.height, fill: 'none', stroke: styles.frameStroke, 'stroke-width': 1, 'data-panel': panel.id, 'data-role': 'plot-frame'}));
++      const eventX = tx.x(0);
++      svg.appendChild(el('line', {x1: eventX, y1: box.y, x2: eventX, y2: box.y + box.height, stroke: styles.eventLineStroke, 'stroke-width': styles.eventLineWidth, 'data-event-anchor': 'movement-onset', 'data-panel': panel.id}));
++
++      for (const tick of coord.x.ticks) {
++        const x = tx.x(tick.value);
++        svg.appendChild(el('line', {x1: x, y1: box.y + box.height, x2: x, y2: box.y + box.height + 5, stroke: styles.axisStroke, 'stroke-width': styles.tickStrokeWidth, 'data-axis': 'x', 'data-value': tick.value}));
++        addText(svg, tick.label, x, box.y + box.height + 19, {size: 12, anchor: 'middle'});
++      }
++      for (const tick of coord.y.ticks) {
++        const y = tx.y(tick.value);
++        svg.appendChild(el('line', {x1: box.x - 5, y1: y, x2: box.x, y2: y, stroke: styles.axisStroke, 'stroke-width': styles.tickStrokeWidth, 'data-axis': 'y', 'data-value': tick.value}));
++        if (panelIndex === 0) {
++          const label = tick.label.replace('10^0', '10⁰').replace('10^-1', '10⁻¹').replace('10^-2', '10⁻²').replace('10^-3', '10⁻³');
++          addText(svg, label, box.x - 10, y + 4, {size: 12, anchor: 'end'});
++        }
++      }
++
++      const dense = densify(panel.series.points, panel.series.seed);
++      svg.appendChild(el('path', {
++        d: bandPath(dense, tx, panel.series.bandFraction),
++        fill: panel.series.uncertaintyColor,
++        opacity: styles.uncertaintyOpacity,
++        stroke: 'none',
++        'data-series': panel.series.id,
++        'data-role': 'uncertainty-band'
++      }));
++      svg.appendChild(el('path', {
++        d: linePath(dense, tx),
++        fill: 'none',
++        stroke: panel.series.color,
++        'stroke-width': styles.curveStrokeWidth,
++        'stroke-linecap': 'round',
++        'stroke-linejoin': 'round',
++        'data-series': panel.series.id,
++        'data-role': 'mean-line'
++      }));
++      addText(svg, panel.title.text, panel.title.anchor.x, panel.title.anchor.y, {size: 14, anchor: 'middle', class: 'panel-title'});
++    }
++
++    function renderLegend(svg, spec) {
++      const legend = spec.layoutObjects.find(item => item.id === 'epoch-legend');
++      for (const item of legend.items) {
++        svg.appendChild(el('rect', {x: legend.bbox.x, y: item.y, width: 20, height: 17, fill: item.fill, stroke: item.stroke, 'stroke-width': 1, 'data-legend-item': item.id}));
++        addText(svg, item.label, legend.bbox.x + 29, item.y + 13, {size: 13});
++      }
++    }
++
++    function render(spec) {
++      document.getElementById('title').textContent = spec.id;
++      const frame = document.getElementById('frame');
++      frame.style.width = `${spec.canvas.width}px`;
++      frame.style.height = `${spec.canvas.height}px`;
++      document.getElementById('reference').src = spec.source.path;
++
++      const surface = document.getElementById('surface');
++      surface.innerHTML = '';
++      const svg = el('svg', {viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, width: spec.canvas.width, height: spec.canvas.height, role: 'img', 'aria-label': spec.id});
++      svg.style.backgroundColor = spec.canvas.background;
++      surface.appendChild(svg);
++
++      const coord = spec.coordinateSystems.find(system => system.id === 'residual-time-log');
++      for (const panel of spec.panels) renderPanel(svg, spec, panel, coord, spec.panels.indexOf(panel));
++
++      const label = spec.layoutObjects.find(item => item.id === 'panel-label');
++      addText(svg, label.text, label.anchor.x, label.anchor.y, {size: label.fontSize, weight: label.fontWeight, class: 'panel-label'});
++      const title = spec.layoutObjects.find(item => item.id === 'figure-title');
++      addText(svg, title.text, title.anchor.x, title.anchor.y, {size: title.fontSize, class: 'figure-title'});
++      const yTitle = spec.layoutObjects.find(item => item.id === 'shared-y-title');
++      addText(svg, yTitle.text, yTitle.anchor.x, yTitle.anchor.y, {size: yTitle.fontSize, rotate: yTitle.rotation, anchor: 'middle', class: 'axis-title'});
++      const xTitle = spec.layoutObjects.find(item => item.id === 'shared-x-title');
++      addText(svg, xTitle.text, xTitle.anchor.x, xTitle.anchor.y, {size: xTitle.fontSize, anchor: 'middle', class: 'axis-title'});
++      renderLegend(svg, spec);
++    }
++
++    async function init() {
++      const response = await fetch(SPEC_PATH);
++      const spec = await response.json();
++      render(spec);
++    }
++
++    const frame = document.getElementById('frame');
++    const generatedButton = document.getElementById('generatedButton');
++    const referenceButton = document.getElementById('referenceButton');
++    generatedButton.addEventListener('click', () => {
++      frame.classList.remove('show-reference');
++      generatedButton.classList.add('active');
++      referenceButton.classList.remove('active');
++    });
++    referenceButton.addEventListener('click', () => {
++      frame.classList.add('show-reference');
++      referenceButton.classList.add('active');
++      generatedButton.classList.remove('active');
++    });
++
++    init().catch(error => {
++      document.getElementById('surface').textContent = `Unable to load reconstruction JSON: ${error.message}`;
++    });
++  </script>
++</body>
++</html>
+diff --git a/outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.json b/outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..52ea23e5d4b453a0d9de4f381172a174b98ea8d7
+--- /dev/null
++++ b/outputs/reference-04-motor-manifold-H-make-figure-batch/reference-04-motor-manifold-H.json
+@@ -0,0 +1,152 @@
++{
++  "schema": "scientific_figure_reconstruction.v1",
++  "id": "reference-04-motor-manifold-H",
++  "source": {
++    "path": "../../assets/reference/reference-04-motor-manifold-H-reference.png",
++    "usage": "QA-only; not used by generated candidate.",
++    "notes": "First-pass reconstruction inferred visually from the native 619 x 363 raster crop. Generated visual layers are SVG axes, labels, bands, lines, shaded epochs, and legend; the source raster is only available in a labeled QA/reference view."
++  },
++  "canvas": {
++    "width": 619,
++    "height": 363,
++    "background": "#ffffff"
++  },
++  "typography": {
++    "fontFamily": "Arial, Helvetica, sans-serif",
++    "defaultSize": 14,
++    "color": "#111111",
++    "fontImports": [],
++    "fontFaces": [],
++    "fontCandidates": ["Arial", "Helvetica", "Liberation Sans", "Roboto Condensed"],
++    "calibration": {
++      "fontStretch": "condensed",
++      "letterSpacing": 0,
++      "lineHeight": 1.05,
++      "notes": "Approximate compact publication typography from visual inspection; no OCR/font calibration run for this first pass."
++    }
++  },
++  "coordinateSystems": [
++    {
++      "id": "residual-time-log",
++      "type": "cartesian",
++      "x": {
++        "scale": "linear",
++        "domain": [-1.0, 1.1],
++        "ticks": [
++          {"value": -1.0, "label": "-1.0"},
++          {"value": 0, "label": "0"},
++          {"value": 1.0, "label": "1.0"}
++        ],
++        "label": "Time (s)"
++      },
++      "y": {
++        "scale": "log10",
++        "domain": [0.001, 1],
++        "ticks": [
++          {"value": 1, "label": "10^0"},
++          {"value": 0.1, "label": "10^-1"},
++          {"value": 0.01, "label": "10^-2"},
++          {"value": 0.001, "label": "10^-3"}
++        ],
++        "label": "Residual variance"
++      },
++      "eventAnchors": [
++        {"id": "movement-onset", "value": 0, "label": "0 s"}
++      ]
++    }
++  ],
++  "layoutObjects": [
++    {"id": "panel-label", "type": "panelLabel", "text": "H", "anchor": {"x": 31, "y": 45}, "fontSize": 23, "fontWeight": 700},
++    {"id": "figure-title", "type": "title", "text": "Residuals (data - reconstruction)", "anchor": {"x": 58, "y": 44}, "fontSize": 14},
++    {"id": "shared-y-title", "type": "axisTitle", "text": "Residual variance", "axis": "y", "anchor": {"x": 21, "y": 176}, "rotation": -90, "fontSize": 14},
++    {"id": "shared-x-title", "type": "axisTitle", "text": "Time (s)", "axis": "x", "anchor": {"x": 240, "y": 300}, "fontSize": 14},
++    {
++      "id": "epoch-legend",
++      "type": "legend",
++      "bbox": {"x": 564, "y": 132, "width": 54, "height": 101},
++      "items": [
++        {"id": "cue", "label": "Cue", "fill": "#f2f2f2", "stroke": "#808080", "y": 132},
++        {"id": "delay", "label": "Delay", "fill": "#e8e8e8", "stroke": "#808080", "y": 160},
++        {"id": "move", "label": "Move", "fill": "#d6d6d6", "stroke": "#808080", "y": 188},
++        {"id": "hold", "label": "Hold", "fill": "#a6a6a6", "stroke": "#808080", "y": 216}
++      ]
++    }
++  ],
++  "panels": [
++    {
++      "id": "pca-10d",
++      "title": {"text": "PCA (10D)", "anchor": {"x": 118, "y": 89}},
++      "plot": {"dataBbox": {"x": 66, "y": 99, "width": 105, "height": 154}},
++      "series": {"id": "series-pca-10d", "label": "PCA (10D)", "color": "#7e35c8", "uncertaintyColor": "#caa9ef", "seed": 4041, "bandFraction": 0.24, "points": [[-1.0,0.44],[-0.85,0.25],[-0.7,0.18],[-0.55,0.17],[-0.4,0.15],[-0.25,0.17],[-0.1,0.12],[0.0,0.065],[0.18,0.038],[0.35,0.075],[0.55,0.095],[0.78,0.125],[1.0,0.14],[1.1,0.13]]}
++    },
++    {
++      "id": "pca-20d",
++      "title": {"text": "PCA (20D)", "anchor": {"x": 241, "y": 89}},
++      "plot": {"dataBbox": {"x": 190, "y": 99, "width": 105, "height": 154}},
++      "series": {"id": "series-pca-20d", "label": "PCA (20D)", "color": "#2b83d3", "uncertaintyColor": "#a9cbee", "seed": 4042, "bandFraction": 0.28, "points": [[-1.0,0.25],[-0.84,0.15],[-0.68,0.085],[-0.5,0.06],[-0.32,0.05],[-0.12,0.032],[0.0,0.018],[0.16,0.0078],[0.33,0.012],[0.55,0.018],[0.78,0.027],[1.0,0.038],[1.1,0.047]]}
++    },
++    {
++      "id": "pls",
++      "title": {"text": "PLS", "anchor": {"x": 367, "y": 89}},
++      "plot": {"dataBbox": {"x": 315, "y": 99, "width": 105, "height": 154}},
++      "series": {"id": "series-pls", "label": "PLS", "color": "#5aa02c", "uncertaintyColor": "#b9d7a9", "seed": 4043, "bandFraction": 0.22, "points": [[-1.0,0.19],[-0.82,0.15],[-0.65,0.11],[-0.48,0.083],[-0.3,0.058],[-0.12,0.032],[0.0,0.018],[0.15,0.013],[0.34,0.017],[0.55,0.024],[0.78,0.036],[1.0,0.052],[1.1,0.062]]}
++    },
++    {
++      "id": "lda",
++      "title": {"text": "LDA", "anchor": {"x": 495, "y": 89}},
++      "plot": {"dataBbox": {"x": 442, "y": 99, "width": 100, "height": 154}},
++      "series": {"id": "series-lda", "label": "LDA", "color": "#f47a2b", "uncertaintyColor": "#f6c29c", "seed": 4044, "bandFraction": 0.22, "points": [[-1.0,0.16],[-0.82,0.105],[-0.62,0.065],[-0.42,0.055],[-0.22,0.04],[-0.08,0.024],[0.0,0.014],[0.12,0.0084],[0.26,0.014],[0.44,0.023],[0.65,0.035],[0.88,0.051],[1.1,0.067]]}
++    }
++  ],
++  "data": {
++    "curveRecipe": {
++      "type": "sampledApproximation",
++      "description": "Line points are visually sampled from the raster and rendered in data coordinates. A deterministic low-amplitude wiggle approximates jagged mean traces; uncertainty bands follow the line shape and are not rectangular boxes."
++    },
++    "epochs": [
++      {"id": "cue-window", "label": "Cue", "x0": -1.0, "x1": -0.58, "fill": "#f7f7f7", "opacity": 0.85},
++      {"id": "delay-window", "label": "Delay", "x0": -0.58, "x1": -0.05, "fill": "#eeeeee", "opacity": 0.85},
++      {"id": "move-window", "label": "Move", "x0": 0.45, "x1": 0.85, "fill": "#e3e3e3", "opacity": 0.75}
++    ]
++  },
++  "marks": [
++    {"id": "residual-curves", "type": "lineSeriesGroup", "coordinateSystem": "residual-time-log", "seriesRefs": ["series-pca-10d", "series-pca-20d", "series-pls", "series-lda"]},
++    {"id": "epoch-shading", "type": "rectGroup", "coordinateSystem": "residual-time-log", "epochRefs": ["cue-window", "delay-window", "move-window"]},
++    {"id": "movement-onset-lines", "type": "eventLineGroup", "coordinateSystem": "residual-time-log", "eventAnchor": "movement-onset"}
++  ],
++  "rendering": {
++    "renderer": "svg",
++    "layers": ["background", "epochShading", "axes", "uncertaintyBands", "lineSeries", "titles", "legend"],
++    "styles": {
++      "axisStroke": "#222222",
++      "axisStrokeWidth": 1,
++      "tickStrokeWidth": 1,
++      "eventLineStroke": "#111111",
++      "eventLineWidth": 1.25,
++      "frameStroke": "#222222",
++      "curveStrokeWidth": 2,
++      "uncertaintyOpacity": 0.42,
++      "epochOpacity": 0.72
++    }
++  },
++  "constraints": [
++    {"id": "shared-log-scale", "type": "sharedScale", "panels": "all", "coordinateSystem": "residual-time-log"},
++    {"id": "event-line-shared-anchor", "type": "eventAnchor", "event": "movement-onset", "xValue": 0},
++    {"id": "legend-items-reference-epochs", "type": "legendReference", "legend": "epoch-legend", "items": ["cue-window", "delay-window", "move-window", "hold"]},
++    {"id": "qa-separation", "type": "sourceUsage", "rule": "Source raster appears only in labeled reference view and is not used for generated candidate layers."}
++  ],
++  "validation": {
++    "expectedPanelCount": 4,
++    "expectedSeriesCount": 4,
++    "expectedEventLines": 4,
++    "expectedEpochRectsPerPanel": 3,
++    "expectedLegendItems": 4,
++    "jsonEditableFields": ["panels[].series.points", "coordinateSystems[0].x.domain", "coordinateSystems[0].y.domain", "data.epochs", "layoutObjects"]
++  },
++  "confidence": [
++    {"target": "curve values", "confidence": "medium-low", "note": "Curves are visually approximated from the raster rather than digitized."},
++    {"target": "uncertainty bands", "confidence": "medium-low", "note": "Band widths are estimated and generated to follow the mean line geometry."},
++    {"target": "layout", "confidence": "medium", "note": "Plot boxes, shared labels, legend, and event lines were measured by visual inspection at native resolution."},
++    {"target": "typography", "confidence": "medium-low", "note": "Publication typography is approximated with Arial/Helvetica-like sans-serif metrics for this first pass."}
++  ]
++}
+

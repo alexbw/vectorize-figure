@@ -1,0 +1,186 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-02-decision-dynamics-B-ocr-text-targets",
+  "source": {
+    "path": "/assets/reference/reference-02-decision-dynamics-B-reference.png",
+    "usage": "QA-only OCR text target extraction for typography calibration."
+  },
+  "canvas": {
+    "width": 356,
+    "height": 514,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Helvetica, Arial, sans-serif",
+    "defaultSize": 13,
+    "color": "#111111"
+  },
+  "panels": [
+    {
+      "id": "ocr-text-targets",
+      "marks": [
+        {
+          "id": "ocr-01",
+          "type": "text",
+          "text": "B Neural state-space trajectories",
+          "x": 9,
+          "y": 36,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 20.7,
+          "fontWeight": 700,
+          "anchor": "start",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 9,
+            "y": 13,
+            "width": 243,
+            "height": 23
+          },
+          "targetWidth": 243,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 92
+        },
+        {
+          "id": "ocr-02",
+          "type": "text",
+          "text": "(population activity)",
+          "x": 107,
+          "y": 57,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 17.1,
+          "fontWeight": 700,
+          "anchor": "middle",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 34,
+            "y": 38,
+            "width": 146,
+            "height": 19
+          },
+          "targetWidth": 146,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 96.9
+        },
+        {
+          "id": "ocr-03",
+          "type": "text",
+          "text": "Right choice © Time points",
+          "x": 247.5,
+          "y": 101,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 27.900000000000002,
+          "fontWeight": 400,
+          "anchor": "middle",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 172,
+            "y": 70,
+            "width": 151,
+            "height": 31
+          },
+          "targetWidth": 151,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 80.5
+        },
+        {
+          "id": "ocr-04",
+          "type": "text",
+          "text": "Stim x",
+          "x": 123,
+          "y": 229,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 20.7,
+          "fontWeight": 400,
+          "anchor": "middle",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 71,
+            "y": 206,
+            "width": 104,
+            "height": 23
+          },
+          "targetWidth": 104,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 52.7
+        },
+        {
+          "id": "ocr-05",
+          "type": "text",
+          "text": "(2504 Om Lg",
+          "x": 85.5,
+          "y": 256,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 28,
+          "fontWeight": 400,
+          "anchor": "middle",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 8,
+            "y": 222,
+            "width": 155,
+            "height": 34
+          },
+          "targetWidth": 155,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 51.1
+        },
+        {
+          "id": "ocr-06",
+          "type": "text",
+          "text": "SA",
+          "x": 208.5,
+          "y": 291,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 27,
+          "fontWeight": 400,
+          "anchor": "middle",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 177,
+            "y": 261,
+            "width": 63,
+            "height": 30
+          },
+          "targetWidth": 63,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 67.3
+        },
+        {
+          "id": "ocr-07",
+          "type": "text",
+          "text": "(12%) PCL",
+          "x": 65,
+          "y": 436,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 17.1,
+          "fontWeight": 400,
+          "anchor": "start",
+          "fill": "#111111",
+          "sourceBox": {
+            "x": 65,
+            "y": 417,
+            "width": 225,
+            "height": 19
+          },
+          "targetWidth": 225,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "ocrConfidence": 67
+        }
+      ]
+    }
+  ],
+  "confidence": [
+    {
+      "target": "ocr-text-targets",
+      "confidence": "medium",
+      "note": "Generated from Tesseract line OCR; noisy lines should be ignored in visual QA."
+    }
+  ]
+}

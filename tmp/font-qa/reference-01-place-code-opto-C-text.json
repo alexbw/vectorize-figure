@@ -1,0 +1,145 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-01-place-code-opto-C-text-qa",
+  "source": {
+    "path": "/assets/reference/reference-01-place-code-opto-C-reference.png",
+    "usage": "QA-only; sourceBox values are representative measured text boxes for QA."
+  },
+  "canvas": {"width": 560, "height": 512, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Helvetica, Arial, sans-serif",
+    "defaultSize": 13,
+    "color": "#111111",
+    "fontImports": [
+      "https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&family=Roboto:wght@400;700&family=Source+Sans+3:wght@400;700&display=swap"
+    ],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Roboto", "Source Sans 3", "Times New Roman", "Courier New"]
+  },
+  "panels": [
+    {
+      "id": "panel-c-text",
+      "label": {
+        "id": "panel-label",
+        "text": "C",
+        "x": 0,
+        "y": 32,
+        "fontFamily": "Helvetica, Arial, sans-serif",
+        "fontSize": 18,
+        "fontWeight": 700,
+        "overlayX": 0,
+        "overlayY": 31,
+        "targetWidth": 17,
+        "fit": "scaleX",
+        "sourceBox": {"x": 0, "y": 15, "width": 16, "height": 20}
+      },
+      "title": {
+        "id": "panel-title",
+        "text": "Event-aligned responses to light onset",
+        "x": 34,
+        "y": 34,
+        "fontFamily": "Helvetica, Arial, sans-serif",
+        "fontSize": 17,
+        "fontWeight": 700,
+        "overlayX": 32,
+        "overlayY": 34,
+        "targetWidth": 283,
+        "fit": "scaleX",
+        "fitTolerancePx": 0.5,
+        "sourceBox": {"x": 34, "y": 20, "width": 283, "height": 19}
+      },
+      "marks": [
+        {
+          "id": "event-label",
+          "type": "text",
+          "text": "532 nm light ON",
+          "x": 251,
+          "y": 62,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 16,
+          "anchor": "middle",
+          "fill": "#009da3",
+          "overlayX": 266,
+          "overlayY": 64,
+          "targetWidth": 103,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "sourceBox": {"x": 211, "y": 50, "width": 103, "height": 23}
+        },
+        {
+          "id": "raster-x-label",
+          "type": "text",
+          "text": "Time from light onset (s)",
+          "x": 288,
+          "y": 301,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 10,
+          "anchor": "middle",
+          "overlayX": 285,
+          "overlayY": 302,
+          "targetWidth": 156,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "sourceBox": {"x": 211, "y": 289, "width": 156, "height": 16}
+        },
+        {
+          "id": "control-label",
+          "type": "text",
+          "text": "Control\n(no light)",
+          "x": 44,
+          "y": 92,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 12,
+          "anchor": "middle",
+          "lineHeight": 1.0,
+          "overlayX": 45,
+          "overlayY": 90,
+          "targetWidth": 50,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "sourceBox": {"x": 20, "y": 80, "width": 50, "height": 28}
+        },
+        {
+          "id": "opto-label",
+          "type": "text",
+          "text": "Optogenetic\ninhibition\n(ArchT)",
+          "x": 44,
+          "y": 195,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 10.5,
+          "anchor": "middle",
+          "lineHeight": 1.0,
+          "fill": "#009da3",
+          "overlayX": 44,
+          "overlayY": 193,
+          "targetWidth": 78,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "sourceBox": {"x": 5, "y": 181, "width": 78, "height": 50}
+        },
+        {
+          "id": "line-x-label",
+          "type": "text",
+          "text": "Time from light onset (s)",
+          "x": 291,
+          "y": 482,
+          "fontFamily": "Helvetica, Arial, sans-serif",
+          "fontSize": 13,
+          "anchor": "middle",
+          "overlayX": 287.5,
+          "overlayY": 498,
+          "targetWidth": 154,
+          "fit": "scaleX",
+          "fitTolerancePx": 0.5,
+          "sourceBox": {"x": 214, "y": 481, "width": 154, "height": 18}
+        }
+      ]
+    }
+  ],
+  "confidence": [
+    {
+      "target": "sourceBox",
+      "confidence": "medium",
+      "note": "Representative text boxes are sufficient to exercise renderer QA and candidate scoring; not a final source annotation pass."
+    }
+  ]
+}

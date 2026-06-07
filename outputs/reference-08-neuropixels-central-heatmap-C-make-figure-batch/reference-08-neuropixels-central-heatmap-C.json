@@ -1,0 +1,442 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-08-neuropixels-central-heatmap-C",
+  "source": {
+    "path": "../../assets/reference/reference-08-neuropixels-central-heatmap-C-reference.png",
+    "usage": "QA-only reference view; not used by generated candidate layers.",
+    "notes": "Single panel C heatmap reconstructed from visual inspection. Dense activity field is generated from editable recipes and does not sample or reuse the source raster."
+  },
+  "canvas": {
+    "width": 636,
+    "height": 605,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": [
+      "Arial",
+      "Helvetica",
+      "Arimo",
+      "Source Sans 3",
+      "Roboto",
+      "Noto Sans"
+    ],
+    "calibration": {
+      "fontStretch": "normal",
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "First-pass visual match; title and labels use Arial-like bold sans without source-raster text extraction."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "panel-c.xy",
+      "type": "cartesian",
+      "xDomain": [
+        0,
+        200
+      ],
+      "yDomain": [
+        1,
+        384
+      ],
+      "plotBbox": {
+        "x": 84,
+        "y": 25,
+        "width": 541,
+        "height": 564
+      }
+    },
+    {
+      "id": "panel-c.activity-z",
+      "type": "colorScale",
+      "domain": [
+        -2.2,
+        2.4
+      ],
+      "stops": [
+        {
+          "value": -2.2,
+          "color": "#001316"
+        },
+        {
+          "value": -0.7,
+          "color": "#08282b"
+        },
+        {
+          "value": 0,
+          "color": "#101311"
+        },
+        {
+          "value": 0.8,
+          "color": "#8a6200"
+        },
+        {
+          "value": 2.4,
+          "color": "#f1bb18"
+        }
+      ]
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-c",
+      "label": {
+        "id": "panel-c-label",
+        "text": "C",
+        "x": 42,
+        "y": 10,
+        "fontSize": 21,
+        "fontWeight": 700,
+        "anchor": "middle"
+      },
+      "title": {
+        "id": "panel-c-title",
+        "text": "Sorted neural activity (z-scored firing rate)",
+        "x": 72,
+        "y": 10,
+        "fontSize": 16,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {
+          "x": 72,
+          "y": 0,
+          "width": 363,
+          "height": 18
+        },
+        "fit": "measured first-pass"
+      },
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 636,
+        "height": 605
+      },
+      "plot": {
+        "dataBbox": {
+          "x": 84,
+          "y": 25,
+          "width": 541,
+          "height": 564
+        },
+        "background": "#071214",
+        "axes": {
+          "xAxis": {
+            "id": "panel-c-x-axis",
+            "line": {
+              "x1": 84,
+              "y1": 589,
+              "x2": 625,
+              "y2": 589
+            },
+            "tickLength": 7,
+            "stroke": "#111111",
+            "strokeWidth": 1
+          },
+          "yAxis": {
+            "id": "panel-c-y-axis",
+            "line": {
+              "x1": 84,
+              "y1": 25,
+              "x2": 84,
+              "y2": 589
+            },
+            "tickLength": 7,
+            "stroke": "#111111",
+            "strokeWidth": 1
+          }
+        },
+        "x": {
+          "scale": "linear",
+          "domain": [
+            0,
+            200
+          ],
+          "ticks": [
+            {
+              "value": 0,
+              "label": "0"
+            },
+            {
+              "value": 50,
+              "label": "50"
+            },
+            {
+              "value": 100,
+              "label": "100"
+            },
+            {
+              "value": 150,
+              "label": "150"
+            },
+            {
+              "value": 200,
+              "label": "200"
+            }
+          ],
+          "label": null
+        },
+        "y": {
+          "scale": "linear",
+          "domain": [
+            1,
+            384
+          ],
+          "ticks": [
+            {
+              "value": 1,
+              "label": "1"
+            },
+            {
+              "value": 96,
+              "label": "96"
+            },
+            {
+              "value": 192,
+              "label": "192"
+            },
+            {
+              "value": 288,
+              "label": "288"
+            },
+            {
+              "value": 336,
+              "label": "336"
+            },
+            {
+              "value": 384,
+              "label": "384"
+            }
+          ],
+          "label": {
+            "id": "panel-c-y-label",
+            "text": "Neuron # (sorted by peak location)",
+            "x": 29,
+            "y": 306,
+            "rotation": -90,
+            "fontSize": 16,
+            "fontWeight": 400,
+            "anchor": "middle",
+            "sourceBox": {
+              "x": 18,
+              "y": 207,
+              "width": 17,
+              "height": 211
+            }
+          }
+        }
+      },
+      "layoutObjects": [
+        {
+          "id": "panel-c-color-strip",
+          "type": "segmentedColorbar",
+          "orientation": "vertical",
+          "bbox": {
+            "x": 69,
+            "y": 25,
+            "width": 10,
+            "height": 564
+          },
+          "segments": [
+            {
+              "id": "upper-teal-block",
+              "fromY": 25,
+              "toY": 431,
+              "fill": "#009688",
+              "label": "upper sorted block"
+            },
+            {
+              "id": "lower-gold-block",
+              "fromY": 431,
+              "toY": 589,
+              "fill": "#e0a500",
+              "label": "lower sorted block"
+            }
+          ],
+          "linkedAxis": "panel-c-y-axis"
+        }
+      ],
+      "marks": [
+        {
+          "id": "panel-c-heatmap",
+          "type": "heatmap",
+          "renderer": "canvas",
+          "usesTransform": "panel-c.xy",
+          "colorScale": "panel-c.activity-z",
+          "matrix": {
+            "rows": 384,
+            "columns": 200
+          },
+          "interpolation": false,
+          "recipe": {
+            "type": "syntheticSortedNeuralActivity",
+            "seed": 8108,
+            "baseline": -0.15,
+            "noise": 0.56,
+            "horizontalLineProbability": 0.78,
+            "rowTextureStrength": 0.72,
+            "columnBandStrength": 0.32,
+            "eventResponses": [
+              {
+                "centerX": 50,
+                "centerY": 132,
+                "sigmaX": 8,
+                "sigmaY": 58,
+                "amplitude": 1.75
+              },
+              {
+                "centerX": 50,
+                "centerY": 268,
+                "sigmaX": 6,
+                "sigmaY": 42,
+                "amplitude": 1.35
+              },
+              {
+                "centerX": 50,
+                "centerY": 344,
+                "sigmaX": 11,
+                "sigmaY": 42,
+                "amplitude": 1.1
+              },
+              {
+                "centerX": 150,
+                "centerY": 92,
+                "sigmaX": 9,
+                "sigmaY": 54,
+                "amplitude": 1.25
+              },
+              {
+                "centerX": 150,
+                "centerY": 244,
+                "sigmaX": 7,
+                "sigmaY": 58,
+                "amplitude": 1.6
+              },
+              {
+                "centerX": 166,
+                "centerY": 170,
+                "sigmaX": 15,
+                "sigmaY": 48,
+                "amplitude": 1.22
+              },
+              {
+                "centerX": 22,
+                "centerY": 218,
+                "sigmaX": 14,
+                "sigmaY": 24,
+                "amplitude": 0.95
+              },
+              {
+                "centerX": 32,
+                "centerY": 368,
+                "sigmaX": 12,
+                "sigmaY": 26,
+                "amplitude": 0.92
+              }
+            ],
+            "cyanSuppressions": [
+              {
+                "centerX": 94,
+                "centerY": 32,
+                "sigmaX": 18,
+                "sigmaY": 33,
+                "amplitude": -1.24
+              },
+              {
+                "centerX": 93,
+                "centerY": 193,
+                "sigmaX": 23,
+                "sigmaY": 13,
+                "amplitude": -1.15
+              },
+              {
+                "centerX": 103,
+                "centerY": 339,
+                "sigmaX": 17,
+                "sigmaY": 11,
+                "amplitude": -1
+              },
+              {
+                "centerX": 182,
+                "centerY": 31,
+                "sigmaX": 20,
+                "sigmaY": 28,
+                "amplitude": -1.04
+              },
+              {
+                "centerX": 184,
+                "centerY": 195,
+                "sigmaX": 22,
+                "sigmaY": 13,
+                "amplitude": -1
+              },
+              {
+                "centerX": 184,
+                "centerY": 340,
+                "sigmaX": 19,
+                "sigmaY": 10,
+                "amplitude": -0.95
+              }
+            ]
+          }
+        },
+        {
+          "id": "panel-c-event-lines",
+          "type": "eventLines",
+          "renderer": "svg",
+          "usesTransform": "panel-c.xy",
+          "values": [
+            50,
+            100,
+            150
+          ],
+          "stroke": "#e8e8e8",
+          "strokeWidth": 1.5,
+          "dasharray": "9 7",
+          "opacity": 0.95
+        }
+      ],
+      "annotations": [],
+      "provenance": [
+        {
+          "target": "panel-c-heatmap",
+          "confidence": "medium",
+          "note": "Activity clusters, noise density, and row ordering are approximate semantic recipes intended for editable first-pass visual inspection."
+        },
+        {
+          "target": "panel-c.axes",
+          "confidence": "high",
+          "note": "Plot box, ticks, event anchors, title, y-label, and color strip positions were visually measured from the 636 x 605 reference crop."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "expected": {
+      "canvasWidth": 636,
+      "canvasHeight": 605,
+      "panelCount": 1,
+      "eventLineCount": 3,
+      "xTickCount": 5,
+      "yTickCount": 6,
+      "qaSourceUsage": "reference-only"
+    },
+    "constraints": [
+      "Generated candidate must not call drawImage with the source raster.",
+      "Generated candidate must not use the source raster as a CSS background.",
+      "Event lines at x=50, x=100, and x=150 share the panel-c.xy transform.",
+      "Heatmap, axes, and ticks share the same plotBbox and domains."
+    ]
+  },
+  "confidence": [
+    {
+      "target": "overall",
+      "confidence": "first-pass",
+      "note": "Close structural reconstruction; exact neural activity values are inferred texture recipes, not recovered data."
+    }
+  ]
+}

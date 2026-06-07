@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-08-neuropixels-central-heatmap-A reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cccccc;
+    }
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .note {
+      margin-top: 3px;
+      color: #555555;
+      font-size: 12px;
+    }
+    .toggle {
+      display: inline-flex;
+      overflow: hidden;
+      border: 1px solid #999999;
+      border-radius: 4px;
+      flex: 0 0 auto;
+    }
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+    .surface, .reference {
+      position: absolute;
+      inset: 0;
+    }
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+    }
+    .show-reference .surface {
+      display: none;
+    }
+    .show-reference .reference {
+      display: block;
+    }
+    svg {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-08-neuropixels-central-heatmap-A</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">QA reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA reference source image">
+    </div>
+  </main>
+  <script>
+    const SPEC_URL = './reference-08-neuropixels-central-heatmap-A.json';
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function byId(id) {
+      return document.getElementById(id);
+    }
+
+    function node(tag, attrs = {}) {
+      const item = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) item.setAttribute(key, value);
+      }
+      return item;
+    }
+
+    function addText(svg, spec, defaults = {}) {
+      const text = node('text', {
+        x: spec.x,
+        y: spec.y,
+        fill: spec.fill || defaults.color || '#111111',
+        'font-family': spec.fontFamily || defaults.fontFamily || 'Arial, Helvetica, sans-serif',
+        'font-size': spec.fontSize || defaults.defaultSize || 14,
+        'font-weight': spec.fontWeight || 400,
+        'text-anchor': spec.anchor || 'start',
+        'dominant-baseline': spec.baseline || 'alphabetic',
+        'letter-spacing': spec.letterSpacing ?? 0,
+        transform: spec.rotate ? `rotate(${spec.rotate} ${spec.x} ${spec.y})` : null,
+        'data-id': spec.id,
+        'data-role': spec.role || 'text'
+      });
+      text.textContent = spec.text || '';
+      svg.appendChild(text);
+      return text;
+    }
+
+    function makeScale(scale) {
+      const [d0, d1] = scale.domain;
+      const [r0, r1] = scale.range;
+      return value => r0 + ((value - d0) / (d1 - d0)) * (r1 - r0);
+    }
+
+    function lcg(seed) {
+      let state = seed >>> 0;
+      return () => {
+        state = (1664525 * state + 1013904223) >>> 0;
+        return state / 4294967296;
+      };
+    }
+
+    function interpolate(points, x) {
+      for (let i = 1; i < points.length; i += 1) {
+        const prev = points[i - 1];
+        const next = points[i];
+        if (x <= next[0]) {
+          const t = (x - prev[0]) / (next[0] - prev[0]);
+          return prev[1] + t * (next[1] - prev[1]);
+        }
+      }
+      return points[points.length - 1][1];
+    }
+
+    function sampledSeries(series) {
+      const rand = lcg(series.jitter?.seed || 1);
+      const [start] = series.points[0];
+      const [end] = series.points[series.points.length - 1];
+      const samples = [];
+      for (let x = start; x <= end; x += 1) {
+        let y = interpolate(series.points, x);
+        const jitter = series.jitter || {};
+        if (jitter.amplitude) {
+          const wave = Math.sin(x * jitter.frequency) * jitter.amplitude * 0.42;
+          const noise = (rand() - 0.5) * jitter.amplitude;
+          y += wave + noise;
+        }
+        if (jitter.spikeEvery && x > start && x % jitter.spikeEvery === 0) {
+          y += 4 + rand() * 8;
+        }
+        samples.push([x, y]);
+      }
+      return samples;
+    }
+
+    function pathFromSeries(series, xMap, yMap) {
+      return sampledSeries(series).map(([x, y], index) => {
+        const cmd = index === 0 ? 'M' : 'L';
+        return `${cmd}${xMap(x).toFixed(1)},${yMap(y).toFixed(1)}`;
+      }).join(' ');
+    }
+
+    function drawTrack(svg, track, defaults) {
+      svg.appendChild(node('line', {
+        x1: track.line.x1,
+        y1: track.line.y1,
+        x2: track.line.x2,
+        y2: track.line.y2,
+        stroke: track.stroke,
+        'stroke-width': track.strokeWidth,
+        'stroke-linecap': 'round',
+        'data-id': track.id
+      }));
+      const start = track.startMarker;
+      svg.appendChild(node('circle', {
+        cx: start.cx,
+        cy: start.cy,
+        r: start.r,
+        fill: start.fill,
+        stroke: start.stroke,
+        'stroke-width': 1
+      }));
+      const goal = track.goalMarker;
+      svg.appendChild(node('circle', {
+        cx: goal.cx,
+        cy: goal.cy,
+        r: goal.r,
+        fill: goal.fill,
+        stroke: goal.stroke,
+        'stroke-width': goal.strokeWidth
+      }));
+      track.ticks.forEach(tick => {
+        svg.appendChild(node('line', {
+          x1: tick.x,
+          y1: tick.y1,
+          x2: tick.x,
+          y2: tick.y2,
+          stroke: '#111111',
+          'stroke-width': 1.5,
+          'data-id': tick.id
+        }));
+        addText(svg, {id: `${tick.id}-label`, text: tick.label, x: tick.labelX, y: tick.labelY, anchor: 'middle', fontSize: 14}, defaults);
+      });
+      track.labels.forEach(label => addText(svg, label, defaults));
+    }
+
+    function drawAxes(svg, plot, scales, defaults) {
+      const box = plot.bbox;
+      const xMap = scales[plot.xScale.id];
+      svg.appendChild(node('line', {x1: box.x, y1: box.y + box.height, x2: box.x + box.width, y2: box.y + box.height, stroke: '#111111', 'stroke-width': 1.4}));
+      plot.yAxes.forEach(axis => {
+        const scaleSpec = plot.yScales.find(s => s.id === axis.scale);
+        const yMap = scales[axis.scale];
+        svg.appendChild(node('line', {x1: axis.axisX, y1: box.y, x2: axis.axisX, y2: box.y + box.height, stroke: scaleSpec.color, 'stroke-width': 1.4}));
+        axis.ticks.forEach(tick => {
+          const y = yMap(tick.value);
+          const outward = scaleSpec.side === 'left' ? -6 : 6;
+          svg.appendChild(node('line', {x1: axis.axisX, y1: y, x2: axis.axisX + outward, y2: y, stroke: scaleSpec.color, 'stroke-width': 1.2}));
+          addText(svg, {
+            id: `${axis.scale}-${tick.value}`,
+            text: tick.label,
+            x: axis.axisX + (scaleSpec.side === 'left' ? -14 : 14),
+            y: y + 5,
+            anchor: scaleSpec.side === 'left' ? 'end' : 'start',
+            fill: scaleSpec.color,
+            fontSize: 16
+          }, defaults);
+        });
+        addText(svg, axis.label, defaults);
+      });
+      plot.xAxis.ticks.forEach(tick => {
+        const x = xMap(tick.value);
+        svg.appendChild(node('line', {x1: x, y1: plot.xAxis.baseline, x2: x, y2: plot.xAxis.baseline + 6, stroke: '#111111', 'stroke-width': 1.2}));
+        addText(svg, {id: `time-${tick.value}`, text: tick.label, x, y: plot.xAxis.baseline + 25, anchor: 'middle', fontSize: 16}, defaults);
+      });
+      addText(svg, plot.xAxis.label, defaults);
+    }
+
+    function drawPlot(svg, plot, defaults) {
+      const box = plot.bbox;
+      const defs = node('defs');
+      const clip = node('clipPath', {id: `${plot.id}-clip`});
+      clip.appendChild(node('rect', {x: box.x, y: box.y, width: box.width, height: box.height}));
+      defs.appendChild(clip);
+      svg.appendChild(defs);
+
+      const scales = {[plot.xScale.id]: makeScale(plot.xScale)};
+      plot.yScales.forEach(scale => {
+        scales[scale.id] = makeScale(scale);
+      });
+
+      plot.shadedEpochs.forEach(epoch => {
+        svg.appendChild(node('rect', {
+          x: scales[plot.xScale.id](epoch.x0),
+          y: box.y,
+          width: scales[plot.xScale.id](epoch.x1) - scales[plot.xScale.id](epoch.x0),
+          height: box.height,
+          fill: epoch.fill,
+          'data-id': epoch.id
+        }));
+      });
+
+      const traces = node('g', {'clip-path': `url(#${plot.id}-clip)`, 'data-role': 'traces'});
+      plot.series.forEach(series => {
+        traces.appendChild(node('path', {
+          d: pathFromSeries(series, scales[plot.xScale.id], scales[series.scale]),
+          fill: 'none',
+          stroke: series.color,
+          'stroke-width': series.strokeWidth,
+          'stroke-linejoin': 'round',
+          'stroke-linecap': 'round',
+          'data-id': series.id
+        }));
+      });
+      svg.appendChild(traces);
+      drawAxes(svg, plot, scales, defaults);
+    }
+
+    function render(spec) {
+      byId('title').textContent = spec.id;
+      const frame = byId('frame');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      const reference = byId('reference');
+      reference.src = spec.source.path;
+
+      const surface = byId('surface');
+      surface.innerHTML = '';
+      const svg = node('svg', {
+        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
+        width: spec.canvas.width,
+        height: spec.canvas.height,
+        role: 'img',
+        'aria-label': `${spec.id} generated reconstruction`
+      });
+      svg.appendChild(node('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
+
+      const panel = spec.panels[0];
+      addText(svg, panel.label, spec.typography);
+      addText(svg, panel.title, spec.typography);
+      drawTrack(svg, panel.track, spec.typography);
+      drawPlot(svg, panel.plot, spec.typography);
+      surface.appendChild(svg);
+    }
+
+    function setupToggle() {
+      const frame = byId('frame');
+      const generatedButton = byId('generatedButton');
+      const referenceButton = byId('referenceButton');
+      generatedButton.addEventListener('click', () => {
+        frame.classList.remove('show-reference');
+        generatedButton.classList.add('active');
+        referenceButton.classList.remove('active');
+      });
+      referenceButton.addEventListener('click', () => {
+        frame.classList.add('show-reference');
+        referenceButton.classList.add('active');
+        generatedButton.classList.remove('active');
+      });
+    }
+
+    setupToggle();
+    fetch(SPEC_URL)
+      .then(response => response.json())
+      .then(render)
+      .catch(error => {
+        byId('surface').textContent = `Failed to load reconstruction spec: ${error.message}`;
+      });
+  </script>
+</body>
+</html>

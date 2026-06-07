@@ -1,0 +1,246 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-07-cross-region-small-multiples-A",
+  "source": {
+    "path": "../../assets/reference/reference-07-cross-region-small-multiples-A-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Single cropped panel reconstructed from visual inspection. Heatmap matrices are seeded procedural recipes matching density, hotspot placement, strip spacing, and color scale; no source pixels are used as generated marks."
+  },
+  "canvas": {"width": 430, "height": 375, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Arial", "Helvetica"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "Condensed sans approximates the source title, axis labels, and compact side labels."
+    }
+  },
+  "styleTokens": {
+    "axis": "#111111",
+    "tick": "#111111",
+    "heatmapLow": "#090619",
+    "heatmapMid": "#b92272",
+    "heatmapHigh": "#fff06a",
+    "divider": "#ffffff",
+    "ca1": "#153ac7",
+    "ca3": "#0066c7",
+    "dg": "#0b8a18",
+    "pfc": "#ff5a1a",
+    "rsc": "#ff1717"
+  },
+  "coordinateSystems": [
+    {
+      "id": "panel-a.position",
+      "type": "linear",
+      "domain": [0, 300],
+      "range": [73, 388],
+      "axis": "x",
+      "unit": "cm"
+    },
+    {
+      "id": "panel-a.zscore-color",
+      "type": "linearColorScale",
+      "domain": [-3, 3],
+      "range": ["#090619", "#5f187f", "#d44842", "#fff06a"],
+      "bbox": {"x": 139, "y": 342, "width": 176, "height": 9}
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-a",
+      "label": {"id": "panel-a-label", "text": "A", "x": 7, "y": 20, "fontSize": 22, "fontWeight": 700, "anchor": "start"},
+      "title": {
+        "id": "panel-a-title",
+        "text": "Population rate maps by brain region",
+        "x": 36,
+        "y": 19,
+        "fontSize": 17,
+        "fontWeight": 700,
+        "anchor": "start",
+        "targetWidth": 278,
+        "sourceBox": {"x": 35, "y": 5, "width": 278, "height": 20},
+        "fit": "condensed"
+      },
+      "bbox": {"x": 0, "y": 0, "width": 430, "height": 375},
+      "plot": {
+        "id": "panel-a-small-multiple-heatmaps",
+        "dataBbox": {"x": 72, "y": 81, "width": 316, "height": 250},
+        "x": {
+          "scale": "linear",
+          "domain": [0, 300],
+          "ticks": [
+            {"value": 0, "label": "0"},
+            {"value": 100, "label": "100"},
+            {"value": 200, "label": "200"},
+            {"value": 300, "label": "300"}
+          ],
+          "label": {"id": "panel-a-x-label", "text": "Position (cm)", "x": 230, "y": 49, "fontSize": 14, "fontWeight": 400, "anchor": "middle"}
+        },
+        "leftHeader": {"id": "panel-a-left-header", "text": "Region", "x": 10, "y": 70, "fontSize": 13, "anchor": "start"},
+        "rightHeader": {"id": "panel-a-right-header", "text": "N cells", "x": 395, "y": 70, "fontSize": 12, "anchor": "start"}
+      },
+      "heatmapRows": [
+        {
+          "id": "ca1",
+          "region": "CA1",
+          "nCells": 142,
+          "labelColor": "#153ac7",
+          "bbox": {"x": 72, "y": 81, "width": 316, "height": 45},
+          "usesTransform": "panel-a.position",
+          "matrix": {"columns": 210, "rows": 42, "xDomain": [0, 300], "zDomain": [-3, 3], "interpolation": "nearest"},
+          "recipe": {
+            "seed": 7101,
+            "base": -2.15,
+            "noise": 0.75,
+            "rowStripe": 0.42,
+            "verticalTexture": 0.22,
+            "hotspots": [
+              {"x": 63, "y": 9, "amp": 2.0, "sx": 18, "sy": 5},
+              {"x": 125, "y": 16, "amp": 2.7, "sx": 20, "sy": 6},
+              {"x": 195, "y": 24, "amp": 2.5, "sx": 24, "sy": 7},
+              {"x": 258, "y": 7, "amp": 1.8, "sx": 18, "sy": 5}
+            ],
+            "bands": [
+              {"x0": 96, "x1": 205, "y0": 34, "y1": 13, "amp": 1.2, "width": 3.6},
+              {"x0": 180, "x1": 295, "y0": 38, "y1": 22, "amp": 1.1, "width": 3.2}
+            ]
+          }
+        },
+        {
+          "id": "ca3",
+          "region": "CA3",
+          "nCells": 123,
+          "labelColor": "#0066c7",
+          "bbox": {"x": 72, "y": 133, "width": 316, "height": 45},
+          "usesTransform": "panel-a.position",
+          "matrix": {"columns": 210, "rows": 40, "xDomain": [0, 300], "zDomain": [-3, 3], "interpolation": "nearest"},
+          "recipe": {
+            "seed": 7103,
+            "base": -2.2,
+            "noise": 0.68,
+            "rowStripe": 0.35,
+            "verticalTexture": 0.26,
+            "hotspots": [
+              {"x": 24, "y": 29, "amp": 2.5, "sx": 14, "sy": 5},
+              {"x": 112, "y": 8, "amp": 2.1, "sx": 20, "sy": 5},
+              {"x": 176, "y": 19, "amp": 1.9, "sx": 18, "sy": 5},
+              {"x": 270, "y": 34, "amp": 2.4, "sx": 23, "sy": 6}
+            ],
+            "bands": [
+              {"x0": 145, "x1": 300, "y0": 16, "y1": 36, "amp": 1.1, "width": 3.4}
+            ]
+          }
+        },
+        {
+          "id": "dg",
+          "region": "DG",
+          "nCells": 96,
+          "labelColor": "#0b8a18",
+          "bbox": {"x": 72, "y": 185, "width": 316, "height": 45},
+          "usesTransform": "panel-a.position",
+          "matrix": {"columns": 210, "rows": 34, "xDomain": [0, 300], "zDomain": [-3, 3], "interpolation": "nearest"},
+          "recipe": {
+            "seed": 7104,
+            "base": -2.05,
+            "noise": 0.74,
+            "rowStripe": 0.55,
+            "verticalTexture": 0.2,
+            "hotspots": [
+              {"x": 84, "y": 21, "amp": 2.6, "sx": 22, "sy": 7},
+              {"x": 127, "y": 16, "amp": 2.0, "sx": 16, "sy": 5},
+              {"x": 212, "y": 10, "amp": 2.4, "sx": 25, "sy": 5},
+              {"x": 294, "y": 20, "amp": 1.7, "sx": 17, "sy": 5}
+            ],
+            "bands": [
+              {"x0": 50, "x1": 155, "y0": 32, "y1": 13, "amp": 1.0, "width": 3.5}
+            ]
+          }
+        },
+        {
+          "id": "pfc",
+          "region": "PFC",
+          "nCells": 118,
+          "labelColor": "#ff5a1a",
+          "bbox": {"x": 72, "y": 237, "width": 316, "height": 45},
+          "usesTransform": "panel-a.position",
+          "matrix": {"columns": 210, "rows": 39, "xDomain": [0, 300], "zDomain": [-3, 3], "interpolation": "nearest"},
+          "recipe": {
+            "seed": 7118,
+            "base": -2.08,
+            "noise": 0.72,
+            "rowStripe": 0.48,
+            "verticalTexture": 0.24,
+            "hotspots": [
+              {"x": 34, "y": 10, "amp": 1.9, "sx": 18, "sy": 5},
+              {"x": 122, "y": 28, "amp": 2.7, "sx": 30, "sy": 6},
+              {"x": 188, "y": 18, "amp": 2.0, "sx": 17, "sy": 5},
+              {"x": 241, "y": 8, "amp": 2.6, "sx": 18, "sy": 5}
+            ],
+            "bands": [
+              {"x0": 86, "x1": 205, "y0": 5, "y1": 34, "amp": 1.05, "width": 3.3},
+              {"x0": 175, "x1": 286, "y0": 34, "y1": 17, "amp": 1.0, "width": 3.1}
+            ]
+          }
+        },
+        {
+          "id": "rsc",
+          "region": "RSC",
+          "nCells": 110,
+          "labelColor": "#ff1717",
+          "bbox": {"x": 72, "y": 289, "width": 316, "height": 42},
+          "usesTransform": "panel-a.position",
+          "matrix": {"columns": 210, "rows": 37, "xDomain": [0, 300], "zDomain": [-3, 3], "interpolation": "nearest"},
+          "recipe": {
+            "seed": 7110,
+            "base": -2.12,
+            "noise": 0.7,
+            "rowStripe": 0.5,
+            "verticalTexture": 0.22,
+            "hotspots": [
+              {"x": 36, "y": 15, "amp": 2.3, "sx": 18, "sy": 5},
+              {"x": 102, "y": 33, "amp": 2.1, "sx": 24, "sy": 5},
+              {"x": 173, "y": 29, "amp": 2.5, "sx": 25, "sy": 5},
+              {"x": 234, "y": 17, "amp": 2.0, "sx": 20, "sy": 5}
+            ],
+            "bands": [
+              {"x0": 62, "x1": 230, "y0": 34, "y1": 10, "amp": 1.35, "width": 3.5},
+              {"x0": 128, "x1": 280, "y0": 38, "y1": 20, "amp": 1.0, "width": 3.2}
+            ]
+          }
+        }
+      ],
+      "colorbar": {
+        "id": "panel-a-colorbar",
+        "usesTransform": "panel-a.zscore-color",
+        "bbox": {"x": 139, "y": 342, "width": 176, "height": 9},
+        "domain": [-3, 3],
+        "ticks": [
+          {"value": -2, "label": "-2"},
+          {"value": 0, "label": "0"},
+          {"value": 2, "label": "2"}
+        ],
+        "label": {"id": "panel-a-colorbar-label", "text": "Z-scored", "x": 84, "y": 366, "fontSize": 13, "anchor": "start"}
+      },
+      "annotations": [],
+      "provenance": [
+        {"target": "heatmapRows", "confidence": "medium", "note": "Strip boxes, labels, ticks, and colorbar positions are visually measured from the 430x375 source crop."},
+        {"target": "heatmap recipes", "confidence": "low", "note": "Dense fields are synthetic approximations preserving visual grammar and major hotspots, not extracted data."}
+      ]
+    }
+  ],
+  "validation": {
+    "expectedHeatmapRows": 5,
+    "expectedTopTicks": 4,
+    "expectedColorbarTicks": 3,
+    "sourceReuse": "Generated surface must not call drawImage on the source raster or use the source path as a CSS background."
+  },
+  "confidence": [
+    {"target": "layout", "confidence": "medium-high", "note": "Panel label, title, strip geometry, top ticks, region labels, counts, and colorbar are directly visible."},
+    {"target": "data", "confidence": "low", "note": "The original numeric matrix values are unavailable; procedural recipes produce editable first-pass visual surrogates."}
+  ]
+}

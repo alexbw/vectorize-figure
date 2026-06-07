@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Font QA Evidence</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #f2f2f2;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      padding: 14px 18px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 18px;
+    }
+
+    .note {
+      color: #555555;
+      font-size: 13px;
+    }
+
+    main {
+      display: grid;
+      gap: 16px;
+      padding: 16px;
+    }
+
+    section {
+      background: #ffffff;
+      border: 1px solid #cfcfcf;
+    }
+
+    h2 {
+      margin: 0;
+      padding: 10px 12px;
+      border-bottom: 1px solid #d8d8d8;
+      font-size: 15px;
+    }
+
+    .body {
+      display: grid;
+      grid-template-columns: minmax(360px, 620px) minmax(360px, 1fr);
+      gap: 12px;
+      padding: 12px;
+      align-items: start;
+    }
+
+    iframe {
+      width: 100%;
+      height: 300px;
+      border: 1px solid #bdbdbd;
+      background: #ffffff;
+    }
+
+    .actual iframe {
+      height: 560px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+
+    th,
+    td {
+      border: 1px solid #d0d0d0;
+      padding: 5px 6px;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child,
+    td:first-child {
+      text-align: left;
+    }
+
+    th {
+      background: #eeeeee;
+    }
+
+    .ok {
+      color: #087333;
+      font-weight: 700;
+    }
+
+    .pending {
+      color: #666666;
+    }
+
+    .reference {
+      width: 100%;
+      border: 1px solid #bdbdbd;
+      display: block;
+      background: #ffffff;
+    }
+
+    .visual-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .visual-title {
+      margin: 0 0 5px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #333333;
+    }
+
+    .reference-stage {
+      position: relative;
+      width: 100%;
+      aspect-ratio: var(--aspect, 2.5714);
+      border: 1px solid #bdbdbd;
+      background: #ffffff;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+
+    .actual .reference-stage {
+      aspect-ratio: 1.09375;
+    }
+
+    .reference-stage img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .target-box,
+    .generated-box {
+      position: absolute;
+      box-sizing: border-box;
+      pointer-events: none;
+    }
+
+    .target-box {
+      border: 1.5px dashed #0a7f35;
+    }
+
+    .generated-box {
+      border: 1.25px solid #c00078;
+    }
+
+    .target-label {
+      position: absolute;
+      color: #333333;
+      font-size: 12px;
+      line-height: 1;
+      transform: translateY(-14px);
+      white-space: nowrap;
+    }
+
+    @media (max-width: 900px) {
+      .body {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Font QA Evidence</h1>
+      <div class="note">Each iframe is the shared renderer opened with <code>qaDom=1&amp;fontQa=1&amp;qaOverlay=1</code>. Green dashed boxes are target/source boxes; magenta boxes are generated measured text boxes after fitting.</div>
+  </header>
+  <main id="cases"></main>
+
+  <script>
+    const cases = [
+      {
+        id: 'simple-scale',
+        title: 'Simple Example: fit = scaleX',
+        spec: '/tmp/font-qa/scale-fit.json',
+        note: 'Expected: magenta generated width reaches the green target width.'
+      },
+      {
+        id: 'simple-textlength',
+        title: 'Simple Example: fit = textLength',
+        spec: '/tmp/font-qa/textlength-fit.json',
+        note: 'Expected: magenta generated width reaches the green target width.'
+      },
+      {
+        id: 'actual-panel-c',
+        title: 'Actual Subpanel Text QA: reference-01-place-code-opto-C',
+        spec: '/tmp/font-qa/reference-01-place-code-opto-C-text.json',
+        note: 'Expected: green boxes sit on the reference labels; magenta boxes sit on the generated labels with matching widths.',
+        actual: true
+      }
+    ];
+
+    function rendererUrl(spec) {
+      return `/skills/make-figure/assets/hybrid-renderer-template.html?spec=${encodeURIComponent(spec)}&qaDom=1&fontQa=1&qaOverlay=1`;
+    }
+
+    async function loadSpec(specUrl) {
+      const response = await fetch(specUrl);
+      return response.json();
+    }
+
+    function cell(value) {
+      return typeof value === 'number' ? value.toFixed(2) : value;
+    }
+
+    function table(headers, rows) {
+      if (!rows || !rows.length) return '<div class="pending">No rows</div>';
+      return `<table><thead><tr>${headers.map(header => `<th>${header}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${headers.map(header => `<td>${cell(row[header])}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    }
+
+    function renderTextQa(rows) {
+      const mapped = rows.map(row => ({
+        id: row.id,
+        width: row.delta.width,
+        height: row.delta.height,
+        x: row.delta.x,
+        y: row.delta.y
+      }));
+      return table(['id', 'width', 'height', 'x', 'y'], mapped);
+    }
+
+    function renderFontQa(candidates) {
+      return table(['fontFamily', 'score'], candidates.slice(0, 7).map(row => ({
+        fontFamily: row.candidate,
+        score: row.score
+      })));
+    }
+
+    function sourceBoxes(spec) {
+      const rows = [];
+      for (const panel of spec.panels || []) {
+        for (const item of [panel.label, panel.title, ...(panel.marks || [])]) {
+          if (item && (item.sourceBox || item.source_box)) {
+            rows.push({
+              id: item.id || item.text,
+              text: item.text,
+              box: item.sourceBox || item.source_box
+            });
+          }
+        }
+      }
+      return rows;
+    }
+
+    function stageBox(box, canvas) {
+      return `left:${box.x / canvas.width * 100}%;top:${box.y / canvas.height * 100}%;width:${box.width / canvas.width * 100}%;height:${box.height / canvas.height * 100}%`;
+    }
+
+    function renderReferenceStage(spec) {
+      const canvas = spec.canvas || {width: 360, height: 140};
+      const boxes = sourceBoxes(spec);
+      const image = spec.source && spec.source.path
+        ? `<img src="${spec.source.path}" alt="${spec.id} reference">`
+        : '';
+      const labels = image ? '' : boxes.map(row => `<div class="target-label" style="left:${row.box.x / canvas.width * 100}%;top:${row.box.y / canvas.height * 100}%">${row.text.replace(/\n/g, ' / ')}</div>`).join('');
+      return `
+        <div class="reference-stage" style="--aspect:${canvas.width / canvas.height}">
+          ${image}
+          ${labels}
+          ${boxes.map(row => `<div class="target-box" title="${row.id}" style="${stageBox(row.box, canvas)}"></div>`).join('')}
+        </div>
+      `;
+    }
+
+    function waitForQa(frame) {
+      return new Promise(resolve => {
+        const started = Date.now();
+        const tick = () => {
+          const win = frame.contentWindow;
+          if (win && win.figureTextQa && win.figureFontQa) return resolve({textQa: win.figureTextQa, fontQa: win.figureFontQa});
+          if (Date.now() - started > 8000) return resolve(null);
+          setTimeout(tick, 100);
+        };
+        tick();
+      });
+    }
+
+    async function init() {
+      const root = document.getElementById('cases');
+      for (const item of cases) {
+        const section = document.createElement('section');
+        if (item.actual) section.className = 'actual';
+        const spec = await loadSpec(item.spec);
+        section.innerHTML = `
+          <h2>${item.title}</h2>
+          <div class="body">
+            <div>
+              <div class="visual-pair">
+                <div>
+                  <div class="visual-title">Generated: magenta = measured text box</div>
+                  <iframe title="${item.title}" src="${rendererUrl(item.spec)}"></iframe>
+                </div>
+                <div>
+                  <div class="visual-title">${item.actual ? 'Reference raster' : 'Synthetic target'}: green = target/source box</div>
+                  ${renderReferenceStage(spec)}
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="note">${item.note}</div>
+              <h2>Text Box Deltas After Fitting</h2>
+              <div data-text class="pending">Measuring...</div>
+              <h2>Candidate Font Scores Before Fitting</h2>
+              <div data-font class="pending">Measuring...</div>
+            </div>
+          </div>
+        `;
+        root.appendChild(section);
+        const qa = await waitForQa(section.querySelector('iframe'));
+        if (!qa) {
+          section.querySelector('[data-text]').textContent = 'Timed out waiting for QA data.';
+          section.querySelector('[data-font]').textContent = 'Timed out waiting for QA data.';
+          continue;
+        }
+        section.querySelector('[data-text]').innerHTML = renderTextQa(qa.textQa.rows);
+        section.querySelector('[data-font]').innerHTML = renderFontQa(qa.fontQa.candidates || []);
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

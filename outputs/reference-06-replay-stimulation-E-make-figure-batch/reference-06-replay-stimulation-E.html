@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-06-replay-stimulation-E reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 12px;
+      background: #ffffff;
+      border-bottom: 1px solid #cccccc;
+    }
+    h1 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .note {
+      margin-top: 2px;
+      font-size: 11px;
+      color: #555555;
+    }
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #999999;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    button {
+      border: 0;
+      padding: 5px 9px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+    main {
+      min-height: calc(100vh - 46px);
+      display: grid;
+      place-items: center;
+      padding: 14px;
+      box-sizing: border-box;
+    }
+    .frame {
+      position: relative;
+      background: #ffffff;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.12);
+      overflow: hidden;
+    }
+    svg, .reference {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .reference {
+      display: none;
+      object-fit: contain;
+      background-color: #ffffff;
+    }
+    .show-reference svg {
+      display: none;
+    }
+    .show-reference .reference {
+      display: block;
+    }
+    text {
+      dominant-baseline: alphabetic;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>reference-06-replay-stimulation-E</h1>
+      <div class="note">Generated SVG from semantic JSON. Reference image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">QA reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <svg id="figure" role="img" aria-label="Generated reconstruction"></svg>
+      <img id="reference" class="reference" alt="QA-only source reference">
+    </div>
+  </main>
+
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const SPEC_URL = 'reference-06-replay-stimulation-E.json';
+
+    function el(tag, attrs = {}, text) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      if (text !== undefined) node.textContent = text;
+      return node;
+    }
+
+    function mulberry32(seed) {
+      return function next() {
+        seed |= 0;
+        seed = seed + 0x6D2B79F5 | 0;
+        let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    function normal(rand) {
+      const u = Math.max(rand(), 1e-9);
+      const v = Math.max(rand(), 1e-9);
+      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+
+    function generatedPoints(group) {
+      const recipe = group.pointsRecipe;
+      const rand = mulberry32(recipe.seed);
+      const points = [];
+      for (let i = 0; i < recipe.count; i += 1) {
+        let cursor = rand();
+        let cluster = recipe.clusters[recipe.clusters.length - 1];
+        for (const candidate of recipe.clusters) {
+          cursor -= candidate.weight;
+          if (cursor <= 0) {
+            cluster = candidate;
+            break;
+          }
+        }
+        let y = cluster.mean + normal(rand) * cluster.sd;
+        y = Math.max(recipe.clip[0], Math.min(recipe.clip[1], y));
+        const xOffset = (rand() - 0.5) * recipe.jitter;
+        points.push({y, xOffset});
+      }
+      return points;
+    }
+
+    function pathFromProfile(group, xForCategory, yForValue) {
+      const density = group.distribution;
+      const center = xForCategory(group.id);
+      const left = density.profile.map(p => [center - p.w * density.maxHalfWidth, yForValue(p.y)]);
+      const right = density.profile.slice().reverse().map(p => [center + p.w * density.maxHalfWidth, yForValue(p.y)]);
+      return left.concat(right).map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ') + ' Z';
+    }
+
+    function textNode(parent, attrs, value) {
+      parent.appendChild(el('text', attrs, value));
+    }
+
+    function render(spec) {
+      const panel = spec.panels[0];
+      const coord = panel.coordinateSystems[0];
+      const plot = coord.plotBbox;
+      const yDomain = coord.y.domain;
+      const categories = new Map(coord.x.categories.map(category => [category.id, category]));
+      const svg = document.getElementById('figure');
+      const frame = document.getElementById('frame');
+      const reference = document.getElementById('reference');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      svg.setAttribute('viewBox', `0 0 ${spec.canvas.width} ${spec.canvas.height}`);
+      svg.setAttribute('width', spec.canvas.width);
+      svg.setAttribute('height', spec.canvas.height);
+      reference.src = spec.source.path;
+
+      const yForValue = value => plot.y + (yDomain[1] - value) / (yDomain[1] - yDomain[0]) * plot.height;
+      const xForCategory = id => categories.get(id).x;
+      svg.appendChild(el('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
+
+      textNode(svg, {x: panel.label.x, y: panel.label.y + panel.label.fontSize, 'font-size': panel.label.fontSize, 'font-weight': panel.label.fontWeight, 'font-family': spec.typography.fontFamily}, panel.label.text);
+      textNode(svg, {x: panel.title.x, y: panel.title.y + panel.title.fontSize - 1, 'font-size': panel.title.fontSize, 'font-weight': panel.title.fontWeight, 'font-family': spec.typography.fontFamily}, panel.title.text);
+
+      for (const layout of panel.layoutObjects) {
+        if (layout.type === 'axis') {
+          svg.appendChild(el('line', {
+            x1: layout.line.x1, y1: layout.line.y1, x2: layout.line.x2, y2: layout.line.y2,
+            stroke: layout.stroke, 'stroke-width': layout.strokeWidth, 'data-object-id': layout.id
+          }));
+        }
+        if (layout.type === 'referenceLine') {
+          svg.appendChild(el('line', {
+            x1: layout.x1, x2: layout.x2, y1: yForValue(layout.value), y2: yForValue(layout.value),
+            stroke: layout.stroke, 'stroke-width': layout.strokeWidth, 'stroke-dasharray': layout.dasharray,
+            opacity: layout.opacity, 'data-object-id': layout.id
+          }));
+        }
+      }
+
+      for (const tick of coord.y.ticks) {
+        const y = yForValue(tick.value);
+        svg.appendChild(el('line', {x1: 62, y1: y, x2: 66, y2: y, stroke: '#111111', 'stroke-width': 1.1, 'data-axis': 'y', 'data-value': tick.value}));
+        textNode(svg, {x: 57, y: y + 5, 'font-size': 16, 'text-anchor': 'end', 'font-family': spec.typography.fontFamily}, tick.label);
+      }
+
+      const yLabel = coord.y.label;
+      const label = el('text', {
+        x: yLabel.x, y: yLabel.y, transform: `rotate(${yLabel.rotation} ${yLabel.x} ${yLabel.y})`,
+        'font-size': yLabel.fontSize, 'font-weight': yLabel.fontWeight, 'text-anchor': 'middle',
+        'font-family': spec.typography.fontFamily
+      }, yLabel.text);
+      svg.appendChild(label);
+
+      for (const group of panel.data.groups) {
+        const violinPath = pathFromProfile(group, xForCategory, yForValue);
+        svg.appendChild(el('path', {
+          d: violinPath, fill: group.fill, stroke: group.color, 'stroke-width': 1.8,
+          opacity: 0.6, 'data-mark-type': 'violin', 'data-group': group.id
+        }));
+      }
+
+      for (const group of panel.data.groups) {
+        const center = xForCategory(group.id);
+        for (const point of generatedPoints(group)) {
+          svg.appendChild(el('circle', {
+            cx: center + point.xOffset, cy: yForValue(point.y), r: 2.35,
+            fill: group.color, stroke: group.color, 'stroke-width': 0.7,
+            opacity: group.id === 'stim' ? 0.9 : 0.62,
+            'data-mark-type': 'scatter', 'data-group': group.id
+          }));
+        }
+      }
+
+      for (const group of panel.data.groups) {
+        const center = xForCategory(group.id);
+        const summary = group.summary;
+        svg.appendChild(el('line', {x1: center, y1: yForValue(summary.whiskerLow), x2: center, y2: yForValue(summary.whiskerHigh), stroke: '#333333', 'stroke-width': 3.2, 'stroke-linecap': 'round', 'data-mark-type': 'summaryInterval', 'data-group': group.id}));
+        svg.appendChild(el('line', {x1: center - 12, y1: yForValue(summary.q1), x2: center + 12, y2: yForValue(summary.q1), stroke: '#ffffff', 'stroke-width': 5, 'stroke-linecap': 'round'}));
+        svg.appendChild(el('line', {x1: center - 12, y1: yForValue(summary.q3), x2: center + 12, y2: yForValue(summary.q3), stroke: '#ffffff', 'stroke-width': 5, 'stroke-linecap': 'round'}));
+        svg.appendChild(el('circle', {cx: center, cy: yForValue(summary.median), r: 4.6, fill: '#ffffff', stroke: '#333333', 'stroke-width': 1.4}));
+      }
+
+      for (const annotation of panel.annotations) {
+        if (annotation.type === 'bracket') {
+          const path = `M${annotation.x1},${annotation.y + annotation.tick} L${annotation.x1},${annotation.y} L${annotation.x2},${annotation.y} L${annotation.x2},${annotation.y + annotation.tick}`;
+          svg.appendChild(el('path', {d: path, fill: 'none', stroke: annotation.stroke, 'stroke-width': annotation.strokeWidth, 'data-object-id': annotation.id}));
+          textNode(svg, {x: annotation.label.x, y: annotation.label.y, 'font-size': annotation.label.fontSize, 'font-style': annotation.label.fontStyle, 'text-anchor': annotation.label.anchor, 'font-family': spec.typography.fontFamily}, annotation.label.text);
+        }
+        if (annotation.type === 'categoryLabel') {
+          textNode(svg, {x: annotation.x, y: annotation.y, fill: annotation.color, 'font-size': annotation.fontSize, 'text-anchor': annotation.anchor, 'font-family': spec.typography.fontFamily}, annotation.text);
+          textNode(svg, {x: annotation.x, y: annotation.y + 17, fill: annotation.color, 'font-size': annotation.fontSize, 'text-anchor': annotation.anchor, 'font-family': spec.typography.fontFamily}, annotation.subtext);
+        }
+      }
+    }
+
+    fetch(SPEC_URL)
+      .then(response => response.json())
+      .then(render)
+      .catch(error => {
+        document.body.appendChild(document.createTextNode(`Failed to load ${SPEC_URL}: ${error.message}`));
+      });
+
+    const frame = document.getElementById('frame');
+    const generatedButton = document.getElementById('generatedButton');
+    const referenceButton = document.getElementById('referenceButton');
+    generatedButton.addEventListener('click', () => {
+      frame.classList.remove('show-reference');
+      generatedButton.classList.add('active');
+      referenceButton.classList.remove('active');
+    });
+    referenceButton.addEventListener('click', () => {
+      frame.classList.add('show-reference');
+      referenceButton.classList.add('active');
+      generatedButton.classList.remove('active');
+    });
+  </script>
+</body>
+</html>

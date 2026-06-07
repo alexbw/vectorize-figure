@@ -1,4 +1,4 @@
-# Scientific Figure Reconstruction
+# Vectorize Figure
 
 Experimental workflow for converting raster scientific figure panels into editable, data-driven HTML reconstructions.
 
@@ -35,4 +35,4 @@ Then open:
 
 ## Current Status
 
-This is an early prototype. The strongest current example is `examples/no-image-1c`, which focuses on faithful axis/tick/event alignment and generated raster/line marks without drawing from the source image.
+This is an early prototype. The strongest current examples are the generated panel reconstructions in `outputs/`, which focus on faithful axis/tick/event alignment and generated raster/line marks without drawing from the source image.

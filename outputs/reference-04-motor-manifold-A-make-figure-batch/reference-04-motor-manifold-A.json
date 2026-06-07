@@ -1,0 +1,557 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-04-motor-manifold-A",
+  "source": {
+    "path": "../../assets/reference/reference-04-motor-manifold-A-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "nativeSize": {
+      "width": 482,
+      "height": 365
+    },
+    "notes": "Single-panel 3D neural manifold reconstruction from visual inspection. Trajectories are synthetic editable recipes that approximate the source geometry and color progression rather than extracted source pixels."
+  },
+  "canvas": {
+    "width": 482,
+    "height": 365,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": [
+      "Arial",
+      "Helvetica",
+      "Arimo",
+      "Source Sans 3"
+    ],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "First-pass typography matched visually at native size; no OCR or font-scoring harness was run."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "panel-a.pc3d",
+      "type": "orthographicBasis3D",
+      "domains": {
+        "pc1": [
+          -6,
+          6
+        ],
+        "pc2": [
+          -5,
+          5
+        ],
+        "pc3": [
+          -4,
+          4
+        ]
+      },
+      "projection": {
+        "origin": {
+          "x": 61,
+          "y": 276
+        },
+        "domainOrigin": {
+          "pc1": -6,
+          "pc2": -5,
+          "pc3": -4
+        },
+        "basis": {
+          "pc1": {
+            "x": 203,
+            "y": 37
+          },
+          "pc2": {
+            "x": 114,
+            "y": -60
+          },
+          "pc3": {
+            "x": 0,
+            "y": -176
+          }
+        }
+      }
+    },
+    {
+      "id": "reach-angle-hue",
+      "type": "cyclicColorScale",
+      "domain": [
+        0,
+        360
+      ],
+      "stops": [
+        {
+          "value": 0,
+          "color": "#5b35d8"
+        },
+        {
+          "value": 45,
+          "color": "#d619a5"
+        },
+        {
+          "value": 90,
+          "color": "#f01816"
+        },
+        {
+          "value": 135,
+          "color": "#ff9414"
+        },
+        {
+          "value": 180,
+          "color": "#ffcf1c"
+        },
+        {
+          "value": 225,
+          "color": "#18ba42"
+        },
+        {
+          "value": 270,
+          "color": "#10a6d9"
+        },
+        {
+          "value": 315,
+          "color": "#195fd8"
+        },
+        {
+          "value": 360,
+          "color": "#5b35d8"
+        }
+      ]
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-a",
+      "label": {
+        "id": "panel-label",
+        "text": "A",
+        "x": 9,
+        "y": 28,
+        "fontSize": 20,
+        "fontWeight": 700,
+        "sourceBox": {
+          "x": 8,
+          "y": 12,
+          "width": 13,
+          "height": 19
+        },
+        "fit": "visual"
+      },
+      "title": {
+        "id": "panel-title",
+        "text": "Neural manifold (reach epoch)",
+        "x": 34,
+        "y": 28,
+        "fontSize": 16,
+        "fontWeight": 700,
+        "sourceBox": {
+          "x": 34,
+          "y": 14,
+          "width": 236,
+          "height": 19
+        },
+        "fit": "visual"
+      },
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 482,
+        "height": 365
+      },
+      "scene": {
+        "id": "reach-manifold-scene",
+        "usesTransform": "panel-a.pc3d",
+        "plotBbox": {
+          "x": 45,
+          "y": 51,
+          "width": 318,
+          "height": 259
+        },
+        "axes": [
+          {
+            "id": "pc1-axis",
+            "dimension": "pc1",
+            "label": {
+              "text": "PC 1 (23%)",
+              "x": 151,
+              "y": 345,
+              "rotation": 0,
+              "fontSize": 16,
+              "anchor": "middle"
+            },
+            "ticks": [
+              {
+                "value": -6,
+                "label": "-6"
+              },
+              {
+                "value": -3,
+                "label": "-3"
+              },
+              {
+                "value": 0,
+                "label": "0"
+              },
+              {
+                "value": 3,
+                "label": "3"
+              },
+              {
+                "value": 6,
+                "label": "6"
+              }
+            ],
+            "tickLabelPlacement": {
+              "labelOffset": {
+                "x": -5,
+                "y": 23
+              },
+              "tickVector": {
+                "x": -5,
+                "y": 7
+              }
+            }
+          },
+          {
+            "id": "pc2-axis",
+            "dimension": "pc2",
+            "label": {
+              "text": "PC 2 (14%)",
+              "x": 333,
+              "y": 296,
+              "rotation": -28,
+              "fontSize": 16,
+              "anchor": "middle"
+            },
+            "ticks": [
+              {
+                "value": -5,
+                "label": "-5"
+              },
+              {
+                "value": 0,
+                "label": "0"
+              },
+              {
+                "value": 5,
+                "label": "5"
+              }
+            ],
+            "tickLabelPlacement": {
+              "labelOffset": {
+                "x": 13,
+                "y": 4
+              },
+              "tickVector": {
+                "x": 6,
+                "y": 5
+              }
+            }
+          },
+          {
+            "id": "pc3-axis",
+            "dimension": "pc3",
+            "label": {
+              "text": "PC 3 (9%)",
+              "x": 19,
+              "y": 181,
+              "rotation": -90,
+              "fontSize": 16,
+              "anchor": "middle"
+            },
+            "ticks": [
+              {
+                "value": -4,
+                "label": "-4"
+              },
+              {
+                "value": -2,
+                "label": "-2"
+              },
+              {
+                "value": 0,
+                "label": "0"
+              },
+              {
+                "value": 2,
+                "label": "2"
+              },
+              {
+                "value": 4,
+                "label": "4"
+              }
+            ],
+            "tickLabelPlacement": {
+              "labelOffset": {
+                "x": -13,
+                "y": 4
+              },
+              "tickVector": {
+                "x": -7,
+                "y": 0
+              }
+            }
+          }
+        ],
+        "gridPlanes": [
+          {
+            "id": "floor-pc1-pc2",
+            "fixed": {
+              "pc3": -4
+            },
+            "families": [
+              {
+                "dimension": "pc1",
+                "values": [
+                  -3,
+                  0,
+                  3,
+                  6
+                ]
+              },
+              {
+                "dimension": "pc2",
+                "values": [
+                  -5,
+                  0,
+                  5
+                ]
+              }
+            ]
+          },
+          {
+            "id": "back-pc1-pc3",
+            "fixed": {
+              "pc2": 5
+            },
+            "families": [
+              {
+                "dimension": "pc1",
+                "values": [
+                  -3,
+                  0,
+                  3,
+                  6
+                ]
+              },
+              {
+                "dimension": "pc3",
+                "values": [
+                  -2,
+                  0,
+                  2,
+                  4
+                ]
+              }
+            ]
+          },
+          {
+            "id": "left-pc2-pc3",
+            "fixed": {
+              "pc1": -6
+            },
+            "families": [
+              {
+                "dimension": "pc2",
+                "values": [
+                  0,
+                  5
+                ]
+              },
+              {
+                "dimension": "pc3",
+                "values": [
+                  -2,
+                  0,
+                  2,
+                  4
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "data": {
+        "trajectoryRecipe": {
+          "id": "reach-epoch-trials",
+          "type": "synthetic3DTrajectoryBundle",
+          "seed": 4041,
+          "trialCount": 88,
+          "pointsPerTrial": 46,
+          "angleDomainDegrees": [
+            0,
+            360
+          ],
+          "shape": "Open looping manifold: paths begin near the left-front red cluster, sweep upward through yellow/green/cyan/blue, and wrap toward purple near the lower center.",
+          "startCluster": {
+            "pc1": -4.9,
+            "pc2": -4.3,
+            "pc3": -1
+          },
+          "endCluster": {
+            "pc1": 2,
+            "pc2": -0.2,
+            "pc3": -1.3
+          },
+          "noise": {
+            "radial": 0.34,
+            "vertical": 0.38,
+            "path": 0.22
+          }
+        }
+      },
+      "marks": [
+        {
+          "id": "trajectory-cloud",
+          "type": "lineSeriesBundle",
+          "renderer": "svg",
+          "usesTransform": "panel-a.pc3d",
+          "colorScale": "reach-angle-hue",
+          "dataRecipe": "reach-epoch-trials",
+          "strokeWidth": 1.1,
+          "strokeOpacity": 0.72,
+          "markerEvery": 4,
+          "markerRadius": 2.2,
+          "markerFill": "#ffffff"
+        }
+      ],
+      "legend": {
+        "id": "angle-colorwheel",
+        "type": "cyclicColorWheel",
+        "scale": "reach-angle-hue",
+        "center": {
+          "x": 427,
+          "y": 101
+        },
+        "outerRadius": 31,
+        "innerRadius": 16,
+        "labels": [
+          {
+            "text": "0°",
+            "x": 464,
+            "y": 104,
+            "anchor": "start"
+          },
+          {
+            "text": "90°",
+            "x": 427,
+            "y": 64,
+            "anchor": "middle"
+          },
+          {
+            "text": "180°",
+            "x": 389,
+            "y": 104,
+            "anchor": "end"
+          },
+          {
+            "text": "270°",
+            "x": 427,
+            "y": 144,
+            "anchor": "middle"
+          }
+        ],
+        "markerLegend": {
+          "items": [
+            {
+              "label": "Start",
+              "x": 408,
+              "y": 170,
+              "fill": "#666666",
+              "stroke": "#111111"
+            },
+            {
+              "label": "End",
+              "x": 408,
+              "y": 190,
+              "fill": "#ffffff",
+              "stroke": "#111111"
+            }
+          ]
+        }
+      },
+      "annotations": [
+        {
+          "id": "panel-letter",
+          "type": "text",
+          "anchorsTo": "panel-a.label"
+        },
+        {
+          "id": "panel-title",
+          "type": "text",
+          "anchorsTo": "panel-a.title"
+        },
+        {
+          "id": "angle-wheel",
+          "type": "colorLegend",
+          "anchorsTo": "reach-angle-hue"
+        },
+        {
+          "id": "start-end-legend",
+          "type": "markerLegend",
+          "anchorsTo": "trajectory-cloud.markers"
+        }
+      ],
+      "provenance": [
+        {
+          "target": "3D projection",
+          "confidence": "medium-low",
+          "note": "Projection basis manually fit to visible axes and grid extents."
+        },
+        {
+          "target": "trajectory geometry",
+          "confidence": "low",
+          "note": "Synthetic paths recreate visual density and manifold shape only; no original neural data are available."
+        },
+        {
+          "target": "axis labels and ticks",
+          "confidence": "medium",
+          "note": "Labels and tick values transcribed from the visible source panel."
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "id": "source-is-qa-only",
+      "description": "Generated candidate must not render the source raster as a candidate layer."
+    },
+    {
+      "id": "shared-3d-transform",
+      "description": "Axes, grid planes, trajectories, and markers use the same named 3D projection."
+    },
+    {
+      "id": "editable-legends",
+      "description": "Angle color wheel and Start/End marker legend are generated SVG objects with semantic labels."
+    }
+  ],
+  "validation": {
+    "expectedCanvas": {
+      "width": 482,
+      "height": 365
+    },
+    "expectedTrajectoryCount": 88,
+    "expectedAxes": [
+      "PC 1 (23%)",
+      "PC 2 (14%)",
+      "PC 3 (9%)"
+    ],
+    "sourceReuseCheck": [
+      "No candidate canvas source-raster blit calls.",
+      "No CSS background using the source path.",
+      "Source image appears only in the QA reference img element."
+    ]
+  },
+  "confidence": [
+    {
+      "target": "overall first-pass visual match",
+      "confidence": "medium-low",
+      "note": "Suitable for visual inspection; geometry is editable and source-independent but not quantitatively recovered."
+    }
+  ]
+}

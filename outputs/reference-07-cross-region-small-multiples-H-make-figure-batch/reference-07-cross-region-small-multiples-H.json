@@ -1,0 +1,322 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-07-cross-region-small-multiples-H",
+  "source": {
+    "path": "../../assets/reference/reference-07-cross-region-small-multiples-H-reference.png",
+    "usage": "QA reference only; not used by the generated candidate layer.",
+    "nativeWidth": 398,
+    "nativeHeight": 330,
+    "notes": "Single cropped panel H showing a 5 by 5 cross-region decoding accuracy matrix with diagonal entries suppressed."
+  },
+  "canvas": {
+    "width": 398,
+    "height": 330,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontCandidates": [
+      "Arial",
+      "Helvetica",
+      "Roboto Condensed",
+      "Noto Sans"
+    ],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.1,
+      "notes": "Condensed publication typography approximated with Arial narrow sizing and bold title weights."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "heatmap-grid",
+      "type": "categoricalMatrix",
+      "bbox": {
+        "x": 132,
+        "y": 77,
+        "width": 236,
+        "height": 176
+      },
+      "rows": [
+        "CA1",
+        "CA3",
+        "DG",
+        "PFC",
+        "RSC"
+      ],
+      "columns": [
+        "CA1",
+        "CA3",
+        "DG",
+        "PFC",
+        "RSC"
+      ],
+      "cellWidth": 47.2,
+      "cellHeight": 35.2
+    },
+    {
+      "id": "decoding-color",
+      "type": "linearColorScale",
+      "domain": [
+        0,
+        1
+      ],
+      "range": [
+        "#ffffff",
+        "#0b3c95"
+      ],
+      "missingColor": "#ffffff"
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-h",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 398,
+        "height": 330
+      },
+      "label": {
+        "id": "panel-label",
+        "text": "H",
+        "x": 49,
+        "y": 54,
+        "fontSize": 24,
+        "fontWeight": 700,
+        "targetWidth": 14,
+        "sourceBox": {
+          "x": 49,
+          "y": 36,
+          "width": 15,
+          "height": 23
+        }
+      },
+      "title": {
+        "id": "panel-title",
+        "text": "Decoding generalization (train ≠ test region)",
+        "x": 76,
+        "y": 54,
+        "fontSize": 14,
+        "fontWeight": 700,
+        "targetWidth": 287,
+        "sourceBox": {
+          "x": 77,
+          "y": 39,
+          "width": 287,
+          "height": 19
+        }
+      },
+      "layoutObjects": [
+        {
+          "id": "train-test-corner",
+          "type": "axisCornerLabel",
+          "lines": [
+            {
+              "text": "Train →",
+              "x": 58,
+              "y": 83,
+              "fontSize": 12
+            },
+            {
+              "text": "Test",
+              "x": 67,
+              "y": 101,
+              "fontSize": 12
+            }
+          ]
+        },
+        {
+          "id": "matrix-frame",
+          "type": "plotFrame",
+          "bbox": {
+            "x": 132,
+            "y": 77,
+            "width": 236,
+            "height": 176
+          },
+          "stroke": "#222222",
+          "strokeWidth": 1
+        },
+        {
+          "id": "colorbar",
+          "type": "colorbar",
+          "bbox": {
+            "x": 119,
+            "y": 292,
+            "width": 240,
+            "height": 11
+          },
+          "scaleRef": "decoding-color",
+          "label": {
+            "text": "Decoding accuracy (r)",
+            "x": 239,
+            "y": 285,
+            "fontSize": 12,
+            "textAnchor": "middle"
+          },
+          "ticks": [
+            {
+              "value": 0,
+              "label": "0"
+            },
+            {
+              "value": 0.5,
+              "label": "0.5"
+            },
+            {
+              "value": 1,
+              "label": "1.0"
+            }
+          ]
+        }
+      ],
+      "data": {
+        "id": "cross-region-decoding-matrix",
+        "type": "matrix",
+        "rows": [
+          "CA1",
+          "CA3",
+          "DG",
+          "PFC",
+          "RSC"
+        ],
+        "columns": [
+          "CA1",
+          "CA3",
+          "DG",
+          "PFC",
+          "RSC"
+        ],
+        "values": [
+          [
+            null,
+            0.62,
+            0.44,
+            0.28,
+            0.33
+          ],
+          [
+            0.58,
+            null,
+            0.49,
+            0.3,
+            0.36
+          ],
+          [
+            0.41,
+            0.47,
+            null,
+            0.25,
+            0.31
+          ],
+          [
+            0.27,
+            0.29,
+            0.23,
+            null,
+            0.55
+          ],
+          [
+            0.32,
+            0.35,
+            0.3,
+            0.51,
+            null
+          ]
+        ],
+        "diagonalLabel": "—",
+        "valueFormat": ".2f"
+      },
+      "marks": [
+        {
+          "id": "heatmap-cells",
+          "type": "heatmap",
+          "dataRef": "cross-region-decoding-matrix",
+          "usesTransform": "heatmap-grid",
+          "colorScaleRef": "decoding-color",
+          "interpolation": "none",
+          "cellStroke": "#eef2f8",
+          "cellStrokeWidth": 1
+        }
+      ],
+      "annotations": [
+        {
+          "id": "region-labels",
+          "type": "categoricalAxisLabels",
+          "usesTransform": "heatmap-grid",
+          "rowLabelX": 123,
+          "rowLabelDy": 4,
+          "columnLabelY": 266,
+          "fontSize": 14,
+          "colors": {
+            "CA1": "#0047bd",
+            "CA3": "#0047bd",
+            "DG": "#11852b",
+            "PFC": "#ff6a00",
+            "RSC": "#ff0000"
+          }
+        },
+        {
+          "id": "cell-value-labels",
+          "type": "matrixValueLabels",
+          "dataRef": "cross-region-decoding-matrix",
+          "usesTransform": "heatmap-grid",
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fill": "#111111",
+          "diagonalFill": "#111111"
+        }
+      ],
+      "provenance": [
+        {
+          "confidence": "medium",
+          "note": "Matrix values and region labels were read visually from the source crop; heatmap shades are approximate."
+        },
+        {
+          "confidence": "medium",
+          "note": "Panel title and geometry are source-calibrated by eye from the 398 by 330 raster."
+        }
+      ]
+    }
+  ],
+  "rendering": {
+    "strategy": "hybrid-dom-svg",
+    "generatedLayers": [
+      "background",
+      "svg-matrix",
+      "svg-text",
+      "svg-colorbar"
+    ],
+    "qaReference": {
+      "enabled": true,
+      "separateFromCandidate": true,
+      "label": "QA reference image (source raster, not part of generated candidate)"
+    }
+  },
+  "validation": {
+    "expectedMatrixCells": 25,
+    "expectedNumericCells": 20,
+    "expectedDiagonalDashes": 5,
+    "expectedRegionLabelsPerAxis": 5,
+    "forbiddenGeneratedSourceReuse": [
+      "drawImage",
+      "background-image",
+      "source raster as candidate layer"
+    ]
+  },
+  "confidence": [
+    {
+      "field": "exact typeface",
+      "confidence": "low",
+      "note": "Original appears condensed; browser system fallback is approximate."
+    },
+    {
+      "field": "cell color calibration",
+      "confidence": "medium",
+      "note": "Blue-white scale approximates the visible intensity order."
+    }
+  ]
+}

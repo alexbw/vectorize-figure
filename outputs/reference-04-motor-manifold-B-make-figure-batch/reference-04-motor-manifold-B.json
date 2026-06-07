@@ -1,0 +1,695 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-04-motor-manifold-B",
+  "source": {
+    "path": "../../assets/reference/reference-04-motor-manifold-B-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "First-pass reconstruction inferred visually from the raster crop. Generated marks are SVG paths, axes, labels, and markers."
+  },
+  "canvas": {
+    "width": 471,
+    "height": 365,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": [
+      "Arial",
+      "Helvetica",
+      "Liberation Sans",
+      "Roboto Condensed"
+    ],
+    "calibration": {
+      "fontStretch": "condensed",
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "Approximate sans-serif typography; source appears compact and bold in title text."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "shared-pc1-pc3",
+      "type": "cartesian2d",
+      "x": {
+        "label": "PC 1",
+        "domain": [
+          -6,
+          6
+        ]
+      },
+      "y": {
+        "label": "PC 3",
+        "domain": [
+          -4,
+          4
+        ]
+      },
+      "notes": "Each small multiple uses the same data domains but independent plot boxes."
+    }
+  ],
+  "layoutObjects": [
+    {
+      "id": "figure-label",
+      "type": "panelLabel",
+      "text": "B",
+      "anchor": {
+        "x": 3,
+        "y": 22
+      }
+    },
+    {
+      "id": "figure-title",
+      "type": "title",
+      "text": "Condition-aligned trajectories (mean +/- SEM)",
+      "anchor": {
+        "x": 28,
+        "y": 22
+      }
+    },
+    {
+      "id": "axis-key",
+      "type": "orientationKey",
+      "anchor": {
+        "x": 399,
+        "y": 316
+      },
+      "bbox": {
+        "x": 397,
+        "y": 278,
+        "width": 70,
+        "height": 52
+      },
+      "exclusionZone": {
+        "paddingPx": 2
+      },
+      "labels": [
+        {
+          "axis": "pc3",
+          "text": "PC 3"
+        },
+        {
+          "axis": "pc1",
+          "text": "PC 1"
+        }
+      ]
+    }
+  ],
+  "panels": [
+    {
+      "id": "condition-000",
+      "conditionDegrees": 0,
+      "title": {
+        "text": "0°"
+      },
+      "plot": {
+        "bbox": {
+          "x": 47,
+          "y": 68,
+          "width": 79,
+          "height": 99
+        }
+      },
+      "seriesColor": "#e53935",
+      "bandColor": "#f6a5a0",
+      "trajectory": [
+        [
+          -5.4,
+          -2.25
+        ],
+        [
+          -4.2,
+          -1.65
+        ],
+        [
+          -3.3,
+          -0.7
+        ],
+        [
+          -2.1,
+          0.1
+        ],
+        [
+          -0.6,
+          1
+        ],
+        [
+          0.3,
+          2.9
+        ],
+        [
+          1.7,
+          3.15
+        ],
+        [
+          3,
+          2.05
+        ],
+        [
+          4.5,
+          0.25
+        ]
+      ],
+      "bandRadius": 0.75,
+      "startPoint": [
+        -5.55,
+        -2.45
+      ],
+      "endPoint": [
+        4.58,
+        0.05
+      ]
+    },
+    {
+      "id": "condition-045",
+      "conditionDegrees": 45,
+      "title": {
+        "text": "45°"
+      },
+      "plot": {
+        "bbox": {
+          "x": 141,
+          "y": 68,
+          "width": 80,
+          "height": 99
+        }
+      },
+      "seriesColor": "#ff7f32",
+      "bandColor": "#ffc29c",
+      "trajectory": [
+        [
+          -5.4,
+          -2.45
+        ],
+        [
+          -4.3,
+          -1.45
+        ],
+        [
+          -3,
+          -0.95
+        ],
+        [
+          -1.6,
+          -0.1
+        ],
+        [
+          -0.2,
+          1.05
+        ],
+        [
+          1.5,
+          3.05
+        ],
+        [
+          3,
+          3.25
+        ],
+        [
+          4.1,
+          2.25
+        ],
+        [
+          4.9,
+          0.05
+        ]
+      ],
+      "bandRadius": 0.78,
+      "startPoint": [
+        -5.6,
+        -2.55
+      ],
+      "endPoint": [
+        4.92,
+        -0.05
+      ]
+    },
+    {
+      "id": "condition-090",
+      "conditionDegrees": 90,
+      "title": {
+        "text": "90°"
+      },
+      "plot": {
+        "bbox": {
+          "x": 239,
+          "y": 68,
+          "width": 80,
+          "height": 99
+        }
+      },
+      "seriesColor": "#ffb81c",
+      "bandColor": "#ffe38f",
+      "trajectory": [
+        [
+          -5.5,
+          -2.45
+        ],
+        [
+          -4.3,
+          -1.55
+        ],
+        [
+          -2.6,
+          -1.1
+        ],
+        [
+          -0.8,
+          -0.85
+        ],
+        [
+          0.4,
+          -0.35
+        ],
+        [
+          1.3,
+          2.7
+        ],
+        [
+          2.8,
+          3.45
+        ],
+        [
+          4,
+          3.1
+        ],
+        [
+          5.3,
+          1.1
+        ]
+      ],
+      "bandRadius": 0.82,
+      "startPoint": [
+        -5.65,
+        -2.55
+      ],
+      "endPoint": [
+        5.35,
+        1.02
+      ]
+    },
+    {
+      "id": "condition-135",
+      "conditionDegrees": 135,
+      "title": {
+        "text": "135°"
+      },
+      "plot": {
+        "bbox": {
+          "x": 333,
+          "y": 68,
+          "width": 79,
+          "height": 99
+        }
+      },
+      "seriesColor": "#66b84f",
+      "bandColor": "#b8e7aa",
+      "trajectory": [
+        [
+          -5.5,
+          -2.45
+        ],
+        [
+          -4.1,
+          -1.5
+        ],
+        [
+          -2.5,
+          -0.85
+        ],
+        [
+          -1.3,
+          0.15
+        ],
+        [
+          0.1,
+          0.9
+        ],
+        [
+          1.8,
+          2.55
+        ],
+        [
+          3,
+          3.15
+        ],
+        [
+          4.3,
+          1.9
+        ],
+        [
+          5,
+          -0.55
+        ]
+      ],
+      "bandRadius": 0.8,
+      "startPoint": [
+        -5.6,
+        -2.55
+      ],
+      "endPoint": [
+        5.05,
+        -0.62
+      ]
+    },
+    {
+      "id": "condition-180",
+      "conditionDegrees": 180,
+      "title": {
+        "text": "180°"
+      },
+      "plot": {
+        "bbox": {
+          "x": 47,
+          "y": 202,
+          "width": 79,
+          "height": 99
+        }
+      },
+      "seriesColor": "#37c7c4",
+      "bandColor": "#a5ecea",
+      "trajectory": [
+        [
+          -5.4,
+          -2.65
+        ],
+        [
+          -4.3,
+          -1.75
+        ],
+        [
+          -3,
+          -0.7
+        ],
+        [
+          -1.8,
+          0.2
+        ],
+        [
+          -0.1,
+          1.1
+        ],
+        [
+          1.7,
+          1.65
+        ],
+        [
+          3.2,
+          1.25
+        ],
+        [
+          4.6,
+          -0.4
+        ]
+      ],
+      "bandRadius": 0.72,
+      "startPoint": [
+        -5.55,
+        -2.7
+      ],
+      "endPoint": [
+        4.65,
+        -0.48
+      ]
+    },
+    {
+      "id": "condition-225",
+      "conditionDegrees": 225,
+      "title": {
+        "text": "225°"
+      },
+      "plot": {
+        "bbox": {
+          "x": 141,
+          "y": 202,
+          "width": 80,
+          "height": 99
+        }
+      },
+      "seriesColor": "#35a6e8",
+      "bandColor": "#a9daf6",
+      "trajectory": [
+        [
+          -5.4,
+          -2.55
+        ],
+        [
+          -4,
+          -1.55
+        ],
+        [
+          -2.3,
+          -0.4
+        ],
+        [
+          -0.8,
+          0.85
+        ],
+        [
+          1,
+          1.55
+        ],
+        [
+          2.6,
+          1.35
+        ],
+        [
+          3.7,
+          0.35
+        ],
+        [
+          5,
+          -0.85
+        ]
+      ],
+      "bandRadius": 0.78,
+      "startPoint": [
+        -5.55,
+        -2.65
+      ],
+      "endPoint": [
+        5.02,
+        -0.93
+      ]
+    },
+    {
+      "id": "condition-270",
+      "conditionDegrees": 270,
+      "title": {
+        "text": "270°"
+      },
+      "plot": {
+        "bbox": {
+          "x": 239,
+          "y": 202,
+          "width": 80,
+          "height": 99
+        }
+      },
+      "seriesColor": "#4f69f0",
+      "bandColor": "#b9c5ff",
+      "trajectory": [
+        [
+          -5.5,
+          -2.55
+        ],
+        [
+          -4.4,
+          -1.75
+        ],
+        [
+          -3,
+          -0.55
+        ],
+        [
+          -1.2,
+          0.85
+        ],
+        [
+          0.5,
+          1.55
+        ],
+        [
+          2.3,
+          1.65
+        ],
+        [
+          3.8,
+          1.05
+        ],
+        [
+          5,
+          -0.25
+        ]
+      ],
+      "bandRadius": 0.76,
+      "startPoint": [
+        -5.6,
+        -2.65
+      ],
+      "endPoint": [
+        5.08,
+        -0.32
+      ]
+    },
+    {
+      "id": "condition-315",
+      "conditionDegrees": 315,
+      "title": {
+        "text": "315°"
+      },
+      "plot": {
+        "bbox": {
+          "x": 333,
+          "y": 202,
+          "width": 79,
+          "height": 99
+        },
+        "truncateXAxisAfter": 3.1,
+        "forceXTicks": true,
+        "xTicks": [
+          -6,
+          0
+        ],
+        "occluders": [
+          "axis-key"
+        ]
+      },
+      "seriesColor": "#a45ad7",
+      "bandColor": "#d8afea",
+      "trajectory": [
+        [
+          -5.5,
+          -2.45
+        ],
+        [
+          -4.1,
+          -1.5
+        ],
+        [
+          -2.5,
+          -0.25
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0.8,
+          1.95
+        ],
+        [
+          2.2,
+          2.1
+        ],
+        [
+          3.6,
+          1.1
+        ],
+        [
+          5,
+          -0.35
+        ]
+      ],
+      "bandRadius": 0.76,
+      "startPoint": [
+        -5.6,
+        -2.55
+      ],
+      "endPoint": [
+        5.05,
+        -0.42
+      ]
+    }
+  ],
+  "rendering": {
+    "renderer": "svg",
+    "layers": [
+      "axes",
+      "uncertaintyBands",
+      "meanTrajectories",
+      "markers",
+      "labels",
+      "orientationKey"
+    ],
+    "styles": {
+      "axisStroke": "#5d5d5d",
+      "axisStrokeWidth": 1.25,
+      "tickStrokeWidth": 1,
+      "meanStrokeWidth": 2.1,
+      "bandOpacity": 0.56,
+      "startFill": "#7a7a7a",
+      "markerStroke": "#111111"
+    }
+  },
+  "annotations": [
+    {
+      "id": "shared-y-label",
+      "type": "axisTitle",
+      "text": "PC 3 (9%)",
+      "anchor": {
+        "x": 8,
+        "y": 176
+      },
+      "rotation": -90
+    },
+    {
+      "id": "shared-x-label",
+      "type": "axisTitle",
+      "text": "PC 1 (23%)",
+      "anchor": {
+        "x": 236,
+        "y": 350
+      },
+      "anchorText": "middle"
+    }
+  ],
+  "constraints": [
+    {
+      "id": "same-domains",
+      "type": "sharedScale",
+      "panels": "all",
+      "coordinateSystem": "shared-pc1-pc3"
+    },
+    {
+      "id": "paired-markers",
+      "type": "markerPair",
+      "requiredForEachPanel": [
+        "startPoint",
+        "endPoint"
+      ]
+    },
+    {
+      "id": "qa-separation",
+      "type": "sourceUsage",
+      "rule": "Source raster appears only in reference view and is not used for generated SVG layers."
+    }
+  ],
+  "validation": {
+    "expectedPanelCount": 8,
+    "expectedTrajectoryCount": 8,
+    "expectedBandCount": 8,
+    "expectedStartMarkerCount": 8,
+    "expectedEndMarkerCount": 8
+  },
+  "confidence": [
+    {
+      "target": "trajectory coordinates",
+      "confidence": "medium",
+      "note": "Trajectory geometry is visually approximated from source; it is semantic and editable, not digitized data."
+    },
+    {
+      "target": "SEM bands",
+      "confidence": "medium-low",
+      "note": "Bands are curve-following generated offsets with per-panel radius, approximating visible translucent envelopes."
+    },
+    {
+      "target": "typography",
+      "confidence": "medium-low",
+      "note": "Font family and exact text metrics are approximate first-pass settings."
+    }
+  ]
+}
