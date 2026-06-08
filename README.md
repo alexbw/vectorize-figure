@@ -15,6 +15,7 @@ The core rule: generated candidates must not reuse the source PNG as a visual la
 - `examples/no-image-four/` - earlier four-panel no-image experiment.
 - `assets/reference/` - reference PNGs used only for visual QA toggles.
 - `assets/full-reference/` - full composite reference PNGs used only for QA toggles.
+- `outputs/index.html` - inspection hub for generated figure viewers.
 - `outputs/full-figure-batch-viewer.html` - full composite GEN/REF viewer.
 - `outputs/vectorize-figure-batch-gallery.html` - cropped subpanel GEN/REF gallery.
 
@@ -28,6 +29,7 @@ python3 -m http.server 8765
 
 Then open:
 
+- `http://localhost:8765/outputs/`
 - `http://localhost:8765/examples/no-image-1c/index.html`
 - `http://localhost:8765/examples/no-image-four/index.html`
 - `http://localhost:8765/outputs/full-figure-batch-viewer.html`

@@ -30,13 +30,15 @@
       "id": "env-a.positionLap",
       "type": "cartesian",
       "domain": {"x": [0, 240], "y": [1, 40]},
-      "range": {"x": [58, 236], "y": [164, 442]}
+      "range": {"x": [58, 236], "y": [164, 442]},
+      "layoutOwner": "env-a-plot-box"
     },
     {
       "id": "env-b.positionLap",
       "type": "cartesian",
       "domain": {"x": [0, 240], "y": [1, 40]},
-      "range": {"x": [255, 423], "y": [164, 442]}
+      "range": {"x": [255, 423], "y": [164, 442]},
+      "layoutOwner": "env-b-plot-box"
     },
     {
       "id": "rate-map-a",
@@ -69,6 +71,10 @@
       "type": "croppedContextTitle",
       "text": "emapping across virtual envi",
       "anchor": {"x": -2, "y": 40},
+      "anchorTo": "figure-crop",
+      "targetPoint": "top-left",
+      "anchorPoint": "top-left",
+      "sourceCalibrated": true,
       "fontSize": 31,
       "fontWeight": 700,
       "sourceBox": {"x": 0, "y": 17, "width": 456, "height": 39},
@@ -80,48 +86,84 @@
       "type": "panelLabel",
       "text": "B",
       "anchor": {"x": 19, "y": 92},
+      "anchorTo": "figure-crop",
+      "targetPoint": "top-left",
+      "anchorPoint": "top-left",
+      "sourceCalibrated": true,
       "fontSize": 29,
       "fontWeight": 700,
       "sourceBox": {"x": 19, "y": 69, "width": 20, "height": 29},
-      "fit": "manual"
+      "fit": "manual",
+      "provenance": {"confidence": "medium", "note": "Panel label anchor was visually measured from the source crop."}
     },
     {
       "id": "panel-title",
       "type": "title",
       "text": "Firing rate map across laps",
       "anchor": {"x": 61, "y": 94},
+      "anchorTo": "env-a-plot-box",
+      "targetPoint": "top-left",
+      "anchorPoint": "bottom-left",
+      "sourceCalibrated": true,
       "fontSize": 23,
       "fontWeight": 700,
       "sourceBox": {"x": 61, "y": 77, "width": 290, "height": 24},
-      "fit": "manual"
+      "fit": "manual",
+      "provenance": {"confidence": "medium", "note": "Panel title is anchored to the plot group with source-calibrated resolved coordinates."}
     },
     {
       "id": "env-a-title",
       "type": "panelTitle",
       "text": "Environment A",
       "anchor": {"x": 147, "y": 143},
+      "anchorTo": "env-a-plot-box",
+      "targetPoint": "top-center",
+      "anchorPoint": "bottom-center",
+      "sourceCalibrated": true,
       "fontSize": 20,
       "fontWeight": 700,
       "fill": "#78310f",
       "textAnchor": "middle",
-      "underline": {"x1": 59, "y1": 152, "x2": 235, "y2": 152, "stroke": "#78310f", "strokeWidth": 1.4}
+      "underline": {"x1": 59, "y1": 152, "x2": 235, "y2": 152, "stroke": "#78310f", "strokeWidth": 1.4},
+      "provenance": {"confidence": "medium", "note": "Environment A title and underline are anchored above the left heatmap from source-calibrated positions."}
     },
     {
       "id": "env-b-title",
       "type": "panelTitle",
       "text": "Environment B",
       "anchor": {"x": 338, "y": 143},
+      "anchorTo": "env-b-plot-box",
+      "targetPoint": "top-center",
+      "anchorPoint": "bottom-center",
+      "sourceCalibrated": true,
       "fontSize": 20,
       "fontWeight": 700,
       "fill": "#00747a",
       "textAnchor": "middle",
-      "underline": {"x1": 241, "y1": 152, "x2": 422, "y2": 152, "stroke": "#00747a", "strokeWidth": 1.4}
+      "underline": {"x1": 241, "y1": 152, "x2": 422, "y2": 152, "stroke": "#00747a", "strokeWidth": 1.4},
+      "provenance": {"confidence": "medium", "note": "Environment B title and underline are anchored above the right heatmap from source-calibrated positions."}
+    },
+    {
+      "id": "env-a-plot-box",
+      "type": "plotBox",
+      "parent": "figure-crop",
+      "bbox": {"x": 58, "y": 164, "width": 178, "height": 278},
+      "children": ["env-a-rate-field", "env-a-title", "shared-y-axis"]
+    },
+    {
+      "id": "env-b-plot-box",
+      "type": "plotBox",
+      "parent": "figure-crop",
+      "bbox": {"x": 255, "y": 164, "width": 168, "height": 278},
+      "children": ["env-b-rate-field", "env-b-title"]
     },
     {
       "id": "shared-y-axis",
       "type": "axis",
       "transform": "env-a.positionLap",
       "orientation": "left",
+      "parent": "env-a-plot-box",
+      "anchorTo": "env-a-plot-box",
       "line": {"x1": 58, "y1": 164, "x2": 58, "y2": 442},
       "ticks": [
         {"value": 1, "label": "1"},
@@ -130,36 +172,73 @@
         {"value": 30, "label": "30"},
         {"value": 40, "label": "40"}
       ],
-      "label": {"text": "Lap", "x": 17, "y": 304, "fontSize": 20, "rotation": -90}
+      "label": {
+        "id": "shared-y-axis-label",
+        "type": "text",
+        "text": "Lap",
+        "x": 17,
+        "y": 304,
+        "fontSize": 20,
+        "rotation": -90,
+        "anchorTo": "shared-y-axis",
+        "targetPoint": "middle-left",
+        "anchorPoint": "center",
+        "sourceCalibrated": true,
+        "provenance": {"confidence": "medium", "note": "Y-axis label is anchored to the shared lap axis with source-calibrated resolved coordinates."}
+      }
     },
     {
       "id": "shared-x-axis-label",
       "type": "axisLabel",
       "text": "Linearized position (cm)",
       "anchor": {"x": 234, "y": 499},
+      "anchorTo": "env-a-plot-box",
+      "targetPoint": "bottom-right",
+      "anchorPoint": "top-center",
+      "sourceCalibrated": true,
       "fontSize": 19,
       "textAnchor": "middle",
       "sourceBox": {"x": 136, "y": 486, "width": 204, "height": 14},
-      "fit": "bottom-cropped"
+      "fit": "bottom-cropped",
+      "provenance": {"confidence": "medium", "note": "Shared x-axis title is source-calibrated and partly constrained by the bottom crop edge."}
     },
     {
       "id": "rate-colorbar",
       "type": "colorbar",
       "colorScale": "rate-map-a",
+      "parent": "figure-crop",
+      "orientation": "vertical",
+      "tickSide": "right",
+      "tickDirection": "outward",
+      "tickLength": 8,
+      "titleAnchor": "top-left",
       "bbox": {"x": 440, "y": 248, "width": 14, "height": 154},
       "ticks": [
         {"value": 0, "label": "0"},
         {"value": 0.5, "label": "0.5"},
         {"value": 1, "label": "1"}
       ],
-      "title": {"text": "Rate\n(Hz)", "x": 440, "y": 201, "fontSize": 16, "lineHeight": 17},
+      "title": {
+        "id": "rate-colorbar-title",
+        "type": "text",
+        "text": "Rate\n(Hz)",
+        "x": 440,
+        "y": 201,
+        "fontSize": 16,
+        "lineHeight": 17,
+        "anchorTo": "rate-colorbar",
+        "targetPoint": "top-left",
+        "anchorPoint": "bottom-left",
+        "sourceCalibrated": true,
+        "provenance": {"confidence": "low", "note": "Colorbar title is anchored to the clipped right-side rate colorbar."}
+      },
       "provenance": {"confidence": "low", "note": "Right side of colorbar label and tick text are clipped in the source crop."}
     }
   ],
   "panels": [
     {
       "id": "env-a",
-      "label": {"text": "Environment A", "layoutObject": "env-a-title"},
+      "label": {"text": "Environment A", "layoutObject": "env-a-title", "anchorTo": "env-a-title"},
       "plot": {
         "bbox": {"x": 58, "y": 164, "width": 178, "height": 278},
         "dataBbox": {"x": 58, "y": 164, "width": 178, "height": 278},
@@ -177,6 +256,8 @@
           "type": "heatmap",
           "renderer": "canvas",
           "usesTransform": "env-a.positionLap",
+          "ownerBox": "env-a-plot-box",
+          "clipToOwner": true,
           "colorScale": "rate-map-a",
           "resolution": {"columns": 178, "rows": 278},
           "backgroundNoise": {"seed": 5105, "amplitude": 0.12, "grain": 0.9},
@@ -196,7 +277,7 @@
     },
     {
       "id": "env-b",
-      "label": {"text": "Environment B", "layoutObject": "env-b-title"},
+      "label": {"text": "Environment B", "layoutObject": "env-b-title", "anchorTo": "env-b-title"},
       "plot": {
         "bbox": {"x": 255, "y": 164, "width": 168, "height": 278},
         "dataBbox": {"x": 255, "y": 164, "width": 168, "height": 278},
@@ -214,6 +295,8 @@
           "type": "heatmap",
           "renderer": "canvas",
           "usesTransform": "env-b.positionLap",
+          "ownerBox": "env-b-plot-box",
+          "clipToOwner": true,
           "colorScale": "rate-map-b",
           "resolution": {"columns": 168, "rows": 278},
           "backgroundNoise": {"seed": 6105, "amplitude": 0.15, "grain": 0.9},

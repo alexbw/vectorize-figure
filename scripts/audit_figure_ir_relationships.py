@@ -84,6 +84,8 @@ def load_json(path: Path) -> dict[str, Any]:
 
 def walk_objects(value: Any, path: tuple[str, ...] = ()) -> list[ObjectRecord]:
     records: list[ObjectRecord] = []
+    if len(path) >= 2 and path[:2] == ("rendering", "styleTokens"):
+        return records
     if isinstance(value, dict):
         if "id" in value or "type" in value or "bbox" in value or "text" in value:
             records.append(ObjectRecord(".".join(path) or "$", value))

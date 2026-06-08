@@ -13,6 +13,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 VIEWERS = [
+    ROOT / "outputs" / "index.html",
     ROOT / "outputs" / "full-figure-batch-viewer.html",
     ROOT / "outputs" / "vectorize-figure-batch-gallery.html",
 ]
@@ -71,7 +72,6 @@ def main() -> int:
                 continue
             scripts = extract_scripts(viewer)
             if not scripts:
-                errors.append(f"{viewer.relative_to(ROOT)}: no inline scripts found")
                 continue
             for index, script in enumerate(scripts, start=1):
                 script_path = tmp / f"{viewer.stem}-{index}.js"

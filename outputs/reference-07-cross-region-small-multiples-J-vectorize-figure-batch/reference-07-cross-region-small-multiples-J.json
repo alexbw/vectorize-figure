@@ -30,6 +30,7 @@
       "type": "cartesian",
       "x": {"domain": [-0.4, 0.4], "range": [199, 406]},
       "y": {"categories": ["CA1", "CA3", "DG", "PFC", "RSC"], "range": [105, 213]},
+      "layoutOwner": "panel-j-plot-box",
       "notes": "The y range is categorical. Category centers were estimated from label and dot centers."
     },
     {
@@ -47,28 +48,49 @@
     {
       "id": "panel-j-label",
       "type": "panelLabel",
+      "parent": "panel-j",
       "text": "J",
       "anchor": {"x": 166, "y": 74},
+      "anchorTo": "panel-j",
+      "targetPoint": "top-left",
+      "anchorPoint": "top-left",
+      "sourceCalibrated": true,
       "fontSize": 20,
-      "fontWeight": 700
+      "fontWeight": 700,
+      "provenance": {"confidence": "medium", "note": "Panel label point was visually measured from the crop."}
     },
     {
       "id": "panel-j-title",
       "type": "title",
+      "parent": "panel-j",
       "text": "Residual structuraler (lag-1 autocorr.)",
       "anchor": {"x": 199, "y": 74},
+      "anchorTo": "panel-j-plot-box",
+      "targetPoint": "top-left",
+      "anchorPoint": "bottom-left",
+      "sourceCalibrated": true,
       "fontSize": 16,
       "fontWeight": 700,
       "textCalibration": {
         "sourceBox": {"x": 199, "y": 61, "width": 238, "height": 17},
         "targetWidth": 238,
         "fit": "condensed-family"
-      }
+      },
+      "provenance": {"confidence": "medium", "note": "Panel title is anchored to the plot box with source-calibrated resolved text coordinates."}
+    },
+    {
+      "id": "panel-j-plot-box",
+      "type": "plotBox",
+      "parent": "panel-j",
+      "bbox": {"x": 199, "y": 93, "width": 207, "height": 127},
+      "children": ["region-intervals", "region-labels", "numeric-interval-labels", "panel-j-x-axis", "panel-j-zero-line"]
     },
     {
       "id": "panel-j-x-axis",
       "type": "axis",
       "orientation": "bottom",
+      "parent": "panel-j-plot-box",
+      "anchorTo": "panel-j-plot-box",
       "usesTransform": "panel-j.autocorrelation",
       "line": {"x1": 199, "y1": 225, "x2": 406, "y2": 225},
       "ticks": [
@@ -79,11 +101,24 @@
         {"value": 0.4, "label": "0.4"}
       ],
       "tickLength": 4,
-      "label": {"text": "Lag-1 autocorrelation", "anchor": {"x": 303, "y": 264}, "fontSize": 13}
+      "label": {
+        "id": "panel-j-x-axis-label",
+        "type": "text",
+        "text": "Lag-1 autocorrelation",
+        "anchor": {"x": 303, "y": 264},
+        "fontSize": 13,
+        "anchorTo": "panel-j-x-axis",
+        "targetPoint": "bottom-center",
+        "anchorPoint": "top-center",
+        "sourceCalibrated": true,
+        "provenance": {"confidence": "medium", "note": "Axis title is anchored to the bottom axis; anchor preserves the source-calibrated text point."}
+      }
     },
     {
       "id": "panel-j-zero-line",
       "type": "referenceLine",
+      "parent": "panel-j-plot-box",
+      "anchorTo": "panel-j-plot-box",
       "usesTransform": "panel-j.autocorrelation",
       "xValue": 0,
       "y1": 93,
@@ -93,14 +128,31 @@
     {
       "id": "residual-colorbar",
       "type": "colorbar",
+      "parent": "panel-j",
       "usesColorScale": "residual-z-color",
+      "orientation": "vertical",
+      "tickSide": "right",
+      "tickDirection": "outward",
+      "tickLength": 4,
+      "labelAnchor": "right-center",
       "bbox": {"x": 12, "y": 111, "width": 13, "height": 87},
       "ticks": [
         {"value": 2, "label": "2"},
         {"value": 0, "label": "0"},
         {"value": -2, "label": "-2"}
       ],
-      "label": {"text": "Residual\n(z-score)", "anchor": {"x": 58, "y": 159}, "fontSize": 12}
+      "label": {
+        "id": "residual-colorbar-label",
+        "type": "text",
+        "text": "Residual\n(z-score)",
+        "anchor": {"x": 58, "y": 159},
+        "fontSize": 12,
+        "anchorTo": "residual-colorbar",
+        "targetPoint": "middle-right",
+        "anchorPoint": "middle-left",
+        "sourceCalibrated": true,
+        "provenance": {"confidence": "medium", "note": "Colorbar label is anchored to the right side of the residual z-score colorbar."}
+      }
     }
   ],
   "data": {
@@ -126,6 +178,8 @@
           "id": "region-intervals",
           "type": "confidenceIntervalDotPlot",
           "usesTransform": "panel-j.autocorrelation",
+          "ownerBox": "panel-j-plot-box",
+          "clipToOwner": true,
           "dataRef": "data.regions",
           "intervalStrokeWidth": 1,
           "capHeight": 5,
@@ -137,17 +191,23 @@
           "id": "region-labels",
           "type": "categoryLabels",
           "usesTransform": "panel-j.autocorrelation",
+          "anchorTo": "panel-j-plot-box",
           "x": 165,
           "fontSize": 14,
-          "anchor": "start"
+          "anchor": "start",
+          "sourceCalibrated": true,
+          "provenance": {"confidence": "medium", "note": "Region labels are anchored to categorical rows with a source-calibrated fixed label column."}
         },
         {
           "id": "numeric-interval-labels",
           "type": "rightValueLabels",
           "usesTransform": "panel-j.autocorrelation",
+          "anchorTo": "region-intervals",
           "x": 431,
           "fontSize": 12,
-          "anchor": "start"
+          "anchor": "start",
+          "sourceCalibrated": true,
+          "provenance": {"confidence": "medium", "note": "Numeric interval labels are anchored to the region interval rows with a source-calibrated fixed label column."}
         }
       ],
       "provenance": [

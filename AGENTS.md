@@ -6,6 +6,7 @@ This repository is the authoritative home for the Vectorize Figure workflow:
 - Command: `$vectorize-figure`
 - Plugin source: `plugins/vectorize-figure`
 - Skill source: `skills/vectorize-figure`
+- Primary viewer hub: `outputs/index.html`
 - Primary viewers: `outputs/full-figure-batch-viewer.html` and `outputs/vectorize-figure-batch-gallery.html`
 
 Do not use pre-rename command, plugin, skill, or output paths for new work in this repo. If a session exposes stale skill metadata, prefer the files in this repository and the installed `vectorize-figure@personal` plugin.
