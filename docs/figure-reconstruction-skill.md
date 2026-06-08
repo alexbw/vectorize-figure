@@ -139,6 +139,12 @@ Generated HTML candidates must not use the source PNG as a visual layer. The sou
 
 It is not allowed inside the generated candidate through `<img>`, CSS background images, canvas `drawImage`, or any equivalent source-image copy.
 
+### Generated Surface Boundary
+
+Every HTML reconstruction should expose the generated candidate through one stable root, preferably `id="surface"` or `data-role="generated-candidate"`.
+
+QA/reference imagery, diff overlays, and source rasters must be siblings or separate views outside that generated-surface root. Viewers and validators should be able to hide every QA/reference element and still capture the generated figure by targeting only the generated-surface root.
+
 ### Coordinate Systems
 
 Every plot region should define named coordinate transforms before marks are rendered.
@@ -334,7 +340,7 @@ Deprecated batch tooling:
 - `html-reconstructions/batch/index.html`
 - `html-reconstructions/batch/strategy-contact-sheet.png`
 
-The current batch covers all 62 cropped subpanels, but its generated previews are invalid as reconstructions because they used source raster content as a mark layer. Keep it only as a record of the failed approach.
+The current vectorize batch covers all 62 cropped subpanels with generated candidates separated from reference PNGs. It is validated by the structural output checks, the standalone subpanel batch validator, and the GEN/REF gallery verifier. Keep the deprecated strategy gallery only as a record of the failed source-raster-reuse approach.
 
 Strategy assignment counts:
 
@@ -344,7 +350,7 @@ Strategy assignment counts:
 - `dom_svg_schematic`: 2 panels
 - `hybrid_unknown`: 1 panel
 
-Future batch galleries should separate each panel into:
+Batch galleries should separate each panel into:
 
 - source PNG for visual ground truth in a clearly labeled reference pane
 - generated candidate built only from DOM/SVG/canvas marks, data recipes, and layout specs

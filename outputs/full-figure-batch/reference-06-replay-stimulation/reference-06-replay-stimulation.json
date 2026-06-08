@@ -1,0 +1,149 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-06-replay-stimulation",
+  "source": {
+    "path": "../../../assets/full-reference/reference-06-replay-stimulation.png",
+    "usage": "QA-only reference view; never used as a generated visual layer.",
+    "nativeSize": {"width": 1536, "height": 1024},
+    "notes": "Independent first-pass full-composite reconstruction from visual inspection. Dense rasters, heatmaps, posterior traces, distributions, and intervals are deterministic procedural approximations rather than extracted source pixels."
+  },
+  "canvas": {"width": 1536, "height": 1024, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "calibration": {"letterSpacing": 0, "lineHeight": 1.05}
+  },
+  "styleTokens": {
+    "preStim": "#0b7777",
+    "stim": "#ff650f",
+    "axis": "#111111",
+    "divider": "#8a8a8a",
+    "grid": "#e5e5e5",
+    "zero": "#777777",
+    "heatmap": {"domain": [-3, 3], "low": "#0b7777", "mid": "#f7f3e8", "high": "#ff650f"},
+    "posteriorFillAlpha": 0.13,
+    "semAlpha": 0.22
+  },
+  "coordinateSystems": [
+    {"id": "A.plot.xy", "type": "cartesian", "bbox": {"x": 51, "y": 94, "width": 239, "height": 318}, "xDomain": [1, 200], "yDomain": [1, 200]},
+    {"id": "B.pre.xy", "type": "cartesian", "bbox": {"x": 464, "y": 109, "width": 254, "height": 148}, "xDomain": [1, 220], "yDomain": [1, 200], "zDomain": [-3, 3]},
+    {"id": "B.stim.xy", "type": "cartesian", "bbox": {"x": 464, "y": 264, "width": 254, "height": 152}, "xDomain": [1, 220], "yDomain": [1, 200], "zDomain": [-3, 3]},
+    {"id": "C.pre.xy", "type": "cartesian", "bbox": {"x": 867, "y": 108, "width": 257, "height": 115}, "xDomain": [0, 220], "yDomain": [0, 0.10]},
+    {"id": "C.stim.xy", "type": "cartesian", "bbox": {"x": 867, "y": 280, "width": 257, "height": 115}, "xDomain": [0, 220], "yDomain": [0, 0.10]},
+    {"id": "D.plot.xy", "type": "cartesian", "bbox": {"x": 1216, "y": 132, "width": 304, "height": 268}, "xDomain": [-500, 550], "yDomain": [-1.7, 1.8]},
+    {"id": "E.plot.xy", "type": "categoricalY", "bbox": {"x": 66, "y": 570, "width": 278, "height": 314}, "categories": ["Pre-stim", "Stim"], "yDomain": [-1, 1]},
+    {"id": "F.forest.xy", "type": "forest", "bbox": {"x": 465, "y": 575, "width": 233, "height": 316}, "xDomain": [-1, 2], "rows": 15},
+    {"id": "G.plot.xy", "type": "cartesian", "bbox": {"x": 825, "y": 586, "width": 292, "height": 306}, "xDomain": [-1, 1], "yDomain": [0, 1]},
+    {"id": "H.plot.xy", "type": "categorical", "bbox": {"x": 1225, "y": 572, "width": 273, "height": 313}, "xDomain": [-100, 100], "categories": ["Sequential\n(sweeping)", "Fragmented\n(sequential)", "IID", "Stationary\n(rate)"]}
+  ],
+  "panels": [
+    {
+      "id": "A",
+      "bbox": {"x": 0, "y": 0, "width": 378, "height": 500},
+      "label": {"text": "A", "x": 8, "y": 27, "fontSize": 22, "fontWeight": 700},
+      "title": {"text": "Replay event raster (position order)", "x": 37, "y": 27, "fontSize": 21, "fontWeight": 700},
+      "legend": {"items": [{"label": "Pre-stim", "x": 104, "y": 57, "color": "#0b7777"}, {"label": "Stim", "x": 203, "y": 57, "color": "#ff650f"}], "markerRadius": 3.4},
+      "plot": {
+        "dataBbox": {"x": 51, "y": 94, "width": 239, "height": 318},
+        "usesTransform": "A.plot.xy",
+        "split": {"yValue": 100, "stroke": "#8a8a8a", "dasharray": "5 3"},
+        "x": {"domain": [1, 200], "ticks": [{"value": 1, "label": "1"}, {"value": 50, "label": "50"}, {"value": 100, "label": "100"}, {"value": 150, "label": "150"}, {"value": 200, "label": "200"}], "label": {"text": "Position bin", "x": 170, "y": 462, "fontSize": 19, "anchor": "middle"}},
+        "y": {"domain": [1, 200], "ticks": [{"value": 1, "label": "1"}, {"value": 200, "label": "200"}], "label": {"text": "Replay events (sorted)", "x": 28, "y": 256, "fontSize": 16, "rotation": -90, "anchor": "middle"}}
+      },
+      "marks": [
+        {"id": "pre-stim-events", "type": "raster", "color": "#0b7777", "opacity": 0.72, "markerRadius": 1.3, "recipe": {"seed": 6101, "rowDomain": [101, 200], "backgroundCount": 900, "bands": [{"start": [29, 199], "end": [93, 111], "count": 190}, {"start": [141, 199], "end": [196, 126], "count": 120}, {"start": [92, 184], "end": [124, 102], "count": 76}]}},
+        {"id": "stim-events", "type": "raster", "color": "#ff650f", "opacity": 0.72, "markerRadius": 1.3, "recipe": {"seed": 6202, "rowDomain": [1, 100], "backgroundCount": 760, "bands": [{"start": [143, 99], "end": [197, 2], "count": 190}, {"start": [63, 93], "end": [88, 5], "count": 82}]}}
+      ],
+      "annotations": [{"id": "A.time-colorbar", "type": "colorbar", "bbox": {"x": 317, "y": 156, "width": 10, "height": 222}, "title": {"text": "Time within\nreplay (norm.)", "x": 304, "y": 117, "fontSize": 10}, "ticks": [{"value": 1, "label": "1"}, {"value": 0.5, "label": "0.5"}, {"value": 0, "label": "0"}]}]
+    },
+    {
+      "id": "B",
+      "bbox": {"x": 388, "y": 0, "width": 374, "height": 500},
+      "label": {"text": "B", "x": 389, "y": 27, "fontSize": 22, "fontWeight": 700},
+      "title": {"text": "Sequence score heatmap", "x": 417, "y": 28, "fontSize": 21, "fontWeight": 700},
+      "colorbar": {"bbox": {"x": 484, "y": 67, "width": 130, "height": 11}, "title": {"text": "Sequence score (z)", "x": 549, "y": 58, "fontSize": 12, "anchor": "middle"}, "ticks": [{"value": -3, "label": "-3"}, {"value": 0, "label": "0"}, {"value": 3, "label": "3"}]},
+      "heatmaps": [
+        {"id": "B.pre", "label": {"text": "Pre-stim", "x": 423, "y": 166, "rotation": -90, "fontSize": 16, "fill": "#0b7777"}, "plotBox": {"x": 464, "y": 109, "width": 254, "height": 148}, "domain": {"x": [1, 220], "y": [1, 200], "z": [-3, 3]}, "axes": {"x": {"ticks": []}, "y": {"ticks": [{"value": 1, "label": "1"}, {"value": 100, "label": "100"}, {"value": 200, "label": "200"}]}}, "recipe": {"seed": 6301, "diagonalStrength": 2.7, "bandWidth": 4.2, "bias": -0.35}},
+        {"id": "B.stim", "label": {"text": "Stim", "x": 423, "y": 352, "rotation": -90, "fontSize": 16, "fill": "#ff650f"}, "plotBox": {"x": 464, "y": 264, "width": 254, "height": 152}, "domain": {"x": [1, 220], "y": [1, 200], "z": [-3, 3]}, "axes": {"x": {"ticks": [{"value": 1, "label": "1"}, {"value": 100, "label": "100"}, {"value": 200, "label": "200"}], "label": {"text": "Position bin (end)", "x": 591, "y": 462, "fontSize": 18, "anchor": "middle"}}, "y": {"ticks": [{"value": 1, "label": "1"}, {"value": 100, "label": "100"}]}}, "recipe": {"seed": 6302, "diagonalStrength": 3.0, "bandWidth": 8.5, "bias": 0.28}}
+      ],
+      "yLabel": {"text": "Position bin (start)", "x": 400, "y": 257, "fontSize": 18, "rotation": -90, "anchor": "middle"}
+    },
+    {
+      "id": "C",
+      "bbox": {"x": 768, "y": 0, "width": 372, "height": 500},
+      "label": {"text": "C", "x": 768, "y": 26, "fontSize": 22, "fontWeight": 700},
+      "title": {"text": "Bayesian posterior over position", "x": 797, "y": 26, "fontSize": 21, "fontWeight": 700},
+      "plots": [
+        {"id": "C.pre", "label": {"text": "Pre-stim\n(example\nreplay)", "x": 768, "y": 164, "fontSize": 14, "fill": "#0b7777"}, "plotBox": {"x": 867, "y": 108, "width": 257, "height": 115}, "color": "#0b7777", "rugColor": "#0b7777", "peaks": [{"x": 57, "h": 0.082, "w": 6}, {"x": 113, "h": 0.072, "w": 5}, {"x": 146, "h": 0.032, "w": 4}, {"x": 184, "h": 0.078, "w": 6}]},
+        {"id": "C.stim", "label": {"text": "Stim\n(example\nreplay)", "x": 768, "y": 326, "fontSize": 14, "fill": "#ff650f"}, "plotBox": {"x": 867, "y": 280, "width": 257, "height": 115}, "color": "#ff650f", "rugColor": "#ff650f", "peaks": [{"x": 54, "h": 0.087, "w": 8}, {"x": 125, "h": 0.058, "w": 11}, {"x": 178, "h": 0.052, "w": 8}, {"x": 198, "h": 0.020, "w": 5}]}
+      ],
+      "x": {"domain": [0, 220], "ticks": [{"value": 0, "label": "0"}, {"value": 100, "label": "100"}, {"value": 200, "label": "200"}], "label": {"text": "Position (cm)", "x": 996, "y": 421, "fontSize": 16, "anchor": "middle"}},
+      "y": {"domain": [0, 0.10], "ticks": [{"value": 0, "label": "0"}, {"value": 0.05, "label": "0.05"}, {"value": 0.10, "label": "0.10"}], "label": {"text": "Posterior ρ(position)", "x": 750, "y": 250, "fontSize": 16, "rotation": -90, "anchor": "middle"}}
+    },
+    {
+      "id": "D",
+      "bbox": {"x": 1166, "y": 0, "width": 370, "height": 500},
+      "label": {"text": "D", "x": 1167, "y": 28, "fontSize": 22, "fontWeight": 700},
+      "title": {"text": "Stimulation-triggered\nperi-event average", "x": 1197, "y": 28, "fontSize": 20, "fontWeight": 700},
+      "plot": {"dataBbox": {"x": 1216, "y": 132, "width": 304, "height": 268}, "x": {"domain": [-500, 550], "ticks": [{"value": -500, "label": "-500"}, {"value": -250, "label": "-250"}, {"value": 0, "label": "0"}, {"value": 250, "label": "250"}, {"value": 500, "label": "500"}], "label": {"text": "Time from stim (ms)", "x": 1368, "y": 458, "fontSize": 16, "anchor": "middle"}}, "y": {"domain": [-1.7, 1.8], "ticks": [{"value": -1.5, "label": "-1.5"}, {"value": -1, "label": "-1.0"}, {"value": -0.5, "label": "-0.5"}, {"value": 0, "label": "0"}, {"value": 0.5, "label": "0.5"}, {"value": 1, "label": "1.0"}, {"value": 1.5, "label": "1.5"}], "label": {"text": "Sequence score (z)", "x": 1172, "y": 268, "fontSize": 16, "rotation": -90, "anchor": "middle"}}},
+      "series": [{"id": "pre", "label": "Pre-stim (n=15 sessions)", "color": "#0b7777"}, {"id": "stim", "label": "Stim (n=15 sessions)", "color": "#ff650f"}],
+      "annotations": [{"type": "eventLine", "xValue": 0}, {"type": "zeroLine", "yValue": 0}, {"type": "pBar", "x1": 1401, "x2": 1498, "y": 380, "text": "p < 0.001"}]
+    },
+    {
+      "id": "E",
+      "bbox": {"x": 0, "y": 507, "width": 378, "height": 524},
+      "label": {"text": "E", "x": 8, "y": 527, "fontSize": 22, "fontWeight": 700},
+      "title": {"text": "Rank-order correlation (position)", "x": 37, "y": 527, "fontSize": 21, "fontWeight": 700},
+      "plot": {"dataBbox": {"x": 66, "y": 570, "width": 278, "height": 314}, "x": {"categories": [{"id": "pre", "label": "Pre-stim\n(n=15 sessions)", "x": 147, "color": "#0b7777"}, {"id": "stim", "label": "Stim\n(n=15 sessions)", "x": 272, "color": "#ff650f"}]}, "y": {"domain": [-1, 1], "ticks": [{"value": -1, "label": "-1.0"}, {"value": -0.5, "label": "-0.5"}, {"value": 0, "label": "0"}, {"value": 0.5, "label": "0.5"}, {"value": 1, "label": "1.0"}], "label": {"text": "Spearman ρ", "x": 24, "y": 727, "fontSize": 17, "rotation": -90, "anchor": "middle"}}},
+      "marks": [{"id": "pre", "type": "violin", "color": "#0b7777", "center": 147, "mean": 0.08, "seed": 6501}, {"id": "stim", "type": "violin", "color": "#ff650f", "center": 272, "mean": 0.36, "seed": 6502}],
+      "annotations": [{"type": "zeroLine", "yValue": 0}, {"type": "bracket", "x1": 148, "x2": 272, "y": 580, "text": "p < 0.001"}]
+    },
+    {
+      "id": "F",
+      "bbox": {"x": 388, "y": 507, "width": 374, "height": 524},
+      "label": {"text": "F", "x": 389, "y": 527, "fontSize": 22, "fontWeight": 700},
+      "title": {"text": "Effect size by session (Cohen's d)", "x": 417, "y": 527, "fontSize": 19, "fontWeight": 700},
+      "headers": [{"text": "Session", "x": 404, "y": 561, "fontSize": 14, "anchor": "middle"}, {"text": "n. events\n(Stim / Pre)", "x": 472, "y": 552, "fontSize": 14, "anchor": "middle"}],
+      "plot": {"dataBbox": {"x": 465, "y": 575, "width": 233, "height": 316}, "x": {"domain": [-1, 2], "ticks": [{"value": -1, "label": "-1"}, {"value": 0, "label": "0"}, {"value": 1, "label": "1"}, {"value": 2, "label": "2"}], "label": {"text": "Cohen's d (Stim - Pre)", "x": 585, "y": 943, "fontSize": 18, "anchor": "middle"}}},
+      "rows": [{"session": 1, "events": "512 / 471", "d": 1.00, "lo": 0.78, "hi": 1.22}, {"session": 2, "events": "498 / 450", "d": 1.12, "lo": 0.88, "hi": 1.34}, {"session": 3, "events": "620 / 584", "d": 0.95, "lo": 0.68, "hi": 1.20}, {"session": 4, "events": "534 / 488", "d": 1.36, "lo": 1.11, "hi": 1.62}, {"session": 5, "events": "475 / 452", "d": 0.98, "lo": 0.73, "hi": 1.21}, {"session": 6, "events": "610 / 570", "d": 1.16, "lo": 0.94, "hi": 1.39}, {"session": 7, "events": "502 / 468", "d": 0.90, "lo": 0.64, "hi": 1.16}, {"session": 8, "events": "559 / 516", "d": 1.01, "lo": 0.77, "hi": 1.25}, {"session": 9, "events": "583 / 544", "d": 0.96, "lo": 0.72, "hi": 1.19}, {"session": 10, "events": "478 / 439", "d": 0.88, "lo": 0.61, "hi": 1.15}, {"session": 11, "events": "621 / 590", "d": 1.08, "lo": 0.84, "hi": 1.31}, {"session": 12, "events": "505 / 487", "d": 0.91, "lo": 0.65, "hi": 1.17}, {"session": 13, "events": "567 / 532", "d": 1.03, "lo": 0.78, "hi": 1.26}, {"session": 14, "events": "540 / 505", "d": 0.85, "lo": 0.61, "hi": 1.09}, {"session": 15, "events": "489 / 463", "d": 0.93, "lo": 0.67, "hi": 1.18}],
+      "summary": {"label": "RE Model", "d": 0.61, "lo": 0.40, "hi": 0.82, "text": "0.61 [0.40, 0.82]"}
+    },
+    {
+      "id": "G",
+      "bbox": {"x": 768, "y": 507, "width": 380, "height": 524},
+      "label": {"text": "G", "x": 768, "y": 527, "fontSize": 22, "fontWeight": 700},
+      "title": {"text": "Cumulative distribution of ρ", "x": 797, "y": 527, "fontSize": 21, "fontWeight": 700},
+      "legend": {"items": [{"label": "Pre-stim", "x": 884, "y": 564, "color": "#0b7777"}, {"label": "Stim", "x": 884, "y": 587, "color": "#ff650f"}]},
+      "plot": {"dataBbox": {"x": 825, "y": 586, "width": 292, "height": 306}, "x": {"domain": [-1, 1], "ticks": [{"value": -1, "label": "-1.0"}, {"value": -0.5, "label": "-0.5"}, {"value": 0, "label": "0"}, {"value": 0.5, "label": "0.5"}, {"value": 1, "label": "1.0"}], "label": {"text": "Spearman ρ", "x": 970, "y": 947, "fontSize": 17, "anchor": "middle"}}, "y": {"domain": [0, 1], "ticks": [{"value": 0, "label": "0"}, {"value": 0.25, "label": "0.25"}, {"value": 0.5, "label": "0.50"}, {"value": 0.75, "label": "0.75"}, {"value": 1, "label": "1.00"}], "label": {"text": "Cumulative probability", "x": 777, "y": 740, "fontSize": 17, "rotation": -90, "anchor": "middle"}}},
+      "annotations": [{"type": "zeroLine", "xValue": 0}, {"type": "ksText", "text": "KS test\np < 0.001", "x": 1047, "y": 840, "fontSize": 14}]
+    },
+    {
+      "id": "H",
+      "bbox": {"x": 1166, "y": 507, "width": 370, "height": 524},
+      "label": {"text": "H", "x": 1167, "y": 527, "fontSize": 22, "fontWeight": 700},
+      "title": {"text": "Model comparison", "x": 1197, "y": 527, "fontSize": 21, "fontWeight": 700},
+      "legend": {"x": 1377, "y": 528, "items": [{"label": "Pre-stim  (LPPD)", "color": "#0b7777"}, {"label": "Stim  (LPPD)", "color": "#ff650f"}]},
+      "plot": {"dataBbox": {"x": 1225, "y": 572, "width": 273, "height": 313}, "x": {"domain": [-100, 100], "ticks": [{"value": -100, "label": "-100"}, {"value": -50, "label": "-50"}, {"value": 0, "label": "0"}, {"value": 50, "label": "50"}, {"value": 100, "label": "100"}], "label": {"text": "Δ LPPD (vs. best model)", "x": 1362, "y": 933, "fontSize": 17, "anchor": "middle"}}, "categories": [{"id": "seq", "label": "Sequential\n(sweeping)", "y": 624}, {"id": "frag", "label": "Fragmented\n(sequential)", "y": 697}, {"id": "iid", "label": "IID", "y": 769}, {"id": "rate", "label": "Stationary\n(rate)", "y": 836}]},
+      "marks": [{"category": "seq", "pre": 35, "preLo": 17, "preHi": 53, "stim": 78, "stimLo": 60, "stimHi": 96}, {"category": "frag", "pre": -3, "preLo": -18, "preHi": 12, "stim": 28, "stimLo": 13, "stimHi": 44}, {"category": "iid", "pre": -32, "preLo": -49, "preHi": -15, "stim": -10, "stimLo": -25, "stimHi": 5}, {"category": "rate", "pre": -57, "preLo": -70, "preHi": -44, "stim": -39, "stimLo": -54, "stimHi": -25}],
+      "annotations": [{"type": "zeroLine", "xValue": 0}, {"type": "helperLabel", "text": "Positive Δ LPPD favors model", "x": 1362, "y": 981, "fontSize": 16, "anchor": "middle"}]
+    }
+  ],
+  "rendering": {
+    "strategy": "hybrid",
+    "layers": [
+      {"id": "dense-canvas", "renderer": "canvas", "objects": ["A raster dots", "B heatmaps", "E violin point clouds"]},
+      {"id": "structure-svg", "renderer": "svg", "objects": ["axes", "ticks", "labels", "legends", "curves", "intervals", "annotations", "colorbars"]}
+    ]
+  },
+  "provenance": [
+    {"target": "all panels", "confidence": "medium", "note": "Panel inventory, plot boxes, tick anchors, titles, legends, and annotation locations were inferred from the supplied 1536x1024 composite."},
+    {"target": "dense data layers", "confidence": "low", "note": "Synthetic procedural recipes preserve visible grammar and approximate distribution shapes without copying source pixels."},
+    {"target": "source usage", "confidence": "high", "note": "The source PNG path is included only for the labeled QA/reference view."}
+  ],
+  "constraints": [
+    {"id": "no-source-raster-as-generated-layer", "note": "Generated candidate layers may not use the source PNG."},
+    {"id": "semantic-editability", "note": "Panel boxes, plot boxes, ticks, labels, legends, colorbars, helper strips, annotations, and deterministic mark recipes are explicit in JSON."}
+  ],
+  "confidence": [{"target": "overall", "confidence": "medium-low", "note": "First-pass full-composite reconstruction for visual inspection; exact data values are approximated."}]
+}

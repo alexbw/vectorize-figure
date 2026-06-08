@@ -1,0 +1,1124 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-07-cross-region-small-multiples",
+  "source": {
+    "path": "../../../assets/full-reference/reference-07-cross-region-small-multiples.png",
+    "usage": "QA-only reference view; never used by generated candidate.",
+    "nativeSize": {
+      "width": 1536,
+      "height": 1024
+    },
+    "notes": "Regenerated full composite reconstruction for visual inspection. Generated dense fields use seeded recipes; no source pixels are reused."
+  },
+  "canvas": {
+    "width": 1536,
+    "height": 1024,
+    "background": "#fff"
+  },
+  "typography": {
+    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111",
+    "fontImports": [],
+    "fontFaces": [],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "Condensed sans approximates compact publication text."
+    }
+  },
+  "styleTokens": {
+    "axis": "#111",
+    "blueLow": "#fff",
+    "blueMid": "#d5e3f5",
+    "blueHigh": "#08206f",
+    "heatLow": "#090619",
+    "heatMid": "#b92272",
+    "heatHigh": "#fff06a"
+  },
+  "regions": [
+    {
+      "id": "CA1",
+      "color": "#153ac7",
+      "n": 142
+    },
+    {
+      "id": "CA3",
+      "color": "#0066c7",
+      "n": 123
+    },
+    {
+      "id": "DG",
+      "color": "#0b8a18",
+      "n": 96
+    },
+    {
+      "id": "PFC",
+      "color": "#ff5a1a",
+      "n": 118
+    },
+    {
+      "id": "RSC",
+      "color": "#ff1717",
+      "n": 110
+    }
+  ],
+  "panels": [
+    {
+      "id": "A",
+      "kind": "populationHeatmaps",
+      "label": {
+        "text": "A",
+        "x": 6,
+        "y": 20,
+        "fontSize": 22,
+        "fontWeight": 700
+      },
+      "title": {
+        "text": "Population rate maps by brain region",
+        "x": 36,
+        "y": 20,
+        "fontSize": 17,
+        "fontWeight": 700
+      },
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 430,
+        "height": 385
+      },
+      "plot": {
+        "dataBbox": {
+          "x": 72,
+          "y": 80,
+          "width": 316,
+          "height": 250
+        },
+        "x": {
+          "domain": [
+            0,
+            300
+          ],
+          "ticks": [
+            0,
+            100,
+            200,
+            300
+          ],
+          "label": {
+            "text": "Position (cm)",
+            "x": 230,
+            "y": 49
+          }
+        },
+        "headers": [
+          {
+            "text": "Region",
+            "x": 10,
+            "y": 70
+          },
+          {
+            "text": "N cells",
+            "x": 394,
+            "y": 70
+          }
+        ]
+      },
+      "heatmapRows": [
+        {
+          "id": "CA1",
+          "region": "CA1",
+          "nCells": 142,
+          "labelColor": "#153ac7",
+          "bbox": {
+            "x": 72,
+            "y": 81,
+            "width": 316,
+            "height": 45
+          },
+          "recipe": {
+            "seed": 7100,
+            "hotspots": [
+              45,
+              115,
+              185,
+              260
+            ],
+            "bands": 2
+          }
+        },
+        {
+          "id": "CA3",
+          "region": "CA3",
+          "nCells": 123,
+          "labelColor": "#0066c7",
+          "bbox": {
+            "x": 72,
+            "y": 133,
+            "width": 316,
+            "height": 45
+          },
+          "recipe": {
+            "seed": 7101,
+            "hotspots": [
+              53,
+              127,
+              178,
+              255
+            ],
+            "bands": 3
+          }
+        },
+        {
+          "id": "DG",
+          "region": "DG",
+          "nCells": 96,
+          "labelColor": "#0b8a18",
+          "bbox": {
+            "x": 72,
+            "y": 185,
+            "width": 316,
+            "height": 45
+          },
+          "recipe": {
+            "seed": 7102,
+            "hotspots": [
+              61,
+              139,
+              171,
+              250
+            ],
+            "bands": 2
+          }
+        },
+        {
+          "id": "PFC",
+          "region": "PFC",
+          "nCells": 118,
+          "labelColor": "#ff5a1a",
+          "bbox": {
+            "x": 72,
+            "y": 237,
+            "width": 316,
+            "height": 45
+          },
+          "recipe": {
+            "seed": 7103,
+            "hotspots": [
+              69,
+              151,
+              164,
+              245
+            ],
+            "bands": 3
+          }
+        },
+        {
+          "id": "RSC",
+          "region": "RSC",
+          "nCells": 110,
+          "labelColor": "#ff1717",
+          "bbox": {
+            "x": 72,
+            "y": 289,
+            "width": 316,
+            "height": 42
+          },
+          "recipe": {
+            "seed": 7104,
+            "hotspots": [
+              77,
+              163,
+              157,
+              240
+            ],
+            "bands": 2
+          }
+        }
+      ],
+      "colorbar": {
+        "bbox": {
+          "x": 139,
+          "y": 342,
+          "width": 176,
+          "height": 9
+        },
+        "domain": [
+          -2,
+          2
+        ],
+        "ticks": [
+          -2,
+          0,
+          2
+        ],
+        "label": "Z-scored\nfiring rate"
+      }
+    },
+    {
+      "id": "B",
+      "kind": "ridges",
+      "label": {
+        "text": "B",
+        "x": 438,
+        "y": 20,
+        "fontSize": 22,
+        "fontWeight": 700
+      },
+      "title": {
+        "text": "Example firing fields (ridge plots)",
+        "x": 472,
+        "y": 20,
+        "fontSize": 17,
+        "fontWeight": 700
+      },
+      "bbox": {
+        "x": 430,
+        "y": 0,
+        "width": 370,
+        "height": 385
+      },
+      "plot": {
+        "dataBbox": {
+          "x": 10,
+          "y": 52,
+          "width": 293,
+          "height": 292
+        },
+        "x": {
+          "domain": [
+            0,
+            315
+          ],
+          "ticks": [
+            0,
+            100,
+            200,
+            300
+          ],
+          "label": {
+            "text": "Position (cm)",
+            "x": 157,
+            "y": 366
+          }
+        }
+      },
+      "groups": [
+        {
+          "id": "CA1",
+          "color": "#153ac7",
+          "n": 142,
+          "baselineY": 118,
+          "label": {
+            "text": "CA1",
+            "x": 20,
+            "y": 99
+          },
+          "seed": 7200
+        },
+        {
+          "id": "CA3",
+          "color": "#0066c7",
+          "n": 123,
+          "baselineY": 175,
+          "label": {
+            "text": "CA3",
+            "x": 20,
+            "y": 156
+          },
+          "seed": 7201
+        },
+        {
+          "id": "DG",
+          "color": "#0b8a18",
+          "n": 96,
+          "baselineY": 232,
+          "label": {
+            "text": "DG",
+            "x": 20,
+            "y": 213
+          },
+          "seed": 7202
+        },
+        {
+          "id": "PFC",
+          "color": "#ff5a1a",
+          "n": 118,
+          "baselineY": 289,
+          "label": {
+            "text": "PFC",
+            "x": 20,
+            "y": 270
+          },
+          "seed": 7203
+        },
+        {
+          "id": "RSC",
+          "color": "#ff1717",
+          "n": 110,
+          "baselineY": 346,
+          "label": {
+            "text": "RSC",
+            "x": 20,
+            "y": 327
+          },
+          "seed": 7204
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "kind": "lines",
+      "label": {
+        "text": "C",
+        "x": 828,
+        "y": 20,
+        "fontSize": 22,
+        "fontWeight": 700
+      },
+      "title": {
+        "text": "Position decoding accuracy",
+        "x": 862,
+        "y": 20,
+        "fontSize": 17,
+        "fontWeight": 700
+      },
+      "bbox": {
+        "x": 810,
+        "y": 0,
+        "width": 345,
+        "height": 385
+      },
+      "plot": {
+        "dataBbox": {
+          "x": 55,
+          "y": 51,
+          "width": 276,
+          "height": 291
+        },
+        "x": {
+          "domain": [
+            0,
+            1000
+          ],
+          "ticks": [
+            0,
+            200,
+            400,
+            600,
+            800,
+            1000
+          ],
+          "label": {
+            "text": "Time (s)"
+          }
+        },
+        "y": {
+          "domain": [
+            -0.2,
+            1
+          ],
+          "ticks": [
+            -0.2,
+            0,
+            0.2,
+            0.4,
+            0.6,
+            0.8,
+            1
+          ],
+          "label": {
+            "text": "Decoding accuracy (r)"
+          }
+        },
+        "zero": 0
+      },
+      "series": [
+        {
+          "region": "CA1",
+          "color": "#153ac7",
+          "asymptote": 0.72,
+          "seed": 7300
+        },
+        {
+          "region": "CA3",
+          "color": "#0066c7",
+          "asymptote": 0.55,
+          "seed": 7301
+        },
+        {
+          "region": "DG",
+          "color": "#0b8a18",
+          "asymptote": 0.42,
+          "seed": 7302
+        },
+        {
+          "region": "PFC",
+          "color": "#ff5a1a",
+          "asymptote": 0.27,
+          "seed": 7303
+        },
+        {
+          "region": "RSC",
+          "color": "#ff1717",
+          "asymptote": 0.15,
+          "seed": 7304
+        }
+      ],
+      "annotation": {
+        "text": "5-fold CV (r)",
+        "x": 260,
+        "y": 328
+      }
+    },
+    {
+      "id": "D",
+      "kind": "matrix",
+      "label": {
+        "text": "D",
+        "x": 1185,
+        "y": 20,
+        "fontSize": 22,
+        "fontWeight": 700
+      },
+      "title": {
+        "text": "Cross-region correlation",
+        "x": 1215,
+        "y": 20,
+        "fontSize": 17,
+        "fontWeight": 700
+      },
+      "bbox": {
+        "x": 1175,
+        "y": 0,
+        "width": 350,
+        "height": 385
+      },
+      "matrix": [
+        [
+          1,
+          0.65,
+          0.48,
+          0.34,
+          0.41
+        ],
+        [
+          0.65,
+          1,
+          0.53,
+          0.31,
+          0.4
+        ],
+        [
+          0.48,
+          0.53,
+          1,
+          0.28,
+          0.36
+        ],
+        [
+          0.34,
+          0.31,
+          0.28,
+          1,
+          0.57
+        ],
+        [
+          0.41,
+          0.4,
+          0.36,
+          0.57,
+          1
+        ]
+      ],
+      "plot": {
+        "dataBbox": {
+          "x": 39,
+          "y": 37,
+          "width": 299,
+          "height": 241
+        }
+      },
+      "colorbar": {
+        "bbox": {
+          "x": 77,
+          "y": 326,
+          "width": 228,
+          "height": 14
+        },
+        "label": "Pearson r",
+        "ticks": [
+          0,
+          0.5,
+          1
+        ]
+      }
+    },
+    {
+      "id": "E",
+      "kind": "forest",
+      "label": {
+        "text": "E",
+        "x": 6,
+        "y": 430,
+        "fontSize": 22,
+        "fontWeight": 700
+      },
+      "title": {
+        "text": "Effect sizes (Cohen's d) with 95% CI",
+        "x": 40,
+        "y": 430,
+        "fontSize": 17,
+        "fontWeight": 700
+      },
+      "bbox": {
+        "x": 0,
+        "y": 410,
+        "width": 420,
+        "height": 310
+      },
+      "plot": {
+        "dataBbox": {
+          "x": 36,
+          "y": 41,
+          "width": 262,
+          "height": 238
+        },
+        "x": {
+          "domain": [
+            -1,
+            1
+          ],
+          "ticks": [
+            -1,
+            -0.5,
+            0,
+            0.5,
+            1
+          ],
+          "label": {
+            "text": "Cohen's d"
+          }
+        },
+        "rows": [
+          "CA1–CA3",
+          "CA1–DG",
+          "CA1–PFC",
+          "CA1–RSC",
+          "CA3–DG",
+          "CA3–PFC",
+          "CA3–RSC",
+          "DG–PFC",
+          "DG–RSC",
+          "PFC–RSC"
+        ],
+        "values": [
+          0.44,
+          0.62,
+          0.78,
+          0.68,
+          0.22,
+          0.36,
+          0.31,
+          0.17,
+          0.23,
+          0.45
+        ],
+        "ci": [
+          [
+            0.21,
+            0.67
+          ],
+          [
+            0.37,
+            0.86
+          ],
+          [
+            0.52,
+            1.04
+          ],
+          [
+            0.43,
+            0.94
+          ],
+          [
+            0,
+            0.45
+          ],
+          [
+            0.13,
+            0.59
+          ],
+          [
+            0.08,
+            0.54
+          ],
+          [
+            -0.06,
+            0.4
+          ],
+          [
+            0,
+            0.47
+          ],
+          [
+            0.19,
+            0.71
+          ]
+        ]
+      }
+    },
+    {
+      "id": "F",
+      "kind": "raster",
+      "label": {
+        "text": "F",
+        "x": 438,
+        "y": 430,
+        "fontSize": 22,
+        "fontWeight": 700
+      },
+      "title": {
+        "text": "Sparse population raster (example session)",
+        "x": 472,
+        "y": 430,
+        "fontSize": 17,
+        "fontWeight": 700
+      },
+      "bbox": {
+        "x": 430,
+        "y": 410,
+        "width": 390,
+        "height": 310
+      },
+      "plot": {
+        "dataBbox": {
+          "x": 55,
+          "y": 41,
+          "width": 315,
+          "height": 235
+        },
+        "x": {
+          "domain": [
+            0,
+            50
+          ],
+          "ticks": [
+            0,
+            10,
+            20,
+            30,
+            40,
+            50
+          ],
+          "label": {
+            "text": "Time (s)"
+          }
+        }
+      },
+      "rows": [
+        {
+          "id": "CA1",
+          "color": "#153ac7",
+          "n": 142,
+          "bbox": {
+            "x": 55,
+            "y": 41,
+            "width": 315,
+            "height": 40
+          },
+          "seed": 7400
+        },
+        {
+          "id": "CA3",
+          "color": "#0066c7",
+          "n": 123,
+          "bbox": {
+            "x": 55,
+            "y": 88,
+            "width": 315,
+            "height": 40
+          },
+          "seed": 7401
+        },
+        {
+          "id": "DG",
+          "color": "#0b8a18",
+          "n": 96,
+          "bbox": {
+            "x": 55,
+            "y": 135,
+            "width": 315,
+            "height": 40
+          },
+          "seed": 7402
+        },
+        {
+          "id": "PFC",
+          "color": "#ff5a1a",
+          "n": 118,
+          "bbox": {
+            "x": 55,
+            "y": 182,
+            "width": 315,
+            "height": 40
+          },
+          "seed": 7403
+        },
+        {
+          "id": "RSC",
+          "color": "#ff1717",
+          "n": 110,
+          "bbox": {
+            "x": 55,
+            "y": 229,
+            "width": 315,
+            "height": 40
+          },
+          "seed": 7404
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "kind": "forestR2",
+      "label": {
+        "text": "G",
+        "x": 828,
+        "y": 430,
+        "fontSize": 22,
+        "fontWeight": 700
+      },
+      "title": {
+        "text": "Model fit (variance explained)",
+        "x": 862,
+        "y": 430,
+        "fontSize": 17,
+        "fontWeight": 700
+      },
+      "bbox": {
+        "x": 810,
+        "y": 410,
+        "width": 335,
+        "height": 310
+      },
+      "plot": {
+        "dataBbox": {
+          "x": 38,
+          "y": 53,
+          "width": 250,
+          "height": 238
+        },
+        "x": {
+          "domain": [
+            0,
+            1
+          ],
+          "ticks": [
+            0,
+            0.2,
+            0.4,
+            0.6,
+            0.8,
+            1
+          ],
+          "label": {
+            "text": "Variance explained (R²)"
+          }
+        },
+        "values": [
+          0.71,
+          0.63,
+          0.58,
+          0.42,
+          0.49
+        ],
+        "ci": [
+          [
+            0.66,
+            0.76
+          ],
+          [
+            0.57,
+            0.69
+          ],
+          [
+            0.51,
+            0.65
+          ],
+          [
+            0.35,
+            0.49
+          ],
+          [
+            0.42,
+            0.56
+          ]
+        ]
+      }
+    },
+    {
+      "id": "H",
+      "kind": "matrix",
+      "label": {
+        "text": "H",
+        "x": 1185,
+        "y": 430,
+        "fontSize": 22,
+        "fontWeight": 700
+      },
+      "title": {
+        "text": "Decoding generalization (train ≠ test region)",
+        "x": 1215,
+        "y": 430,
+        "fontSize": 17,
+        "fontWeight": 700
+      },
+      "bbox": {
+        "x": 1175,
+        "y": 410,
+        "width": 350,
+        "height": 310
+      },
+      "matrix": [
+        [
+          null,
+          0.62,
+          0.44,
+          0.28,
+          0.33
+        ],
+        [
+          0.58,
+          null,
+          0.49,
+          0.3,
+          0.36
+        ],
+        [
+          0.41,
+          0.47,
+          null,
+          0.25,
+          0.31
+        ],
+        [
+          0.27,
+          0.29,
+          0.23,
+          null,
+          0.55
+        ],
+        [
+          0.32,
+          0.35,
+          0.3,
+          0.51,
+          null
+        ]
+      ],
+      "plot": {
+        "dataBbox": {
+          "x": 39,
+          "y": 41,
+          "width": 299,
+          "height": 178
+        }
+      },
+      "colorbar": {
+        "bbox": {
+          "x": 77,
+          "y": 267,
+          "width": 228,
+          "height": 14
+        },
+        "label": "Decoding accuracy (r)",
+        "ticks": [
+          0,
+          0.5,
+          1
+        ]
+      },
+      "cornerLabel": "Train →\nTest"
+    },
+    {
+      "id": "I",
+      "kind": "residuals",
+      "label": {
+        "text": "I",
+        "x": 6,
+        "y": 782,
+        "fontSize": 22,
+        "fontWeight": 700
+      },
+      "title": {
+        "text": "Model residuals (data – model)",
+        "x": 36,
+        "y": 782,
+        "fontSize": 17,
+        "fontWeight": 700
+      },
+      "bbox": {
+        "x": 0,
+        "y": 760,
+        "width": 1035,
+        "height": 250
+      },
+      "plot": {
+        "domain": [
+          0,
+          300
+        ]
+      },
+      "maps": [
+        {
+          "id": "CA1",
+          "color": "#153ac7",
+          "bbox": {
+            "x": 40,
+            "y": 45,
+            "width": 158,
+            "height": 112
+          },
+          "seed": 7500
+        },
+        {
+          "id": "CA3",
+          "color": "#0066c7",
+          "bbox": {
+            "x": 235,
+            "y": 45,
+            "width": 158,
+            "height": 112
+          },
+          "seed": 7501
+        },
+        {
+          "id": "DG",
+          "color": "#0b8a18",
+          "bbox": {
+            "x": 430,
+            "y": 45,
+            "width": 158,
+            "height": 112
+          },
+          "seed": 7502
+        },
+        {
+          "id": "PFC",
+          "color": "#ff5a1a",
+          "bbox": {
+            "x": 625,
+            "y": 45,
+            "width": 158,
+            "height": 112
+          },
+          "seed": 7503
+        },
+        {
+          "id": "RSC",
+          "color": "#ff1717",
+          "bbox": {
+            "x": 820,
+            "y": 45,
+            "width": 158,
+            "height": 112
+          },
+          "seed": 7504
+        }
+      ]
+    },
+    {
+      "id": "J",
+      "kind": "forestAuto",
+      "label": {
+        "text": "J",
+        "x": 1155,
+        "y": 782,
+        "fontSize": 22,
+        "fontWeight": 700
+      },
+      "title": {
+        "text": "Residual structure (lag-1 autocorr.)",
+        "x": 1189,
+        "y": 782,
+        "fontSize": 17,
+        "fontWeight": 700
+      },
+      "bbox": {
+        "x": 1145,
+        "y": 760,
+        "width": 380,
+        "height": 250
+      },
+      "plot": {
+        "dataBbox": {
+          "x": 40,
+          "y": 55,
+          "width": 205,
+          "height": 138
+        },
+        "x": {
+          "domain": [
+            -0.4,
+            0.4
+          ],
+          "ticks": [
+            -0.4,
+            -0.2,
+            0,
+            0.2,
+            0.4
+          ],
+          "label": {
+            "text": "Lag-1 autocorrelation"
+          }
+        },
+        "values": [
+          -0.02,
+          -0.03,
+          -0.01,
+          0.05,
+          0.06
+        ],
+        "ci": [
+          [
+            -0.07,
+            0.03
+          ],
+          [
+            -0.08,
+            0.02
+          ],
+          [
+            -0.06,
+            0.04
+          ],
+          [
+            0,
+            0.1
+          ],
+          [
+            0.01,
+            0.11
+          ]
+        ]
+      }
+    }
+  ],
+  "provenance": [
+    {
+      "note": "Panel inventory inferred as A-J full composite. All generated layers are procedural SVG/canvas and editable semantic objects."
+    },
+    {
+      "note": "Regenerated on 2026-06-07 for full-composite inspection; replaced only JSON and HTML outputs."
+    }
+  ],
+  "confidence": [
+    {
+      "scope": "overall",
+      "level": "first-pass",
+      "notes": "Geometry and data are approximate for visual inspection; numeric labels visible in source are transcribed where practical."
+    }
+  ]
+}

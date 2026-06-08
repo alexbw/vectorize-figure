@@ -1,0 +1,167 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-02-decision-dynamics",
+  "source": {
+    "path": "../../../assets/full-reference/reference-02-decision-dynamics.png",
+    "usage": "QA-only reference view; not used by generated candidate layers.",
+    "nativeSize": {"width": 1536, "height": 1024},
+    "notes": "Independent first-pass reconstruction of the complete eight-panel decision dynamics composite. Dense heatmaps, trajectory clouds, stimulus dots, histograms, and summary samples are generated from synthetic recipes; source raster is only exposed through a labeled reference toggle."
+  },
+  "canvas": {"width": 1536, "height": 1024, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial Narrow, Helvetica Neue, Arial, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "calibration": {"letterSpacing": 0, "lineHeight": 1.08, "notes": "Compact sans-serif approximation selected visually."}
+  },
+  "style": {
+    "blue": "#0048c7",
+    "red": "#f01414",
+    "black": "#111111",
+    "grid": "#d0d0d0",
+    "lightGrid": "#e6e6e6",
+    "panelBorder": "#111111"
+  },
+  "panels": [
+    {
+      "id": "A",
+      "type": "trial_timeline_schematic",
+      "bbox": {"x": 0, "y": 0, "width": 430, "height": 512},
+      "label": {"text": "A", "x": 13, "y": 31, "fontSize": 24, "fontWeight": 700},
+      "title": {"text": "Trial timeline", "x": 38, "y": 30, "fontSize": 18, "fontWeight": 700},
+      "timeline": {
+        "domain": [-600, 1950],
+        "axis": {"x1": 15, "y1": 249, "x2": 411, "y2": 249},
+        "ticks": [
+          {"value": -500, "label": "-500"}, {"value": 0, "label": "0"}, {"value": 200, "label": "200"},
+          {"value": 1200, "label": "1,200"}, {"value": 1400, "label": "1,400"}, {"value": 1900, "label": "1,900"}
+        ],
+        "epochBoxes": [
+          {"label": "Baseline", "x": 15, "y": 312, "width": 83, "height": 33, "fill": "#f3f3f3"},
+          {"label": "Stim", "x": 101, "y": 312, "width": 58, "height": 33, "fill": "#e8f0ff", "stroke": "#7aa4e8"},
+          {"label": "Delay", "x": 162, "y": 312, "width": 105, "height": 33, "fill": "#f5f5f5"},
+          {"label": "Response", "x": 271, "y": 312, "width": 70, "height": 33, "fill": "#ffe7e7", "stroke": "#ff4c4c"},
+          {"label": "Outcome", "x": 344, "y": 312, "width": 67, "height": 33, "fill": "#f5f5f5"}
+        ],
+        "frames": [
+          {"id": "fix", "x": 15, "y": 135, "width": 73, "height": 74, "label": "Fixate\n500 ms", "center": "dot"},
+          {"id": "stim", "x": 99, "y": 135, "width": 73, "height": 74, "label": "Stimulus\n200 ms", "center": "dots", "seed": 220},
+          {"id": "delay", "x": 182, "y": 135, "width": 73, "height": 74, "label": "Delay\n~1,000 ms", "center": "dot"},
+          {"id": "go", "x": 267, "y": 135, "width": 70, "height": 74, "label": "Go\n(response)", "center": "choice", "stroke": "#ff0000"},
+          {"id": "out", "x": 346, "y": 135, "width": 64, "height": 74, "label": "Outcome\n500 ms", "center": "drop"}
+        ],
+        "rows": [
+          {"head": "Cognitive\nprocess", "y": 370, "items": ["", "Evidence\nencoding", "Evidence\naccumulation", "Decision\nexecution", "Feedback\nprocessing"]},
+          {"head": "Example behavior", "y": 432, "items": ["", "L / R", "Hold", "Saccade\nL or R", "Reward\nor no reward"]}
+        ],
+        "axisLabel": {"text": "Time from stimulus onset (ms)", "x": 213, "y": 297, "fontSize": 14, "anchor": "middle"}
+      }
+    },
+    {
+      "id": "B",
+      "type": "state_space_3d",
+      "bbox": {"x": 430, "y": 0, "width": 356, "height": 512},
+      "label": {"text": "B", "x": 13, "y": 31, "fontSize": 24, "fontWeight": 700},
+      "title": {"text": "Neural state-space trajectories\n(population activity)", "x": 38, "y": 30, "fontSize": 18, "fontWeight": 700},
+      "legend": {"x": 52, "y": 86},
+      "scene": {
+        "plotBox": {"x": 55, "y": 109, "width": 270, "height": 302},
+        "domains": {"pc1": [-2, 2], "pc2": [-2, 2], "pc3": [-2, 2]},
+        "projection": {"corner": {"x": 70, "y": 334}, "basis": {"pc1": {"x": 235, "y": 42}, "pc2": {"x": 122, "y": -64}, "pc3": {"x": 0, "y": -188}}},
+        "cloudRecipe": {"seed": 3302, "count": 38, "points": 42},
+        "leftMean": [[-1.6,-1.5,-0.2],[-1.0,-0.6,0.5],[-0.3,0.3,1.1],[0.6,0.9,1.35],[1.4,1.0,1.55],[1.9,0.6,1.35]],
+        "rightMean": [[-1.6,-1.5,-0.2],[-0.8,-0.6,-0.1],[-0.1,0.3,-0.5],[0.7,0.8,-1.1],[1.4,1.0,-1.45],[1.9,0.6,-1.55]]
+      }
+    },
+    {
+      "id": "C",
+      "type": "paired_heatmaps",
+      "bbox": {"x": 786, "y": 0, "width": 360, "height": 512},
+      "label": {"text": "C", "x": 10, "y": 29, "fontSize": 22, "fontWeight": 700},
+      "title": {"text": "Peri-event firing rates (z-scored)", "x": 35, "y": 30, "fontSize": 16, "fontWeight": 700},
+      "timeDomain": [-500, 1600],
+      "plots": [
+        {"id": "left-choice", "title": "Left choice (n = 142 trials)", "titleColor": "#0037b8", "rows": 142, "box": {"x": 45, "y": 77, "width": 242, "height": 139}, "seed": 14217},
+        {"id": "right-choice", "title": "Right choice (n = 138 trials)", "titleColor": "#ff0000", "rows": 138, "box": {"x": 45, "y": 272, "width": 242, "height": 136}, "seed": 13829}
+      ],
+      "ticks": [-500, 0, 500, 1000, 1500],
+      "eventLines": [0, 1100],
+      "colorbar": {"x": 305, "y": 202, "width": 14, "height": 128, "domain": [-3, 3], "label": "z-score"},
+      "epochStrip": {"x": 45, "y": 462, "height": 28, "items": [
+        {"label": "Stim", "width": 44, "fill": "#dce9ff"}, {"label": "Delay", "width": 86, "fill": "#f5f5f5"},
+        {"label": "Response", "width": 58, "fill": "#ffe1e1"}, {"label": "Outcome", "width": 56, "fill": "#f5f5f5"}
+      ]}
+    },
+    {
+      "id": "D",
+      "type": "psychometric",
+      "bbox": {"x": 1146, "y": 0, "width": 390, "height": 512},
+      "label": {"text": "D", "x": 10, "y": 29, "fontSize": 22, "fontWeight": 700},
+      "title": {"text": "Psychometric curve", "x": 36, "y": 30, "fontSize": 17, "fontWeight": 700},
+      "plot": {"x": 64, "y": 82, "width": 285, "height": 327, "xDomain": [-55, 60], "yDomain": [0, 1]},
+      "xTicks": [-50, -25, 0, 25, 50],
+      "yTicks": [0, 0.5, 1],
+      "points": [[-50,0.055,0.025],[-40,0.065,0.026],[-30,0.095,0.035],[-20,0.135,0.045],[-12,0.24,0.046],[-5,0.375,0.05],[5,0.595,0.055],[12,0.735,0.058],[22,0.855,0.06],[35,0.91,0.06],[45,0.95,0.045],[55,0.925,0.045]],
+      "fit": {"lower": 0.045, "upper": 0.955, "midpoint": 0.9, "slope": 0.108}
+    },
+    {
+      "id": "E",
+      "type": "confusion_matrix",
+      "bbox": {"x": 0, "y": 512, "width": 430, "height": 512},
+      "label": {"text": "E", "x": 13, "y": 31, "fontSize": 24, "fontWeight": 700},
+      "title": {"text": "Decoding: choice from population activity\n(at response time)", "x": 40, "y": 30, "fontSize": 18, "fontWeight": 700},
+      "matrixBox": {"x": 72, "y": 132, "width": 220, "height": 237},
+      "values": [[89, 11], [13, 87]],
+      "rowLabels": ["Left", "Right"],
+      "colLabels": ["Left", "Right"],
+      "caption": "Decoding accuracy: 88% (shuffle: 50%)"
+    },
+    {
+      "id": "F",
+      "type": "reaction_time_distribution",
+      "bbox": {"x": 430, "y": 512, "width": 356, "height": 512},
+      "label": {"text": "F", "x": 13, "y": 31, "fontSize": 24, "fontWeight": 700},
+      "title": {"text": "Reaction time distribution", "x": 40, "y": 30, "fontSize": 18, "fontWeight": 700},
+      "plot": {"x": 68, "y": 66, "width": 252, "height": 317, "xDomain": [150, 1200], "yDomain": [0, 0.008]},
+      "xTicks": [200, 400, 600, 800, 1000, 1200],
+      "yTicks": [0, 0.002, 0.004, 0.006, 0.008],
+      "recipes": {"left": {"seed": 512, "median": 512, "color": "#0048c7"}, "right": {"seed": 525, "median": 525, "color": "#ff0000"}}
+    },
+    {
+      "id": "G",
+      "type": "trajectory_2d",
+      "bbox": {"x": 786, "y": 512, "width": 360, "height": 512},
+      "label": {"text": "G", "x": 10, "y": 31, "fontSize": 22, "fontWeight": 700},
+      "title": {"text": "Low-dimensional trajectory comparison\n(mean ± SEM)", "x": 35, "y": 30, "fontSize": 16, "fontWeight": 700},
+      "plot": {"x": 49, "y": 138, "width": 292, "height": 242, "xDomain": [-2.2, 2.2], "yDomain": [-2.1, 2.2]},
+      "xTicks": [-2, -1, 0, 1, 2],
+      "yTicks": [-2, -1, 0, 1, 2],
+      "left": [[-1.25,0],[-0.6,0.15],[0.25,0.55],[0.85,0.85],[1.25,1.22],[1.85,1.25]],
+      "right": [[-1.25,0],[-0.55,0.05],[0.25,0.0],[0.9,-0.45],[1.35,-1.0],[1.85,-1.35]]
+    },
+    {
+      "id": "H",
+      "type": "summary_animals",
+      "bbox": {"x": 1146, "y": 512, "width": 390, "height": 512},
+      "label": {"text": "H", "x": 10, "y": 31, "fontSize": 22, "fontWeight": 700},
+      "title": {"text": "Summary across animals", "x": 36, "y": 30, "fontSize": 17, "fontWeight": 700},
+      "plots": [
+        {"id": "accuracy", "title": "Decoding accuracy (%)", "box": {"x": 46, "y": 124, "width": 140, "height": 258}, "yDomain": [50, 100], "yTicks": [50, 60, 70, 80, 90, 100], "leftLabel": "Left\ndecode", "rightLabel": "Right\ndecode", "values": [[92,84],[88,85],[85,82],[82,86],[76,80],[69,68],[60,62],[84,89]]},
+        {"id": "rt", "title": "Median RT (ms)", "box": {"x": 220, "y": 124, "width": 126, "height": 258}, "yDomain": [300, 800], "yTicks": [300, 400, 500, 600, 700, 800], "leftLabel": "Left\nRT", "rightLabel": "Right\nRT", "values": [[650,720],[610,640],[565,620],[525,585],[505,600],[460,540],[430,455],[590,620]]}
+      ],
+      "caption": "n = 8 animals"
+    }
+  ],
+  "provenance": [
+    {"target": "panel layout", "confidence": "high", "note": "Panel boxes inferred from visible divider lines in the 1536x1024 composite."},
+    {"target": "numeric data", "confidence": "medium-low", "note": "Data values are visually approximated and recipe-generated for inspection only."},
+    {"target": "dense raster-like fields", "confidence": "medium", "note": "Heatmaps, dot fields, histograms, and trajectory clouds are synthetic generated fields, not source pixels."}
+  ],
+  "validation": {
+    "constraints": [
+      "Generated layers must not use drawImage, CSS background images, or source PNG pixels.",
+      "Source raster path may appear only in the clearly labeled QA/reference image element.",
+      "Panel boxes, plot boxes, ticks, labels, legends, colorbars, helper strips, and provenance are explicit in this JSON."
+    ]
+  }
+}

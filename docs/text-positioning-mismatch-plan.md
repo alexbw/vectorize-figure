@@ -54,12 +54,12 @@ Annotated current overlays are saved in `tmp/font-qa/mismatch-report/`.
 
 Applied in this pass:
 
-- Refined Panel A y-axis title and colorbar title manual anchors in `outputs/reference-01-place-code-opto-A-make-figure/reference-01-place-code-opto-A.json`.
-- Moved Panel B x-axis title baseline up in `outputs/reference-01-place-code-opto-B-make-figure/reference-01-place-code-opto-B.json`.
-- Nudged Panel C line legend labels up/left in `outputs/reference-01-place-code-opto-C-make-figure/reference-01-place-code-opto-C.json`.
-- Moved Panel F y-axis title right, x-axis titles up, legend labels up, and colorbar title left in `outputs/reference-01-place-code-opto-F-make-figure/reference-01-place-code-opto-F.json`.
-- Moved Decision A epoch titles down and timeline axis title down in `outputs/reference-02-decision-dynamics-A-make-figure/reference-02-decision-dynamics-A.json`.
-- Refined Decision B PC1 and PC3 axis-title manual anchors in `outputs/reference-02-decision-dynamics-B-make-figure/reference-02-decision-dynamics-B.json`.
+- Refined Panel A y-axis title and colorbar title manual anchors in `outputs/reference-01-place-code-opto-A-vectorize-figure/reference-01-place-code-opto-A.json`.
+- Moved Panel B x-axis title baseline up in `outputs/reference-01-place-code-opto-B-vectorize-figure/reference-01-place-code-opto-B.json`.
+- Nudged Panel C line legend labels up/left in `outputs/reference-01-place-code-opto-C-vectorize-figure/reference-01-place-code-opto-C.json`.
+- Moved Panel F y-axis title right, x-axis titles up, legend labels up, and colorbar title left in `outputs/reference-01-place-code-opto-F-vectorize-figure/reference-01-place-code-opto-F.json`.
+- Moved Decision A epoch titles down and timeline axis title down in `outputs/reference-02-decision-dynamics-A-vectorize-figure/reference-02-decision-dynamics-A.json`.
+- Refined Decision B PC1 and PC3 axis-title manual anchors in `outputs/reference-02-decision-dynamics-B-vectorize-figure/reference-02-decision-dynamics-B.json`.
 
 Post-fix overlays:
 

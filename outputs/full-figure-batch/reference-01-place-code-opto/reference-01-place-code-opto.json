@@ -1,0 +1,141 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-01-place-code-opto",
+  "source": {
+    "path": "../../../assets/full-reference/reference-01-place-code-opto.png",
+    "usage": "QA-only reference view; never used as a generated visual layer.",
+    "notes": "Full 1536 x 1024 raster was visually inspected. Dense data layers are procedural approximations, not source pixels."
+  },
+  "canvas": {"width": 1536, "height": 1024, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 16,
+    "color": "#000000",
+    "calibration": {"letterSpacing": 0, "lineHeight": 1.08}
+  },
+  "styles": {
+    "black": "#111111",
+    "gray": "#777777",
+    "lightGray": "#d7d7d7",
+    "teal": "#009aa0",
+    "tealFill": "rgba(0,154,160,0.25)",
+    "controlBand": "rgba(17,17,17,0.22)",
+    "axisWidth": 1.3,
+    "curveWidth": 3,
+    "titleSize": 18,
+    "labelSize": 16,
+    "tickSize": 16
+  },
+  "colorScales": [
+    {
+      "id": "viridisLike",
+      "domain": [-2.2, 2.2],
+      "palette": [
+        {"value": -2.2, "color": "#440154"},
+        {"value": -1.0, "color": "#31688e"},
+        {"value": 0.0, "color": "#35b779"},
+        {"value": 1.0, "color": "#fde725"},
+        {"value": 2.2, "color": "#fff43a"}
+      ]
+    },
+    {
+      "id": "rateHzLog",
+      "domain": [0.1, 20],
+      "palette": [
+        {"value": 0.1, "color": "#440154"},
+        {"value": 0.5, "color": "#31688e"},
+        {"value": 2, "color": "#35b779"},
+        {"value": 10, "color": "#fde725"},
+        {"value": 20, "color": "#fff43a"}
+      ]
+    }
+  ],
+  "panels": [
+    {
+      "id": "A",
+      "bbox": {"x": 0, "y": 0, "width": 500, "height": 505},
+      "label": {"text": "A", "x": 18, "y": 35, "fontSize": 26, "fontWeight": 700},
+      "title": {"text": "Hippocampal CA1 place cells (n = 162)", "x": 58, "y": 35, "fontSize": 18, "fontWeight": 700},
+      "plots": [
+        {"id": "A-control", "type": "heatmap", "title": {"text": "Control (no light)", "x": 155, "y": 73}, "plotBox": {"x": 70, "y": 91, "width": 170, "height": 354}, "x": {"domain": [0, 210], "ticks": [0, 100, 200], "label": "Position (cm)"}, "y": {"domain": [1, 162], "ticks": [1, 162], "label": "Neurons (sorted by peak position)"}, "mark": {"type": "sortedPlaceHeatmap", "seed": 12037, "peakStart": 15, "peakEnd": 196, "amplitude": 2.9, "baseline": -1.45, "noise": 0.28}},
+        {"id": "A-opto", "type": "heatmap", "title": {"lines": ["Optogenetic inhibition", "(ArchT, 532 nm)"], "x": 342, "y": 64}, "plotBox": {"x": 259, "y": 91, "width": 166, "height": 354}, "x": {"domain": [0, 210], "ticks": [0, 100, 200], "label": "Position (cm)"}, "y": {"domain": [1, 162], "ticks": [1, 162], "labelsVisible": false}, "mark": {"type": "sortedPlaceHeatmap", "seed": 92011, "peakStart": 20, "peakEnd": 190, "amplitude": 2.55, "baseline": -1.35, "noise": 0.30}}
+      ],
+      "colorbar": {"id": "A-z", "scale": "viridisLike", "box": {"x": 443, "y": 251, "width": 19, "height": 188}, "ticks": [-2, -1, 0, 1, 2], "title": ["Firing rate", "(z-scored)"]}
+    },
+    {
+      "id": "B",
+      "bbox": {"x": 512, "y": 0, "width": 430, "height": 500},
+      "label": {"text": "B", "x": 520, "y": 35, "fontSize": 26, "fontWeight": 700},
+      "title": {"text": "Population place fields", "x": 554, "y": 35, "fontSize": 18, "fontWeight": 700},
+      "plotBox": {"x": 570, "y": 70, "width": 350, "height": 368},
+      "x": {"domain": [0, 210], "ticks": [0, 50, 100, 150, 200], "label": "Position (cm)"},
+      "y": {"domain": [0, 20], "ticks": [0, 5, 10, 15, 20], "label": "Mean firing rate (Hz)"},
+      "legend": [{"label": "Control (no light)", "color": "#111111"}, {"label": "Optogenetic inhibition (ArchT)", "color": "#009aa0"}],
+      "marks": [
+        {"id": "B-control", "type": "populationCurves", "seed": 2231, "color": "#111111", "thinColor": "rgba(0,0,0,0.10)", "amplitude": 12, "baseline": 0.8, "band": 0.85},
+        {"id": "B-opto", "type": "populationCurves", "seed": 2232, "color": "#009aa0", "thinColor": "rgba(0,154,160,0.15)", "amplitude": 4.9, "baseline": 0.9, "band": 0.55}
+      ]
+    },
+    {
+      "id": "C",
+      "bbox": {"x": 965, "y": 0, "width": 560, "height": 500},
+      "label": {"text": "C", "x": 976, "y": 35, "fontSize": 26, "fontWeight": 700},
+      "title": {"text": "Event-aligned responses to light onset", "x": 1010, "y": 35, "fontSize": 18, "fontWeight": 700},
+      "rasterBox": {"x": 1072, "y": 72, "width": 440, "height": 190},
+      "plotBox": {"x": 1058, "y": 311, "width": 452, "height": 108},
+      "x": {"domain": [-1, 2], "ticks": [-1, -0.5, 0, 0.5, 1, 1.5, 2], "label": "Time from light onset (s)"},
+      "y": {"domain": [0, 30], "ticks": [0, 10, 20, 30], "label": "Mean firing rate\n(Hz)"},
+      "event": {"time": 0, "label": "532 nm light ON", "color": "#009aa0"},
+      "legend": [{"label": "Control (no light)", "color": "#111111"}, {"label": "Opto inhibition (ArchT)", "color": "#009aa0"}],
+      "marks": [{"type": "eventRaster", "seed": 3301}, {"type": "eventTimeSeries", "seed": 3302}]
+    },
+    {
+      "id": "D",
+      "bbox": {"x": 0, "y": 505, "width": 500, "height": 500},
+      "label": {"text": "D", "x": 18, "y": 539, "fontSize": 26, "fontWeight": 700},
+      "title": {"text": "Position decoding accuracy over time", "x": 56, "y": 539, "fontSize": 18, "fontWeight": 700},
+      "plotBox": {"x": 68, "y": 578, "width": 398, "height": 339},
+      "x": {"domain": [-2, 5], "ticks": [-2, -1, 0, 1, 2, 3, 4, 5], "label": "Time from light onset (s)"},
+      "y": {"domain": [33, 100], "ticks": [40, 50, 60, 70, 80, 90, 100], "label": "Decoding accuracy (%)"},
+      "chance": {"value": 40, "label": "Chance (20%)"},
+      "event": {"time": 0, "window": [0, 2], "label": "Light ON", "color": "#009aa0"},
+      "legend": [{"label": "Control (no light)", "color": "#111111"}, {"label": "Optogenetic inhibition (ArchT)", "color": "#009aa0"}],
+      "marks": [{"type": "decodingTimeSeries", "seed": 4411}]
+    },
+    {
+      "id": "E",
+      "bbox": {"x": 512, "y": 505, "width": 430, "height": 500},
+      "label": {"text": "E", "x": 514, "y": 539, "fontSize": 26, "fontWeight": 700},
+      "title": {"text": "Decoding accuracy reduction (0-2 s)", "x": 548, "y": 539, "fontSize": 18, "fontWeight": 700},
+      "subtitle": {"text": "Paired t-test: P = 3.1 x 10^-5", "x": 630, "y": 585, "fontSize": 16},
+      "plotBox": {"x": 578, "y": 578, "width": 308, "height": 302},
+      "x": {"categories": ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8"], "label": "Animal"},
+      "y": {"domain": [-30, 100], "ticks": [-20, 0, 20, 40, 60, 80, 100], "label": "Delta Accuracy (% points)\n(control - opto)"},
+      "summary": {"x": 918, "value": 16, "error": 10, "label": "All"},
+      "marks": [{"type": "pairedAnimalDots", "seed": 5512}]
+    },
+    {
+      "id": "F",
+      "bbox": {"x": 965, "y": 505, "width": 560, "height": 500},
+      "label": {"text": "F", "x": 976, "y": 539, "fontSize": 26, "fontWeight": 700},
+      "title": {"text": "Example spatial rate map (same session)", "x": 1012, "y": 539, "fontSize": 18, "fontWeight": 700},
+      "plots": [
+        {"id": "F-control", "title": {"text": "Control (no light)", "x": 1126, "y": 596}, "plotBox": {"x": 1028, "y": 608, "width": 196, "height": 280}, "mark": {"type": "spatialRateMap", "seed": 6601, "hotspots": [[65, 150, 16], [75, 75, 11], [120, 110, 5]]}},
+        {"id": "F-opto", "title": {"lines": ["Optogenetic inhibition", "(ArchT, 532 nm)"], "x": 1346, "y": 574}, "plotBox": {"x": 1243, "y": 608, "width": 207, "height": 280}, "mark": {"type": "spatialRateMap", "seed": 6602, "hotspots": [[110, 88, 8], [145, 75, 5]]}}
+      ],
+      "x": {"domain": [0, 210], "ticks": [0, 100, 200], "label": "X position (cm)"},
+      "y": {"domain": [0, 200], "ticks": [0, 50, 100, 150, 200], "label": "Y position (cm)"},
+      "colorbar": {"id": "F-rate", "scale": "rateHzLog", "box": {"x": 1467, "y": 608, "width": 18, "height": 280}, "ticks": [0.1, 0.2, 0.5, 1, 2, 5, 10, 20], "title": ["Rate", "(Hz)"]},
+      "legend": [{"label": "Arena boundary", "dash": "7 6"}, {"label": "Example trajectory", "color": "#ffffff"}]
+    }
+  ],
+  "provenance": [
+    {"target": "all", "note": "Independent first-pass reconstruction from visual inspection; no source raster pixels are reused in generated layers."},
+    {"target": "dense layers", "note": "Heatmaps, rasters, rate maps, trajectories, thin trial curves, and scatter positions are deterministic procedural recipes with editable seeds."},
+    {"target": "uncertainty", "note": "Exact data values, statistical samples, and trajectory paths were not recoverable from the raster and are approximate."}
+  ],
+  "constraints": [
+    {"id": "no-source-raster-as-generated-layer", "note": "HTML may load the source PNG only into the labeled QA/reference image element."},
+    {"id": "editable-structure", "note": "Axes, labels, legends, titles, ticks, annotations, colorbars, bands, and lines are SVG/DOM generated from this JSON."}
+  ]
+}

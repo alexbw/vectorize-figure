@@ -80,7 +80,7 @@ const {port} = server.address();
 
 try {
   for (const [name, spec] of cases) {
-    const url = `http://127.0.0.1:${port}/skills/make-figure/assets/hybrid-renderer-template.html?spec=${encodeURIComponent(spec)}&qaDom=1&fontQa=1`;
+    const url = `http://127.0.0.1:${port}/skills/vectorize-figure/assets/hybrid-renderer-template.html?spec=${encodeURIComponent(spec)}&qaDom=1&fontQa=1`;
     const qa = parseQa(await dumpDom(url));
     console.log(`\n## ${name}`);
     console.table(summarizeText(qa.textQa.rows));

@@ -1,0 +1,386 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-01-place-code-opto-A",
+  "source": {
+    "path": "../../assets/reference/reference-01-place-code-opto-A-reference.png",
+    "usage": "QA-only reference view; never used as a generated visual layer.",
+    "notes": "Native source is a 512 x 512 raster crop of panel A. Layout and heatmap recipes were visually inferred."
+  },
+  "canvas": {
+    "width": 512,
+    "height": 512,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 16,
+    "color": "#000000",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Roboto", "Noto Sans"],
+    "calibration": {
+      "fontStretch": "normal",
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "First-pass Arial/Helvetica approximation; title weights and source text boxes were tuned by visual inspection."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "panel-a.page",
+      "type": "pagePixels",
+      "domain": {"x": [0, 512], "y": [0, 512]}
+    },
+    {
+      "id": "heatmap.color.zscored",
+      "type": "colorScale",
+      "domain": [-2.2, 2.2],
+      "palette": [
+        {"value": -2.2, "color": "#440154"},
+        {"value": -1.2, "color": "#31688e"},
+        {"value": 0, "color": "#35b779"},
+        {"value": 1.2, "color": "#fde725"},
+        {"value": 2.2, "color": "#fff43a"}
+      ]
+    },
+    {
+      "id": "control.position-by-sorted-neuron",
+      "type": "cartesianHeatmap",
+      "xDomain": [0, 210],
+      "yDomain": [1, 162],
+      "rangeBox": {"x": 70, "y": 91, "width": 170, "height": 354},
+      "layoutOwner": "control.dataBbox"
+    },
+    {
+      "id": "opto.position-by-sorted-neuron",
+      "type": "cartesianHeatmap",
+      "xDomain": [0, 210],
+      "yDomain": [1, 162],
+      "rangeBox": {"x": 259, "y": 91, "width": 166, "height": 354},
+      "layoutOwner": "opto.dataBbox"
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-a",
+      "bbox": {"x": 0, "y": 0, "width": 512, "height": 512},
+      "label": {
+        "id": "panel-label",
+        "type": "text",
+        "text": "A",
+        "x": 17,
+        "y": 35,
+        "fontSize": 26,
+        "fontWeight": 700,
+        "anchor": "start",
+        "anchorTo": "panel-a",
+        "targetPoint": "top-left",
+        "anchorPoint": "top-left",
+        "sourceCalibrated": true,
+        "provenance": {"confidence": "high", "note": "Panel label position measured from the source crop."},
+        "sourceBox": {"x": 17, "y": 14, "width": 20, "height": 24}
+      },
+      "title": {
+        "id": "main-title",
+        "type": "text",
+        "text": "Hippocampal CA1 place cells (n = 162)",
+        "x": 58,
+        "y": 34,
+        "fontSize": 18,
+        "fontWeight": 700,
+        "anchor": "start",
+        "anchorTo": "panel-a",
+        "targetPoint": "top-left",
+        "anchorPoint": "top-left",
+        "sourceCalibrated": true,
+        "provenance": {"confidence": "high", "note": "Main title position measured from the source crop."},
+        "sourceBox": {"x": 58, "y": 19, "width": 286, "height": 18}
+      },
+      "plotGroups": [
+        {
+          "id": "control",
+          "type": "heatmapPlot",
+          "title": {
+            "id": "control-title",
+            "type": "text",
+            "text": "Control (no light)",
+            "x": 155,
+            "y": 73,
+            "fontSize": 16,
+            "fontWeight": 400,
+            "anchor": "middle",
+            "anchorTo": "control.dataBbox",
+            "targetPoint": "top-center",
+            "anchorPoint": "bottom-center",
+            "sourceCalibrated": true,
+            "provenance": {"confidence": "medium", "note": "Title is anchored to the control heatmap plot box with a source-calibrated label point."}
+          },
+          "dataBbox": {"x": 70, "y": 91, "width": 170, "height": 354},
+          "x": {
+            "domain": [0, 210],
+            "ticks": [
+              {"value": 0, "label": "0"},
+              {"value": 100, "label": "100"},
+              {"value": 200, "label": "200"}
+            ],
+            "label": {
+              "id": "control-x-axis-label",
+              "type": "text",
+              "text": "Position (cm)",
+              "x": 155,
+              "y": 488,
+              "fontSize": 17,
+              "anchor": "middle",
+              "anchorTo": "control.xAxis.tickLabelBand",
+              "targetPoint": "bottom-center",
+              "anchorPoint": "top-center",
+              "sourceCalibrated": true,
+              "provenance": {"confidence": "medium", "note": "Axis title is anchored below the control x-axis tick-label band; x/y preserves the source-calibrated resolved point."}
+            }
+          },
+          "y": {
+            "domain": [1, 162],
+            "ticks": [
+              {"value": 1, "label": "1"},
+              {"value": 162, "label": "162"}
+            ]
+          },
+          "marks": [
+            {
+              "id": "control-place-field-heatmap",
+              "type": "heatmap",
+              "renderer": "canvas",
+              "usesTransform": "control.position-by-sorted-neuron",
+              "ownerBox": "control.dataBbox",
+              "clipToOwner": true,
+              "colorScale": "heatmap.color.zscored",
+              "matrix": {"rows": 162, "columns": 211},
+              "recipe": {
+                "kind": "sortedPlaceFieldMatrix",
+                "seed": 12037,
+                "peakStartCm": 15,
+                "peakEndCm": 192,
+                "peakJitterCm": 8,
+                "peakWidthCm": 12,
+                "tailWidthCm": 25,
+                "amplitude": 2.85,
+                "baseline": -1.45,
+                "horizontalStreakRate": 0.44,
+                "textureNoise": 0.28,
+                "dropoutRate": 0.045
+              }
+            }
+          ]
+        },
+        {
+          "id": "opto",
+          "type": "heatmapPlot",
+          "title": {
+            "id": "opto-title",
+            "type": "text",
+            "lines": ["Optogenetic inhibition", "(ArchT, 532 nm)"],
+            "x": 342,
+            "y": 64,
+            "fontSize": 16,
+            "fontWeight": 400,
+            "anchor": "middle",
+            "lineHeight": 1.12,
+            "anchorTo": "opto.dataBbox",
+            "targetPoint": "top-center",
+            "anchorPoint": "bottom-center",
+            "sourceCalibrated": true,
+            "provenance": {"confidence": "medium", "note": "Multiline title is anchored to the optogenetic-inhibition heatmap plot box with source-calibrated resolved coordinates."}
+          },
+          "dataBbox": {"x": 259, "y": 91, "width": 166, "height": 354},
+          "x": {
+            "domain": [0, 210],
+            "ticks": [
+              {"value": 0, "label": "0"},
+              {"value": 100, "label": "100"},
+              {"value": 200, "label": "200"}
+            ],
+            "label": {
+              "id": "opto-x-axis-label",
+              "type": "text",
+              "text": "Position (cm)",
+              "x": 342,
+              "y": 488,
+              "fontSize": 17,
+              "anchor": "middle",
+              "anchorTo": "opto.xAxis.tickLabelBand",
+              "targetPoint": "bottom-center",
+              "anchorPoint": "top-center",
+              "sourceCalibrated": true,
+              "provenance": {"confidence": "medium", "note": "Axis title is anchored below the optogenetic-inhibition x-axis tick-label band; x/y preserves the source-calibrated resolved point."}
+            }
+          },
+          "y": {
+            "domain": [1, 162],
+            "ticks": [
+              {"value": 1, "label": "1"},
+              {"value": 162, "label": "162"}
+            ],
+            "labelsVisible": false
+          },
+          "marks": [
+            {
+              "id": "opto-place-field-heatmap",
+              "type": "heatmap",
+              "renderer": "canvas",
+              "usesTransform": "opto.position-by-sorted-neuron",
+              "ownerBox": "opto.dataBbox",
+              "clipToOwner": true,
+              "colorScale": "heatmap.color.zscored",
+              "matrix": {"rows": 162, "columns": 211},
+              "recipe": {
+                "kind": "sortedPlaceFieldMatrix",
+                "seed": 92011,
+                "peakStartCm": 20,
+                "peakEndCm": 188,
+                "peakJitterCm": 9,
+                "peakWidthCm": 11,
+                "tailWidthCm": 28,
+                "amplitude": 2.62,
+                "baseline": -1.35,
+                "horizontalStreakRate": 0.5,
+                "textureNoise": 0.3,
+                "dropoutRate": 0.055
+              }
+            }
+          ]
+        }
+      ],
+      "layoutObjects": [
+        {
+          "id": "control.dataBbox",
+          "type": "plotBox",
+          "parent": "panel-a",
+          "bbox": {"x": 70, "y": 91, "width": 170, "height": 354},
+          "children": ["control-place-field-heatmap", "control.xAxis.tickLabelBand"]
+        },
+        {
+          "id": "control.xAxis.tickLabelBand",
+          "type": "tickLabelBand",
+          "parent": "control.dataBbox",
+          "bbox": {"x": 70, "y": 445, "width": 170, "height": 49},
+          "anchorTo": "control.dataBbox"
+        },
+        {
+          "id": "opto.dataBbox",
+          "type": "plotBox",
+          "parent": "panel-a",
+          "bbox": {"x": 259, "y": 91, "width": 166, "height": 354},
+          "children": ["opto-place-field-heatmap", "opto.xAxis.tickLabelBand"]
+        },
+        {
+          "id": "opto.xAxis.tickLabelBand",
+          "type": "tickLabelBand",
+          "parent": "opto.dataBbox",
+          "bbox": {"x": 259, "y": 445, "width": 166, "height": 49},
+          "anchorTo": "opto.dataBbox"
+        },
+        {
+          "id": "shared-y-axis",
+          "type": "axis",
+          "orientation": "left",
+          "anchorPlot": "control",
+          "parent": "panel-a",
+          "anchorTo": "control.dataBbox",
+          "line": {"x1": 65, "y1": 91, "x2": 65, "y2": 445},
+          "tickLength": 5,
+          "label": {
+            "id": "shared-y-axis-label",
+            "type": "text",
+            "text": "Neurons (sorted by peak position)",
+            "x": 38,
+            "y": 267,
+            "fontSize": 17,
+            "rotation": -90,
+            "anchor": "middle",
+            "anchorTo": "shared-y-axis",
+            "targetPoint": "middle-left",
+            "anchorPoint": "center",
+            "sourceCalibrated": true,
+            "provenance": {"confidence": "medium", "note": "Y-axis title is anchored to the shared axis; x/y preserves the source-calibrated resolved point."}
+          }
+        },
+        {
+          "id": "firing-rate-colorbar",
+          "type": "colorbar",
+          "colorScale": "heatmap.color.zscored",
+          "parent": "panel-a",
+          "orientation": "vertical",
+          "tickSide": "right",
+          "tickDirection": "outward",
+          "tickLength": 5,
+          "labelAnchor": "start",
+          "titleAnchor": "top-left",
+          "bbox": {"x": 443, "y": 251, "width": 19, "height": 188},
+          "ticks": [
+            {"value": -2, "label": "-2"},
+            {"value": -1, "label": "-1"},
+            {"value": 0, "label": "0"},
+            {"value": 1, "label": "1"},
+            {"value": 2, "label": "2"}
+          ],
+          "title": {
+            "id": "firing-rate-colorbar-title",
+            "type": "text",
+            "lines": ["Firing rate", "(z-scored)"],
+            "x": 432,
+            "y": 220,
+            "fontSize": 16,
+            "anchor": "start",
+            "lineHeight": 1.08,
+            "anchorTo": "firing-rate-colorbar",
+            "targetPoint": "top-left",
+            "anchorPoint": "bottom-left",
+            "sourceCalibrated": true,
+            "provenance": {"confidence": "medium", "note": "Colorbar title is anchored to the colorbar and preserves the source-calibrated resolved text point."}
+          }
+        }
+      ],
+      "annotations": []
+    }
+  ],
+  "constraints": [
+    {
+      "id": "shared-y-axis-links-to-control-rows",
+      "type": "semanticRelationship",
+      "note": "The y-axis tick labels 1 and 162 use the same row transform as both heatmaps."
+    },
+    {
+      "id": "colorbar-links-to-heatmap-scale",
+      "type": "semanticRelationship",
+      "note": "The colorbar ticks and raster colors reference heatmap.color.zscored."
+    },
+    {
+      "id": "no-source-raster-as-generated-layer",
+      "type": "renderingConstraint",
+      "note": "Generated candidate uses procedural canvas heatmaps and SVG layout only; source raster is only loaded into a labeled reference view."
+    }
+  ],
+  "validation": {
+    "expectedCanvas": {"width": 512, "height": 512},
+    "expectedHeatmapCount": 2,
+    "expectedColorbarTickCount": 5,
+    "sourceReuseForbiddenPatterns": ["drawImage", "background-image", "background:"]
+  },
+  "confidence": [
+    {
+      "target": "heatmap matrices",
+      "confidence": "medium",
+      "note": "The diagonal place-field bands, horizontal streaks, and z-scored color distribution are synthetic and editable, not digitized from source pixels."
+    },
+    {
+      "target": "typography",
+      "confidence": "medium",
+      "note": "Font family and sizes are visually approximated; no OCR/font calibration harness was run for this first pass."
+    },
+    {
+      "target": "plot geometry",
+      "confidence": "high",
+      "note": "Panel dimensions, plot boxes, y-axis, x ticks, colorbar, and titles were estimated from native-resolution inspection."
+    }
+  ]
+}

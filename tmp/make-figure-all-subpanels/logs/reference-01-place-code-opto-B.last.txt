@@ -1,9 +1,0 @@
-Done. Created only the requested files:
-
-- [reference-01-place-code-opto-B.json](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-01-place-code-opto-B-make-figure-batch/reference-01-place-code-opto-B.json)
-- [reference-01-place-code-opto-B.html](/Users/alex/Code/scientific-figure-reconstruction/outputs/reference-01-place-code-opto-B-make-figure-batch/reference-01-place-code-opto-B.html)
-
-Verification passed:
-- JSON validity: `python3 -m json.tool` returned valid.
-- Forbidden generated-raster reuse scan: no matches for `drawImage`, `background-image`, source-backed CSS backgrounds, or `url(`.
-- Source raster references appear only in the semantic JSON source metadata and the clearly labeled QA/reference `<img>` view.

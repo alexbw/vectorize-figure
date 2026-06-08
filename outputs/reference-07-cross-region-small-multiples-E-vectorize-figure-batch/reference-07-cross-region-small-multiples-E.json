@@ -1,0 +1,162 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-07-cross-region-small-multiples-E",
+  "source": {
+    "path": "../../assets/reference/reference-07-cross-region-small-multiples-E-reference.png",
+    "usage": "QA/reference only; not used by the generated candidate renderer.",
+    "nativeWidth": 430,
+    "nativeHeight": 330,
+    "notes": "Single cropped panel E showing Cohen's d effect sizes with 95% confidence intervals and a right-side numeric table."
+  },
+  "canvas": {
+    "width": 430,
+    "height": 330,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "fontCandidates": ["Arial", "Helvetica", "Roboto Condensed", "Noto Sans"],
+    "calibration": {
+      "fontStretch": "condensed",
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "Source typography appears like a condensed sans-serif. Numeric table and row labels were manually sized for first-pass visual fit."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "panel-e.effect-size",
+      "type": "cartesian",
+      "xDomain": [-1, 1],
+      "yType": "categoricalRows",
+      "plotBbox": {"x": 38, "y": 78, "width": 260, "height": 236},
+      "rowCenters": [88, 112, 136, 159, 183, 207, 230, 254, 278, 302],
+      "zeroLineX": 168
+    }
+  ],
+  "styleTokens": {
+    "blue": "#0b58c8",
+    "green": "#13833c",
+    "orange": "#ff5a14",
+    "red": "#ff0000",
+    "axis": "#3c3c3c",
+    "zeroLine": "#cfcfcf"
+  },
+  "panels": [
+    {
+      "id": "panel-e",
+      "type": "forestPlotWithTable",
+      "bbox": {"x": 0, "y": 0, "width": 430, "height": 330},
+      "label": {
+        "id": "panel-e-label",
+        "text": "E",
+        "x": 7,
+        "y": 52,
+        "fontSize": 24,
+        "fontWeight": 700,
+        "sourceBox": {"x": 7, "y": 36, "width": 14, "height": 21},
+        "fit": "manual"
+      },
+      "title": {
+        "id": "panel-e-title",
+        "text": "Effect sizes (Cohen's d) with 95% CI",
+        "x": 38,
+        "y": 52,
+        "fontSize": 18,
+        "fontWeight": 700,
+        "sourceBox": {"x": 39, "y": 39, "width": 250, "height": 16},
+        "fit": "manual"
+      },
+      "plot": {
+        "id": "panel-e-plot",
+        "usesTransform": "panel-e.effect-size",
+        "dataBbox": {"x": 38, "y": 78, "width": 260, "height": 236},
+        "axes": {
+          "xAxis": {
+            "id": "panel-e-x-axis",
+            "line": {"x1": 38, "y1": 314, "x2": 298, "y2": 314},
+            "domain": [-1, 1],
+            "ticks": [
+              {"value": -1, "label": "1.0"},
+              {"value": -0.5, "label": "0.5"},
+              {"value": 0, "label": "0"},
+              {"value": 0.5, "label": "0.5"},
+              {"value": 1, "label": "1.0"}
+            ],
+            "tickLength": 4
+          },
+          "zeroLine": {
+            "id": "panel-e-zero-line",
+            "value": 0,
+            "line": {"x1": 168, "y1": 78, "x2": 168, "y2": 314},
+            "strokeDasharray": "4 3"
+          }
+        }
+      },
+      "data": {
+        "effectSizes": [
+          {"id": "row-01", "label": "CA1-CA3", "leftColor": "blue", "rightColor": "blue", "d": 0.44, "ci": [0.21, 0.67], "y": 88},
+          {"id": "row-02", "label": "CA1-DG", "leftColor": "blue", "rightColor": "blue", "d": 0.62, "ci": [0.37, 0.86], "y": 112},
+          {"id": "row-03", "label": "CA1-PFC", "leftColor": "blue", "rightColor": "orange", "d": 0.78, "ci": [0.52, 1.04], "y": 136},
+          {"id": "row-04", "label": "CA1-RSC", "leftColor": "blue", "rightColor": "red", "d": 0.68, "ci": [0.43, 0.94], "y": 159},
+          {"id": "row-05", "label": "CA3-DG", "leftColor": "blue", "rightColor": "green", "d": 0.22, "ci": [0.00, 0.45], "y": 183},
+          {"id": "row-06", "label": "CA3-PFC", "leftColor": "blue", "rightColor": "orange", "d": 0.36, "ci": [0.13, 0.59], "y": 207},
+          {"id": "row-07", "label": "CA3-RSC", "leftColor": "blue", "rightColor": "red", "d": 0.31, "ci": [0.08, 0.54], "y": 230},
+          {"id": "row-08", "label": "DG-PFC", "leftColor": "green", "rightColor": "orange", "d": 0.17, "ci": [-0.06, 0.40], "y": 254},
+          {"id": "row-09", "label": "DG-RSC", "leftColor": "green", "rightColor": "red", "d": 0.23, "ci": [0.00, 0.47], "y": 278},
+          {"id": "row-10", "label": "PFC-RSC", "leftColor": "orange", "rightColor": "red", "d": 0.45, "ci": [0.19, 0.71], "y": 302}
+        ]
+      },
+      "marks": [
+        {
+          "id": "panel-e-ci-series",
+          "type": "confidenceIntervalSeries",
+          "usesTransform": "panel-e.effect-size",
+          "dataRef": "panel-e.data.effectSizes",
+          "pointRadius": 3.6,
+          "lineWidth": 1.2,
+          "capHeight": 5
+        }
+      ],
+      "layoutObjects": [
+        {
+          "id": "panel-e-row-labels",
+          "type": "segmentedRowLabels",
+          "x": 8,
+          "fontSize": 14,
+          "fontWeight": 400,
+          "segments": "split around hyphen using leftColor/rightColor"
+        },
+        {
+          "id": "panel-e-table",
+          "type": "numericTable",
+          "columns": [
+            {"id": "d", "header": "d", "x": 326, "align": "middle"},
+            {"id": "ci", "header": "95% CI", "x": 382, "align": "middle"}
+          ],
+          "headerY": 72,
+          "rowValueY": "effectSizes.y",
+          "fontSize": 14
+        }
+      ],
+      "provenance": [
+        {"confidence": "high", "note": "Row labels, d values, and CI values transcribed from the source crop."},
+        {"confidence": "medium", "note": "Plot box, row y positions, and axis tick placement are visually estimated from the raster."},
+        {"confidence": "medium", "note": "The clipped rightmost CI for CA1-PFC is encoded beyond x-domain to preserve semantic interval value."}
+      ]
+    }
+  ],
+  "validation": {
+    "expectedRows": 10,
+    "expectedCiMarks": 10,
+    "expectedXAxisTicks": 5,
+    "candidateMustNotUseSourceRaster": true,
+    "sourceAllowedOnlyInQaReference": true
+  },
+  "confidence": [
+    {"field": "text typography", "level": "medium", "note": "First-pass condensed sans-serif approximation without automated font calibration."},
+    {"field": "geometry", "level": "medium", "note": "Manual reconstruction calibrated to visible source positions."}
+  ]
+}

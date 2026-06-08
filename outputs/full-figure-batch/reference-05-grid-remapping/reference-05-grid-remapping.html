@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-05-grid-remapping reconstruction</title>
+  <style>
+    html, body { margin: 0; background: #eeeeee; color: #111; font-family: Arial, Helvetica, sans-serif; }
+    header { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 10px 14px; background: #fff; border-bottom: 1px solid #ccc; }
+    h1 { margin: 0; font-size: 16px; line-height: 1.1; }
+    .note { margin-top: 3px; font-size: 12px; color: #555; }
+    .toggle { display: inline-flex; border: 1px solid #999; border-radius: 4px; overflow: hidden; }
+    .toggle button { border: 0; padding: 5px 10px; background: #fff; color: #111; font: inherit; font-size: 12px; cursor: pointer; }
+    .toggle button.active { background: #111; color: #fff; }
+    main { min-height: calc(100vh - 52px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
+    .frame { position: relative; background: #fff; border: 1px solid #d3d3d3; box-shadow: 0 1px 5px rgba(0,0,0,.08); overflow: hidden; }
+    .surface, .reference { position: absolute; inset: 0; }
+    .reference { display: none; width: 100%; height: 100%; object-fit: contain; background: #fff; }
+    .show-reference .surface { display: none; }
+    .show-reference .reference { display: block; }
+    svg, canvas { position: absolute; inset: 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="doc-title">reference-05-grid-remapping</h1>
+      <div class="note">Generated candidate is JSON-rendered SVG/canvas. Source image is QA/reference only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generated-button" class="active" type="button">Generated</button>
+      <button id="reference-button" type="button">Reference</button>
+    </div>
+  </header>
+  <main><div id="frame" class="frame"><div id="surface" class="surface"></div><img id="reference" class="reference" alt="QA-only source reference"></div></main>
+  <script>
+    const SPEC_URL = './reference-05-grid-remapping.json';
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const el = id => document.getElementById(id);
+    function s(tag, attrs = {}) { const n = document.createElementNS(SVG_NS, tag); for (const [k, v] of Object.entries(attrs)) if (v !== undefined && v !== null) n.setAttribute(k, v); return n; }
+    function add(p, tag, attrs = {}) { const n = s(tag, attrs); p.appendChild(n); return n; }
+    function txt(p, t, x, y, opt = {}) {
+      const n = add(p, 'text', {x, y, fill: opt.fill || '#111', 'font-family': opt.fontFamily || 'Arial, Helvetica, sans-serif', 'font-size': opt.size || 16, 'font-weight': opt.weight || 400, 'font-style': opt.style, 'text-anchor': opt.anchor || 'start', transform: opt.rotate ? `rotate(${opt.rotate} ${x} ${y})` : undefined, 'letter-spacing': 0});
+      String(t).split('\n').forEach((line, i) => { const sp = add(n, 'tspan', {x, dy: i ? (opt.size || 16) * 1.08 : 0}); sp.textContent = line; });
+      return n;
+    }
+    function rng(seed) { let t = seed >>> 0; return () => { t += 0x6D2B79F5; let r = Math.imul(t ^ t >>> 15, 1 | t); r ^= r + Math.imul(r ^ r >>> 7, 61 | r); return ((r ^ r >>> 14) >>> 0) / 4294967296; }; }
+    function map(v, d, r) { return r[0] + (v - d[0]) / (d[1] - d[0]) * (r[1] - r[0]); }
+    function rgb(hex) { return hex.match(/[0-9a-f]{2}/gi).map(h => parseInt(h, 16)); }
+    function color(spec, id, v) {
+      const sc = spec.colorScales.find(c => c.id === id), stops = sc.stops; let a = stops[0], b = stops[stops.length - 1];
+      for (let i = 0; i < stops.length - 1; i++) if (v >= stops[i].value && v <= stops[i + 1].value) { a = stops[i]; b = stops[i + 1]; break; }
+      const ar = rgb(a.color), br = rgb(b.color), t = Math.max(0, Math.min(1, (v - a.value) / (b.value - a.value || 1)));
+      return ar.map((c, i) => Math.round(c + (br[i] - c) * t));
+    }
+    function panel(svg, p) { const g = add(svg, 'g', {'data-panel': p.id, transform: `translate(${p.bbox.x} ${p.bbox.y})`}); txt(g, p.label.text, p.label.x, p.label.y, {size: p.label.fontSize, weight: p.label.fontWeight}); txt(g, p.title.text, p.title.x, p.title.y, {size: p.title.fontSize, weight: p.title.fontWeight}); return g; }
+    function axes(g, plot, opt = {}) {
+      const b = plot.dataBbox || plot, xd = plot.xDomain, yd = plot.yDomain;
+      const mx = v => map(v, xd, [b.x, b.x + b.width]), my = v => map(v, yd, [b.y + b.height, b.y]);
+      add(g, 'line', {x1: b.x, y1: b.y + b.height, x2: b.x + b.width, y2: b.y + b.height, stroke: '#111'});
+      add(g, 'line', {x1: b.x, y1: b.y, x2: b.x, y2: b.y + b.height, stroke: '#111'});
+      (plot.xTicks || []).forEach(v => { const x = mx(v); add(g, 'line', {x1: x, y1: b.y + b.height, x2: x, y2: b.y + b.height + 6, stroke: '#111'}); txt(g, String(v), x, b.y + b.height + 28, {size: 16, anchor: 'middle'}); });
+      (plot.yTicks || []).forEach(v => { const y = my(v); add(g, 'line', {x1: b.x - 6, y1: y, x2: b.x, y2: y, stroke: '#111'}); txt(g, String(v), b.x - 12, y + 5, {size: 16, anchor: 'end'}); });
+      if (plot.xLabel) txt(g, plot.xLabel, b.x + b.width / 2, b.y + b.height + 61, {size: 18, anchor: 'middle'});
+      if (plot.yLabel) txt(g, plot.yLabel, b.x - 60, b.y + b.height / 2, {size: 18, anchor: 'middle', rotate: -90});
+      if (opt.zeroLine) add(g, 'line', {x1: b.x, y1: my(0), x2: b.x + b.width, y2: my(0), stroke: '#111', 'stroke-dasharray': '5 4'});
+      return {x: mx, y: my, b};
+    }
+    function colorbar(g, spec, cb) {
+      const sc = spec.colorScales.find(c => c.id === cb.scale), x = cb.x, y = cb.y, w = cb.width, h = cb.height;
+      for (let i = 0; i < h; i++) { const v = map(i, [h, 0], sc.domain), c = color(spec, cb.scale, v); add(g, 'rect', {x, y: y + i, width: w, height: 1, fill: `rgb(${c[0]},${c[1]},${c[2]})`}); }
+      add(g, 'rect', {x, y, width: w, height: h, fill: 'none', stroke: '#111'});
+      txt(g, sc.label, x + w + 5, y - 18, {size: 14});
+      sc.ticks.forEach(t => { const yy = map(t.value, sc.domain, [y + h, y]); add(g, 'line', {x1: x + w, y1: yy, x2: x + w + 5, y2: yy, stroke: '#111'}); txt(g, t.label, x + w + 9, yy + 5, {size: 14}); });
+    }
+    function heatRect(ctx, spec, box, recipe, scale, ox, oy) {
+      const rr = rng(recipe.seed), img = ctx.createImageData(box.width, box.height);
+      for (let y = 0; y < box.height; y++) for (let x = 0; x < box.width; x++) {
+        const row = y / box.height, pos = map(x, [0, box.width], [0, 220]);
+        const ctr = recipe.ridgeCenter + Math.sin(row * Math.PI * 6) * recipe.wobble + Math.sin(row * Math.PI * 17) * recipe.wobble * .35;
+        let v = Math.exp(-Math.pow((pos - ctr) / recipe.ridgeWidth, 2)) * 14 + (rr() - .5) * 2.2 + (rr() > .985 ? rr() * 9 : 0);
+        v = Math.max(0, Math.min(15, v));
+        const c = color(spec, scale, v), o = (y * box.width + x) * 4; img.data[o] = c[0]; img.data[o + 1] = c[1]; img.data[o + 2] = c[2]; img.data[o + 3] = 255;
+      }
+      ctx.putImageData(img, ox + box.x, oy + box.y);
+    }
+    function matrix(ctx, spec, box, rec, scale, ox, oy) {
+      const rr = rng(rec.seed), img = ctx.createImageData(box.width, box.height);
+      for (let y = 0; y < box.height; y++) for (let x = 0; x < box.width; x++) {
+        const d = Math.abs(y - x * box.height / box.width + Math.sin(x * .08) * rec.diagonalJitter), ridge = Math.exp(-(d * d) / 32);
+        const v = scale === 'posterior' ? Math.max(.001, Math.min(1, .002 + ridge * .9 + (rr() > .996 ? .2 : 0))) : Math.max(0, Math.min(1, ridge + (rr() - .5) * .08));
+        const c = color(spec, scale, v), o = (y * box.width + x) * 4; img.data[o] = c[0]; img.data[o + 1] = c[1]; img.data[o + 2] = c[2]; img.data[o + 3] = 255;
+      }
+      ctx.putImageData(img, ox + box.x, oy + box.y);
+    }
+    function renderA(ctx, g, p, spec) {
+      const m = axes(g, p.plot);
+      const rr = rng(p.marks[0].seed); ctx.save(); ctx.translate(p.bbox.x, p.bbox.y);
+      for (let i = 0; i < p.marks[0].count; i++) {
+        const x = Math.max(0, Math.min(200, 100 + (rr() - .5) * 140 + (rr() - .5) * 80));
+        const y = Math.max(0, Math.min(360, p.marks[0].intercept + p.marks[0].slope * x + (rr() - .5) * p.marks[0].yJitter * 2));
+        ctx.fillStyle = rr() > .68 ? 'rgba(121,54,15,.42)' : 'rgba(0,0,0,.82)'; ctx.fillRect(m.x(x), m.y(y), 2, 2);
+      }
+      ctx.restore();
+      p.annotations.forEach(a => a.type === 'line' ? add(g, 'line', {x1: a.x1, y1: a.y1, x2: a.x2, y2: a.y2, stroke: a.stroke, 'stroke-width': a.strokeWidth}) : txt(g, a.text, a.x, a.y, {size: a.fontSize}));
+      colorbar(g, spec, p.colorbar);
+    }
+    function renderB(ctx, g, p, spec) {
+      p.heatmaps.forEach(h => { txt(g, h.title, h.bbox.x + h.bbox.width / 2, 75, {size: 18, fill: h.color, weight: 700, anchor: 'middle'}); add(g, 'line', {x1: h.underline[0], y1: h.underline[1], x2: h.underline[2], y2: h.underline[3], stroke: h.color, 'stroke-width': 1.4}); heatRect(ctx, spec, h.bbox, h, h.scale, p.bbox.x, p.bbox.y); add(g, 'rect', {x: h.bbox.x, y: h.bbox.y, width: h.bbox.width, height: h.bbox.height, fill: 'none', stroke: '#111'}); p.plot.xTicks.forEach(v => txt(g, String(v), map(v, p.plot.xDomain, [h.bbox.x, h.bbox.x + h.bbox.width]), h.bbox.y + h.bbox.height + 28, {size: 16, anchor: 'middle'})); });
+      p.plot.yTicks.forEach(v => txt(g, String(v), 28, map(v, p.plot.yDomain, [379, 99]) + 5, {size: 16, anchor: 'end'}));
+      txt(g, p.plot.yLabel, 0, 240, {size: 18, anchor: 'middle', rotate: -90}); txt(g, p.plot.xLabel, 222, 440, {size: 18, anchor: 'middle'}); colorbar(g, spec, p.colorbar);
+    }
+    function renderC(ctx, g, p, spec) {
+      p.maps.forEach(mm => { txt(g, mm.title, mm.bbox.x + mm.bbox.width / 2, 92, {size: 18, fill: mm.color, weight: 700, anchor: 'middle'}); matrix(ctx, spec, mm.bbox, {seed: mm.seed, diagonalJitter: 2}, 'norm-counts', p.bbox.x, p.bbox.y); const rr = rng(mm.seed + 12); for (let i = 0; i < 38; i++) { const ang = mm.latticeAngle + i * Math.PI / 3 + (Math.floor(i / 6) * .16); const rad = 28 + (i % 6) * 14; const cx = mm.bbox.x + mm.bbox.width / 2 + Math.cos(ang) * rad; const cy = mm.bbox.y + mm.bbox.height / 2 + Math.sin(ang) * rad * .82; add(g, 'ellipse', {cx, cy, rx: 6 + rr() * 4, ry: 5 + rr() * 4, fill: '#d07224', opacity: .38}); } add(g, 'rect', {x: mm.bbox.x, y: mm.bbox.y, width: mm.bbox.width, height: mm.bbox.height, fill: 'none', stroke: '#111'}); });
+      const pl = p.plot; [-60,0,60].forEach(v => { txt(g, String(v), map(v, pl.xDomain, [57,230]), 357, {size: 16, anchor: 'middle'}); txt(g, String(v), map(v, pl.xDomain, [242,425]), 357, {size: 16, anchor: 'middle'}); txt(g, String(v), 45, map(v, pl.yDomain, [333,118]) + 5, {size: 16, anchor: 'end'}); });
+      txt(g, pl.xLabel, 142, 393, {size: 18, anchor: 'middle'}); txt(g, pl.xLabel, 333, 393, {size: 18, anchor: 'middle'}); txt(g, pl.yLabel, 10, 226, {size: 18, rotate: -90, anchor: 'middle'}); colorbar(g, spec, p.colorbar);
+    }
+    function violin(g, x, b, domain, colorFill, seed, mean, sd, delta) {
+      const rr = rng(seed), vals = Array.from({length: delta ? 62 : 156}, () => Math.max(domain[0], Math.min(domain[1], mean + (rr() + rr() + rr() - 1.5) * sd * 1.8)));
+      const y = v => map(v, domain, [b.y + b.height, b.y]);
+      let d = ''; for (let i = 0; i <= 80; i++) { const v = map(i, [0,80], domain); const w = (18 + 34 * Math.exp(-Math.pow((v - mean) / sd, 2))) * (delta ? .65 : 1); d += `${i ? 'L' : 'M'} ${x - w} ${y(v)}`; } for (let i = 80; i >= 0; i--) { const v = map(i, [0,80], domain); const w = (18 + 34 * Math.exp(-Math.pow((v - mean) / sd, 2))) * (delta ? .65 : 1); d += ` L ${x + w} ${y(v)}`; } d += ' Z';
+      add(g, 'path', {d, fill: colorFill, opacity: .42, stroke: colorFill, 'stroke-width': 1.5});
+      vals.forEach(v => add(g, 'circle', {cx: x + (rr() - .5) * (delta ? 34 : 68), cy: y(v), r: delta ? 2.2 : 2.4, fill: colorFill, opacity: .58}));
+      add(g, 'line', {x1: x, y1: y(domain[0]), x2: x, y2: y(domain[1]), stroke: '#111'}); add(g, 'circle', {cx: x, cy: y(mean), r: 6, fill: '#fff', stroke: '#111', 'stroke-width': 1.5});
+    }
+    function renderD(g, p) {
+      const m = axes(g, p.plot, {zeroLine: true}); violin(g, 150, p.plot.dataBbox, p.plot.yDomain, '#7a320f', 5401, .26, .45); violin(g, 322, p.plot.dataBbox, p.plot.yDomain, '#00777d', 5402, .29, .43);
+      p.plot.xCategories.forEach(c => txt(g, c.label, c.x, 390, {size: 16, fill: c.color, anchor: 'middle'})); p.annotations.forEach(a => a.type === 'line' ? add(g, 'line', {x1:a.x1,y1:a.y1,x2:a.x2,y2:a.y2,stroke:'#111'}) : txt(g, a.text, a.x, a.y, {size:a.fontSize, style:a.fontStyle, anchor:a.anchor}));
+    }
+    function renderE(ctx, g, p, spec) {
+      p.matrices.forEach(mm => { txt(g, mm.title, mm.bbox.x + mm.bbox.width / 2, 78, {size: 18, fill: mm.color, anchor: 'middle'}); matrix(ctx, spec, mm.bbox, mm, 'posterior', p.bbox.x, p.bbox.y); add(g, 'rect', {x:mm.bbox.x,y:mm.bbox.y,width:mm.bbox.width,height:mm.bbox.height,fill:'none',stroke:'#111'}); p.plot.xTicks.forEach(v => txt(g, String(v), map(v,p.plot.xDomain,[mm.bbox.x,mm.bbox.x+mm.bbox.width]), 348, {size:16,anchor:'middle'})); });
+      p.plot.yTicks.forEach(v => txt(g, String(v), 34, map(v,p.plot.yDomain,[322,112])+5, {size:16,anchor:'end'})); txt(g,p.plot.yLabel,0,217,{size:18,rotate:-90,anchor:'middle'}); txt(g,p.plot.xLabel,212,385,{size:18,anchor:'middle'}); colorbar(g,spec,p.colorbar);
+    }
+    function renderF(g, p) {
+      const m = axes(g, p.pairedPlot, {zeroLine: true}), rr = rng(p.pairedPlot.seed);
+      for (let i = 0; i < p.pairedPlot.n; i++) { const a = Math.max(-1.2, Math.min(1.35, .42 + (rr()+rr()+rr()-1.5)*.75)); const b = Math.max(-1, Math.min(1.05, a - .38 + (rr()-.5)*.75)); add(g,'line',{x1:105,y1:m.y(a),x2:295,y2:m.y(b),stroke:'#999','stroke-width':1}); add(g,'circle',{cx:105,cy:m.y(a),r:3.2,fill:'#7a320f'}); add(g,'circle',{cx:295,cy:m.y(b),r:3.2,fill:'#00777d'}); }
+      p.pairedPlot.categories.forEach(c => txt(g,c.label,c.x,390,{size:17,fill:c.color,anchor:'middle'}));
+      txt(g,p.deltaPlot.title,445,30,{size:16,anchor:'middle'}); txt(g,p.deltaPlot.pText,445,95,{size:16,style:'italic',anchor:'middle'}); const b = p.deltaPlot.dataBbox; axes(g,{dataBbox:b,xDomain:[0,1],yDomain:p.deltaPlot.yDomain,xTicks:[],yTicks:p.deltaPlot.yTicks}, {zeroLine:true}); violin(g,447,b,p.deltaPlot.yDomain,'#00777d',p.deltaPlot.seed,-.12,.33,true);
+    }
+    function render(spec) {
+      const frame = el('frame'), surface = el('surface'); frame.style.width = spec.canvas.width + 'px'; frame.style.height = spec.canvas.height + 'px'; surface.innerHTML = '';
+      const canvas = document.createElement('canvas'); canvas.width = spec.canvas.width; canvas.height = spec.canvas.height; surface.appendChild(canvas);
+      const ctx = canvas.getContext('2d'); ctx.fillStyle = spec.canvas.background; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const svg = s('svg', {width: spec.canvas.width, height: spec.canvas.height, viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`}); surface.appendChild(svg);
+      txt(svg, 'Grid cell remapping across virtual environments', 768, 43, {size: 33, weight: 700, anchor: 'middle'});
+      spec.panels.forEach(p => { const g = panel(svg, p); if (p.id === 'A') renderA(ctx,g,p,spec); if (p.id === 'B') renderB(ctx,g,p,spec); if (p.id === 'C') renderC(ctx,g,p,spec); if (p.id === 'D') renderD(g,p); if (p.id === 'E') renderE(ctx,g,p,spec); if (p.id === 'F') renderF(g,p); });
+      el('reference').src = spec.source.path; el('doc-title').textContent = spec.id;
+    }
+    fetch(SPEC_URL).then(r => r.json()).then(render);
+    el('generated-button').onclick = () => { el('frame').classList.remove('show-reference'); el('generated-button').classList.add('active'); el('reference-button').classList.remove('active'); };
+    el('reference-button').onclick = () => { el('frame').classList.add('show-reference'); el('reference-button').classList.add('active'); el('generated-button').classList.remove('active'); };
+  </script>
+</body>
+</html>

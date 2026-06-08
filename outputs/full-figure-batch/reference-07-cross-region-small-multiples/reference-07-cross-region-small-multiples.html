@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-07-cross-region-small-multiples reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #e8e8e8;
+      color: #111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #fff;
+      border-bottom: 1px solid #c8c8c8;
+    }
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.2;
+    }
+    .note {
+      margin-top: 2px;
+      color: #555;
+      font-size: 12px;
+    }
+    .toggle {
+      display: inline-flex;
+      overflow: hidden;
+      border: 1px solid #888;
+      border-radius: 4px;
+      background: #fff;
+    }
+    .toggle button {
+      border: 0;
+      background: #fff;
+      padding: 6px 11px;
+      font: inherit;
+      cursor: pointer;
+    }
+    .toggle button.active {
+      background: #111;
+      color: #fff;
+    }
+    main {
+      display: grid;
+      place-items: start center;
+      padding: 16px;
+      overflow: auto;
+    }
+    .frame {
+      position: relative;
+      background: #fff;
+      border: 1px solid #c8c8c8;
+      box-shadow: 0 1px 7px rgba(0, 0, 0, 0.16);
+    }
+    .surface, .reference {
+      position: absolute;
+      inset: 0;
+    }
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .qa-label {
+      display: none;
+      position: absolute;
+      left: 14px;
+      top: 14px;
+      padding: 5px 8px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid #777;
+      font-size: 12px;
+      font-weight: 700;
+      z-index: 3;
+    }
+    .show-reference .surface {
+      display: none;
+    }
+    .show-reference .reference,
+    .show-reference .qa-label {
+      display: block;
+    }
+    svg, canvas {
+      position: absolute;
+      inset: 0;
+    }
+    text {
+      font-family: "Arial Narrow", "Helvetica Neue Condensed", Arial, Helvetica, sans-serif;
+      letter-spacing: 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="doc-title">reference-07-cross-region-small-multiples</h1>
+      <div class="note">Generated candidate is procedural SVG/canvas from JSON. Source raster is QA/reference only.</div>
+    </div>
+    <div class="toggle" aria-label="view mode">
+      <button id="generated-button" class="active" type="button">Generated</button>
+      <button id="reference-button" type="button">QA Reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA-only source reference">
+      <div class="qa-label">QA reference only: source raster is not used in generated layers</div>
+    </div>
+  </main>
+
+  <script>
+    const SPEC_URL = "./reference-07-cross-region-small-multiples.json";
+    const SVG_NS = "http://www.w3.org/2000/svg";
+
+    function byId(id) {
+      return document.getElementById(id);
+    }
+
+    function svgEl(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== null && value !== undefined) {
+          node.setAttribute(key, value);
+        }
+      }
+      return node;
+    }
+
+    function add(parent, tag, attrs = {}) {
+      const node = svgEl(tag, attrs);
+      parent.appendChild(node);
+      return node;
+    }
+
+    function text(parent, value, x, y, options = {}) {
+      const node = add(parent, "text", {
+        x,
+        y,
+        fill: options.fill || "#111",
+        "font-size": options.size || 12,
+        "font-weight": options.weight || 400,
+        "text-anchor": options.anchor || "start",
+        transform: options.rotate ? `rotate(${options.rotate} ${x} ${y})` : null
+      });
+      const lines = String(value).split("\\n");
+      for (let i = 0; i < lines.length; i += 1) {
+        const tspan = add(node, "tspan", {
+          x,
+          dy: i === 0 ? 0 : (options.size || 12) * 1.1
+        });
+        tspan.textContent = lines[i];
+      }
+      return node;
+    }
+
+    function rng(seed) {
+      let state = seed >>> 0;
+      return function next() {
+        state += 0x6D2B79F5;
+        let r = Math.imul(state ^ (state >>> 15), 1 | state);
+        r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+        return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function map(value, domain, range) {
+      return range[0] + ((value - domain[0]) / (domain[1] - domain[0])) * (range[1] - range[0]);
+    }
+
+    function clamp01(value) {
+      return Math.max(0, Math.min(1, value));
+    }
+
+    function blueScale(value) {
+      const t = clamp01(value);
+      if (t > 0.55) {
+        const u = (t - 0.55) / 0.45;
+        return `rgb(${Math.round(213 - 205 * u)},${Math.round(227 - 195 * u)},${Math.round(245 - 134 * u)})`;
+      }
+      const u = t / 0.55;
+      return `rgb(${Math.round(255 - 42 * u)},${Math.round(255 - 28 * u)},${Math.round(255 - 10 * u)})`;
+    }
+
+    function heatScale(value) {
+      const bounded = Math.max(-2, Math.min(2, value));
+      const t = (bounded + 2) / 4;
+      if (t < 0.55) {
+        const u = t / 0.55;
+        return `rgb(${Math.round(9 + 176 * u)},${Math.round(6 + 28 * u)},${Math.round(25 + 89 * u)})`;
+      }
+      const u = (t - 0.55) / 0.45;
+      return `rgb(${Math.round(185 + 70 * u)},${Math.round(34 + 206 * u)},${Math.round(114 - 8 * u)})`;
+    }
+
+    function drawAxes(group, box, xDomain, xTicks, yDomain, yTicks, xLabel, yLabel, zeroLine) {
+      add(group, "line", {
+        x1: box.x,
+        y1: box.y + box.height,
+        x2: box.x + box.width,
+        y2: box.y + box.height,
+        stroke: "#111"
+      });
+      if (yDomain) {
+        add(group, "line", {
+          x1: box.x,
+          y1: box.y,
+          x2: box.x,
+          y2: box.y + box.height,
+          stroke: "#111"
+        });
+      }
+      for (const tick of xTicks || []) {
+        const x = map(tick, xDomain, [box.x, box.x + box.width]);
+        add(group, "line", {
+          x1: x,
+          y1: box.y + box.height,
+          x2: x,
+          y2: box.y + box.height + 5,
+          stroke: "#111"
+        });
+        text(group, String(tick), x, box.y + box.height + 20, { size: 12, anchor: "middle" });
+      }
+      for (const tick of yTicks || []) {
+        const y = map(tick, yDomain, [box.y + box.height, box.y]);
+        add(group, "line", { x1: box.x - 5, y1: y, x2: box.x, y2: y, stroke: "#111" });
+        text(group, String(tick), box.x - 9, y + 4, { size: 12, anchor: "end" });
+      }
+      if (zeroLine !== null && zeroLine !== undefined && yDomain) {
+        const y = map(zeroLine, yDomain, [box.y + box.height, box.y]);
+        add(group, "line", {
+          x1: box.x,
+          y1: y,
+          x2: box.x + box.width,
+          y2: y,
+          stroke: "#666",
+          "stroke-dasharray": "4 3"
+        });
+      }
+      if (xLabel) {
+        text(group, xLabel, box.x + box.width / 2, box.y + box.height + 40, { size: 13, anchor: "middle" });
+      }
+      if (yLabel) {
+        text(group, yLabel, box.x - 43, box.y + box.height / 2, { size: 13, anchor: "middle", rotate: -90 });
+      }
+    }
+
+    function drawColorbar(group, colorbar, kind) {
+      const box = colorbar.bbox;
+      for (let i = 0; i < box.width; i += 1) {
+        const color = kind === "heat" ? heatScale(map(i, [0, box.width], [-2, 2])) : blueScale(i / box.width);
+        add(group, "rect", { x: box.x + i, y: box.y, width: 1, height: box.height, fill: color });
+      }
+      add(group, "rect", { x: box.x, y: box.y, width: box.width, height: box.height, fill: "none", stroke: "#111" });
+      if (colorbar.label) {
+        text(group, colorbar.label, box.x + box.width / 2, box.y - 8, { size: 12, anchor: "middle" });
+      }
+      for (const tick of colorbar.ticks || []) {
+        const domain = kind === "heat" ? [-2, 2] : [0, 1];
+        const x = map(tick, domain, [box.x, box.x + box.width]);
+        text(group, String(tick), x, box.y + box.height + 18, { size: 12, anchor: "middle" });
+      }
+    }
+
+    function panelGroup(svg, panel) {
+      text(svg, panel.label.text, panel.label.x, panel.label.y, {
+        size: panel.label.fontSize,
+        weight: panel.label.fontWeight || 700
+      });
+      text(svg, panel.title.text, panel.title.x, panel.title.y, {
+        size: panel.title.fontSize,
+        weight: panel.title.fontWeight || 700
+      });
+      return add(svg, "g", {
+        "data-panel": panel.id,
+        transform: `translate(${panel.bbox.x} ${panel.bbox.y})`
+      });
+    }
+
+    function renderHeatmaps(ctx, group, panel) {
+      text(group, "Position (cm)", 230, 49, { size: 13, anchor: "middle" });
+      for (const tick of [0, 100, 200, 300]) {
+        text(group, String(tick), map(tick, [0, 300], [72, 388]), 69, { size: 12, anchor: "middle" });
+      }
+      for (const header of panel.plot.headers) {
+        text(group, header.text, header.x, header.y, { size: 12 });
+      }
+      for (const row of panel.heatmapRows) {
+        text(group, row.region, 22, row.bbox.y + 20, { size: 15, fill: row.labelColor });
+        text(group, `n=${row.nCells}`, 20, row.bbox.y + 40, { size: 12 });
+        const random = rng(row.recipe.seed);
+        for (let y = 0; y < row.bbox.height; y += 1) {
+          for (let x = 0; x < row.bbox.width; x += 2) {
+            const position = map(x, [0, row.bbox.width], [0, 300]);
+            let value = -1.85 + (random() - 0.5) * 1.15;
+            for (const hotspot of row.recipe.hotspots) {
+              const centerY = row.bbox.height * (0.2 + 0.6 * random());
+              const dx = position - hotspot;
+              const dy = y - centerY;
+              value += 2.35 * Math.exp(-((dx * dx) / 720)) * Math.exp(-((dy * dy) / 900));
+            }
+            ctx.fillStyle = heatScale(value);
+            ctx.fillRect(panel.bbox.x + row.bbox.x + x, panel.bbox.y + row.bbox.y + y, 2, 1);
+          }
+        }
+        add(group, "rect", {
+          x: row.bbox.x,
+          y: row.bbox.y,
+          width: row.bbox.width,
+          height: row.bbox.height,
+          fill: "none",
+          stroke: "#eeeeee"
+        });
+      }
+      if (panel.colorbar) {
+        drawColorbar(group, panel.colorbar, "heat");
+      }
+    }
+
+    function renderRidges(group, panel) {
+      for (const ridge of panel.groups) {
+        text(group, ridge.id, 20, ridge.label.y, { size: 14, fill: ridge.color });
+        text(group, `${ridge.n} cells`, 310, ridge.baselineY - 5, { size: 12 });
+        add(group, "line", { x1: 10, y1: ridge.baselineY, x2: 303, y2: ridge.baselineY, stroke: ridge.color });
+        for (let curve = 0; curve < 7; curve += 1) {
+          const random = rng(ridge.seed + curve);
+          let d = `M 10 ${ridge.baselineY}`;
+          for (let i = 0; i <= 170; i += 1) {
+            const x = map(i, [0, 170], [10, 303]);
+            const pos = map(i, [0, 170], [0, 315]);
+            let amp = 0;
+            for (let peak = 0; peak < 5; peak += 1) {
+              const center = 25 + random() * 275;
+              const width = 5 + random() * 10;
+              const height = 8 + random() * 40;
+              const dx = pos - center;
+              amp += height * Math.exp(-((dx * dx) / (2 * width * width)));
+            }
+            const y = ridge.baselineY - amp * (1 - curve * 0.11);
+            d += ` L ${x.toFixed(1)} ${y.toFixed(1)}`;
+          }
+          d += ` L 303 ${ridge.baselineY}`;
+          add(group, "path", { d, fill: ridge.color, opacity: 0.12, stroke: ridge.color, "stroke-width": 1 });
+        }
+      }
+      drawAxes(group, { x: 10, y: 52, width: 293, height: 292 }, [0, 315], [0, 100, 200, 300], null, null, "Position (cm)");
+    }
+
+    function renderLines(group, panel) {
+      const box = panel.plot.dataBbox;
+      drawAxes(
+        group,
+        box,
+        panel.plot.x.domain,
+        panel.plot.x.ticks,
+        panel.plot.y.domain,
+        panel.plot.y.ticks,
+        panel.plot.x.label.text,
+        panel.plot.y.label.text,
+        0
+      );
+      for (let seriesIndex = 0; seriesIndex < panel.series.length; seriesIndex += 1) {
+        const series = panel.series[seriesIndex];
+        const random = rng(series.seed);
+        let d = "";
+        for (let i = 0; i <= 80; i += 1) {
+          const xValue = i * 12.5;
+          const base = series.asymptote * (1 - Math.exp(-(xValue / 55)));
+          const yValue = base + 0.035 * Math.sin(i / 4) + (random() - 0.5) * 0.04;
+          const x = map(xValue, [0, 1000], [box.x, box.x + box.width]);
+          const y = map(yValue, [-0.2, 1], [box.y + box.height, box.y]);
+          d += `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)} `;
+        }
+        add(group, "path", { d, fill: "none", stroke: series.color, "stroke-width": 1.4 });
+        text(group, series.region, 268, 63 + seriesIndex * 17, { size: 12, fill: series.color });
+      }
+      if (panel.annotation) {
+        text(group, panel.annotation.text, panel.annotation.x, panel.annotation.y, { size: 12 });
+      }
+    }
+
+    function renderMatrix(group, panel, regions) {
+      const box = panel.plot.dataBbox;
+      const cellW = box.width / 5;
+      const cellH = box.height / 5;
+      for (let i = 0; i < regions.length; i += 1) {
+        text(group, regions[i].id, box.x + i * cellW + cellW / 2, box.y + box.height + 20, {
+          size: 13,
+          fill: regions[i].color,
+          anchor: "middle"
+        });
+        text(group, regions[i].id, box.x - 12, box.y + i * cellH + 24, {
+          size: 13,
+          fill: regions[i].color,
+          anchor: "end"
+        });
+      }
+      if (panel.cornerLabel) {
+        text(group, panel.cornerLabel, 8, 50, { size: 12 });
+      }
+      for (let row = 0; row < panel.matrix.length; row += 1) {
+        for (let col = 0; col < panel.matrix[row].length; col += 1) {
+          const value = panel.matrix[row][col];
+          add(group, "rect", {
+            x: box.x + col * cellW,
+            y: box.y + row * cellH,
+            width: cellW,
+            height: cellH,
+            fill: value === null ? "#f7f7f7" : blueScale(value),
+            stroke: "#d8e0ea"
+          });
+          text(group, value === null ? "-" : value.toFixed(2), box.x + col * cellW + cellW / 2, box.y + row * cellH + 29, {
+            size: 12,
+            anchor: "middle",
+            fill: value !== null && value > 0.75 ? "#fff" : "#111"
+          });
+        }
+      }
+      if (panel.colorbar) {
+        drawColorbar(group, panel.colorbar, "blue");
+      }
+    }
+
+    function regionColor(regions, name, fallback) {
+      const region = regions.find(item => item.id === name);
+      return region ? region.color : fallback;
+    }
+
+    function renderForest(group, panel, regions) {
+      const box = panel.plot.dataBbox;
+      const domain = panel.plot.x.domain;
+      drawAxes(group, box, domain, panel.plot.x.ticks, null, null, panel.plot.x.label.text);
+      const zero = domain[0] <= 0 && domain[1] >= 0 ? 0 : null;
+      if (zero !== null) {
+        const x = map(zero, domain, [box.x, box.x + box.width]);
+        add(group, "line", { x1: x, y1: box.y, x2: x, y2: box.y + box.height, stroke: "#bbbbbb", "stroke-dasharray": "4 3" });
+      }
+      const rows = panel.plot.rows || regions.map(item => item.id);
+      for (let i = 0; i < rows.length; i += 1) {
+        const y = box.y + 18 + i * (box.height / rows.length);
+        const value = panel.plot.values[i];
+        const ci = panel.plot.ci[i];
+        const color = rows[i].includes("-") ? regionColor(regions, rows[i].split("-")[0], "#1565c0") : regionColor(regions, rows[i], "#1565c0");
+        text(group, rows[i], 8, y + 4, { size: 12, fill: color });
+        add(group, "line", {
+          x1: map(ci[0], domain, [box.x, box.x + box.width]),
+          y1: y,
+          x2: map(ci[1], domain, [box.x, box.x + box.width]),
+          y2: y,
+          stroke: color
+        });
+        add(group, "circle", { cx: map(value, domain, [box.x, box.x + box.width]), cy: y, r: 3.5, fill: color });
+        if (panel.kind !== "forest") {
+          text(group, `${value.toFixed(2)} [${ci[0].toFixed(2)}, ${ci[1].toFixed(2)}]`, box.x + box.width + 18, y + 4, { size: 12 });
+        }
+      }
+    }
+
+    function renderRaster(group, panel) {
+      for (const row of panel.rows) {
+        text(group, row.id, 17, row.bbox.y + 15, { size: 13, fill: row.color });
+        text(group, `(${row.n})`, 17, row.bbox.y + 31, { size: 11 });
+        add(group, "rect", {
+          x: row.bbox.x,
+          y: row.bbox.y,
+          width: row.bbox.width,
+          height: row.bbox.height,
+          fill: "#fff",
+          stroke: "#cccccc"
+        });
+        const random = rng(row.seed);
+        for (let i = 0; i < 120; i += 1) {
+          const x = row.bbox.x + random() * row.bbox.width;
+          const y = row.bbox.y + 3 + random() * (row.bbox.height - 8);
+          add(group, "line", { x1: x, y1: y, x2: x, y2: y + 5, stroke: "#111", "stroke-width": 0.8 });
+        }
+      }
+      drawAxes(group, { x: 55, y: 41, width: 315, height: 235 }, [0, 50], panel.plot.x.ticks, null, null, "Time (s)");
+    }
+
+    function renderResiduals(ctx, group, panel) {
+      for (const mapSpec of panel.maps) {
+        text(group, mapSpec.id, mapSpec.bbox.x + mapSpec.bbox.width / 2, 34, {
+          size: 14,
+          fill: mapSpec.color,
+          anchor: "middle"
+        });
+        const random = rng(mapSpec.seed);
+        for (let y = 0; y < mapSpec.bbox.height; y += 2) {
+          for (let x = 0; x < mapSpec.bbox.width; x += 2) {
+            const wave = Math.sin(x / 22 + y / 31 + mapSpec.seed) * 0.9;
+            const value = wave + (random() - 0.5) * 1.4;
+            const alpha = Math.min(0.8, Math.abs(value) / 2);
+            ctx.fillStyle = value > 0 ? `rgba(239,69,51,${alpha})` : `rgba(45,92,232,${alpha})`;
+            ctx.fillRect(panel.bbox.x + mapSpec.bbox.x + x, panel.bbox.y + mapSpec.bbox.y + y, 2, 2);
+          }
+        }
+        add(group, "rect", {
+          x: mapSpec.bbox.x,
+          y: mapSpec.bbox.y,
+          width: mapSpec.bbox.width,
+          height: mapSpec.bbox.height,
+          fill: "none",
+          stroke: "#111"
+        });
+        text(group, "0", mapSpec.bbox.x, mapSpec.bbox.y + mapSpec.bbox.height + 18, { size: 12, anchor: "middle" });
+        text(group, "150", mapSpec.bbox.x + mapSpec.bbox.width / 2, mapSpec.bbox.y + mapSpec.bbox.height + 18, { size: 12, anchor: "middle" });
+        text(group, "300", mapSpec.bbox.x + mapSpec.bbox.width, mapSpec.bbox.y + mapSpec.bbox.height + 18, { size: 12, anchor: "middle" });
+      }
+      text(group, "Cells (sorted)", 16, 104, { size: 13, rotate: -90, anchor: "middle" });
+      text(group, "Position (cm)", 420, 205, { size: 13, anchor: "middle" });
+      drawColorbar(group, { bbox: { x: 1004, y: 56, width: 14, height: 84 }, label: "Residual\\n(z-score)", ticks: [] }, "heat");
+    }
+
+    function render(spec) {
+      const frame = byId("frame");
+      const surface = byId("surface");
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      surface.innerHTML = "";
+
+      const canvas = document.createElement("canvas");
+      canvas.width = spec.canvas.width;
+      canvas.height = spec.canvas.height;
+      surface.appendChild(canvas);
+
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = spec.canvas.background || "#fff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const svg = svgEl("svg", {
+        width: spec.canvas.width,
+        height: spec.canvas.height,
+        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
+        role: "img",
+        "aria-label": "Generated reconstruction of a multi-panel cross-region neuroscience figure"
+      });
+      surface.appendChild(svg);
+
+      for (const panel of spec.panels) {
+        const group = panelGroup(svg, panel);
+        if (panel.kind === "populationHeatmaps") {
+          renderHeatmaps(ctx, group, panel);
+        } else if (panel.kind === "ridges") {
+          renderRidges(group, panel);
+        } else if (panel.kind === "lines") {
+          renderLines(group, panel);
+        } else if (panel.kind === "matrix") {
+          renderMatrix(group, panel, spec.regions);
+        } else if (panel.kind === "forest" || panel.kind === "forestR2" || panel.kind === "forestAuto") {
+          renderForest(group, panel, spec.regions);
+        } else if (panel.kind === "raster") {
+          renderRaster(group, panel);
+        } else if (panel.kind === "residuals") {
+          renderResiduals(ctx, group, panel);
+        }
+      }
+
+      byId("reference").src = spec.source.path;
+      byId("doc-title").textContent = spec.id;
+    }
+
+    function showGenerated() {
+      byId("frame").classList.remove("show-reference");
+      byId("generated-button").classList.add("active");
+      byId("reference-button").classList.remove("active");
+    }
+
+    function showReference() {
+      byId("frame").classList.add("show-reference");
+      byId("reference-button").classList.add("active");
+      byId("generated-button").classList.remove("active");
+    }
+
+    fetch(SPEC_URL)
+      .then(response => response.json())
+      .then(render)
+      .catch(error => {
+        const surface = byId("surface");
+        surface.textContent = `Failed to load reconstruction JSON: ${error.message}`;
+      });
+
+    byId("generated-button").addEventListener("click", showGenerated);
+    byId("reference-button").addEventListener("click", showReference);
+  </script>
+</body>
+</html>

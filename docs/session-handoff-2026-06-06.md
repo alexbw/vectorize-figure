@@ -4,14 +4,14 @@ Date: 2026-06-06
 
 ## Current Objective
 
-Continue iterative reconstruction of scientific figure panels with the `make-figure`
+Continue iterative reconstruction of scientific figure panels with the `vectorize-figure`
 workflow. The active panel is:
 
 - Reference: `assets/reference/reference-02-decision-dynamics-B-reference.png`
-- Generated spec: `outputs/reference-02-decision-dynamics-B-make-figure/reference-02-decision-dynamics-B.json`
-- Generated HTML: `outputs/reference-02-decision-dynamics-B-make-figure/reference-02-decision-dynamics-B.html`
+- Generated spec: `outputs/reference-02-decision-dynamics-B-vectorize-figure/reference-02-decision-dynamics-B.json`
+- Generated HTML: `outputs/reference-02-decision-dynamics-B-vectorize-figure/reference-02-decision-dynamics-B.html`
 - Preview URL while the local server is running:
-  `http://127.0.0.1:8765/outputs/reference-02-decision-dynamics-B-make-figure/reference-02-decision-dynamics-B.html`
+  `http://127.0.0.1:8765/outputs/reference-02-decision-dynamics-B-vectorize-figure/reference-02-decision-dynamics-B.html`
 
 The user expects a preview link after every figure-generation iteration.
 
@@ -145,8 +145,8 @@ axis direction.
 
 The reconstruction contract was already updated in both locations:
 
-- `skills/make-figure/references/reconstruction-contract.md`
-- `plugins/make-figure/skills/make-figure/references/reconstruction-contract.md`
+- `skills/vectorize-figure/references/reconstruction-contract.md`
+- `plugins/vectorize-figure/skills/vectorize-figure/references/reconstruction-contract.md`
 
 Relevant contract guidance already added:
 
@@ -191,19 +191,19 @@ python3 -m http.server 8765
 Open current preview:
 
 ```text
-http://127.0.0.1:8765/outputs/reference-02-decision-dynamics-B-make-figure/reference-02-decision-dynamics-B.html
+http://127.0.0.1:8765/outputs/reference-02-decision-dynamics-B-vectorize-figure/reference-02-decision-dynamics-B.html
 ```
 
 Validate JSON:
 
 ```bash
-python3 -m json.tool outputs/reference-02-decision-dynamics-B-make-figure/reference-02-decision-dynamics-B.json
+python3 -m json.tool outputs/reference-02-decision-dynamics-B-vectorize-figure/reference-02-decision-dynamics-B.json
 ```
 
 Check that generated HTML does not reuse the source raster as a rendered layer:
 
 ```bash
-rg -n "drawImage|background-image|source.path|reference.src" outputs/reference-02-decision-dynamics-B-make-figure
+rg -n "drawImage|background-image|source.path|reference.src" outputs/reference-02-decision-dynamics-B-vectorize-figure
 ```
 
 ## GitHub Issues
@@ -211,9 +211,9 @@ rg -n "drawImage|background-image|source.path|reference.src" outputs/reference-0
 Existing issues created during this session:
 
 - Font fidelity issue:
-  `https://github.com/alexbw/scientific-figure-reconstruction/issues/1`
+  `https://github.com/alexbw/vectorize-figure/issues/1`
 - Collision-aware placement issue:
-  `https://github.com/alexbw/scientific-figure-reconstruction/issues/2`
+  `https://github.com/alexbw/vectorize-figure/issues/2`
 
 ## Working Tree Note
 
@@ -221,6 +221,5 @@ The working tree contains untracked reference images and generated outputs. Do
 not clean, reset, or revert them. The last explicit checkpoint commit was:
 
 ```text
-edd0539 Checkpoint make-figure reconstructions
+edd0539 Checkpoint vectorize-figure reconstructions
 ```
-

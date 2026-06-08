@@ -1,7 +1,7 @@
 # Font Calibration
 
 This directory contains the current text-matching calibration harness for
-`make-figure` reconstructions. It is intentionally lightweight: a static HTML
+`vectorize-figure` reconstructions. It is intentionally lightweight: a static HTML
 page runs the pixel scoring in the browser, and a small Node wrapper launches
 headless Chrome and writes updated JSON plus a report.
 
@@ -32,7 +32,7 @@ node scripts/font-calibration/assert-improvement.mjs tmp/font-qa/reference-01-pl
 To apply a calibrated text spec to a real generated panel JSON:
 
 ```sh
-node scripts/font-calibration/apply-text-calibration.mjs outputs/reference-01-place-code-opto-C-make-figure/reference-01-place-code-opto-C.json tmp/font-qa/reference-01-place-code-opto-C-alltext-calibrated.json
+node scripts/font-calibration/apply-text-calibration.mjs outputs/reference-01-place-code-opto-C-vectorize-figure/reference-01-place-code-opto-C.json tmp/font-qa/reference-01-place-code-opto-C-alltext-calibrated.json
 ```
 
 For exploratory OCR targets over the current reference panel set:

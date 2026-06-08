@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>vectorize-figure batch viewer</title>
+  <style>
+    :root {
+      --sidebar: 72px;
+      --border: #cfd5dd;
+      --panel: #ffffff;
+      --page: #eef1f5;
+      --text: #111111;
+      --muted: #5a6270;
+      --active: #1d4f91;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--page);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      display: grid;
+      grid-template-columns: var(--sidebar) minmax(0, 1fr);
+    }
+
+    .rail {
+      min-height: 100vh;
+      border-right: 1px solid var(--border);
+      background: #f9fafc;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 6px 5px;
+    }
+
+    .nav-button {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 38px;
+      margin: 0 0 4px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      background: transparent;
+      color: #20242a;
+      font: 700 11px/1 Arial, Helvetica, sans-serif;
+      letter-spacing: 0;
+      cursor: pointer;
+    }
+
+    .nav-button:hover {
+      border-color: #b9c3ce;
+      background: #ffffff;
+    }
+
+    .nav-button.active {
+      border-color: var(--active);
+      background: #dfeafb;
+      color: #0f376d;
+    }
+
+    .workspace {
+      min-width: 0;
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 16px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+    }
+
+    h1 {
+      margin: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .subline {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      white-space: nowrap;
+    }
+
+    .toggle {
+      display: inline-flex;
+      overflow: hidden;
+      border: 1px solid #9faabb;
+      border-radius: 4px;
+      background: #ffffff;
+    }
+
+    .toggle button {
+      min-width: 76px;
+      border: 0;
+      border-right: 1px solid #c7ced8;
+      padding: 7px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: 700 12px/1 Arial, Helvetica, sans-serif;
+      cursor: pointer;
+    }
+
+    .toggle button:last-child {
+      border-right: 0;
+    }
+
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+
+    .links {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 12px;
+    }
+
+    a {
+      color: #1f5fbf;
+      text-decoration: none;
+    }
+
+    .stage-wrap {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      padding: 14px;
+    }
+
+    .stage {
+      position: relative;
+      width: min(100%, calc((100vh - 82px) * 1.45));
+      height: calc(100vh - 82px);
+      min-height: 360px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      box-shadow: 0 1px 4px rgba(20, 30, 45, 0.08);
+      overflow: hidden;
+    }
+
+    .viewer {
+      position: absolute;
+      border: 0;
+      background: #ffffff;
+    }
+
+    iframe.viewer,
+    img.viewer {
+      left: 50%;
+      top: 50%;
+      max-width: none;
+      max-height: none;
+      transform: translate(-50%, -50%);
+      transform-origin: center center;
+      object-fit: fill;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 760px) {
+      :root {
+        --sidebar: 58px;
+      }
+
+      header {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .controls {
+        justify-content: space-between;
+      }
+
+      .links {
+        display: none;
+      }
+
+      .stage {
+        width: 100%;
+        height: calc(100vh - 128px);
+      }
+
+      .nav-button {
+        height: 34px;
+        font-size: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <aside class="rail" id="rail" aria-label="Subpanel selector"></aside>
+
+  <section class="workspace">
+    <header>
+      <div>
+        <h1 id="panelTitle"></h1>
+        <div class="subline" id="panelMeta"></div>
+      </div>
+      <div class="controls">
+        <div class="toggle" aria-label="View mode">
+          <button id="generatedButton" type="button">Generated</button>
+          <button id="referenceButton" type="button">Reference</button>
+        </div>
+        <div class="links">
+          <a id="htmlLink" target="_blank" rel="noreferrer">html</a>
+          <a id="jsonLink" target="_blank" rel="noreferrer">json</a>
+          <a id="pngLink" target="_blank" rel="noreferrer">png</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="stage-wrap">
+      <div class="stage" id="stage">
+        <iframe id="generatedFrame" class="viewer" title="Generated reconstruction"></iframe>
+        <img id="referenceImage" class="viewer hidden" alt="Reference source panel">
+      </div>
+    </main>
+  </section>
+
+  <script>
+    const groups = [
+      ['reference-01-place-code-opto', ['A', 'B', 'C', 'D', 'E', 'F']],
+      ['reference-02-decision-dynamics', ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']],
+      ['reference-03-learning-remapping', ['A', 'B', 'C', 'D', 'E', 'F', 'G']],
+      ['reference-04-motor-manifold', ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']],
+      ['reference-05-grid-remapping', ['A', 'B', 'C', 'D', 'E', 'F']],
+      ['reference-06-replay-stimulation', ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']],
+      ['reference-07-cross-region-small-multiples', ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']],
+      ['reference-08-neuropixels-central-heatmap', ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']]
+    ];
+    const VIEWER_VERSION = 'vectorize-batch-gallery-v4';
+    const GENERATED_SURFACE_SELECTOR = '#surface, [data-role="generated-candidate"], .surface, .candidate, svg[viewBox], canvas';
+    const QA_REFERENCE_SELECTOR = '#reference, #reference-image, [data-role="reference"], .reference-wrap, img.reference, figure.reference';
+
+    const panels = groups.flatMap(([prefix, letters], groupIndex) => {
+      const groupCode = String(groupIndex + 1).padStart(2, '0');
+      return letters.map(letter => ({
+        id: `${prefix}-${letter}`,
+        shortLabel: `${groupCode}${letter}`,
+        groupLabel: prefix.replace('reference-', '')
+      }));
+    });
+
+    const state = {
+      index: 0,
+      mode: 'generated',
+      panelSize: null,
+      loadToken: 0
+    };
+
+    const rail = document.getElementById('rail');
+    const stage = document.getElementById('stage');
+    const buttons = [];
+    const generatedFrame = document.getElementById('generatedFrame');
+    const referenceImage = document.getElementById('referenceImage');
+    const generatedButton = document.getElementById('generatedButton');
+    const referenceButton = document.getElementById('referenceButton');
+    const panelTitle = document.getElementById('panelTitle');
+    const panelMeta = document.getElementById('panelMeta');
+    const htmlLink = document.getElementById('htmlLink');
+    const jsonLink = document.getElementById('jsonLink');
+    const pngLink = document.getElementById('pngLink');
+
+    function paths(panel) {
+      return {
+        html: `./${panel.id}-vectorize-figure-batch/${panel.id}.html`,
+        json: `./${panel.id}-vectorize-figure-batch/${panel.id}.json`,
+        png: `../assets/reference/${panel.id}-reference.png`
+      };
+    }
+
+    function updateUrl() {
+      const panel = panels[state.index];
+      const url = new URL(window.location.href);
+      url.searchParams.set('panel', panel.id);
+      url.searchParams.set('mode', state.mode);
+      window.history.replaceState(null, '', url);
+    }
+
+    function setMode(mode) {
+      state.mode = mode === 'reference' ? 'reference' : 'generated';
+      const showingReference = state.mode === 'reference';
+      generatedFrame.classList.toggle('hidden', showingReference);
+      referenceImage.classList.toggle('hidden', !showingReference);
+      document.body.dataset.generatedFrameDisplay = getComputedStyle(generatedFrame).display;
+      document.body.dataset.outerReferenceDisplay = getComputedStyle(referenceImage).display;
+      generatedButton.classList.toggle('active', !showingReference);
+      referenceButton.classList.toggle('active', showingReference);
+      document.body.dataset.mode = state.mode;
+      updateUrl();
+    }
+
+    function applySharedFit() {
+      if (!state.panelSize) return;
+      const {width, height} = state.panelSize;
+      const availableWidth = Math.max(1, stage.clientWidth - 24);
+      const availableHeight = Math.max(1, stage.clientHeight - 24);
+      const scale = Math.max(0.2, Math.min(availableWidth / width, availableHeight / height) * 0.98);
+      const transform = `translate(-50%, -50%) scale(${scale})`;
+
+      generatedFrame.style.width = `${width}px`;
+      generatedFrame.style.height = `${height}px`;
+      generatedFrame.style.transform = transform;
+      referenceImage.style.width = `${width}px`;
+      referenceImage.style.height = `${height}px`;
+      referenceImage.style.transform = transform;
+      fitGeneratedFrame();
+    }
+
+    async function loadPanelSize(panelPaths, token) {
+      try {
+        const response = await fetch(panelPaths.json);
+        if (!response.ok) throw new Error(`Could not load ${panelPaths.json}`);
+        const spec = await response.json();
+        if (token !== state.loadToken) return;
+        const canvas = spec.canvas || {};
+        if (canvas.width && canvas.height) {
+          state.panelSize = {width: Number(canvas.width), height: Number(canvas.height)};
+          applySharedFit();
+        }
+      } catch (error) {
+        if (referenceImage.naturalWidth && referenceImage.naturalHeight) {
+          state.panelSize = {width: referenceImage.naturalWidth, height: referenceImage.naturalHeight};
+          applySharedFit();
+        }
+      }
+    }
+
+    function selectPanel(index) {
+      state.index = (index + panels.length) % panels.length;
+      state.loadToken += 1;
+      state.panelSize = null;
+      const panel = panels[state.index];
+      const panelPaths = paths(panel);
+
+      panelTitle.textContent = panel.id;
+      panelMeta.textContent = `${state.index + 1} / ${panels.length} · ${panel.groupLabel}`;
+
+      generatedFrame.src = `${panelPaths.html}?viewer=${VIEWER_VERSION}&panel=${encodeURIComponent(panel.id)}`;
+      referenceImage.src = panelPaths.png;
+      referenceImage.alt = `${panel.id} reference`;
+      htmlLink.href = panelPaths.html;
+      jsonLink.href = panelPaths.json;
+      pngLink.href = panelPaths.png;
+
+      buttons.forEach((button, buttonIndex) => {
+        button.classList.toggle('active', buttonIndex === state.index);
+      });
+      document.body.dataset.panel = panel.id;
+      document.body.dataset.panelIndex = String(state.index + 1);
+      buttons[state.index].scrollIntoView({block: 'nearest'});
+      loadPanelSize(panelPaths, state.loadToken);
+      updateUrl();
+    }
+
+    function move(delta) {
+      selectPanel(state.index + delta);
+    }
+
+    function fitGeneratedFrame() {
+      try {
+        const doc = generatedFrame.contentDocument;
+        if (!doc) return;
+        forceGeneratedFrame(doc);
+        if (!doc.getElementById('batch-viewer-fit-style')) {
+          const style = doc.createElement('style');
+          style.id = 'batch-viewer-fit-style';
+          style.textContent = `
+            body > header { display: none !important; }
+            .toolbar, figcaption, figure.reference { display: none !important; }
+            html, body { width: 100vw !important; height: 100vh !important; overflow: hidden !important; }
+            body { display: grid !important; place-items: center !important; background: #ffffff !important; transform-origin: top left !important; }
+            main { min-height: 100vh !important; padding: 0 !important; overflow: hidden !important; display: grid !important; place-items: center !important; }
+            .workspace, .stage { padding: 0 !important; gap: 0 !important; display: grid !important; place-items: center !important; }
+            .frame, .candidate, [data-role="generated-candidate"] { border: 0 !important; box-shadow: none !important; margin: 0 !important; }
+            .candidate svg, [data-role="generated-candidate"] svg, svg#figure { box-shadow: none !important; }
+          `;
+          doc.head.appendChild(style);
+        }
+        const nativeFrame = doc.querySelector('.frame');
+        const frame = nativeFrame || findGeneratedSurface(doc);
+        if (!frame) return;
+        const width = state.panelSize?.width || frame.offsetWidth || Number(frame.style.width.replace('px', ''));
+        const height = state.panelSize?.height || frame.offsetHeight || Number(frame.style.height.replace('px', ''));
+        if (!width || !height) return;
+        doc.body.style.zoom = '';
+        const directGraphic = frame.matches('svg, canvas') ? frame : frame.querySelector('svg[viewBox], canvas');
+        if (nativeFrame) {
+          nativeFrame.style.transform = '';
+          nativeFrame.style.width = `${width}px`;
+          nativeFrame.style.height = `${height}px`;
+          if (directGraphic) {
+            directGraphic.style.width = `${width}px`;
+            directGraphic.style.height = `${height}px`;
+            directGraphic.style.maxWidth = 'none';
+            directGraphic.style.maxHeight = 'none';
+          }
+        } else {
+          frame.style.transform = '';
+          frame.style.width = `${width}px`;
+          frame.style.height = `${height}px`;
+          if (directGraphic) {
+            directGraphic.style.width = `${width}px`;
+            directGraphic.style.height = `${height}px`;
+            directGraphic.style.maxWidth = 'none';
+            directGraphic.style.maxHeight = 'none';
+          }
+        }
+        if (directGraphic) {
+          directGraphic.style.maxWidth = 'none';
+          directGraphic.style.maxHeight = 'none';
+        }
+      } catch (error) {
+        // Same-origin access is expected for local batch pages; ignore if a browser blocks it.
+      }
+    }
+
+    function findGeneratedSurface(doc) {
+      return Array.from(doc.querySelectorAll(GENERATED_SURFACE_SELECTOR))
+        .find(node => !node.closest(QA_REFERENCE_SELECTOR)) || null;
+    }
+
+    function forceGeneratedFrame(doc) {
+      const frame = doc.getElementById('frame');
+      if (frame) frame.classList.remove('show-reference');
+      const reference = doc.querySelector(QA_REFERENCE_SELECTOR);
+      if (reference) {
+        reference.style.setProperty('display', 'none', 'important');
+        reference.setAttribute('aria-hidden', 'true');
+      }
+      const surface = findGeneratedSurface(doc);
+      if (surface) {
+        surface.style.setProperty('display', 'block', 'important');
+        surface.removeAttribute('aria-hidden');
+      }
+      document.body.dataset.genReady = surface ? '1' : 'missing-surface';
+      document.body.dataset.generatedSurfaceDisplay = surface ? getComputedStyle(surface).display : 'missing';
+      document.body.dataset.internalReferenceDisplay = reference ? getComputedStyle(reference).display : 'missing';
+    }
+
+    function handleShortcut(event) {
+      if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+      const key = event.key;
+      if (key === 'j' || key === 'ArrowDown') {
+        event.preventDefault();
+        move(1);
+      } else if (key === 'k' || key === 'ArrowUp') {
+        event.preventDefault();
+        move(-1);
+      } else if (key === 't') {
+        event.preventDefault();
+        setMode(state.mode === 'generated' ? 'reference' : 'generated');
+      }
+    }
+
+    for (const [index, panel] of panels.entries()) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'nav-button';
+      button.textContent = panel.shortLabel;
+      button.title = panel.id;
+      button.setAttribute('aria-label', panel.id);
+      button.addEventListener('click', () => selectPanel(index));
+      rail.appendChild(button);
+      buttons.push(button);
+    }
+
+    generatedButton.addEventListener('click', () => setMode('generated'));
+    referenceButton.addEventListener('click', () => setMode('reference'));
+    referenceImage.addEventListener('load', () => {
+      if (!state.panelSize && referenceImage.naturalWidth && referenceImage.naturalHeight) {
+        state.panelSize = {width: referenceImage.naturalWidth, height: referenceImage.naturalHeight};
+      }
+      applySharedFit();
+    });
+
+    window.addEventListener('keydown', handleShortcut);
+    window.addEventListener('resize', applySharedFit);
+
+    generatedFrame.addEventListener('load', () => {
+      try {
+        generatedFrame.contentWindow.addEventListener('keydown', handleShortcut);
+        forceGeneratedFrame(generatedFrame.contentDocument);
+      } catch (error) {
+        // Same-origin access is expected for local batch pages; ignore if unavailable.
+      }
+      setTimeout(applySharedFit, 100);
+      setTimeout(applySharedFit, 400);
+    });
+
+    const params = new URLSearchParams(window.location.search);
+    const initialPanel = params.get('panel') || params.get('id');
+    const initialIndex = panels.findIndex(panel => panel.id === initialPanel);
+    state.index = initialIndex >= 0 ? initialIndex : 0;
+    const initialMode = params.get('mode');
+    state.mode = initialMode === 'reference' || initialMode === 'ref' ? 'reference' : 'generated';
+    selectPanel(state.index);
+    setMode(state.mode);
+  </script>
+</body>
+</html>

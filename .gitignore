@@ -4,3 +4,13 @@
 node_modules/
 __pycache__/
 *.pyc
+tmp/**/__pycache__/
+tmp/plugin-validator-venv/
+tmp/vectorize-figure-*/logs/
+tmp/vectorize-figure-*/status.jsonl
+tmp/vectorize-figure-*/validation-summary.json
+tmp/ir-relationship-audit.*
+tmp/vectorize-figure-batch/*.last.txt
+tmp/vectorize-figure-batch/*.stdout.log
+tmp/vectorize-figure-full-figures/viewer-checks/
+tmp/vectorize-figure-all-subpanels/gallery-checks/

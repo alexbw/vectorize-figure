@@ -4,7 +4,7 @@ const path = require('path');
 const root = process.cwd();
 
 function panelPath(id, ext) {
-  return path.join(root, 'outputs', `${id}-make-figure-batch`, `${id}.${ext}`);
+  return path.join(root, 'outputs', `${id}-vectorize-figure-batch`, `${id}.${ext}`);
 }
 
 function readJson(id) {

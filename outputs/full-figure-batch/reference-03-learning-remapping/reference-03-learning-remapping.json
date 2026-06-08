@@ -1,0 +1,191 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-03-learning-remapping",
+  "source": {
+    "path": "../../../assets/full-reference/reference-03-learning-remapping.png",
+    "usage": "QA-only reference view; not used by generated candidate layers.",
+    "nativeSize": {"width": 1536, "height": 1024},
+    "notes": "Independent first-pass reconstruction of the full seven-panel learning/remapping composite. Dense heatmaps and traces are generated from editable recipes, not source pixels."
+  },
+  "canvas": {"width": 1536, "height": 1024, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "calibration": {"letterSpacing": 0, "lineHeight": 1.08, "notes": "Compact sans-serif approximation matched by visual inspection."}
+  },
+  "colorScales": [
+    {
+      "id": "df-f-zscore",
+      "label": "ΔF/F\n(z-score)",
+      "domain": [-1, 3],
+      "stops": [
+        {"value": -1, "color": "#05040a"},
+        {"value": 0, "color": "#26115d"},
+        {"value": 1, "color": "#8d2369"},
+        {"value": 2, "color": "#ed692a"},
+        {"value": 3, "color": "#fee66a"}
+      ]
+    },
+    {
+      "id": "similarity-pearson",
+      "label": "Similarity\n(Pearson r)",
+      "domain": [0, 1],
+      "stops": [
+        {"value": 0, "color": "#ffffff"},
+        {"value": 0.5, "color": "#d7bce8"},
+        {"value": 1, "color": "#5a189a"}
+      ]
+    },
+    {
+      "id": "activity-rate",
+      "label": "Activity rate\n(ΔF / s)",
+      "domain": [0, 2],
+      "stops": [
+        {"value": 0, "color": "#060612"},
+        {"value": 1, "color": "#8d2369"},
+        {"value": 2, "color": "#fee66a"}
+      ]
+    }
+  ],
+  "panels": [
+    {
+      "id": "A",
+      "type": "longitudinal_place_cell_heatmap_array",
+      "bbox": {"x": 0, "y": 0, "width": 630, "height": 496},
+      "label": {"text": "A", "x": 12, "y": 28, "fontSize": 18, "fontWeight": 700},
+      "title": {"text": "Longitudinal place cell activity (sorted by Day 1 peak location)", "x": 37, "y": 29, "fontSize": 17, "fontWeight": 400},
+      "plotGroup": {
+        "cellCount": 312,
+        "positionDomainCm": [0, 100],
+        "yLabel": {"text": "Place cells (n = 312)", "x": 22, "y": 260, "rotation": -90, "fontSize": 15},
+        "orientationArrow": {"x": 34, "y1": 108, "y2": 415, "labels": [{"text": "dorsal", "x": 14, "y": 96}, {"text": "ventral", "x": 10, "y": 432}]},
+        "xLabel": {"text": "Position (cm)", "x": 315, "y": 484, "fontSize": 14},
+        "heatmaps": [
+          {"id": "day-1", "title": "Day 1", "bbox": {"x": 54, "y": 78, "width": 75, "height": 363}, "seed": 111, "ridge": {"start": 34, "end": 56, "curve": -7, "width": 9, "brightness": 2.9}},
+          {"id": "day-2", "title": "Day 2", "bbox": {"x": 141, "y": 78, "width": 75, "height": 363}, "seed": 222, "ridge": {"start": 40, "end": 61, "curve": 9, "width": 11, "brightness": 2.55}},
+          {"id": "day-3", "title": "Day 3", "bbox": {"x": 229, "y": 78, "width": 75, "height": 363}, "seed": 333, "ridge": {"start": 45, "end": 67, "curve": -12, "width": 10, "brightness": 2.45}},
+          {"id": "day-4", "title": "Day 4", "bbox": {"x": 318, "y": 78, "width": 75, "height": 363}, "seed": 444, "ridge": {"start": 49, "end": 75, "curve": 6, "width": 10, "brightness": 2.45}},
+          {"id": "day-5", "title": "Day 5", "bbox": {"x": 407, "y": 78, "width": 75, "height": 363}, "seed": 555, "ridge": {"start": 55, "end": 82, "curve": -8, "width": 10, "brightness": 2.4}},
+          {"id": "day-7", "title": "Day 7", "bbox": {"x": 511, "y": 78, "width": 75, "height": 363}, "seed": 777, "ridge": {"start": 60, "end": 89, "curve": 5, "width": 10, "brightness": 2.35}}
+        ],
+        "xTicks": [0, 50, 100],
+        "colorbar": {"x": 579, "y": 213, "width": 10, "height": 164, "domain": [-1, 3], "ticks": [-1, 0, 1, 2, 3], "label": "ΔF/F\n(z-score)"}
+      }
+    },
+    {
+      "id": "B",
+      "type": "remapping_similarity_matrix",
+      "bbox": {"x": 642, "y": 0, "width": 365, "height": 496},
+      "label": {"text": "B", "x": 12, "y": 28, "fontSize": 18, "fontWeight": 700},
+      "title": {"text": "Remapping similarity (day-by-day)", "x": 40, "y": 29, "fontSize": 17, "fontWeight": 400},
+      "matrix": {
+        "box": {"x": 47, "y": 87, "width": 282, "height": 332},
+        "days": [1, 2, 3, 4, 5, 6, 7],
+        "values": [
+          [null, 0.62, 0.48, 0.33, 0.25, 0.22, 0.18],
+          [0.62, null, 0.66, 0.45, 0.33, 0.26, 0.21],
+          [0.48, 0.66, null, 0.63, 0.46, 0.33, 0.24],
+          [0.33, 0.45, 0.63, null, 0.61, 0.44, 0.32],
+          [0.25, 0.33, 0.46, 0.61, null, 0.61, 0.46],
+          [0.22, 0.26, 0.33, 0.44, 0.61, null, 0.63],
+          [0.18, 0.21, 0.24, 0.32, 0.46, 0.63, null]
+        ],
+        "xLabel": {"text": "Day", "x": 189, "y": 465, "fontSize": 16},
+        "yLabel": {"text": "Day", "x": 11, "y": 255, "rotation": -90, "fontSize": 16}
+      },
+      "colorbar": {"x": 347, "y": 276, "width": 13, "height": 139, "domain": [0, 1], "ticks": [0, 0.5, 1], "label": "Similarity\n(Pearson r)"}
+    },
+    {
+      "id": "C",
+      "type": "representative_calcium_traces",
+      "bbox": {"x": 1060, "y": 0, "width": 465, "height": 496},
+      "label": {"text": "C", "x": 10, "y": 28, "fontSize": 18, "fontWeight": 700},
+      "title": {"text": "Representative calcium traces", "x": 40, "y": 29, "fontSize": 17, "fontWeight": 400},
+      "traceGroup": {
+        "plotBox": {"x": 44, "y": 56, "width": 424, "height": 379},
+        "days": [1, 2, 3, 4, 5, 6, 7],
+        "dayLines": [65, 123, 181, 240, 299, 357],
+        "rows": [
+          {"id": "cell-27", "label": "Cell 27 (stable)", "seed": 27, "y": 93, "amplitude": 1.3},
+          {"id": "cell-142", "label": "Cell 142 (remapped)", "seed": 142, "y": 180, "amplitude": 1.1},
+          {"id": "cell-198", "label": "Cell 198 (late emerging)", "seed": 198, "y": 267, "amplitude": 1.0},
+          {"id": "cell-233", "label": "Cell 233 (transient)", "seed": 233, "y": 354, "amplitude": 0.85},
+          {"id": "speed", "label": "Running speed (cm/s)", "seed": 901, "y": 430, "amplitude": 38, "stroke": "#111111"}
+        ],
+        "yTicks": [-2, 0, 2],
+        "yLabel": {"text": "ΔF/F (z-score)", "x": 8, "y": 232, "rotation": -90, "fontSize": 15},
+        "scaleBar": {"x": 436, "y": 486, "lengthPx": 30, "label": "2 min"}
+      }
+    },
+    {
+      "id": "D",
+      "type": "field_stability_line_plot",
+      "bbox": {"x": 0, "y": 520, "width": 430, "height": 430},
+      "label": {"text": "D", "x": 12, "y": 36, "fontSize": 18, "fontWeight": 700},
+      "title": {"text": "Field stability over learning", "x": 40, "y": 35, "fontSize": 17, "fontWeight": 400},
+      "plot": {"x": 80, "y": 68, "width": 348, "height": 280, "xDomain": [0.5, 7.5], "yDomain": [0, 1]},
+      "xTicks": [1, 2, 3, 4, 5, 6, 7],
+      "yTicks": [0, 0.5, 1],
+      "xLabel": "Days from first session",
+      "yLabel": "Within-cell spatial correlation\n(Pearson r)",
+      "series": {"values": [0.62, 0.65, 0.63, 0.62, 0.61, 0.62, 0.63], "sem": [0.04, 0.04, 0.035, 0.03, 0.035, 0.035, 0.04], "labels": ["0.62", "0.65", "0.63", "0.62", "0.61", "0.62", "0.63"], "n": [312, 290, 271, 257, 240, 224, 210]}
+    },
+    {
+      "id": "E",
+      "type": "animal_level_stability_slopes",
+      "bbox": {"x": 455, "y": 520, "width": 300, "height": 430},
+      "label": {"text": "E", "x": 0, "y": 36, "fontSize": 18, "fontWeight": 700},
+      "title": {"text": "Animal-level stability slope", "x": 28, "y": 35, "fontSize": 17, "fontWeight": 400},
+      "plot": {"x": 66, "y": 80, "width": 214, "height": 282, "xDomain": [0.5, 8.5], "yDomain": [-0.2, 0.1]},
+      "xTicks": [1, 2, 3, 4, 5, 6, 7, 8],
+      "yTicks": [-0.2, -0.1, 0, 0.1],
+      "xLabel": "Animals",
+      "yLabel": "Stability slope (Δr / day)",
+      "points": [
+        {"x": 1, "y": -0.046, "err": 0.030}, {"x": 2, "y": -0.026, "err": 0.018}, {"x": 3, "y": -0.036, "err": 0.027}, {"x": 4, "y": -0.058, "err": 0.025},
+        {"x": 5, "y": -0.042, "err": 0.039}, {"x": 6, "y": -0.029, "err": 0.030}, {"x": 7, "y": -0.034, "err": 0.037}, {"x": 8, "y": -0.050, "err": 0.020}
+      ],
+      "annotation": {"text": "Mean ± 95% CI\n-0.015 ± 0.006", "x": 128, "y": 94, "fontSize": 16, "fill": "#4b148c"}
+    },
+    {
+      "id": "F",
+      "type": "occupancy_normalized_spatial_map",
+      "bbox": {"x": 792, "y": 520, "width": 375, "height": 430},
+      "label": {"text": "F", "x": 0, "y": 36, "fontSize": 18, "fontWeight": 700},
+      "title": {"text": "Occupancy-normalized spatial map (Day 1)", "x": 28, "y": 35, "fontSize": 17, "fontWeight": 400},
+      "heatmap": {"bbox": {"x": 64, "y": 56, "width": 218, "height": 306}, "seed": 601, "cellCount": 312, "positionDomainCm": [0, 150], "ridge": {"start": 22, "end": 126, "curve": -22, "width": 12, "brightness": 2.0}},
+      "orientationArrow": {"x": 38, "y1": 88, "y2": 338, "labels": [{"text": "dorsal", "x": 19, "y": 77}, {"text": "ventral", "x": 12, "y": 352}]},
+      "yLabel": {"text": "Place cells (n = 312)", "x": 20, "y": 210, "rotation": -90, "fontSize": 15},
+      "xTicks": [0, 50, 100],
+      "xLabel": {"text": "Position (cm)", "x": 173, "y": 386, "fontSize": 14},
+      "colorbar": {"x": 293, "y": 255, "width": 10, "height": 107, "domain": [0, 2], "ticks": [0, 1, 2], "label": "Activity rate\n(ΔF / s)"},
+      "occupancy": {"box": {"x": 340, "y": 111, "width": 48, "height": 251}, "label": "Occupancy\n(s)", "xTicks": [0, 50], "seed": 707}
+    },
+    {
+      "id": "G",
+      "type": "statistical_summary_text",
+      "bbox": {"x": 1204, "y": 520, "width": 310, "height": 430},
+      "label": {"text": "G", "x": 0, "y": 36, "fontSize": 18, "fontWeight": 700},
+      "title": {"text": "Statistical summary", "x": 28, "y": 35, "fontSize": 17, "fontWeight": 400},
+      "blocks": [
+        {"heading": "Stability change across days\n(linear mixed-effects model)", "x": 28, "y": 78, "headingFill": "#4b148c", "lines": ["Slope (Δr / day): -0.015", "95% CI: [-0.026, -0.004]", "p = 0.009"]},
+        {"heading": "Day 1 vs Day 7 (paired)", "x": 28, "y": 228, "headingFill": "#4b148c", "lines": ["Within-cell r: 0.62 ± 0.02 vs 0.63 ± 0.02", "Δr: +0.01 ± 0.02, p = 0.64"]},
+        {"heading": "Remapping (Day 1 vs Day 7)", "x": 28, "y": 324, "headingFill": "#4b148c", "lines": ["Cells with r < 0.3: 61% (191 / 312)", "Cells with r ≥ 0.7: 17% (53 / 312)"]}
+      ],
+      "footnote": {"text": "Mean ± SEM unless noted", "x": 141, "y": 418, "fontSize": 13}
+    }
+  ],
+  "provenance": [
+    {"target": "panel layout", "confidence": "high", "note": "Panel boxes and plot regions inferred from full composite geometry at 1536x1024."},
+    {"target": "numeric values", "confidence": "medium", "note": "Visible matrix, summary statistics, and line-plot labels transcribed from the raster where legible; plotted values are approximate."},
+    {"target": "dense generated fields", "confidence": "medium", "note": "Heatmaps, calcium traces, and occupancy profile are generated from deterministic recipes for visual inspection and editability."}
+  ],
+  "validation": {
+    "constraints": [
+      "Generated layers must not use drawImage, CSS background images, or source PNG pixels.",
+      "Source raster path may appear only in the clearly labeled QA/reference view.",
+      "Panel boxes, plot boxes, ticks, labels, legends, colorbars, helper strips, and provenance notes are explicit in this JSON."
+    ]
+  }
+}

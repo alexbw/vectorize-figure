@@ -1,0 +1,170 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-08-neuropixels-central-heatmap-A",
+  "source": {
+    "path": "../../assets/reference/reference-08-neuropixels-central-heatmap-A-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "First-pass editable reconstruction from visual inspection. The generated candidate uses SVG primitives and semantic path points only; no source raster is drawn as a figure layer."
+  },
+  "canvas": {
+    "width": 391,
+    "height": 263,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Arial approximates the source crop's compact sans-serif labels. Text boxes were placed by visual inspection at native dimensions."
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-a",
+      "type": "behavior_virtual_track",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 391,
+        "height": 263
+      },
+      "label": {
+        "id": "panel-label",
+        "text": "A",
+        "x": -2,
+        "y": 8,
+        "fontSize": 16,
+        "fontWeight": 700,
+        "sourceBox": {"x": 0, "y": 0, "width": 9, "height": 10}
+      },
+      "title": {
+        "id": "panel-title",
+        "text": "Behavior (virtual track)",
+        "x": 20,
+        "y": 11,
+        "fontSize": 16,
+        "fontWeight": 700,
+        "sourceBox": {"x": 18, "y": 0, "width": 191, "height": 13}
+      },
+      "track": {
+        "id": "virtual-track-schematic",
+        "line": {"x1": 45, "y1": 58, "x2": 350, "y2": 58},
+        "stroke": "#111111",
+        "strokeWidth": 1.7,
+        "startMarker": {"type": "filledCircle", "cx": 45, "cy": 58, "r": 5, "fill": "#9a9a9a", "stroke": "#6d6d6d"},
+        "goalMarker": {"type": "circle", "cx": 350, "cy": 58, "r": 10, "fill": "#a8e2d6", "stroke": "#111111", "strokeWidth": 1.3},
+        "ticks": [
+          {"id": "track-tick-100", "value": 100, "x": 149, "y1": 58, "y2": 68, "label": "100", "labelX": 149, "labelY": 84},
+          {"id": "track-tick-200", "value": 200, "x": 251, "y1": 58, "y2": 68, "label": "200", "labelX": 251, "labelY": 84}
+        ],
+        "labels": [
+          {"id": "track-start-label", "text": "Start", "x": 48, "y": 41, "anchor": "middle", "fontSize": 16},
+          {"id": "track-goal-label", "text": "Goal", "x": 349, "y": 41, "anchor": "middle", "fontSize": 16},
+          {"id": "track-zero-label", "text": "0 cm", "x": 58, "y": 84, "anchor": "middle", "fontSize": 14},
+          {"id": "track-end-label", "text": "300 cm", "x": 346, "y": 84, "anchor": "middle", "fontSize": 14}
+        ]
+      },
+      "plot": {
+        "id": "behavior-time-series",
+        "bbox": {"x": 60, "y": 100, "width": 285, "height": 117},
+        "clip": true,
+        "xScale": {"id": "time-s", "domain": [0, 210], "range": [60, 345]},
+        "yScales": [
+          {"id": "position-cm", "side": "left", "domain": [0, 300], "range": [217, 100], "color": "#006c6c"},
+          {"id": "speed-cms", "side": "right", "domain": [0, 60], "range": [217, 100], "color": "#e68600"}
+        ],
+        "xAxis": {
+          "baseline": 217,
+          "ticks": [
+            {"value": 0, "label": "0"},
+            {"value": 50, "label": "50"},
+            {"value": 100, "label": "100"},
+            {"value": 150, "label": "150"},
+            {"value": 200, "label": "200"}
+          ],
+          "label": {"id": "x-axis-label", "text": "Time (s)", "x": 202, "y": 262, "anchor": "middle", "fontSize": 16}
+        },
+        "yAxes": [
+          {
+            "scale": "position-cm",
+            "axisX": 60,
+            "ticks": [
+              {"value": 0, "label": "0"},
+              {"value": 100, "label": "100"},
+              {"value": 200, "label": "200"},
+              {"value": 300, "label": "300"}
+            ],
+            "label": {"id": "position-axis-label", "text": "Position (cm)", "x": 6, "y": 159, "anchor": "middle", "fontSize": 16, "rotate": -90, "fill": "#006c6c"}
+          },
+          {
+            "scale": "speed-cms",
+            "axisX": 345,
+            "ticks": [
+              {"value": 0, "label": "0"},
+              {"value": 20, "label": "20"},
+              {"value": 40, "label": "40"},
+              {"value": 60, "label": "60"}
+            ],
+            "label": {"id": "speed-axis-label", "text": "Speed (cm/s)", "x": 389, "y": 159, "anchor": "middle", "fontSize": 16, "rotate": 90, "fill": "#e68600", "notes": "Right label is intentionally clipped by the source crop."}
+          }
+        ],
+        "shadedEpochs": [
+          {"id": "epoch-1", "x0": 18, "x1": 24, "fill": "#f1f1f1"},
+          {"id": "epoch-2", "x0": 37, "x1": 56, "fill": "#eeeeee"},
+          {"id": "epoch-3", "x0": 76, "x1": 96, "fill": "#eeeeee"},
+          {"id": "epoch-4", "x0": 116, "x1": 134, "fill": "#eeeeee"},
+          {"id": "epoch-5", "x0": 154, "x1": 173, "fill": "#eeeeee"},
+          {"id": "epoch-6", "x0": 183, "x1": 193, "fill": "#eeeeee"}
+        ],
+        "series": [
+          {
+            "id": "position-trace",
+            "scale": "position-cm",
+            "color": "#006c6c",
+            "strokeWidth": 2,
+            "smooth": "linear",
+            "jitter": {"seed": 802, "amplitude": 4.5, "frequency": 1.7},
+            "points": [
+              [0, 90], [8, 155], [25, 215], [38, 160], [55, 120], [70, 98],
+              [83, 112], [101, 160], [116, 205], [129, 266], [136, 242],
+              [149, 205], [160, 260], [169, 276], [180, 263], [190, 156],
+              [198, 166], [204, 142], [210, 112]
+            ]
+          },
+          {
+            "id": "speed-trace",
+            "scale": "speed-cms",
+            "color": "#e68600",
+            "strokeWidth": 1.3,
+            "smooth": "linear",
+            "jitter": {"seed": 211, "amplitude": 3.4, "frequency": 5.3, "spikeEvery": 13},
+            "points": [
+              [0, 8], [12, 13], [30, 12], [50, 10], [70, 9], [88, 11],
+              [105, 12], [126, 13], [142, 12], [158, 13], [172, 12],
+              [186, 11], [196, 9], [210, 10]
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "provenance": {
+    "createdBy": "vectorize-figure first-pass reconstruction",
+    "sourceInspection": "Visual inspection of a 391x263 raster crop.",
+    "renderer": "Hybrid contract implemented as generated SVG marks and text.",
+    "uncertainties": [
+      "Underlying time-series values are visually estimated from the raster and should be treated as editable approximations.",
+      "Fine jagged trace texture is procedurally generated from seeded jitter for visual similarity.",
+      "The right y-axis title is partly outside the crop; its exact wording is inferred from visible orange speed units."
+    ]
+  },
+  "confidence": {
+    "layout": 0.86,
+    "text": 0.78,
+    "dataTraces": 0.58,
+    "style": 0.82
+  }
+}
