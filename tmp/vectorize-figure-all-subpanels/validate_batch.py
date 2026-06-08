@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 import re
+import urllib.parse
 from pathlib import Path
 
 
@@ -35,12 +36,12 @@ def scan_json_for_source_images(json_path: Path, spec: dict, panel_id: str) -> l
     hits = []
 
     def looks_like_source_raster(value: str) -> bool:
-        lower = value.lower()
+        lower = urllib.parse.unquote(value).lower()
         if lower.startswith("data:image/"):
             return True
         if not lower.endswith((".png", ".jpg", ".jpeg", ".webp")):
             return False
-        return panel_id in value or "assets/reference/" in lower or SOURCE_RASTER_RE.search(value) is not None
+        return panel_id in lower or "assets/reference/" in lower or SOURCE_RASTER_RE.search(lower) is not None
 
     def visit(value: object, path: tuple[str, ...] = ()) -> None:
         if isinstance(value, dict):
@@ -98,10 +99,11 @@ def validate_one(panel_id: str) -> dict:
 
     if html.exists():
         for lineno, line in enumerate(html.read_text(errors="replace").splitlines(), start=1):
-            if EXECUTABLE_FORBIDDEN.search(line):
+            decoded_line = urllib.parse.unquote(line)
+            if EXECUTABLE_FORBIDDEN.search(decoded_line):
                 item["html_forbidden_hits"].append(f"{html.relative_to(REPO)}:{lineno}:{line.strip()}")
-            if "-reference.png" in line:
-                lower = line.lower()
+            if "-reference.png" in decoded_line:
+                lower = decoded_line.lower()
                 qaish = (
                     "reference" in lower
                     or "qa" in lower

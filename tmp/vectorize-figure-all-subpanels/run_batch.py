@@ -7,6 +7,7 @@ import signal
 import subprocess
 import sys
 import time
+import urllib.parse
 from pathlib import Path
 
 
@@ -69,12 +70,12 @@ def validate(panel_id: str, outdir: Path) -> dict:
         )
 
         def looks_like_source_raster(value: str) -> bool:
-            lower = value.lower()
+            lower = urllib.parse.unquote(value).lower()
             if lower.startswith("data:image/"):
                 return True
             if not lower.endswith((".png", ".jpg", ".jpeg", ".webp")):
                 return False
-            return panel_id in value or "assets/reference/" in lower
+            return panel_id in lower or "assets/reference/" in lower
 
         def scan_json(value, path: tuple[str, ...] = ()) -> None:
             if isinstance(value, dict):
@@ -101,19 +102,20 @@ def validate(panel_id: str, outdir: Path) -> dict:
         if not path.exists():
             continue
         for lineno, line in enumerate(path.read_text(errors="replace").splitlines(), start=1):
-            if not suspicious.search(line):
+            decoded_line = urllib.parse.unquote(line)
+            if not suspicious.search(decoded_line):
                 continue
-            if "sourceReuseForbiddenPatterns" in line:
+            if "sourceReuseForbiddenPatterns" in decoded_line:
                 continue
-            if "-reference.png" in line:
-                lower = line.lower()
+            if "-reference.png" in decoded_line:
+                lower = decoded_line.lower()
                 qaish = (
                     "reference" in lower
                     or "qa" in lower
-                    or "spec.source.path" in line
-                    or "source.path" in line
-                    or '"path":' in line
-                    or "'path':" in line
+                    or "spec.source.path" in decoded_line
+                    or "source.path" in decoded_line
+                    or '"path":' in decoded_line
+                    or "'path':" in decoded_line
                 )
                 if qaish:
                     continue

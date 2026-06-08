@@ -111,12 +111,12 @@ def scan_json_for_source_images(spec_path: Path, figure_id: str) -> list[str]:
     hits = []
 
     def looks_like_source_raster(value: str) -> bool:
-        lower = value.lower()
+        lower = urllib.parse.unquote(value).lower()
         if lower.startswith("data:image/"):
             return True
         if not lower.endswith((".png", ".jpg", ".jpeg", ".webp")):
             return False
-        return figure_id in value or "assets/full-reference/" in lower or SOURCE_RASTER_RE.search(value) is not None
+        return figure_id in lower or "assets/full-reference/" in lower or SOURCE_RASTER_RE.search(lower) is not None
 
     def visit(value: object, path: tuple[str, ...] = ()) -> None:
         if isinstance(value, dict):
@@ -194,9 +194,10 @@ class SurfaceParser(HTMLParser):
             self.image_tags.append(tag)
         for key in ("src", "href", "xlink:href"):
             value = attr_map.get(key, "")
-            if SOURCE_RASTER_RE.search(value):
+            decoded_value = urllib.parse.unquote(value)
+            if SOURCE_RASTER_RE.search(decoded_value):
                 self.source_refs.append(f"{tag}.{key}={value}")
-            if value.strip().lower().startswith("data:image/"):
+            if decoded_value.strip().lower().startswith("data:image/"):
                 self.embedded_image_refs.append(f"{tag}.{key}=data:image")
 
     def _is_generated_surface(self, tag: str, attr_map: dict[str, str]) -> bool:
@@ -275,7 +276,7 @@ def main() -> int:
     failures = 0
     try:
         for figure_id, html, spec in figure_outputs():
-            html_hits = line_hits(html.read_text(errors="replace"), html_patterns, allowed_html)
+            html_hits = line_hits(urllib.parse.unquote(html.read_text(errors="replace")), html_patterns, allowed_html)
             json_hits = check_source_path(spec) + scan_json_for_source_images(spec, figure_id)
             dom_hits = audit_rendered_surface(args.chrome, args.base_url, figure_id, html)
             ok = not html_hits and not json_hits and not dom_hits

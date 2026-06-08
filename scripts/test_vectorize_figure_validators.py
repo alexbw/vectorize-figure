@@ -164,6 +164,18 @@ class GeneratedSurfaceAuditTests(unittest.TestCase):
         self.assertTrue(any("image elements" in error for error in errors), errors)
         self.assertTrue(any("embedded image data URI" in error for error in errors), errors)
 
+    def test_generated_surface_rejects_url_encoded_source_raster(self) -> None:
+        dom = """
+        <body>
+          <svg id="figure">
+            <image href="../../assets/reference/reference-01-place-code-opto-A-reference%2epng"></image>
+          </svg>
+        </body>
+        """
+        errors = self.audit(dom)
+        self.assertTrue(any("image elements" in error for error in errors), errors)
+        self.assertTrue(any("source raster" in error for error in errors), errors)
+
     def test_missing_generated_surface_fails(self) -> None:
         errors = self.audit("<body><aside class='qa-reference'><img src='reference-01.png'></aside></body>")
         self.assertTrue(any("missing a generated surface" in error for error in errors), errors)
@@ -206,6 +218,23 @@ class JsonSourceRasterAuditTests(unittest.TestCase):
                         {
                             "type": "image",
                             "src": "data:image/png;base64,AAAA",
+                        }
+                    ]
+                }
+            ],
+        }
+        errors = self.scan(spec)
+        self.assertTrue(any("generated JSON references source raster or embedded image" in error for error in errors), errors)
+
+    def test_generated_image_mark_url_encoded_source_raster_is_rejected(self) -> None:
+        spec = {
+            "id": "reference-01-place-code-opto-A",
+            "panels": [
+                {
+                    "marks": [
+                        {
+                            "type": "image",
+                            "src": "../../assets/reference/reference-01-place-code-opto-A-reference%2epng",
                         }
                     ]
                 }
@@ -299,6 +328,19 @@ class StandaloneBatchJsonAuditTests(unittest.TestCase):
         errors = self.scan(spec)
         self.assertTrue(any("marks.0.src" in error for error in errors), errors)
 
+    def test_generated_image_mark_url_encoded_source_raster_is_rejected(self) -> None:
+        spec = {
+            "id": "reference-01-place-code-opto-A",
+            "marks": [
+                {
+                    "type": "image",
+                    "src": "../../assets/reference/reference-01-place-code-opto-A-reference%2epng",
+                }
+            ],
+        }
+        errors = self.scan(spec)
+        self.assertTrue(any("marks.0.src" in error for error in errors), errors)
+
 
 class RunBatchValidationTests(unittest.TestCase):
     def make_output(self, temp_root: Path, item_id: str, spec: dict, html_text: str = "<html><body></body></html>") -> Path:
@@ -336,6 +378,21 @@ class RunBatchValidationTests(unittest.TestCase):
             result = subpanel_run_batch.validate(panel_id, outdir)
         self.assertTrue(result["raster_reuse_hits"], result)
 
+    def test_subpanel_run_batch_rejects_url_encoded_source_raster(self) -> None:
+        panel_id = "reference-01-place-code-opto-A"
+        with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temp:
+            outdir = self.make_output(
+                Path(temp),
+                panel_id,
+                {
+                    "id": panel_id,
+                    "source": {"path": "./source.png"},
+                    "marks": [{"type": "image", "src": "../../assets/reference/reference-01-place-code-opto-A-reference%2epng"}],
+                },
+            )
+            result = subpanel_run_batch.validate(panel_id, outdir)
+        self.assertTrue(result["raster_reuse_hits"], result)
+
     def test_full_run_batch_rejects_json_data_uri(self) -> None:
         figure_id = "reference-01-place-code-opto"
         with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temp:
@@ -359,6 +416,21 @@ class RunBatchValidationTests(unittest.TestCase):
                 figure_id,
                 {"id": figure_id, "source": {"path": "./source.png"}, "marks": []},
                 '<html><body><image href="data:image/png;base64,AAAA"></image></body></html>',
+            )
+            result = full_run_batch.validate(figure_id, outdir)
+        self.assertTrue(result["raster_reuse_hits"], result)
+
+    def test_full_run_batch_rejects_url_encoded_source_raster(self) -> None:
+        figure_id = "reference-01-place-code-opto"
+        with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temp:
+            outdir = self.make_output(
+                Path(temp),
+                figure_id,
+                {
+                    "id": figure_id,
+                    "source": {"path": "./source.png"},
+                    "marks": [{"type": "image", "src": "../../assets/full-reference/reference-01-place-code-opto%2epng"}],
+                },
             )
             result = full_run_batch.validate(figure_id, outdir)
         self.assertTrue(result["raster_reuse_hits"], result)

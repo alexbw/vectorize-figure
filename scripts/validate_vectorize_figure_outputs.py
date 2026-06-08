@@ -24,6 +24,7 @@ import sys
 import tempfile
 import threading
 from typing import Iterable
+import urllib.parse
 
 from PIL import Image
 
@@ -255,9 +256,10 @@ class SurfaceParser(HTMLParser):
             self.image_tags.append(tag)
         for key in ("src", "href", "xlink:href"):
             value = attr_map.get(key, "")
-            if SOURCE_RASTER_RE.search(value):
+            decoded_value = urllib.parse.unquote(value)
+            if SOURCE_RASTER_RE.search(decoded_value):
                 self.source_refs.append(f"{tag}.{key}={value}")
-            if value.strip().lower().startswith("data:image/"):
+            if decoded_value.strip().lower().startswith("data:image/"):
                 self.embedded_image_refs.append(f"{tag}.{key}=data:image")
 
     def _is_generated_surface(self, tag: str, attr_map: dict[str, str]) -> bool:
@@ -304,12 +306,12 @@ def scan_json_for_source_images(json_path: Path, spec: dict, panel_id: str) -> l
     errors = []
 
     def looks_like_source_raster(value: str) -> bool:
-        lower = value.lower()
+        lower = urllib.parse.unquote(value).lower()
         if lower.startswith("data:image/"):
             return True
         if not lower.endswith((".png", ".jpg", ".jpeg", ".webp")):
             return False
-        return panel_id in value or "assets/reference/" in lower or "assets/full-reference/" in lower or SOURCE_RASTER_RE.search(value) is not None
+        return panel_id in lower or "assets/reference/" in lower or "assets/full-reference/" in lower or SOURCE_RASTER_RE.search(lower) is not None
 
     def visit(value: object, path: tuple[str, ...] = ()) -> None:
         if isinstance(value, dict):

@@ -7,6 +7,7 @@ import signal
 import subprocess
 import sys
 import time
+import urllib.parse
 from pathlib import Path
 
 
@@ -90,11 +91,12 @@ def validate(figure_id: str, outdir: Path) -> dict:
     )
     if html.exists():
         for lineno, line in enumerate(html.read_text(errors="replace").splitlines(), start=1):
-            if not html_suspicious.search(line):
+            decoded_line = urllib.parse.unquote(line)
+            if not html_suspicious.search(decoded_line):
                 continue
-            if "url(#" in line:
+            if "url(#" in decoded_line:
                 continue
-            if any(token in line for token in html_allowed_context):
+            if any(token in decoded_line for token in html_allowed_context):
                 continue
             result["raster_reuse_hits"].append(f"{html.relative_to(REPO)}:{lineno}:{line.strip()}")
 
@@ -102,12 +104,12 @@ def validate(figure_id: str, outdir: Path) -> dict:
         source_path = f"assets/full-reference/{figure_id}.png"
 
         def looks_like_source_raster(value: str) -> bool:
-            lower = value.lower()
+            lower = urllib.parse.unquote(value).lower()
             if lower.startswith("data:image/"):
                 return True
             if not lower.endswith((".png", ".jpg", ".jpeg", ".webp")):
                 return False
-            return source_path in value or f"{figure_id}.png" in value or "assets/full-reference/" in lower
+            return source_path in lower or f"{figure_id}.png" in lower or "assets/full-reference/" in lower
 
         def scan_json(value, path: tuple[str, ...] = ()) -> None:
             if isinstance(value, dict):
