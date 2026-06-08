@@ -1,0 +1,22 @@
+{
+  "name": "vectorize-figure",
+  "version": "0.1.0+codex.20260608062005",
+  "description": "Reconstruct raster scientific figures as configurable HTML and JSON.",
+  "author": {
+    "name": "Local developer"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Vectorize Figure",
+    "shortDescription": "Reconstruct scientific figure rasters.",
+    "longDescription": "Vectorize Figure turns raster scientific figure panels into editable, JSON-driven HTML reconstructions with no source-image reuse outside QA views.",
+    "developerName": "Local developer",
+    "category": "Productivity",
+    "capabilities": [
+      "scientific figure reconstruction",
+      "configurable HTML output",
+      "semantic JSON figure specs"
+    ],
+    "defaultPrompt": "Use $vectorize-figure on a raster scientific figure to produce configurable HTML and JSON."
+  }
+}
