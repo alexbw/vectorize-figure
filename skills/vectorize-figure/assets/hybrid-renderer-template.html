@@ -193,7 +193,7 @@
     }
 
     function pointScales(plot) {
-      const box = plot.bbox;
+      const box = plot.dataBbox || plot.data_bbox || plot.bbox;
       return {
         x: value => scale(plot.x.domain, [box.x, box.x + box.width], value),
         y: value => scale(plot.y.domain, [box.y + box.height, box.y], value)
@@ -279,17 +279,22 @@
         'colorbar-label',
         'colorbar-title',
         'legend-label',
+        'legend-title',
         'phase-label',
         'region-label',
+        'colorbar-tick-label',
         'table-header',
-        'table-cell'
+        'table-cell',
+        'axis-title'
       ].includes(role);
     }
 
     function textNode(spec, defaults = {}) {
       const type = resolveTypography(spec, defaults);
       const role = spec.role || 'text';
+      const textId = spec.id || undefined;
       const node = make('text', {
+        id: textId,
         x: spec.x,
         y: spec.y,
         fill: spec.fill || spec.color || defaults.color || '#111111',
@@ -305,12 +310,15 @@
         transform: composeTransform(spec),
         'data-role': role,
         'data-protected-text': spec.protectedText || spec.protected_text || isProtectedTextRole(role) ? 'true' : undefined,
-        'data-text-id': spec.id || undefined,
+        'data-text-id': textId,
         'data-axis': spec.axis || undefined,
         'data-value': spec.value ?? undefined,
         'data-label-offset-x': spec.labelOffsetX ?? spec.label_offset_x,
         'data-label-offset-y': spec.labelOffsetY ?? spec.label_offset_y,
         'data-anchor-to': spec.anchorTo || spec.anchor_to || undefined,
+        'data-alignment-id': spec.alignmentId || spec.alignment_id || undefined,
+        'data-alignment-target': spec.alignmentTarget || spec.alignment_target || undefined,
+        'data-alignment-delta-px': spec.alignmentDeltaPx ?? spec.alignment_delta_px,
         'data-fit': spec.fit || undefined,
         'data-target-width': spec.targetWidth ?? spec.target_width,
         'data-target-height': spec.targetHeight ?? spec.target_height,
@@ -339,6 +347,73 @@
         node.textContent = lines[0] || '';
       }
       return node;
+    }
+
+    function dataBox(plot) {
+      return plot.dataBbox || plot.data_bbox || plot.bbox;
+    }
+
+    function plotAxes(plot) {
+      return plot.axes || {};
+    }
+
+    function axisSpec(plot, dimension) {
+      const axes = plotAxes(plot);
+      const key = dimension === 'x' ? 'xAxis' : 'yAxis';
+      const snake = dimension === 'x' ? 'x_axis' : 'y_axis';
+      return axes[key] || axes[snake] || plot[dimension].axis || {};
+    }
+
+    function axisId(plot, dimension) {
+      return axisSpec(plot, dimension).id || plot[dimension].id || `${dimension}`;
+    }
+
+    function axisLine(plot, dimension) {
+      const box = dataBox(plot);
+      const spec = axisSpec(plot, dimension);
+      if (spec.line) return spec.line;
+      if (dimension === 'x') {
+        const y = spec.y ?? plot.x.axisY ?? plot.x.axis_y ?? box.y + box.height;
+        return {x1: box.x, y1: y, x2: box.x + box.width, y2: y};
+      }
+      const x = spec.x ?? plot.y.axisX ?? plot.y.axis_x ?? box.x;
+      return {x1: x, y1: box.y, x2: x, y2: box.y + box.height};
+    }
+
+    function defaultTickLabelBand(plot, dimension) {
+      const line = axisLine(plot, dimension);
+      if (dimension === 'x') {
+        return {id: `${axisId(plot, 'x')}-tick-label-band`, x: Math.min(line.x1, line.x2), y: line.y1 + 8, width: Math.abs(line.x2 - line.x1), height: 24};
+      }
+      return {id: `${axisId(plot, 'y')}-tick-label-band`, x: line.x1 - 46, y: Math.min(line.y1, line.y2), width: 36, height: Math.abs(line.y2 - line.y1)};
+    }
+
+    function tickLabelBand(plot, dimension) {
+      const axis = axisSpec(plot, dimension);
+      return plot[dimension].tickLabelBand || plot[dimension].tick_label_band ||
+        axis.tickLabelBand || axis.tick_label_band || defaultTickLabelBand(plot, dimension);
+    }
+
+    function resolveAxisLabel(spec, plot, dimension) {
+      const box = dataBox(plot);
+      const line = axisLine(plot, dimension);
+      const band = tickLabelBand(plot, dimension);
+      const axis = axisSpec(plot, dimension);
+      const role = spec.role || (dimension === 'x' ? 'x-axis-label' : 'y-axis-label');
+      if (spec.x !== undefined && spec.y !== undefined) {
+        return {...spec, role, anchorTo: spec.anchorTo || spec.anchor_to || band.id || axis.id || dimension};
+      }
+      if (spec.anchorTo || spec.anchor_to) {
+        const target = spec.anchorTo || spec.anchor_to;
+        if (target === 'tickLabelBand') {
+          if (dimension === 'x') return {...spec, x: band.x + band.width / 2 + (spec.dx || 0), y: band.y + band.height + (spec.dy ?? 14), role, anchor: spec.anchor || 'middle', anchorTo: band.id};
+          return {...spec, x: band.x - (spec.dx ?? 24), y: band.y + band.height / 2 + (spec.dy || 0), role, anchor: spec.anchor || 'middle', rotation: spec.rotation ?? -90, anchorTo: band.id};
+        }
+      }
+      if (dimension === 'x') {
+        return {...spec, x: line.x1 + (line.x2 - line.x1) / 2, y: band.y + band.height + 14, role, anchor: spec.anchor || 'middle', anchorTo: band.id};
+      }
+      return {...spec, x: band.x - 24, y: box.y + box.height / 2, role, anchor: spec.anchor || 'middle', rotation: spec.rotation ?? -90, anchorTo: band.id};
     }
 
     function measuredBox(node) {
@@ -452,7 +527,41 @@
         a.y + a.height > b.y;
     }
 
+    function layoutQaPolicy(spec) {
+      const validation = spec.validation || {};
+      const layoutQa = validation.layoutQa || validation.layout_qa || {};
+      return {
+        minTextGapPx: Number(layoutQa.minTextGapPx ?? layoutQa.min_text_gap_px ?? 1.5),
+        minZoneGapPx: Number(layoutQa.minZoneGapPx ?? layoutQa.min_zone_gap_px ?? 1),
+        allowOverlaps: layoutQa.allowOverlaps || layoutQa.allow_overlaps || []
+      };
+    }
+
+    function idsMatch(actual, expected) {
+      return expected === '*' || String(actual) === String(expected);
+    }
+
+    function isAllowedTextCollision(policy, aId, bId) {
+      return policy.allowOverlaps.some(item => {
+        const first = item.a ?? item.first ?? item.textA ?? item.text_a;
+        const second = item.b ?? item.second ?? item.textB ?? item.text_b;
+        if (first === undefined || second === undefined) return false;
+        return (idsMatch(aId, first) && idsMatch(bId, second)) ||
+          (idsMatch(aId, second) && idsMatch(bId, first));
+      });
+    }
+
+    function isAllowedZoneCollision(policy, textId, zoneId) {
+      return policy.allowOverlaps.some(item => {
+        const text = item.text ?? item.textId ?? item.text_id;
+        const zone = item.zone ?? item.zoneId ?? item.zone_id;
+        return text !== undefined && zone !== undefined &&
+          idsMatch(textId, text) && idsMatch(zoneId, zone);
+      });
+    }
+
     function collectProtectedTextCollisions(svg, spec) {
+      const policy = layoutQaPolicy(spec);
       const nodes = Array.from(svg.querySelectorAll('text[data-protected-text="true"]'));
       const boxes = nodes.map(node => ({
         node,
@@ -465,7 +574,8 @@
         for (let j = i + 1; j < boxes.length; j += 1) {
           const a = boxes[i];
           const b = boxes[j];
-          if (boxesIntersect(paddedBox(a.box, 1.5), paddedBox(b.box, 1.5))) {
+          if (isAllowedTextCollision(policy, a.id, b.id)) continue;
+          if (boxesIntersect(paddedBox(a.box, policy.minTextGapPx), paddedBox(b.box, policy.minTextGapPx))) {
             collisions.push({
               a: {id: a.id, role: a.role, box: a.box},
               b: {id: b.id, role: b.role, box: b.box}
@@ -504,7 +614,7 @@
 
     function collectExclusionZones(spec) {
       const zones = [];
-      const zoneTypes = new Set(['plot', 'heatmapPlot', 'colorbar', 'orientationKey', 'legend', 'helperStrip', 'regionBand', 'phaseBand']);
+      const zoneTypes = new Set(['plot', 'heatmapPlot', 'colorbar', 'orientationKey', 'legend', 'helperStrip', 'regionBand', 'phaseBand', 'sideRowBlockStrip', 'rowBlockSideStrip', 'rowBlockStrip', 'segmentedColorbar']);
       function addZone(id, type, box, padding = 0, allow = []) {
         const normalized = normalizedBox(box);
         if (!normalized) return;
@@ -517,8 +627,8 @@
       }
 
       for (const panel of spec.panels || []) {
-        if (panel.plot && panel.plot.bbox) {
-          addZone(`${panel.id || 'panel'}.plot`, 'plot', panel.plot.bbox, panel.plot.exclusionPaddingPx || panel.plot.exclusion_padding_px || 0, panel.plot.exclusionAllowTextIds || panel.plot.exclusion_allow_text_ids || []);
+        if (panel.plot && (panel.plot.bbox || panel.plot.dataBbox || panel.plot.data_bbox)) {
+          addZone(`${panel.id || 'panel'}.plot`, 'plot', dataBox(panel.plot), panel.plot.exclusionPaddingPx || panel.plot.exclusion_padding_px || 0, panel.plot.exclusionAllowTextIds || panel.plot.exclusion_allow_text_ids || []);
         }
         for (const item of panel.layoutObjects || []) {
           const exclusion = item.exclusionZone || item.exclusion_zone;
@@ -535,6 +645,7 @@
     }
 
     function collectTextExclusionCollisions(svg, spec) {
+      const policy = layoutQaPolicy(spec);
       const zones = collectExclusionZones(spec);
       const nodes = Array.from(svg.querySelectorAll('text[data-protected-text="true"]'));
       const collisions = [];
@@ -544,7 +655,8 @@
         const textId = node.dataset.textId || node.textContent;
         for (const zone of zones) {
           if (zone.allow.has(textId)) continue;
-          if (boxesIntersect(paddedBox(box, 1), zone.box)) {
+          if (isAllowedZoneCollision(policy, textId, zone.id)) continue;
+          if (boxesIntersect(paddedBox(box, policy.minZoneGapPx), zone.box)) {
             collisions.push({
               text: {id: textId, role: node.dataset.role || node.getAttribute('data-role') || 'text', box},
               zone: {id: zone.id, type: zone.type, box: zone.box}
@@ -554,6 +666,27 @@
       }
       if (collisions.length) console.warn('Protected text intersects exclusion zone', collisions);
       return collisions;
+    }
+
+    function collectProtectedTextMetadata(svg) {
+      const missing = [];
+      for (const node of svg.querySelectorAll('text[data-protected-text="true"]')) {
+        const id = node.dataset.textId || '';
+        const role = node.dataset.role || node.getAttribute('data-role') || 'text';
+        const anchorTo = node.dataset.anchorTo || '';
+        if (!id || !anchorTo) {
+          missing.push({
+            id: id || node.textContent || role,
+            role,
+            missing: [
+              ...(!id ? ['id'] : []),
+              ...(!anchorTo ? ['anchorTo'] : [])
+            ]
+          });
+        }
+      }
+      if (missing.length) console.warn('Protected text missing semantic metadata', missing);
+      return missing;
     }
 
     function pointInsideBox(x, y, box, epsilon = 0.5) {
@@ -623,15 +756,17 @@
       const textExclusionCollisions = collectTextExclusionCollisions(svg, spec);
       const boundedMarkEscapes = collectBoundedMarkEscapes(svg);
       const colorbars = validateColorbarMetadata(spec);
+      const protectedTextMetadataMissing = collectProtectedTextMetadata(svg);
       window.figureLayoutQa = {
         id: spec.id,
         protectedTextCollisions: protectedText.collisions,
         clippedProtectedText: protectedText.clipped,
         protectedTextExclusionCollisions: textExclusionCollisions,
+        protectedTextMetadataMissing,
         boundedMarkEscapes,
         colorbarMetadataMissing: colorbars.missing
       };
-      svg.setAttribute('data-layout-validation', protectedText.collisions.length || protectedText.clipped.length || textExclusionCollisions.length || boundedMarkEscapes.length ? 'mismatch' : 'ok');
+      svg.setAttribute('data-layout-validation', protectedText.collisions.length || protectedText.clipped.length || textExclusionCollisions.length || protectedTextMetadataMissing.length || boundedMarkEscapes.length ? 'mismatch' : 'ok');
       return window.figureLayoutQa;
     }
 
@@ -743,19 +878,27 @@
     }
 
     function renderAxes(svg, panel, defaults) {
-      if (!panel.plot || !panel.plot.bbox) return;
+      if (!panel.plot || !(panel.plot.bbox || panel.plot.dataBbox || panel.plot.data_bbox)) return;
       const plot = panel.plot;
-      const box = plot.bbox;
+      const box = dataBox(plot);
       const scales = pointScales(plot);
       const axisStyle = {stroke: '#111111', 'stroke-width': 1.25, fill: 'none'};
+      const xAxis = axisSpec(plot, 'x');
+      const yAxis = axisSpec(plot, 'y');
+      const xLine = axisLine(plot, 'x');
+      const yLine = axisLine(plot, 'y');
+      const xAxisId = axisId(plot, 'x');
+      const yAxisId = axisId(plot, 'y');
+      const xBand = tickLabelBand(plot, 'x');
+      const yBand = tickLabelBand(plot, 'y');
 
-      svg.appendChild(make('line', {...axisStyle, x1: box.x, y1: box.y + box.height, x2: box.x + box.width, y2: box.y + box.height, 'data-role': 'x-axis'}));
-      svg.appendChild(make('line', {...axisStyle, x1: box.x, y1: box.y, x2: box.x, y2: box.y + box.height, 'data-role': 'y-axis'}));
+      svg.appendChild(make('line', {...axisStyle, stroke: xAxis.stroke || axisStyle.stroke, 'stroke-width': xAxis.strokeWidth || xAxis.stroke_width || axisStyle['stroke-width'], ...xLine, 'data-role': 'x-axis', 'data-axis': xAxisId, 'data-source-x1': xLine.x1, 'data-source-y1': xLine.y1, 'data-source-x2': xLine.x2, 'data-source-y2': xLine.y2}));
+      svg.appendChild(make('line', {...axisStyle, stroke: yAxis.stroke || axisStyle.stroke, 'stroke-width': yAxis.strokeWidth || yAxis.stroke_width || axisStyle['stroke-width'], ...yLine, 'data-role': 'y-axis', 'data-axis': yAxisId, 'data-source-x1': yLine.x1, 'data-source-y1': yLine.y1, 'data-source-x2': yLine.x2, 'data-source-y2': yLine.y2}));
 
       for (const tick of plot.x.ticks || []) {
           const x = scales.x(tick.value);
-          const axisId = plot.x.id || 'x';
-        const tickLength = tick.tickLength ?? tick.tick_length ?? plot.x.tickLength ?? plot.x.tick_length ?? 6;
+          const axisId = xAxisId;
+        const tickLength = tick.tickLength ?? tick.tick_length ?? plot.x.tickLength ?? plot.x.tick_length ?? xAxis.tickLength ?? xAxis.tick_length ?? 6;
         const tickDirection = tick.tickDirection || tick.tick_direction || plot.x.tickDirection || plot.x.tick_direction || 'out';
         const edgePolicy = tick.edgePolicy || tick.edge_policy || plot.x.edgeTickPolicy || plot.x.edge_tick_policy;
         let labelX = tick.x ?? x;
@@ -767,26 +910,157 @@
           labelX = tick.x ?? x - 2;
           anchor = tick.anchor || 'end';
         }
-        const axisY = box.y + box.height;
-        svg.appendChild(make('line', {...axisStyle, x1: x, y1: axisY, x2: x, y2: axisY + (tickDirection === 'in' ? -tickLength : tickLength), 'data-role': 'axis-tick-mark', 'data-axis': axisId, 'data-value': tick.value, 'data-source-x': x, 'data-source-y': axisY}));
-        svg.appendChild(textNode({...tick, text: tick.label ?? String(tick.value), x: labelX, y: tick.y ?? axisY + 20, fontSize: tick.fontSize || tick.font_size || 12, anchor, role: 'tick-label', axis: axisId, value: tick.value, labelOffsetX: +(labelX - x).toFixed(3)}, defaults));
+        const axisY = tick.axisY ?? tick.axis_y ?? xLine.y1;
+        const labelY = tick.y ?? tick.labelY ?? tick.label_y ?? xBand.y + (tick.labelDy ?? tick.label_dy ?? 14);
+        const tickId = tick.id || `${axisId}-tick-${String(tick.value).replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+        svg.appendChild(make('line', {...axisStyle, x1: x, y1: axisY, x2: x, y2: axisY + (tickDirection === 'in' ? -tickLength : tickLength), 'data-role': 'axis-tick-mark', 'data-axis': axisId, 'data-value': tick.value, 'data-source-x': x, 'data-source-y': axisY, 'data-anchor-to': tick.anchorTo || tick.anchor_to || tick.alignment?.target || '', 'data-alignment-id': tick.alignment?.id || '', 'data-alignment-target': tick.alignment?.target || '', 'data-alignment-delta-px': tick.alignment?.deltaPx ?? tick.alignment?.delta_px ?? ''}));
+        svg.appendChild(textNode({...tick, id: tick.labelId || tick.label_id || `${tickId}-label`, text: tick.label ?? String(tick.value), x: labelX, y: labelY, fontSize: tick.fontSize || tick.font_size || 12, anchor, role: 'tick-label', axis: axisId, value: tick.value, labelOffsetX: +(labelX - x).toFixed(3), labelOffsetY: +(labelY - axisY).toFixed(3), anchorTo: tick.anchorTo || tick.anchor_to || xBand.id || axisId, alignmentId: tick.alignment?.id, alignmentTarget: tick.alignment?.target, alignmentDeltaPx: tick.alignment?.deltaPx ?? tick.alignment?.delta_px}, defaults));
       }
 
       for (const tick of plot.y.ticks || []) {
         const y = scales.y(tick.value);
-        const axisId = plot.y.id || 'y';
-        const tickLength = tick.tickLength ?? tick.tick_length ?? plot.y.tickLength ?? plot.y.tick_length ?? 6;
+        const axisId = yAxisId;
+        const tickLength = tick.tickLength ?? tick.tick_length ?? plot.y.tickLength ?? plot.y.tick_length ?? yAxis.tickLength ?? yAxis.tick_length ?? 6;
         const tickDirection = tick.tickDirection || tick.tick_direction || plot.y.tickDirection || plot.y.tick_direction || 'out';
-        svg.appendChild(make('line', {...axisStyle, x1: box.x + (tickDirection === 'in' ? tickLength : -tickLength), y1: y, x2: box.x, y2: y, 'data-role': 'axis-tick-mark', 'data-axis': axisId, 'data-value': tick.value, 'data-source-x': box.x, 'data-source-y': y}));
-        svg.appendChild(textNode({...tick, text: tick.label ?? String(tick.value), x: tick.x ?? box.x - 10, y: tick.y ?? y + 4, fontSize: tick.fontSize || tick.font_size || 12, anchor: tick.anchor || 'end', role: 'tick-label', axis: axisId, value: tick.value}, defaults));
+        const axisX = tick.axisX ?? tick.axis_x ?? yLine.x1;
+        const labelX = tick.x ?? tick.labelX ?? tick.label_x ?? yBand.x + yBand.width - 2;
+        const labelY = tick.y ?? tick.labelY ?? tick.label_y ?? y + 4;
+        const tickId = tick.id || `${axisId}-tick-${String(tick.value).replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+        svg.appendChild(make('line', {...axisStyle, x1: axisX + (tickDirection === 'in' ? tickLength : -tickLength), y1: y, x2: axisX, y2: y, 'data-role': 'axis-tick-mark', 'data-axis': axisId, 'data-value': tick.value, 'data-source-x': axisX, 'data-source-y': y}));
+        svg.appendChild(textNode({...tick, id: tick.labelId || tick.label_id || `${tickId}-label`, text: tick.label ?? String(tick.value), x: labelX, y: labelY, fontSize: tick.fontSize || tick.font_size || 12, anchor: tick.anchor || 'end', role: 'tick-label', axis: axisId, value: tick.value, labelOffsetX: +(labelX - axisX).toFixed(3), labelOffsetY: +(labelY - y).toFixed(3), anchorTo: tick.anchorTo || tick.anchor_to || yBand.id || axisId}, defaults));
       }
 
       if (plot.x.label) {
-        svg.appendChild(textNode({...plot.x.label, text: plot.x.label.text, x: plot.x.label.x ?? box.x + box.width / 2, y: plot.x.label.y ?? box.y + box.height + 45, fontSize: plot.x.label.fontSize || plot.x.label.font_size || 14, anchor: plot.x.label.anchor || 'middle', role: plot.x.label.role || 'x-axis-label'}, defaults));
+        svg.appendChild(textNode({...resolveAxisLabel(plot.x.label, plot, 'x'), id: plot.x.label.id || `${xAxisId}-label`, text: plot.x.label.text, fontSize: plot.x.label.fontSize || plot.x.label.font_size || 14}, defaults));
       }
 
       if (plot.y.label) {
-        svg.appendChild(textNode({...plot.y.label, text: plot.y.label.text, x: plot.y.label.x ?? box.x - 48, y: plot.y.label.y ?? box.y + box.height / 2, fontSize: plot.y.label.fontSize || plot.y.label.font_size || 14, anchor: plot.y.label.anchor || 'middle', rotation: plot.y.label.rotation ?? -90, role: plot.y.label.role || 'y-axis-label'}, defaults));
+        svg.appendChild(textNode({...resolveAxisLabel(plot.y.label, plot, 'y'), id: plot.y.label.id || `${yAxisId}-label`, text: plot.y.label.text, fontSize: plot.y.label.fontSize || plot.y.label.font_size || 14}, defaults));
+      }
+    }
+
+    function sideStripTypes() {
+      return new Set(['sideRowBlockStrip', 'rowBlockSideStrip', 'rowBlockStrip', 'segmentedColorbar']);
+    }
+
+    function segmentCoord(strip, segment, edge, panel) {
+      const vertical = strip.orientation !== 'horizontal';
+      const box = strip.bbox || strip.box;
+      const absolute = vertical
+        ? (edge === 'start' ? (segment.fromY ?? segment.y1 ?? segment.startY) : (segment.toY ?? segment.y2 ?? segment.endY))
+        : (edge === 'start' ? (segment.fromX ?? segment.x1 ?? segment.startX) : (segment.toX ?? segment.x2 ?? segment.endX));
+      if (absolute !== undefined) return absolute;
+      const semantic = edge === 'start'
+        ? (segment.from ?? segment.start ?? segment.valueStart ?? segment.value_start)
+        : (segment.to ?? segment.end ?? segment.valueEnd ?? segment.value_end);
+      if (semantic !== undefined && panel.plot) {
+        const scales = pointScales(panel.plot);
+        return vertical ? scales.y(semantic) : scales.x(semantic);
+      }
+      return edge === 'start' ? (vertical ? box.y : box.x) : (vertical ? box.y + box.height : box.x + box.width);
+    }
+
+    function stripBoundaryCoord(strip, boundary, panel) {
+      const vertical = strip.orientation !== 'horizontal';
+      const direct = vertical ? (boundary.atY ?? boundary.y) : (boundary.atX ?? boundary.x);
+      if (direct !== undefined) return direct;
+      const semantic = boundary.at ?? boundary.value;
+      if (semantic !== undefined && panel.plot) {
+        const scales = pointScales(panel.plot);
+        return vertical ? scales.y(semantic) : scales.x(semantic);
+      }
+      return undefined;
+    }
+
+    function renderSideRowBlockStrip(svg, panel, strip) {
+      const box = strip.bbox || strip.box;
+      if (!box) return;
+      const vertical = strip.orientation !== 'horizontal';
+      const group = make('g', {
+        'data-role': 'side-row-block-strip',
+        'data-layout-id': strip.id || '',
+        'data-linked-axis': strip.linkedAxis || strip.linked_axis || '',
+        'data-shared-layout-frame': strip.sharedLayoutFrame || strip.shared_layout_frame || '',
+        'data-alignments': Array.isArray(strip.alignments) ? strip.alignments.map(alignment => alignment.id).join(' ') : ''
+      });
+      svg.appendChild(group);
+      if (Array.isArray(strip.components) && strip.components.length) {
+        for (const component of strip.components) {
+          const box = component.bbox || component.box;
+          if (!box) continue;
+          group.appendChild(make('rect', {
+            x: box.x,
+            y: box.y,
+            width: box.width,
+            height: box.height,
+            fill: component.fill || component.color || '#cccccc',
+            stroke: component.stroke || 'none',
+            'stroke-width': component.strokeWidth || component.stroke_width || undefined,
+            'data-role': 'side-row-block-component',
+            'data-layout-id': strip.id || '',
+            'data-component-id': component.id || '',
+            'data-component-kind': component.kind || component.type || ''
+          }));
+        }
+      } else for (const segment of strip.segments || []) {
+        const start = segmentCoord(strip, segment, 'start', panel);
+        const end = segmentCoord(strip, segment, 'end', panel);
+        group.appendChild(make('rect', {
+          x: vertical ? box.x : Math.min(start, end),
+          y: vertical ? Math.min(start, end) : box.y,
+          width: vertical ? box.width : Math.abs(end - start),
+          height: vertical ? Math.abs(end - start) : box.height,
+          fill: segment.fill || segment.color || '#cccccc',
+          stroke: 'none',
+          'data-role': 'side-row-block-segment',
+          'data-layout-id': strip.id || '',
+          'data-segment-id': segment.id || ''
+        }));
+      }
+      for (const separator of strip.separators || strip.boundaries || []) {
+        const at = stripBoundaryCoord(strip, separator, panel);
+        if (at === undefined) continue;
+        group.appendChild(make('line', {
+          x1: vertical ? box.x : at,
+          y1: vertical ? at : box.y,
+          x2: vertical ? box.x + box.width : at,
+          y2: vertical ? at : box.y + box.height,
+          stroke: separator.stroke || separator.fill || '#ffffff',
+          'stroke-width': separator.strokeWidth || separator.stroke_width || separator.width || 1,
+          'data-role': 'side-row-block-separator',
+          'data-layout-id': strip.id || '',
+          'data-separator-id': separator.id || ''
+        }));
+      }
+      for (const border of strip.borders || []) {
+        const side = border.side || 'right';
+        const width = border.width ?? border.strokeWidth ?? border.stroke_width ?? 1;
+        const fill = border.fill || border.stroke || '#111111';
+        const attrs = {fill, stroke: 'none', 'data-role': 'side-row-block-border', 'data-layout-id': strip.id || '', 'data-border-side': side};
+        if (side === 'left') group.appendChild(make('rect', {...attrs, x: box.x, y: box.y, width, height: box.height}));
+        else if (side === 'right') group.appendChild(make('rect', {...attrs, x: box.x + box.width - width, y: box.y, width, height: box.height}));
+        else if (side === 'top') group.appendChild(make('rect', {...attrs, x: box.x, y: box.y, width: box.width, height: width}));
+        else if (side === 'bottom') group.appendChild(make('rect', {...attrs, x: box.x, y: box.y + box.height - width, width: box.width, height: width}));
+      }
+      if (strip.outline || strip.stroke) {
+        group.appendChild(make('rect', {
+          x: box.x,
+          y: box.y,
+          width: box.width,
+          height: box.height,
+          fill: 'none',
+          stroke: strip.stroke || strip.outline.stroke || '#111111',
+          'stroke-width': strip.strokeWidth || strip.stroke_width || strip.outline.strokeWidth || strip.outline.stroke_width || 1,
+          'data-role': 'side-row-block-outline',
+          'data-layout-id': strip.id || ''
+        }));
+      }
+    }
+
+    function renderLayoutObjects(svg, panel) {
+      const types = sideStripTypes();
+      for (const item of panel.layoutObjects || []) {
+        if (types.has(item.type)) renderSideRowBlockStrip(svg, panel, item);
       }
     }
 
@@ -876,8 +1150,9 @@
       for (const panel of spec.panels || []) {
         const group = make('g', {'data-panel-id': panel.id || '', 'data-role': 'panel'});
         svg.appendChild(group);
-        if (panel.label) group.appendChild(textNode(panel.label, defaults));
-        if (panel.title) group.appendChild(textNode(panel.title, defaults));
+        renderLayoutObjects(group, panel);
+        if (panel.label) group.appendChild(textNode({...panel.label, id: panel.label.id || `${panel.id || 'panel'}-label`, role: panel.label.role || 'panel-label', anchorTo: panel.label.anchorTo || panel.label.anchor_to || panel.id || 'panel'}, defaults));
+        if (panel.title) group.appendChild(textNode({...panel.title, id: panel.title.id || `${panel.id || 'panel'}-title`, role: panel.title.role || 'panel-title', anchorTo: panel.title.anchorTo || panel.title.anchor_to || panel.id || 'panel'}, defaults));
         renderAxes(group, panel, defaults);
         renderMarks(group, canvas, panel, defaults);
       }

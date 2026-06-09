@@ -246,6 +246,7 @@ from the data region. Represent that explicitly instead of treating one
   "axes": {
     "xAxis": {
       "id": "heatmap-a-x-axis",
+      "offsetFromDataBbox": {"edge": "bottom", "pixels": 6},
       "line": {"x1": 70, "y1": 451, "x2": 240, "y2": 451},
       "tickLength": 7
     },
@@ -270,6 +271,10 @@ between x and y axes at the corner, encode that by giving `xAxis.line` and
 `yAxis.line` independent endpoints that do not touch. This preserves editable
 coordinate transforms while matching figures whose axes are visually offset
 from the data.
+When a reconstruction intentionally models that gap, add
+`offsetFromDataBbox: {"edge": "bottom", "pixels": N}` or the corresponding
+edge. Validators treat this as a contract: an axis that declares an offset but
+still copies `dataBbox.bottom`, `top`, `left`, or `right` is invalid.
 
 ### Relative Layout Anchors
 
@@ -662,6 +667,117 @@ bars to explain y-axis sorting strips or event/region colors. When text labels
 and colored strips share an axis area, reserve separate bands so labels never
 overlap the strip.
 
+Heatmap row-block side strips must use a dedicated strip object rather than a
+generic colorbar. Encode the colored segments, the segment transition
+separator, all visible edge/border strips, the linked axis, and the strip
+exclusion zone:
+
+```json
+{
+  "id": "panel-c-row-block-strip",
+  "type": "sideRowBlockStrip",
+  "orientation": "vertical",
+  "bbox": {"x": 69, "y": 25, "width": 12, "height": 564},
+  "linkedAxis": "panel-c-y-axis",
+  "sharedLayoutFrame": "panel-c.plot.dataBbox",
+  "alignments": [
+    {"id": "row-strip-top-to-data-top", "sourceEdge": "top", "target": "panel-c.plot.dataBbox.top", "deltaPx": 0},
+    {"id": "row-strip-bottom-to-data-bottom", "sourceEdge": "bottom", "target": "panel-c.plot.dataBbox.bottom", "deltaPx": 0},
+    {"id": "row-strip-right-to-data-left", "sourceEdge": "right", "target": "panel-c.plot.dataBbox.left", "deltaPx": -2}
+  ],
+  "exclusionZone": {"paddingPx": 1},
+  "expectedComponentCount": 4,
+  "components": [
+    {"id": "dark-edge", "kind": "border", "bbox": {"x": 69, "y": 25, "width": 2, "height": 564}, "fill": "#111111"},
+    {"id": "upper-teal-component", "kind": "segment", "bbox": {"x": 71, "y": 25, "width": 11, "height": 376}, "fill": "#087b76"},
+    {"id": "light-transition-rule", "kind": "separator", "bbox": {"x": 71, "y": 400, "width": 11, "height": 2}, "fill": "#f6f2e8"},
+    {"id": "lower-gold-component", "kind": "segment", "bbox": {"x": 71, "y": 402, "width": 11, "height": 187}, "fill": "#d99117"}
+  ],
+  "segments": [
+    {"id": "upper-teal-block", "fromY": 25, "toY": 431, "fill": "#009688"},
+    {"id": "lower-gold-block", "fromY": 431, "toY": 589, "fill": "#d8a000"}
+  ],
+  "separators": [
+    {"id": "row-block-transition", "atY": 431, "stroke": "#f6f4ec", "strokeWidth": 1.2}
+  ],
+  "borders": [
+    {"side": "right", "width": 2, "fill": "#111111"}
+  ]
+}
+```
+
+The corresponding axis and label geometry remain separate:
+
+```json
+{
+  "plot": {
+    "dataBbox": {"x": 84, "y": 25, "width": 541, "height": 564},
+    "axes": {
+      "xAxis": {
+        "id": "panel-c-x-axis",
+        "line": {"x1": 84, "y1": 589, "x2": 625, "y2": 589},
+        "originAlignment": {
+          "id": "panel-c-x-origin-row-strip-alignment",
+          "tickValue": 0,
+          "target": "panel-c-row-block-strip.right",
+          "deltaPx": 2
+        }
+      },
+      "yAxis": {
+        "id": "panel-c-y-axis",
+        "sourceCalibrated": true,
+        "line": {"x1": 62, "y1": 25, "x2": 62, "y2": 589},
+        "tickLabelBand": {"id": "panel-c-y-tick-label-band", "x": 36, "y": 25, "width": 22, "height": 564}
+      }
+    }
+  }
+}
+```
+
+Renderers must draw side strip segments, separators, and borders from these
+objects. When `components` is present, render each component as a countable
+visual part and publish DOM metadata such as
+`data-role="side-row-block-component"` and `data-layout-id`; validation should
+fail if fewer than `expectedComponentCount` visible components render. Alignment
+relationships must also survive rendering: side strip groups should publish
+their alignment ids, and aligned ticks should publish their `data-alignment-*`
+metadata. A relationship stored only in JSON is not sufficient when validators
+need it to catch drift between side strips, plot frames, and origin ticks. Axis
+tick labels must anchor to the tick-label band, not to the heatmap `dataBbox`
+edge or the side strip. Protected text must be measured after fonts load and
+must avoid declared exclusion zones for side strips, plot boxes, colorbars,
+legends, helper strips, orientation keys, and tables.
+
+For arrays of heatmaps stored as `plotGroups`, each plot group still owns
+explicit axis layout:
+
+```json
+{
+  "id": "control",
+  "type": "heatmapPlot",
+  "dataBbox": {"x": 70, "y": 91, "width": 170, "height": 354},
+  "axes": {
+    "xAxis": {
+      "id": "control-x-axis",
+      "sourceCalibrated": true,
+      "offsetFromDataBbox": {"edge": "bottom", "pixels": 6},
+      "line": {"x1": 70, "y1": 451, "x2": 240, "y2": 451},
+      "tickLabelBand": {"id": "control.xAxis.tickLabelBand", "x": 70, "y": 451, "width": 170, "height": 49}
+    }
+  }
+}
+```
+
+Do not rely on a plot rectangle or `dataBbox.bottom` to imply the x-axis line
+in heatmap plot groups. When the x-axis is visually offset from the heatmap,
+declare `offsetFromDataBbox` and render the line/ticks from `axes.xAxis.line`;
+do not move the heatmap data box to make labels fit.
+
+If validation detects protected text overlap, clipping, or text intersecting a
+side strip/exclusion zone, fix only the label anchor, label offset, or reserved
+band. Do not move source-calibrated heatmap boxes, tick marks, axis lines, or
+data marks to satisfy text collision checks.
+
 ## Provenance And Confidence
 
 Record uncertainty at the object level:
@@ -694,6 +810,11 @@ Prefer approximate data or a generation recipe over fake exact values. If a sour
 
 ## Validation
 
+Semantic IR fields must not be schema-only. Before accepting a new field, make
+sure it affects rendering, is preserved as DOM/debug metadata, is validated, or
+is explicitly classified as provenance-only, deprecated, or ignored with a
+reason in `schemas/ir-field-coverage.json`.
+
 Run a local browser check when possible:
 
 ```bash
@@ -705,3 +826,9 @@ Then open the output at native dimensions, or capture a headless screenshot. Che
 For existing generated outputs, use `scripts/validate_vectorize_figure_outputs.py`
 to capture baselines and check structural relationship invariants before and
 after schema or renderer changes.
+
+When changing schema, renderer contracts, or generated JSON, also run:
+
+```bash
+python3 scripts/audit_ir_field_coverage.py --strict-high-risk
+```

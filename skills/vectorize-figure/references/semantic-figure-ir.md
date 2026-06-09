@@ -20,6 +20,12 @@ source evidence
 Bounding boxes, OCR text, detected line segments, and color samples are source
 evidence. They help infer the graph, but they are not the graph itself.
 
+Semantic IR fields must have coverage. A non-provenance field should affect
+rendering, survive into DOM/debug metadata, be validated against geometry or
+relationships, or be explicitly marked as deprecated/ignored with a reason in
+`schemas/ir-field-coverage.json`. Provenance-only notes belong under
+`source`, `provenance`, `notes`, `confidence`, or `sourceEvidence`.
+
 ## Common Object Fields
 
 Any semantic object may use these fields:
@@ -96,9 +102,40 @@ corresponding objects:
   marks must state whether they point inward or outward.
 - Raster/event ticks and generated strip marks must identify an owner box and
   either clip to that box or validate that every endpoint stays inside it.
-- Colored side strips and phase/region bands are semantic layout objects with
-  orientation, segment boundaries, colors, labels, and axis anchoring. Do not
-  add an x-axis or y-axis colored strip unless the source visibly contains it.
+- Colored side row-block strips and phase/region bands are semantic layout
+  objects with orientation, segment boundaries, colors, separators, borders,
+  labels, linked axes, and exclusion zones. A heatmap-adjacent row-block strip
+  is not a generic colorbar and must not be collapsed into a two-color
+  rectangle when the source shows separator or edge components. Do not add an
+  x-axis or y-axis colored strip unless the source visibly contains it.
+- Data boxes, side strips, strip separators/borders, axis lines, tick marks,
+  tick-label bands, and axis titles are separate layout objects. Offset axes
+  must use explicit axis line geometry; renderers must not blindly derive axis
+  spines from the heatmap `dataBbox` when the source shows a gap or side strip.
+  If a gap is intentionally modeled, add `offsetFromDataBbox` with the source
+  edge and pixel distance; an offset declaration whose line still equals the
+  data box edge is invalid.
+- Heatmap plot arrays that use `plotGroups` still need explicit axis objects.
+  A bottom x-axis line must be encoded as `axes.xAxis.line` with a stable id
+  and tick-label band; it must not be implied by a plot rectangle or the
+  heatmap `dataBbox` bottom edge.
+- Side row-block strips may include `components[]` in addition to semantic
+  `segments[]` when visible parts need countable rendering, such as a dark
+  edge, teal/cyan block, light separator, and gold block. Validators should
+  compare rendered component nodes with `expectedComponentCount`.
+- If a side strip, helper strip, axis origin tick, or plot frame visually
+  shares an edge or origin, encode that as `sharedLayoutFrame`, `alignments`,
+  or axis `originAlignment`. Treat the relationship as important unless the
+  source gives evidence it is accidental. Renderers must preserve those
+  relationships in DOM metadata and validators must check the declared deltas.
+- Every protected text node has a stable `id`, role, and semantic `anchorTo`
+  target such as an axis, tick-label band, side strip, legend row, colorbar,
+  plot box, or table cell. Protected text includes panel labels, titles, tick
+  labels, axis labels, colorbar labels, legend labels, phase/region labels, and
+  table text.
+- Collision repair may move only label anchors, label offsets, or reserved
+  layout bands. It must not move tick marks, data marks, heatmap boxes, or
+  source-calibrated geometry.
 - Polar angle labels anchor to a polar plot and store an `angle`,
   `radialOffsetPx`, `anchor`, and optional source-calibrated label point. They
   are not free-floating page text.
@@ -117,6 +154,8 @@ Before writing the final JSON for a nontrivial panel, produce a short inventory:
 - annotations and what each one anchors to
 - source-calibrated overrides and why the transform alone is insufficient
 - validation constraints that should be checked in the rendered DOM
+- any new semantic IR field and whether it is rendered, preserved, validated,
+  provenance-only, deprecated, or intentionally ignored
 
 Do this before visual tuning. If a generated object looks wrong, first ask which
 relationship or transform is missing before changing pixels.

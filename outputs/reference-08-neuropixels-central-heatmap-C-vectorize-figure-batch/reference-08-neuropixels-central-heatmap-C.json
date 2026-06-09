@@ -127,6 +127,14 @@
         "axes": {
           "xAxis": {
             "id": "panel-c-x-axis",
+            "sourceCalibrated": true,
+            "originAlignment": {
+              "id": "panel-c-x-origin-row-strip-alignment",
+              "tickValue": 0,
+              "target": "panel-c-row-block-strip.right",
+              "deltaPx": 2,
+              "semantic": "The x=0 tick is the plot-origin tick immediately to the right of the row-block strip."
+            },
             "line": {
               "x1": 84,
               "y1": 589,
@@ -135,19 +143,35 @@
             },
             "tickLength": 7,
             "stroke": "#111111",
-            "strokeWidth": 1
+            "strokeWidth": 1,
+            "provenance": {
+              "confidence": "high",
+              "note": "Explicit x-axis line measured from the source crop; kept separate from heatmap dataBbox for editable offset-axis rendering."
+            }
           },
           "yAxis": {
             "id": "panel-c-y-axis",
+            "sourceCalibrated": true,
             "line": {
-              "x1": 84,
+              "x1": 62,
               "y1": 25,
-              "x2": 84,
+              "x2": 62,
               "y2": 589
             },
-            "tickLength": 7,
+            "tickLabelBand": {
+              "id": "panel-c-y-tick-label-band",
+              "x": 33,
+              "y": 25,
+              "width": 24,
+              "height": 564
+            },
+            "tickLength": 5,
             "stroke": "#111111",
-            "strokeWidth": 1
+            "strokeWidth": 1,
+            "provenance": {
+              "confidence": "high",
+              "note": "Explicit y-axis line measured from the source crop and intentionally offset left of the row-block side strip."
+            }
           }
         },
         "x": {
@@ -159,7 +183,14 @@
           "ticks": [
             {
               "value": 0,
-              "label": "0"
+              "label": "0",
+              "anchorTo": "panel-c.plot.dataBbox.left",
+              "alignment": {
+                "id": "panel-c-x-tick-0-row-strip-alignment",
+                "target": "panel-c-row-block-strip.right",
+                "deltaPx": 2,
+                "semantic": "Plot origin tick aligned with the heatmap left edge and offset two pixels to the right of the side row-block strip."
+              }
             },
             {
               "value": 50,
@@ -215,12 +246,13 @@
           "label": {
             "id": "panel-c-y-label",
             "text": "Neuron # (sorted by peak location)",
-            "x": 29,
+            "x": 13,
             "y": 306,
             "rotation": -90,
             "fontSize": 16,
             "fontWeight": 400,
             "anchor": "middle",
+            "anchorTo": "panel-c-y-tick-label-band",
             "sourceBox": {
               "x": 18,
               "y": 207,
@@ -232,29 +264,122 @@
       },
       "layoutObjects": [
         {
-          "id": "panel-c-color-strip",
-          "type": "segmentedColorbar",
+          "id": "panel-c-row-block-strip",
+          "type": "sideRowBlockStrip",
           "orientation": "vertical",
           "bbox": {
             "x": 69,
             "y": 25,
-            "width": 10,
+            "width": 13,
             "height": 564
           },
+          "sharedLayoutFrame": "panel-c.plot.dataBbox",
+          "alignments": [
+            {
+              "id": "panel-c-row-strip-top-to-data-top",
+              "sourceEdge": "top",
+              "target": "panel-c.plot.dataBbox.top",
+              "deltaPx": 0
+            },
+            {
+              "id": "panel-c-row-strip-bottom-to-data-bottom",
+              "sourceEdge": "bottom",
+              "target": "panel-c.plot.dataBbox.bottom",
+              "deltaPx": 0
+            },
+            {
+              "id": "panel-c-row-strip-right-to-data-left",
+              "sourceEdge": "right",
+              "target": "panel-c.plot.dataBbox.left",
+              "deltaPx": -2,
+              "semantic": "The row-block strip terminates immediately before the heatmap/x-axis origin; the x=0 tick resolves from the data frame, not the strip."
+            }
+          ],
+          "exclusionZone": {
+            "paddingPx": 1
+          },
+          "expectedComponentCount": 6,
+          "components": [
+            {
+              "id": "left-dark-edge",
+              "kind": "border",
+              "bbox": {"x": 69, "y": 25, "width": 2, "height": 564},
+              "fill": "#111111"
+            },
+            {
+              "id": "upper-teal-component",
+              "kind": "segment",
+              "bbox": {"x": 71, "y": 25, "width": 11, "height": 283},
+              "fill": "#087b76"
+            },
+            {
+              "id": "light-cyan-transition-component",
+              "kind": "segment",
+              "bbox": {"x": 71, "y": 308, "width": 11, "height": 132},
+              "fill": "#8fd9cf"
+            },
+            {
+              "id": "upper-gold-component",
+              "kind": "segment",
+              "bbox": {"x": 71, "y": 440, "width": 11, "height": 70},
+              "fill": "#e9a22f"
+            },
+            {
+              "id": "thin-gold-boundary-rule",
+              "kind": "separator",
+              "bbox": {"x": 71, "y": 510, "width": 11, "height": 2},
+              "fill": "#f2b03d"
+            },
+            {
+              "id": "lower-orange-component",
+              "kind": "segment",
+              "bbox": {"x": 71, "y": 512, "width": 11, "height": 77},
+              "fill": "#c97908"
+            }
+          ],
           "segments": [
             {
               "id": "upper-teal-block",
               "fromY": 25,
-              "toY": 431,
-              "fill": "#009688",
+              "toY": 308,
+              "fill": "#087b76",
               "label": "upper sorted block"
             },
             {
-              "id": "lower-gold-block",
-              "fromY": 431,
+              "id": "light-cyan-transition-block",
+              "fromY": 308,
+              "toY": 440,
+              "fill": "#8fd9cf",
+              "label": "light separator/transition block"
+            },
+            {
+              "id": "upper-gold-block",
+              "fromY": 440,
+              "toY": 510,
+              "fill": "#e9a22f",
+              "label": "upper lower sorted block"
+            },
+            {
+              "id": "lower-orange-block",
+              "fromY": 512,
               "toY": 589,
-              "fill": "#e0a500",
-              "label": "lower sorted block"
+              "fill": "#c97908",
+              "label": "bottom sorted block"
+            }
+          ],
+          "separators": [
+            {
+              "id": "row-block-gold-orange-boundary",
+              "atY": 510,
+              "stroke": "#f2b03d",
+              "strokeWidth": 1.2
+            }
+          ],
+          "borders": [
+            {
+              "side": "left",
+              "width": 2,
+              "fill": "#101010"
             }
           ],
           "linkedAxis": "panel-c-y-axis"
@@ -429,7 +554,7 @@
       "Generated candidate must not call drawImage with the source raster.",
       "Generated candidate must not use the source raster as a CSS background.",
       "Event lines at x=50, x=100, and x=150 share the panel-c.xy transform.",
-      "Heatmap, axes, and ticks share the same plotBbox and domains."
+      "Heatmap data, row-block side strip, strip separator, strip border, offset y-axis, ticks, tick-label band, and y-axis title are distinct semantic layout objects."
     ]
   },
   "confidence": [

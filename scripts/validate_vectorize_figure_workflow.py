@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 PYTHON_FILES = [
     "scripts/test_vectorize_figure_validators.py",
+    "scripts/audit_ir_field_coverage.py",
     "scripts/audit_figure_ir_relationships.py",
     "scripts/validate_vectorize_figure_plugin.py",
     "scripts/validate_vectorize_figure_rename.py",
@@ -69,6 +70,7 @@ def main() -> int:
         *js_checks,
         ("viewer inline javascript", [sys.executable, "scripts/validate_vectorize_figure_inline_js.py"]),
         ("validator unit tests", [sys.executable, "scripts/test_vectorize_figure_validators.py"]),
+        ("ir field coverage", [sys.executable, "scripts/audit_ir_field_coverage.py", "--strict-high-risk"]),
         ("relationship audit", [sys.executable, "scripts/audit_figure_ir_relationships.py"]),
         ("plugin surfaces", [sys.executable, "scripts/validate_vectorize_figure_plugin.py"]),
         ("rename guard", [sys.executable, "scripts/validate_vectorize_figure_rename.py"]),

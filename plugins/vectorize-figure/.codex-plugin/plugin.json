@@ -1,6 +1,6 @@
 {
   "name": "vectorize-figure",
-  "version": "0.1.0+codex.20260608062005",
+  "version": "0.1.0+codex.20260609053320",
   "description": "Reconstruct raster scientific figures as configurable HTML and JSON.",
   "author": {
     "name": "Local developer"

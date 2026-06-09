@@ -1,6 +1,36 @@
 # Vectorize Figure Handoff
 
-Date: 2026-06-08
+Date: 2026-06-09
+
+## 2026-06-09 Cleanup Closeout
+
+Finished the in-flight checkpoint and brought the worktree to a committed,
+fully validated state.
+
+- Rendered the denotational metadata into two panels (renderer now consumes the
+  relationship fields instead of ignoring them):
+  - `reference-01-place-code-opto-A`: explicit offset x-axis line, tick-label
+    band, axis/tick `data-role`/`data-axis`/`data-value` attributes, and
+    tick-label anchoring. The x-axis, ticks, and labels now sit 6px below the
+    heatmap data box per the source. Visually verified against
+    `assets/reference/reference-01-place-code-opto-A-reference.png`.
+  - `reference-08-neuropixels-central-heatmap-C`: extended HTML + JSON
+    relationship metadata.
+- Refreshed the stale visual baseline
+  `outputs/_regression-baselines/reference-01-place-code-opto-A.png` (the
+  06-08 baseline predated the offset-axis render). Re-validation: `changed=0.0000%`.
+- Wired the new IR field-coverage audit (`scripts/audit_ir_field_coverage.py` +
+  `schemas/ir-field-coverage.json`) into the workflow as the `ir field coverage`
+  check and documented it in `README.md`.
+- Confirmed `skills/` and `plugins/vectorize-figure/skills/` mirrors are byte
+  identical; plugin cachebuster already bumped to the 06-09 build.
+
+Validation: full browser-enabled workflow `OK workflow: checks=15 failed=0`.
+
+Note: `reference-08-...-C` is not part of the per-panel visual-regression
+baseline set (only reference-01 A/B/C/F have baselines), so the standalone
+`validate_vectorize_figure_outputs.py` frame-crop step does not apply to it; it
+passes via the structural and full-viewer browser checks.
 
 ## Current State
 

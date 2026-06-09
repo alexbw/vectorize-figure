@@ -61,6 +61,7 @@ Individual checks:
 
 ```bash
 python3 scripts/audit_figure_ir_relationships.py
+python3 scripts/audit_ir_field_coverage.py --strict-high-risk
 python3 scripts/validate_vectorize_figure_rename.py
 python3 scripts/validate_vectorize_figure_plugin.py
 python3 scripts/validate_vectorize_figure_plugin.py --require-installed-cache
@@ -73,7 +74,7 @@ python3 tmp/vectorize-figure-all-subpanels/validate_batch.py
 python3 tmp/vectorize-figure-all-subpanels/verify_gallery.py --all
 ```
 
-The workflow wrapper compiles the Python harness scripts, checks JavaScript helper syntax when Node is available, extracts and syntax-checks inline JavaScript from the viewer HTML files, runs validator unit tests, reports warning-only denotational relationship gaps, checks plugin/root command and skill surfaces plus the personal marketplace entry when present, guards against stale pre-rename command naming on active surfaces, validates all active output specs, and checks both JSON specs and rendered generated surfaces for source-raster image reuse. The optional `--require-installed-cache` plugin check verifies that the installed Codex plugin cache for the manifest version matches the repo bundle. The viewer checks compare generated and reference screenshots and assert that the iframe generated-surface root is visible while any internal QA/reference image is hidden, so an internal QA image cannot accidentally appear as the generated output.
+The workflow wrapper compiles the Python harness scripts, checks JavaScript helper syntax when Node is available, extracts and syntax-checks inline JavaScript from the viewer HTML files, runs validator unit tests, audits semantic IR field coverage against `schemas/ir-field-coverage.json` so no high-risk field is left as an inert JSON note, reports warning-only denotational relationship gaps, checks plugin/root command and skill surfaces plus the personal marketplace entry when present, guards against stale pre-rename command naming on active surfaces, validates all active output specs, and checks both JSON specs and rendered generated surfaces for source-raster image reuse. The optional `--require-installed-cache` plugin check verifies that the installed Codex plugin cache for the manifest version matches the repo bundle. The viewer checks compare generated and reference screenshots and assert that the iframe generated-surface root is visible while any internal QA/reference image is hidden, so an internal QA image cannot accidentally appear as the generated output.
 
 ## Plugin Updates
 

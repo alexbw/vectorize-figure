@@ -266,7 +266,14 @@
         fill: textSpec.fill || '#000000',
         'text-anchor': textSpec.anchor || 'start',
         transform: textSpec.rotation ? `rotate(${textSpec.rotation} ${textSpec.x} ${textSpec.y})` : null,
-        'data-object-id': textSpec.id || null
+        id: textSpec.id || null,
+        'data-object-id': textSpec.id || null,
+        'data-role': textSpec.role || null,
+        'data-axis': textSpec.axis || null,
+        'data-value': textSpec.value ?? null,
+        'data-text-id': textSpec.id || null,
+        'data-anchor-to': textSpec.anchorTo || textSpec.anchor_to || null,
+        'data-protected-text': textSpec.role ? 'true' : null
       });
       lines.forEach((line, i) => {
         const tspan = svgEl('tspan', {
@@ -281,6 +288,11 @@
 
     function renderAxes(svg, panel, plot, defaults, showYLabels) {
       const box = plot.dataBbox;
+      const xAxis = plot.axes && plot.axes.xAxis;
+      const xAxisLine = xAxis && xAxis.line ? xAxis.line : {x1: box.x, y1: box.y + box.height, x2: box.x + box.width, y2: box.y + box.height};
+      const xAxisId = xAxis && xAxis.id ? xAxis.id : `${plot.id}-x-axis`;
+      const xTickBand = xAxis && xAxis.tickLabelBand ? xAxis.tickLabelBand : {id: `${xAxisId}.tickLabelBand`, x: xAxisLine.x1, y: xAxisLine.y1, width: xAxisLine.x2 - xAxisLine.x1, height: 49};
+      const xTickLength = xAxis && xAxis.tickLength ? xAxis.tickLength : 6;
       const axisGroup = svgEl('g', {'data-plot-id': plot.id, 'data-layer': 'axes'});
       axisGroup.appendChild(svgEl('rect', {
         x: box.x,
@@ -291,11 +303,48 @@
         stroke: '#000000',
         'stroke-width': 1.2
       }));
+      axisGroup.appendChild(svgEl('line', {
+        x1: xAxisLine.x1,
+        y1: xAxisLine.y1,
+        x2: xAxisLine.x2,
+        y2: xAxisLine.y2,
+        stroke: '#000000',
+        'stroke-width': 1.2,
+        'data-role': 'x-axis',
+        'data-axis': xAxisId,
+        'data-source-x1': xAxisLine.x1,
+        'data-source-y1': xAxisLine.y1,
+        'data-source-x2': xAxisLine.x2,
+        'data-source-y2': xAxisLine.y2
+      }));
 
       plot.x.ticks.forEach(tick => {
         const x = scale(plot.x.domain, [box.x, box.x + box.width], tick.value);
-        axisGroup.appendChild(svgEl('line', {x1: x, y1: box.y + box.height, x2: x, y2: box.y + box.height + 6, stroke: '#000000', 'stroke-width': 1}));
-        axisGroup.appendChild(textNode({text: tick.label, x, y: box.y + box.height + 23, fontSize: 16, anchor: 'middle'}, defaults));
+        axisGroup.appendChild(svgEl('line', {
+          x1: x,
+          y1: xAxisLine.y1,
+          x2: x,
+          y2: xAxisLine.y1 + xTickLength,
+          stroke: '#000000',
+          'stroke-width': 1,
+          'data-role': 'axis-tick-mark',
+          'data-axis': xAxisId,
+          'data-value': tick.value,
+          'data-source-x': x,
+          'data-source-y': xAxisLine.y1
+        }));
+        axisGroup.appendChild(textNode({
+          id: `${xAxisId}-tick-${tick.value}-label`,
+          text: tick.label,
+          x,
+          y: xTickBand.y + 23,
+          fontSize: 16,
+          anchor: 'middle',
+          role: 'tick-label',
+          axis: xAxisId,
+          value: tick.value,
+          anchorTo: xTickBand.id
+        }, defaults));
       });
       axisGroup.appendChild(textNode(plot.x.label, defaults));
 

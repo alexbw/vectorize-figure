@@ -37,6 +37,10 @@ DEFAULT_CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 DEFAULT_DOM_TIMEOUT = 8
 DEFAULT_SCREENSHOT_TIMEOUT = 60
 SOURCE_RASTER_RE = re.compile(r"reference-0[1-8].*\.(?:png|jpg|jpeg|webp)", re.IGNORECASE)
+QA_OUTPUT_RE = re.compile(
+    r'<script\b[^>]*\bid=["\']figure-qa-output["\'][^>]*>(.*?)</script>',
+    re.IGNORECASE | re.DOTALL,
+)
 
 
 class QuietHandler(http.server.SimpleHTTPRequestHandler):
@@ -211,8 +215,16 @@ def capture_panel(html: Path, spec: dict, base_url: str, output: Path) -> None:
         image.crop(crop_box).save(output)
 
 
-def dump_dom(html: Path, base_url: str) -> str:
+def page_url(html: Path, base_url: str, query: str | None = None) -> str:
     url = f"{base_url}/{html.relative_to(ROOT).as_posix()}"
+    if query:
+        separator = "&" if "?" in url else "?"
+        url = f"{url}{separator}{query}"
+    return url
+
+
+def dump_dom(html: Path, base_url: str, query: str | None = None) -> str:
+    url = page_url(html, base_url, query)
     result = run_chrome(["--virtual-time-budget=3000", "--dump-dom", url], timeout=DEFAULT_DOM_TIMEOUT)
     if result.returncode != 0:
         raise RuntimeError(f"Chrome DOM dump failed for {html}: {result.stderr.strip()}")
@@ -302,6 +314,529 @@ def audit_rendered_surface(html: Path, dom: str) -> list[str]:
     return errors
 
 
+def extract_qa_report(dom: str) -> dict | None:
+    match = QA_OUTPUT_RE.search(dom)
+    if not match:
+        return None
+    raw = match.group(1).strip()
+    if not raw:
+        return None
+    try:
+        value = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"could not parse figure-qa-output JSON: {exc}") from exc
+    if not isinstance(value, dict):
+        raise ValueError("figure-qa-output JSON must be an object")
+    return value
+
+
+def _item_id(value: object) -> str:
+    if isinstance(value, dict):
+        return str(value.get("id") or value.get("role") or value)
+    return str(value)
+
+
+def summarize_layout_qa_item(item: object) -> str:
+    if not isinstance(item, dict):
+        return str(item)
+    if "a" in item and "b" in item:
+        return f"{_item_id(item['a'])} vs {_item_id(item['b'])}"
+    if "text" in item and "zone" in item:
+        return f"{_item_id(item['text'])} over {_item_id(item['zone'])}"
+    if "id" in item:
+        return _item_id(item)
+    return str(item)
+
+
+def audit_layout_qa_report(html: Path, report: dict | None) -> list[str]:
+    if report is None:
+        return []
+    layout = report.get("layoutQa")
+    if layout is None:
+        return []
+    if not isinstance(layout, dict):
+        return [f"{html}: figure layout QA report must be an object"]
+
+    failures = {
+        "protectedTextCollisions": "protected text overlaps",
+        "clippedProtectedText": "protected text is clipped",
+        "protectedTextExclusionCollisions": "protected text intersects an exclusion zone",
+        "protectedTextMetadataMissing": "protected text is missing stable semantic metadata",
+        "boundedMarkEscapes": "bounded marks escape owner boxes",
+    }
+    errors = []
+    for key, label in failures.items():
+        items = layout.get(key) or []
+        if not isinstance(items, list):
+            errors.append(f"{html}: layout QA `{key}` must be a list")
+            continue
+        if items:
+            examples = "; ".join(summarize_layout_qa_item(item) for item in items[:4])
+            suffix = f": {examples}" if examples else ""
+            errors.append(f"{html}: layout QA failure: {label}{suffix}")
+    return errors
+
+
+SIDE_ROW_BLOCK_STRIP_TYPES = {"sideRowBlockStrip", "rowBlockSideStrip", "rowBlockStrip"}
+
+
+def is_side_strip_like(item: dict) -> bool:
+    item_type = str(item.get("type") or "")
+    item_id = str(item.get("id") or "").lower()
+    return item_type in SIDE_ROW_BLOCK_STRIP_TYPES or (
+        item_type == "segmentedColorbar" and ("strip" in item_id or item.get("linkedAxis") or item.get("linked_axis"))
+    )
+
+
+def segment_has_boundaries(segment: dict, orientation: str) -> bool:
+    if orientation == "horizontal":
+        return (
+            ("fromX" in segment or "x1" in segment or "startX" in segment)
+            and ("toX" in segment or "x2" in segment or "endX" in segment)
+        ) or (("from" in segment or "start" in segment or "valueStart" in segment or "value_start" in segment) and ("to" in segment or "end" in segment or "valueEnd" in segment or "value_end" in segment))
+    return (
+        ("fromY" in segment or "y1" in segment or "startY" in segment)
+        and ("toY" in segment or "y2" in segment or "endY" in segment)
+    ) or (("from" in segment or "start" in segment or "valueStart" in segment or "value_start" in segment) and ("to" in segment or "end" in segment or "valueEnd" in segment or "value_end" in segment))
+
+
+def float_value(value: object) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def bbox_edge_value(bbox: dict, edge: str) -> float | None:
+    x = float_value(bbox.get("x"))
+    y = float_value(bbox.get("y"))
+    width = float_value(bbox.get("width"))
+    height = float_value(bbox.get("height"))
+    if edge == "left":
+        return x
+    if edge == "top":
+        return y
+    if edge == "right" and x is not None and width is not None:
+        return x + width
+    if edge == "bottom" and y is not None and height is not None:
+        return y + height
+    return None
+
+
+def resolve_alignment_target(panel: dict, plot: dict, layout_by_id: dict[str, dict], target: str) -> float | None:
+    object_id, separator, edge = target.rpartition(".")
+    if not separator or edge not in {"left", "right", "top", "bottom"}:
+        return None
+    panel_id = str(panel.get("id") or "")
+    data_bbox_targets = {
+        f"{panel_id}.plot.dataBbox",
+        f"{panel_id}.plot.data_bbox",
+        f"{panel_id}.dataBbox",
+        f"{panel_id}.data_bbox",
+        "plot.dataBbox",
+        "plot.data_bbox",
+        "dataBbox",
+        "data_bbox",
+    }
+    if object_id in data_bbox_targets:
+        return bbox_edge_value(plot.get("dataBbox") or plot.get("data_bbox") or {}, edge)
+    item = layout_by_id.get(object_id)
+    if isinstance(item, dict):
+        return bbox_edge_value(item.get("bbox") or item.get("box") or {}, edge)
+    return None
+
+
+def validate_alignment_contract(
+    errors: list[str],
+    json_path: Path,
+    panel: dict,
+    plot: dict,
+    layout_by_id: dict[str, dict],
+    owner_id: str,
+    source_bbox: dict,
+    alignment: dict,
+) -> None:
+    alignment_id = alignment.get("id")
+    source_edge = str(alignment.get("sourceEdge") or alignment.get("source_edge") or "").lower()
+    target = alignment.get("target")
+    if not alignment_id:
+        errors.append(f"{json_path}: {owner_id} alignment is missing a stable id")
+    if source_edge not in {"left", "right", "top", "bottom"}:
+        errors.append(f"{json_path}: {owner_id} alignment `{alignment_id or 'alignment'}` has invalid sourceEdge")
+        return
+    if not isinstance(target, str):
+        errors.append(f"{json_path}: {owner_id} alignment `{alignment_id or 'alignment'}` is missing target")
+        return
+    source_value = bbox_edge_value(source_bbox, source_edge)
+    target_value = resolve_alignment_target(panel, plot, layout_by_id, target)
+    if source_value is None or target_value is None:
+        errors.append(f"{json_path}: {owner_id} alignment `{alignment_id or 'alignment'}` could not resolve source/target geometry")
+        return
+    delta = float_value(alignment.get("deltaPx", alignment.get("delta_px", 0))) or 0.0
+    tolerance = float_value(alignment.get("tolerancePx", alignment.get("tolerance_px", 0.75))) or 0.75
+    measured = source_value - target_value
+    if abs(measured - delta) > tolerance:
+        errors.append(f"{json_path}: {owner_id} alignment `{alignment_id or 'alignment'}` expected delta {delta:g}px but measured {measured:g}px")
+
+
+def validate_tick_alignment_contract(
+    errors: list[str],
+    json_path: Path,
+    panel: dict,
+    plot: dict,
+    layout_by_id: dict[str, dict],
+    axis_key: str,
+    tick: dict,
+    alignment: dict,
+) -> None:
+    data_bbox = plot.get("dataBbox") or plot.get("data_bbox") or {}
+    axis = plot.get(axis_key) or {}
+    domain = axis.get("domain") or []
+    if len(domain) != 2:
+        return
+    value = float_value(tick.get("value"))
+    start = float_value(domain[0])
+    end = float_value(domain[1])
+    if value is None or start is None or end is None or start == end:
+        return
+    if axis_key == "x":
+        box_start = bbox_edge_value(data_bbox, "left")
+        box_end = bbox_edge_value(data_bbox, "right")
+    else:
+        box_start = bbox_edge_value(data_bbox, "top")
+        box_end = bbox_edge_value(data_bbox, "bottom")
+    if box_start is None or box_end is None:
+        return
+    tick_coord = box_start + ((value - start) / (end - start)) * (box_end - box_start)
+    target = alignment.get("target")
+    target_value = resolve_alignment_target(panel, plot, layout_by_id, target) if isinstance(target, str) else None
+    if target_value is None:
+        errors.append(f"{json_path}: {panel.get('id') or 'panel'} {axis_key} tick {tick.get('value')} alignment could not resolve target")
+        return
+    delta = float_value(alignment.get("deltaPx", alignment.get("delta_px", 0))) or 0.0
+    tolerance = float_value(alignment.get("tolerancePx", alignment.get("tolerance_px", 0.75))) or 0.75
+    measured = tick_coord - target_value
+    if abs(measured - delta) > tolerance:
+        errors.append(f"{json_path}: {panel.get('id') or 'panel'} {axis_key} tick {tick.get('value')} alignment expected delta {delta:g}px but measured {measured:g}px")
+
+
+def audit_semantic_layout_contract(json_path: Path, spec: dict) -> list[str]:
+    errors = []
+
+    def validate_axis_offset(panel_id: str, plot_id: str, data_bbox: dict, axis: dict, axis_key: str) -> None:
+        offset = axis.get("offsetFromDataBbox") or axis.get("offset_from_data_bbox")
+        line = axis.get("line")
+        if not isinstance(offset, dict) or not isinstance(line, dict) or not isinstance(data_bbox, dict):
+            return
+        edge = str(offset.get("edge") or "").lower()
+        try:
+            pixels = float(offset.get("pixels"))
+        except (TypeError, ValueError):
+            errors.append(f"{json_path}: {panel_id}.{plot_id} {axis_key} offsetFromDataBbox is missing numeric pixels")
+            return
+        if edge == "bottom":
+            data_edge = float(data_bbox.get("y", 0)) + float(data_bbox.get("height", 0))
+            axis_values = [float(line[key]) for key in ("y1", "y2") if key in line]
+        elif edge == "top":
+            data_edge = float(data_bbox.get("y", 0))
+            axis_values = [float(line[key]) for key in ("y1", "y2") if key in line]
+            pixels = -pixels
+        elif edge == "left":
+            data_edge = float(data_bbox.get("x", 0))
+            axis_values = [float(line[key]) for key in ("x1", "x2") if key in line]
+            pixels = -pixels
+        elif edge == "right":
+            data_edge = float(data_bbox.get("x", 0)) + float(data_bbox.get("width", 0))
+            axis_values = [float(line[key]) for key in ("x1", "x2") if key in line]
+        else:
+            errors.append(f"{json_path}: {panel_id}.{plot_id} {axis_key} offsetFromDataBbox has unsupported edge `{edge}`")
+            return
+        if not axis_values:
+            errors.append(f"{json_path}: {panel_id}.{plot_id} {axis_key} offsetFromDataBbox has no comparable line coordinate")
+            return
+        measured = sum(axis_values) / len(axis_values) - data_edge
+        if abs(measured) <= 0.75:
+            errors.append(f"{json_path}: {panel_id}.{plot_id} {axis_key} declares offsetFromDataBbox but line is still derived from dataBbox edge")
+        if abs(measured - pixels) > 0.75:
+            errors.append(f"{json_path}: {panel_id}.{plot_id} {axis_key} offsetFromDataBbox expected {pixels:g}px but line measures {measured:g}px")
+
+    for panel in spec.get("panels") or []:
+        panel_id = str(panel.get("id") or "panel")
+        plot = panel.get("plot") or {}
+        layout_by_id = {str(item.get("id")): item for item in panel.get("layoutObjects") or [] if isinstance(item, dict) and item.get("id")}
+        if isinstance(plot, dict):
+            axes = plot.get("axes") or {}
+            x_axis = axes.get("xAxis") or axes.get("x_axis") or {}
+            if isinstance(x_axis, dict) and isinstance(x_axis.get("originAlignment") or x_axis.get("origin_alignment"), dict):
+                origin_alignment = x_axis.get("originAlignment") or x_axis.get("origin_alignment")
+                tick_value = origin_alignment.get("tickValue", origin_alignment.get("tick_value"))
+                matching_ticks = [tick for tick in (plot.get("x") or {}).get("ticks") or [] if isinstance(tick, dict) and tick.get("value") == tick_value]
+                if not matching_ticks:
+                    errors.append(f"{json_path}: {panel_id}.plot xAxis originAlignment references missing tickValue {tick_value}")
+                else:
+                    validate_tick_alignment_contract(errors, json_path, panel, plot, layout_by_id, "x", matching_ticks[0], origin_alignment)
+            for axis_key in ("x", "y"):
+                axis_spec = plot.get(axis_key) or {}
+                if not isinstance(axis_spec, dict):
+                    continue
+                for tick in axis_spec.get("ticks") or []:
+                    if isinstance(tick, dict) and isinstance(tick.get("alignment"), dict):
+                        validate_tick_alignment_contract(errors, json_path, panel, plot, layout_by_id, axis_key, tick, tick["alignment"])
+        for plot in panel.get("plotGroups") or panel.get("plot_groups") or []:
+            if not isinstance(plot, dict):
+                continue
+            plot_id = str(plot.get("id") or "plot")
+            if plot.get("type") == "heatmapPlot" and plot.get("dataBbox") and (plot.get("x") or {}).get("ticks"):
+                axes = plot.get("axes") or {}
+                x_axis = axes.get("xAxis") or axes.get("x_axis")
+                if not isinstance(x_axis, dict) or not isinstance(x_axis.get("line"), dict):
+                    errors.append(f"{json_path}: {panel_id}.{plot_id} heatmap plot must encode an explicit xAxis.line separate from dataBbox")
+                else:
+                    if not x_axis.get("id"):
+                        errors.append(f"{json_path}: {panel_id}.{plot_id} explicit xAxis.line is missing a stable axis id")
+                    if not (x_axis.get("tickLabelBand") or x_axis.get("tick_label_band")):
+                        errors.append(f"{json_path}: {panel_id}.{plot_id} explicit xAxis.line is missing tickLabelBand")
+                    validate_axis_offset(panel_id, plot_id, plot.get("dataBbox") or plot.get("data_bbox") or {}, x_axis, "xAxis")
+        for item in panel.get("layoutObjects") or []:
+            if not isinstance(item, dict) or not is_side_strip_like(item):
+                continue
+            item_id = str(item.get("id") or item.get("type") or "side-strip")
+            item_type = str(item.get("type") or "")
+            if item_type == "segmentedColorbar":
+                errors.append(f"{json_path}: {panel_id}.{item_id} models an axis side row-block strip as generic segmentedColorbar; use sideRowBlockStrip with segments, separators, borders, linkedAxis, and exclusionZone")
+            if "bbox" not in item and "box" not in item:
+                errors.append(f"{json_path}: {panel_id}.{item_id} side row-block strip is missing bbox")
+            if not (item.get("linkedAxis") or item.get("linked_axis")):
+                errors.append(f"{json_path}: {panel_id}.{item_id} side row-block strip is missing linkedAxis")
+            if not (item.get("exclusionZone") or item.get("exclusion_zone")):
+                errors.append(f"{json_path}: {panel_id}.{item_id} side row-block strip is missing exclusionZone")
+            if not item.get("sharedLayoutFrame") and not item.get("shared_layout_frame"):
+                errors.append(f"{json_path}: {panel_id}.{item_id} side row-block strip is missing sharedLayoutFrame")
+            alignments = item.get("alignments") or []
+            if not isinstance(alignments, list) or not alignments:
+                errors.append(f"{json_path}: {panel_id}.{item_id} side row-block strip is missing alignment constraints")
+            else:
+                for alignment in alignments:
+                    if isinstance(alignment, dict):
+                        validate_alignment_contract(errors, json_path, panel, panel.get("plot") or {}, layout_by_id, f"{panel_id}.{item_id}", item.get("bbox") or item.get("box") or {}, alignment)
+                    else:
+                        errors.append(f"{json_path}: {panel_id}.{item_id} alignment must be an object")
+            segments = item.get("segments") or []
+            if not isinstance(segments, list) or len(segments) < 2:
+                errors.append(f"{json_path}: {panel_id}.{item_id} side row-block strip must encode at least two segment objects")
+                continue
+            orientation = str(item.get("orientation") or "vertical")
+            for index, segment in enumerate(segments):
+                if not isinstance(segment, dict):
+                    errors.append(f"{json_path}: {panel_id}.{item_id} segment {index} must be an object")
+                    continue
+                if not segment.get("id"):
+                    errors.append(f"{json_path}: {panel_id}.{item_id} segment {index} is missing a stable id")
+                if not (segment.get("fill") or segment.get("color")):
+                    errors.append(f"{json_path}: {panel_id}.{item_id} segment {index} is missing fill/color")
+                if not segment_has_boundaries(segment, orientation):
+                    errors.append(f"{json_path}: {panel_id}.{item_id} segment {index} is missing explicit boundaries")
+            separators = item.get("separators") or item.get("boundaries") or []
+            if not isinstance(separators, list) or not separators:
+                errors.append(f"{json_path}: {panel_id}.{item_id} side row-block strip must encode separator/boundary strokes")
+            borders = item.get("borders") or []
+            if not isinstance(borders, list) or not borders:
+                errors.append(f"{json_path}: {panel_id}.{item_id} side row-block strip must encode edge/border strokes")
+            components = item.get("components") or []
+            expected_components = item.get("expectedComponentCount") or item.get("expected_component_count")
+            if expected_components is not None:
+                if not isinstance(components, list) or len(components) < int(expected_components):
+                    errors.append(f"{json_path}: {panel_id}.{item_id} side row-block strip encodes {len(components) if isinstance(components, list) else 0}/{expected_components} visible components")
+                for index, component in enumerate(components if isinstance(components, list) else []):
+                    if not isinstance(component, dict):
+                        errors.append(f"{json_path}: {panel_id}.{item_id} component {index} must be an object")
+                        continue
+                    if not component.get("id"):
+                        errors.append(f"{json_path}: {panel_id}.{item_id} component {index} is missing a stable id")
+                    if not (component.get("bbox") or component.get("box")):
+                        errors.append(f"{json_path}: {panel_id}.{item_id} component {index} is missing bbox")
+                    if not (component.get("fill") or component.get("color")):
+                        errors.append(f"{json_path}: {panel_id}.{item_id} component {index} is missing fill/color")
+    return errors
+
+
+ATTR_RE = re.compile(r'([:\w-]+)\s*=\s*["\']([^"\']*)["\']')
+LINE_TAG_RE = re.compile(r"<line\b[^>]*>", re.IGNORECASE)
+GROUP_TAG_RE = re.compile(r"<g\b[^>]*>", re.IGNORECASE)
+RECT_TAG_RE = re.compile(r"<rect\b[^>]*>", re.IGNORECASE)
+
+
+def tag_attrs(tag: str) -> dict[str, str]:
+    return {key: value for key, value in ATTR_RE.findall(tag)}
+
+
+def axis_requires_render_validation(panel: dict) -> bool:
+    layout_objects = panel.get("layoutObjects") or []
+    if any(isinstance(item, dict) and str(item.get("type") or "") in SIDE_ROW_BLOCK_STRIP_TYPES for item in layout_objects):
+        return True
+    axes = ((panel.get("plot") or {}).get("axes") or {})
+    for axis in (axes.get("xAxis") or axes.get("x_axis") or {}, axes.get("yAxis") or axes.get("y_axis") or {}):
+        if isinstance(axis, dict) and (axis.get("sourceCalibrated") or axis.get("source_calibrated") or axis.get("explicit")):
+            return True
+    return False
+
+
+def axis_is_explicit(axis: dict) -> bool:
+    return bool(axis.get("sourceCalibrated") or axis.get("source_calibrated") or axis.get("explicit"))
+
+
+def collect_panel_axis_specs(panel: dict) -> list[tuple[str, dict]]:
+    specs = []
+    plot = panel.get("plot") or {}
+    axes = plot.get("axes") or {}
+    for key in ("xAxis", "yAxis", "x_axis", "y_axis"):
+        axis = axes.get(key)
+        if isinstance(axis, dict) and isinstance(axis.get("line"), dict) and (axis_is_explicit(axis) or axis_requires_render_validation(panel)):
+            axis_id = axis.get("id")
+            specs.append((str(axis_id) if axis_id else f"{panel.get('id') or 'panel'}.{key}", axis))
+    for plot_group in panel.get("plotGroups") or panel.get("plot_groups") or []:
+        if not isinstance(plot_group, dict):
+            continue
+        axes = plot_group.get("axes") or {}
+        force_x_axis = plot_group.get("type") == "heatmapPlot" and plot_group.get("dataBbox") and (plot_group.get("x") or {}).get("ticks")
+        for key in ("xAxis", "yAxis", "x_axis", "y_axis"):
+            axis = axes.get(key)
+            is_x_axis = key in {"xAxis", "x_axis"}
+            if isinstance(axis, dict) and isinstance(axis.get("line"), dict) and (axis_is_explicit(axis) or (force_x_axis and is_x_axis)):
+                axis_id = axis.get("id")
+                specs.append((str(axis_id) if axis_id else f"{panel.get('id') or 'panel'}.{plot_group.get('id') or 'plot'}.{key}", axis))
+    return specs
+
+
+def explicit_axis_expectations(spec: dict) -> list[tuple[str, dict]]:
+    expected = []
+    for panel in spec.get("panels") or []:
+        if not isinstance(panel, dict):
+            continue
+        for axis_id, axis in collect_panel_axis_specs(panel):
+            if not axis.get("id"):
+                expected.append((axis_id, {"missing_id": True}))
+                continue
+            expected.append((str(axis_id), axis["line"]))
+    return expected
+
+
+def tick_alignment_expectations(spec: dict) -> list[tuple[str, object, dict]]:
+    expected = []
+    for panel in spec.get("panels") or []:
+        if not isinstance(panel, dict):
+            continue
+        plot = panel.get("plot") or {}
+        axes = plot.get("axes") or {}
+        x_axis = axes.get("xAxis") or axes.get("x_axis") or {}
+        x_axis_id = x_axis.get("id") if isinstance(x_axis, dict) else None
+        if x_axis_id:
+            origin_alignment = x_axis.get("originAlignment") or x_axis.get("origin_alignment")
+            if isinstance(origin_alignment, dict) and origin_alignment.get("tickValue", origin_alignment.get("tick_value")) is not None:
+                expected.append((str(x_axis_id), origin_alignment.get("tickValue", origin_alignment.get("tick_value")), origin_alignment))
+            for tick in (plot.get("x") or {}).get("ticks") or []:
+                if not isinstance(tick, dict):
+                    continue
+                if isinstance(tick.get("alignment"), dict):
+                    expected.append((str(x_axis_id), tick.get("value"), tick["alignment"]))
+    return expected
+
+
+def number_attr(attrs: dict[str, str], key: str) -> float | None:
+    try:
+        return float(attrs[key])
+    except (KeyError, ValueError):
+        return None
+
+
+def audit_explicit_axis_rendering(html: Path, dom: str, spec: dict) -> list[str]:
+    errors = []
+    line_attrs = [tag_attrs(tag) for tag in LINE_TAG_RE.findall(dom)]
+    for axis_id, line in explicit_axis_expectations(spec):
+        if line.get("missing_id"):
+            errors.append(f"{html}: explicit offset axis {axis_id} is missing a stable axis id")
+            continue
+        matches = [attrs for attrs in line_attrs if attrs.get("data-axis") == axis_id]
+        if not matches:
+            errors.append(f"{html}: explicit offset axis `{axis_id}` was not rendered with matching data-axis metadata")
+            continue
+        wanted = {key: float(line[key]) for key in ("x1", "y1", "x2", "y2") if key in line}
+        if not wanted:
+            continue
+        if not any(all(number_attr(attrs, key) is not None and abs(number_attr(attrs, key) - value) <= 0.75 for key, value in wanted.items()) for attrs in matches):
+            errors.append(f"{html}: explicit offset axis `{axis_id}` rendered at coordinates that do not match its semantic line")
+    for axis_id, value, alignment in tick_alignment_expectations(spec):
+        target = alignment.get("target")
+        alignment_id = alignment.get("id") or "alignment"
+        matches = [
+            attrs for attrs in line_attrs
+            if attrs.get("data-role") == "axis-tick-mark"
+            and attrs.get("data-axis") == axis_id
+            and str(attrs.get("data-value")) == str(value)
+        ]
+        if not matches:
+            errors.append(f"{html}: aligned tick `{axis_id}` value `{value}` was not rendered with axis-tick metadata")
+            continue
+        if target and not any(attrs.get("data-alignment-target") == target for attrs in matches):
+            errors.append(f"{html}: aligned tick `{axis_id}` value `{value}` is missing rendered alignment target `{target}`")
+    return errors
+
+
+def audit_side_strip_rendering(html: Path, dom: str, spec: dict) -> list[str]:
+    errors = []
+    group_attrs = [tag_attrs(tag) for tag in GROUP_TAG_RE.findall(dom)]
+    rect_attrs = [tag_attrs(tag) for tag in RECT_TAG_RE.findall(dom)]
+    for panel in spec.get("panels") or []:
+        for item in panel.get("layoutObjects") or []:
+            if not isinstance(item, dict) or str(item.get("type") or "") not in SIDE_ROW_BLOCK_STRIP_TYPES:
+                continue
+            item_id = str(item.get("id") or "")
+            if not item_id:
+                continue
+            segment_count = len(item.get("segments") or [])
+            component_count = int(item.get("expectedComponentCount") or item.get("expected_component_count") or len(item.get("components") or []))
+            separator_count = len(item.get("separators") or item.get("boundaries") or [])
+            border_count = len(item.get("borders") or [])
+            rendered_components = len(re.findall(rf'data-role=["\']side-row-block-component["\'][^>]*data-layout-id=["\']{re.escape(item_id)}["\']|data-layout-id=["\']{re.escape(item_id)}["\'][^>]*data-role=["\']side-row-block-component["\']', dom))
+            rendered_segments = len(re.findall(rf'data-role=["\']side-row-block-segment["\'][^>]*data-layout-id=["\']{re.escape(item_id)}["\']|data-layout-id=["\']{re.escape(item_id)}["\'][^>]*data-role=["\']side-row-block-segment["\']', dom))
+            rendered_separators = len(re.findall(rf'data-role=["\']side-row-block-separator["\'][^>]*data-layout-id=["\']{re.escape(item_id)}["\']|data-layout-id=["\']{re.escape(item_id)}["\'][^>]*data-role=["\']side-row-block-separator["\']', dom))
+            rendered_borders = len(re.findall(rf'data-role=["\']side-row-block-border["\'][^>]*data-layout-id=["\']{re.escape(item_id)}["\']|data-layout-id=["\']{re.escape(item_id)}["\'][^>]*data-role=["\']side-row-block-border["\']', dom))
+            if component_count and rendered_components < component_count:
+                errors.append(f"{html}: side row-block strip `{item_id}` rendered {rendered_components}/{component_count} visible components")
+            if not component_count and rendered_segments < segment_count:
+                errors.append(f"{html}: side row-block strip `{item_id}` rendered {rendered_segments}/{segment_count} segments")
+            if rendered_separators < separator_count:
+                errors.append(f"{html}: side row-block strip `{item_id}` rendered {rendered_separators}/{separator_count} separators")
+            if rendered_borders < border_count:
+                errors.append(f"{html}: side row-block strip `{item_id}` rendered {rendered_borders}/{border_count} borders")
+            for component in item.get("components") or []:
+                if not isinstance(component, dict) or not component.get("id"):
+                    continue
+                component_id = str(component["id"])
+                matches = [
+                    attrs for attrs in rect_attrs
+                    if attrs.get("data-role") == "side-row-block-component"
+                    and attrs.get("data-layout-id") == item_id
+                    and attrs.get("data-component-id") == component_id
+                ]
+                if not matches:
+                    errors.append(f"{html}: side row-block strip `{item_id}` missing rendered component `{component_id}`")
+                    continue
+                expected_fill = str(component.get("fill") or component.get("color") or "").strip().lower()
+                if expected_fill and not any(str(attrs.get("fill") or "").strip().lower() == expected_fill for attrs in matches):
+                    errors.append(f"{html}: side row-block strip `{item_id}` component `{component_id}` rendered with wrong fill")
+            alignment_ids = [str(alignment.get("id")) for alignment in item.get("alignments") or [] if isinstance(alignment, dict) and alignment.get("id")]
+            if alignment_ids:
+                matching_groups = [attrs for attrs in group_attrs if attrs.get("data-role") == "side-row-block-strip" and attrs.get("data-layout-id") == item_id]
+                rendered_alignment_ids = set()
+                for attrs in matching_groups:
+                    rendered_alignment_ids.update(str(attrs.get("data-alignments") or "").split())
+                missing = [alignment_id for alignment_id in alignment_ids if alignment_id not in rendered_alignment_ids]
+                if missing:
+                    errors.append(f"{html}: side row-block strip `{item_id}` missing rendered alignment metadata: {', '.join(missing[:4])}")
+    return errors
+
+
 def scan_json_for_source_images(json_path: Path, spec: dict, panel_id: str) -> list[str]:
     errors = []
 
@@ -352,6 +887,7 @@ def structural_checks(html: Path, json_path: Path, spec: dict, dom: str) -> list
     elif source_path is None:
         errors.append(f"{json_path}: missing source.path")
     errors.extend(scan_json_for_source_images(json_path, spec, panel_id))
+    errors.extend(audit_semantic_layout_contract(json_path, spec))
     if re.search(r"\bdrawImage\s*\(", html_text):
         errors.append(f"{html}: contains drawImage")
     if "background-image" in html_text:
@@ -371,7 +907,10 @@ def structural_checks(html: Path, json_path: Path, spec: dict, dom: str) -> list
     mismatches = sorted(set(re.findall(r'data-[a-zA-Z0-9_-]*validation="mismatch"', dom)))
     if mismatches:
         errors.append(f"{html}: renderer validation mismatch {', '.join(mismatches)}")
+    errors.extend(audit_layout_qa_report(html, extract_qa_report(dom)))
     errors.extend(audit_rendered_surface(html, dom))
+    errors.extend(audit_explicit_axis_rendering(html, dom, spec))
+    errors.extend(audit_side_strip_rendering(html, dom, spec))
     tick_labels = set(re.findall(r'data-role="tick-label"[^>]*data-axis="([^"]+)"[^>]*data-value="([^"]+)"', dom))
     tick_marks = set(re.findall(r'data-role="(?:axis-tick-mark|colorbar-tick-mark)"[^>]*data-axis="([^"]+)"[^>]*data-value="([^"]+)"', dom))
     if tick_labels or tick_marks:
@@ -424,7 +963,7 @@ def validate_output(
     baseline = BASELINES / f"{panel_id}.png"
     current = tmp / f"{index:04d}-{panel_id}.png"
     try:
-        dom = dump_dom(html, base_url)
+        dom = dump_dom(html, base_url, query="qaDom=1")
         errors.extend(structural_checks(html, json_path, spec, dom))
         if structural_only:
             return errors, messages

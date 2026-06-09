@@ -269,6 +269,7 @@
 
     function appendText(svg, textSpec, extra = {}) {
       const node = svgEl('text', {
+        id: textSpec.id || null,
         x: textSpec.x,
         y: textSpec.y,
         fill: textSpec.fill || '#111111',
@@ -277,7 +278,10 @@
         'text-anchor': textSpec.anchor || 'start',
         'dominant-baseline': extra.baseline || 'alphabetic',
         transform: textSpec.rotation ? `rotate(${textSpec.rotation} ${textSpec.x} ${textSpec.y})` : null,
-        id: textSpec.id || null
+        'data-role': textSpec.role || extra.role || 'text',
+        'data-text-id': textSpec.id || null,
+        'data-anchor-to': textSpec.anchorTo || textSpec.anchor_to || extra.anchorTo || null,
+        'data-protected-text': extra.protectedText ? 'true' : null
       });
       node.textContent = textSpec.text;
       svg.appendChild(node);
@@ -286,6 +290,10 @@
     function renderAxes(svg, panel) {
       const plot = panel.plot;
       const box = plot.dataBbox;
+      const xAxis = plot.axes.xAxis;
+      const yAxis = plot.axes.yAxis;
+      const xAxisLine = xAxis.line || {x1: box.x, y1: box.y + box.height, x2: box.x + box.width, y2: box.y + box.height};
+      const yAxisLine = yAxis.line || {x1: box.x, y1: box.y, x2: box.x, y2: box.y + box.height};
       svg.appendChild(svgEl('rect', {
         x: box.x,
         y: box.y,
@@ -295,26 +303,60 @@
         stroke: '#111111',
         'stroke-width': 1
       }));
+      svg.appendChild(svgEl('line', {
+        x1: xAxisLine.x1,
+        y1: xAxisLine.y1,
+        x2: xAxisLine.x2,
+        y2: xAxisLine.y2,
+        stroke: xAxis.stroke || '#111111',
+        'stroke-width': xAxis.strokeWidth || 1,
+        'data-role': 'axis-line',
+        'data-axis': xAxis.id
+      }));
+      svg.appendChild(svgEl('line', {
+        x1: yAxisLine.x1,
+        y1: yAxisLine.y1,
+        x2: yAxisLine.x2,
+        y2: yAxisLine.y2,
+        stroke: yAxis.stroke || '#111111',
+        'stroke-width': yAxis.strokeWidth || 1,
+        'data-role': 'axis-line',
+        'data-axis': yAxis.id
+      }));
 
       for (const tick of plot.x.ticks) {
         const x = xScale(panel, tick.value);
         svg.appendChild(svgEl('line', {
           x1: x,
-          y1: box.y + box.height,
+          y1: xAxisLine.y1,
           x2: x,
-          y2: box.y + box.height + plot.axes.xAxis.tickLength,
+          y2: xAxisLine.y1 + xAxis.tickLength,
           stroke: '#111111',
           'stroke-width': 1,
-          'data-axis': 'x',
-          'data-value': tick.value
+          'data-role': 'axis-tick-mark',
+          'data-axis': xAxis.id,
+          'data-value': tick.value,
+          'data-anchor-to': tick.anchorTo || tick.anchor_to || tick.alignment?.target || null,
+          'data-alignment-id': tick.alignment?.id || null,
+          'data-alignment-target': tick.alignment?.target || null,
+          'data-alignment-delta-px': tick.alignment?.deltaPx ?? tick.alignment?.delta_px ?? null
         }));
         const label = svgEl('text', {
           x,
-          y: box.y + box.height + 15,
+          y: xAxisLine.y1 + 15,
           fill: '#111111',
           'font-size': 14,
           'font-weight': 400,
-          'text-anchor': 'middle'
+          'text-anchor': 'middle',
+          'data-role': 'tick-label',
+          'data-axis': xAxis.id,
+          'data-value': tick.value,
+          'data-text-id': `${xAxis.id}-tick-${tick.value}-label`,
+          'data-anchor-to': tick.anchorTo || tick.anchor_to || xAxis.tickLabelBand?.id || xAxis.id,
+          'data-alignment-id': tick.alignment?.id || null,
+          'data-alignment-target': tick.alignment?.target || null,
+          'data-alignment-delta-px': tick.alignment?.deltaPx ?? tick.alignment?.delta_px ?? null,
+          'data-protected-text': 'true'
         });
         label.textContent = tick.label;
         svg.appendChild(label);
@@ -323,28 +365,35 @@
       for (const tick of plot.y.ticks) {
         const y = yScale(panel, tick.value);
         svg.appendChild(svgEl('line', {
-          x1: box.x - plot.axes.yAxis.tickLength,
+          x1: yAxisLine.x1 - yAxis.tickLength,
           y1: y,
-          x2: box.x,
+          x2: yAxisLine.x1,
           y2: y,
           stroke: '#111111',
           'stroke-width': 1,
-          'data-axis': 'y',
+          'data-role': 'axis-tick-mark',
+          'data-axis': yAxis.id,
           'data-value': tick.value
         }));
         const label = svgEl('text', {
-          x: box.x - 12,
+          x: yAxisLine.x1 - 10,
           y: y + 5,
           fill: '#111111',
           'font-size': 16,
           'font-weight': 400,
-          'text-anchor': 'end'
+          'text-anchor': 'end',
+          'data-role': 'tick-label',
+          'data-axis': yAxis.id,
+          'data-value': tick.value,
+          'data-text-id': `${yAxis.id}-tick-${tick.value}-label`,
+          'data-anchor-to': yAxis.tickLabelBand?.id || yAxis.id,
+          'data-protected-text': 'true'
         });
         label.textContent = tick.label;
         svg.appendChild(label);
       }
 
-      if (plot.y.label) appendText(svg, plot.y.label, {baseline: 'middle'});
+      if (plot.y.label) appendText(svg, {...plot.y.label, role: 'y-axis-label'}, {baseline: 'middle', anchorTo: yAxis.tickLabelBand?.id || yAxis.id, protectedText: true});
     }
 
     function renderEventLines(svg, panel, mark) {
@@ -368,30 +417,87 @@
 
     function renderColorStrip(svg, panel) {
       for (const item of panel.layoutObjects || []) {
-        if (item.type !== 'segmentedColorbar') continue;
-        for (const segment of item.segments) {
+        if (!['sideRowBlockStrip', 'rowBlockSideStrip', 'rowBlockStrip', 'segmentedColorbar'].includes(item.type)) continue;
+        const group = svgEl('g', {
+          'data-role': 'side-row-block-strip',
+          'data-layout-id': item.id,
+          'data-linked-axis': item.linkedAxis || item.linked_axis,
+          'data-shared-layout-frame': item.sharedLayoutFrame || item.shared_layout_frame || null,
+          'data-alignments': Array.isArray(item.alignments) ? item.alignments.map(alignment => alignment.id).join(' ') : null
+        });
+        svg.appendChild(group);
+        if (Array.isArray(item.components) && item.components.length) {
+          for (const component of item.components) {
+            group.appendChild(svgEl('rect', {
+              x: component.bbox.x,
+              y: component.bbox.y,
+              width: component.bbox.width,
+              height: component.bbox.height,
+              fill: component.fill,
+              stroke: 'none',
+              'data-role': 'side-row-block-component',
+              'data-layout-id': item.id,
+              'data-component-id': component.id,
+              'data-component-kind': component.kind
+            }));
+          }
+        } else for (const segment of item.segments) {
           const horizontal = item.orientation === 'horizontal';
-          svg.appendChild(svgEl('rect', {
+          group.appendChild(svgEl('rect', {
             x: horizontal ? segment.fromX : item.bbox.x,
             y: horizontal ? item.bbox.y : segment.fromY,
             width: horizontal ? segment.toX - segment.fromX : item.bbox.width,
             height: horizontal ? item.bbox.height : segment.toY - segment.fromY,
             fill: segment.fill,
             stroke: 'none',
+            'data-role': 'side-row-block-segment',
             'data-layout-id': item.id,
             'data-segment-id': segment.id
           }));
         }
-        svg.appendChild(svgEl('rect', {
-          x: item.bbox.x,
-          y: item.bbox.y,
-          width: item.bbox.width,
-          height: item.bbox.height,
-          fill: 'none',
-          stroke: '#ffffff',
-          'stroke-width': 0.6
-        }));
-
+        for (const separator of item.separators || item.boundaries || []) {
+          const horizontal = item.orientation === 'horizontal';
+          const at = horizontal ? (separator.atX ?? separator.x) : (separator.atY ?? separator.y);
+          if (at === undefined) continue;
+          group.appendChild(svgEl('line', {
+            x1: horizontal ? at : item.bbox.x,
+            y1: horizontal ? item.bbox.y : at,
+            x2: horizontal ? at : item.bbox.x + item.bbox.width,
+            y2: horizontal ? item.bbox.y + item.bbox.height : at,
+            stroke: separator.stroke || '#ffffff',
+            'stroke-width': separator.strokeWidth || separator.stroke_width || 1,
+            'data-role': 'side-row-block-separator',
+            'data-layout-id': item.id,
+            'data-separator-id': separator.id
+          }));
+        }
+        for (const border of item.borders || []) {
+          const width = border.width ?? border.strokeWidth ?? border.stroke_width ?? 1;
+          const fill = border.fill || border.stroke || '#111111';
+          if (border.side === 'right') {
+            group.appendChild(svgEl('rect', {
+              x: item.bbox.x + item.bbox.width - width,
+              y: item.bbox.y,
+              width,
+              height: item.bbox.height,
+              fill,
+              'data-role': 'side-row-block-border',
+              'data-layout-id': item.id,
+              'data-border-side': border.side
+            }));
+          } else if (border.side === 'left') {
+            group.appendChild(svgEl('rect', {
+              x: item.bbox.x,
+              y: item.bbox.y,
+              width,
+              height: item.bbox.height,
+              fill,
+              'data-role': 'side-row-block-border',
+              'data-layout-id': item.id,
+              'data-border-side': border.side
+            }));
+          }
+        }
       }
     }
 
@@ -441,8 +547,8 @@
         if (mark.type === 'eventLines') renderEventLines(svg, panel, mark);
       }
       renderAxes(svg, panel);
-      appendText(svg, panel.label);
-      appendText(svg, panel.title);
+      appendText(svg, {...panel.label, role: 'panel-label', anchorTo: panel.id}, {protectedText: true});
+      appendText(svg, {...panel.title, role: 'panel-title', anchorTo: panel.id}, {protectedText: true});
     }
 
     $('generatedButton').addEventListener('click', () => {
