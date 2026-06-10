@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-04-motor-manifold-C reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #aaaaaa;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+    .surface, .reference {
+      position: absolute;
+      inset: 0;
+    }
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background-color: #ffffff;
+    }
+    .show-reference .surface {
+      display: none;
+    }
+    .show-reference .reference {
+      display: block;
+    }
+    svg {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-04-motor-manifold-C</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">QA reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA reference source image">
+    </div>
+  </main>
+  <script>
+    const SPEC_URL = './reference-04-motor-manifold-C.json';
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function byId(id) {
+      return document.getElementById(id);
+    }
+
+    function node(tag, attrs = {}) {
+      const item = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) item.setAttribute(key, value);
+      }
+      return item;
+    }
+
+    function addText(svg, spec, defaults = {}) {
+      const text = node('text', {
+        x: spec.x,
+        y: spec.y,
+        fill: spec.fill || defaults.color || '#111111',
+        'font-family': spec.fontFamily || defaults.fontFamily,
+        'font-size': spec.fontSize || defaults.defaultSize || 12,
+        'font-weight': spec.fontWeight || 400,
+        'text-anchor': spec.anchor || 'start',
+        'dominant-baseline': spec.baseline || 'alphabetic',
+        'letter-spacing': spec.letterSpacing ?? defaults.calibration?.letterSpacing ?? 0,
+        transform: spec.rotation ? `rotate(${spec.rotation} ${spec.x} ${spec.y})` : undefined,
+        'data-id': spec.id,
+        'data-role': spec.role || 'text'
+      });
+      text.textContent = spec.text || '';
+      svg.appendChild(text);
+      return text;
+    }
+
+    function polarPoint(plot, angleDeg, radiusValue) {
+      const radians = angleDeg * Math.PI / 180;
+      return {
+        x: plot.center.x + Math.cos(radians) * plot.radius * radiusValue,
+        y: plot.center.y - Math.sin(radians) * plot.radius * radiusValue
+      };
+    }
+
+    function smoothClosedPath(plot, points) {
+      const pixelPoints = points.map(([angle, radius]) => polarPoint(plot, angle, radius));
+      const n = pixelPoints.length;
+      let d = `M ${pixelPoints[0].x.toFixed(2)} ${pixelPoints[0].y.toFixed(2)}`;
+      for (let i = 0; i < n; i += 1) {
+        const p0 = pixelPoints[(i - 1 + n) % n];
+        const p1 = pixelPoints[i];
+        const p2 = pixelPoints[(i + 1) % n];
+        const p3 = pixelPoints[(i + 2) % n];
+        const c1 = {x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6};
+        const c2 = {x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6};
+        d += ` C ${c1.x.toFixed(2)} ${c1.y.toFixed(2)}, ${c2.x.toFixed(2)} ${c2.y.toFixed(2)}, ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+      }
+      return `${d} Z`;
+    }
+
+    function renderPolarGrid(svg, plot, system) {
+      const group = node('g', {'data-id': plot.id, 'data-role': 'polar-plot'});
+      const grid = node('g', {'data-role': 'polar-grid'});
+      group.appendChild(grid);
+
+      for (const tick of system.radialTicks) {
+        grid.appendChild(node('circle', {
+          cx: plot.center.x,
+          cy: plot.center.y,
+          r: plot.radius * tick.value,
+          fill: 'none',
+          stroke: '#b8b8b8',
+          'stroke-width': tick.value === 1 ? 0.9 : 0.75,
+          'data-radius': tick.value
+        }));
+      }
+
+      for (const tick of system.angleTicks) {
+        const end = polarPoint(plot, tick.value, 1);
+        grid.appendChild(node('line', {
+          x1: plot.center.x,
+          y1: plot.center.y,
+          x2: end.x,
+          y2: end.y,
+          stroke: '#b8b8b8',
+          'stroke-width': 0.75,
+          'data-angle': tick.value
+        }));
+      }
+
+      for (const angle of [45, 135, 225, 315]) {
+        const a = polarPoint(plot, angle, 1);
+        const b = polarPoint(plot, angle + 180, 1);
+        grid.appendChild(node('line', {
+          x1: a.x,
+          y1: a.y,
+          x2: b.x,
+          y2: b.y,
+          stroke: '#c7c7c7',
+          'stroke-width': 0.65,
+          'stroke-dasharray': '5 5',
+          'data-angle-guide': angle
+        }));
+      }
+
+      addText(group, {
+        text: plot.label.text,
+        x: plot.label.x,
+        y: plot.label.y,
+        fontSize: 15,
+        fontWeight: 400,
+        anchor: 'middle',
+        role: 'unit-label'
+      });
+
+      const labelOffset = 7;
+      addText(group, {text: '90°', x: plot.center.x, y: plot.center.y - plot.radius - labelOffset, fontSize: 11, anchor: 'middle', role: 'angle-label'});
+      addText(group, {text: '0°', x: plot.center.x + plot.radius + labelOffset, y: plot.center.y + 4, fontSize: 11, anchor: 'start', role: 'angle-label'});
+      addText(group, {text: '270°', x: plot.center.x, y: plot.center.y + plot.radius + labelOffset + 8, fontSize: 11, anchor: 'middle', role: 'angle-label'});
+      if (plot.id === 'unit-1' || plot.id === 'unit-5') {
+        addText(group, {text: '180°', x: plot.center.x - plot.radius - labelOffset, y: plot.center.y + 4, fontSize: 11, anchor: 'end', role: 'angle-label'});
+      }
+
+      if (plot.showRadialLabels) {
+        addText(group, {text: '1.0', x: plot.center.x + 24, y: plot.center.y - 33, fontSize: 11, anchor: 'start', role: 'radius-label'});
+        addText(group, {text: '0.5', x: plot.center.x + 18, y: plot.center.y - 14, fontSize: 11, anchor: 'start', role: 'radius-label'});
+      }
+
+      const path = node('path', {
+        d: smoothClosedPath(plot, plot.curve),
+        fill: 'none',
+        stroke: '#111111',
+        'stroke-width': 2.1,
+        'stroke-linejoin': 'round',
+        'stroke-linecap': 'round',
+        'data-role': 'tuning-curve'
+      });
+      group.appendChild(path);
+
+      if (plot.marker) {
+        const m = polarPoint(plot, plot.marker.angle, plot.marker.radius);
+        group.appendChild(node('circle', {
+          cx: m.x,
+          cy: m.y,
+          r: 4.5,
+          fill: '#ffffff',
+          stroke: '#111111',
+          'stroke-width': 1.25,
+          'data-role': 'preferred-direction-marker'
+        }));
+      }
+
+      svg.appendChild(group);
+    }
+
+    function renderLegend(svg, legend, defaults) {
+      const group = node('g', {'data-id': legend.id, 'data-role': 'legend'});
+      svg.appendChild(group);
+      addText(group, {...legend.title, id: `${legend.id}-title`, role: 'legend-title'}, defaults);
+      for (const item of legend.items) {
+        group.appendChild(node('line', {
+          x1: item.x,
+          y1: item.y,
+          x2: item.x + item.length,
+          y2: item.y,
+          stroke: '#111111',
+          'stroke-width': item.strokeWidth,
+          'stroke-linecap': 'butt',
+          'data-role': 'legend-swatch'
+        }));
+        addText(group, {text: item.label, x: item.x + item.length + 10, y: item.y + 4, fontSize: 13, role: 'legend-label'}, defaults);
+      }
+    }
+
+    function render(spec) {
+      const frame = byId('frame');
+      const surface = byId('surface');
+      const reference = byId('reference');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      surface.innerHTML = '';
+      reference.src = spec.source.path;
+
+      const svg = node('svg', {
+        width: spec.canvas.width,
+        height: spec.canvas.height,
+        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
+        role: 'img',
+        'aria-label': spec.id
+      });
+      svg.appendChild(node('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background || '#ffffff'}));
+      surface.appendChild(svg);
+
+      const defaults = {
+        fontFamily: spec.typography.fontFamily,
+        defaultSize: spec.typography.defaultSize,
+        color: spec.typography.color,
+        calibration: spec.typography.calibration
+      };
+      const panel = spec.panels[0];
+      addText(svg, panel.label, defaults);
+      addText(svg, panel.title, defaults);
+      addText(svg, panel.yAxisLabel, defaults);
+
+      const polarSystem = spec.coordinateSystems.find((system) => system.id === 'polar-rate');
+      for (const plot of panel.polarPlots) {
+        renderPolarGrid(svg, plot, polarSystem);
+      }
+      renderLegend(svg, panel.legend, defaults);
+    }
+
+    async function loadSpec() {
+      const response = await fetch(SPEC_URL);
+      if (!response.ok) throw new Error(`Could not load ${SPEC_URL}`);
+      return response.json();
+    }
+
+    function bindToggle() {
+      const frame = byId('frame');
+      const generated = byId('generatedButton');
+      const reference = byId('referenceButton');
+      generated.addEventListener('click', () => {
+        frame.classList.remove('show-reference');
+        generated.classList.add('active');
+        reference.classList.remove('active');
+      });
+      reference.addEventListener('click', () => {
+        frame.classList.add('show-reference');
+        reference.classList.add('active');
+        generated.classList.remove('active');
+      });
+    }
+
+    bindToggle();
+    loadSpec().then(render).catch((error) => {
+      byId('surface').textContent = error.message;
+    });
+  </script>
+</body>
+</html>

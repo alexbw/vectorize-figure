@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-03-learning-remapping reconstruction</title>
+  <style>
+    html, body { margin: 0; background: #eeeeee; color: #111; font-family: Arial, Helvetica, sans-serif; }
+    header { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 10px 14px; background: #fff; border-bottom: 1px solid #ccc; }
+    h1 { margin: 0; font-size: 16px; line-height: 1.1; }
+    .note { margin-top: 3px; font-size: 12px; color: #555; }
+    .toggle { display: inline-flex; border: 1px solid #999; border-radius: 4px; overflow: hidden; }
+    .toggle button { border: 0; padding: 5px 10px; background: #fff; color: #111; font: inherit; font-size: 12px; cursor: pointer; }
+    .toggle button.active { background: #111; color: #fff; }
+    main { min-height: calc(100vh - 52px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
+    .frame { position: relative; background: #fff; border: 1px solid #d3d3d3; box-shadow: 0 1px 5px rgba(0,0,0,.08); overflow: hidden; }
+    .surface, .reference { position: absolute; inset: 0; }
+    .reference { display: none; width: 100%; height: 100%; object-fit: contain; background: #fff; }
+    .show-reference .surface { display: none; }
+    .show-reference .reference { display: block; }
+    svg, canvas { position: absolute; inset: 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="doc-title">reference-03-learning-remapping</h1>
+      <div class="note">Generated candidate is JSON-rendered SVG/canvas. Source image is QA/reference only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generated-button" class="active" type="button">Generated</button>
+      <button id="reference-button" type="button">Reference</button>
+    </div>
+  </header>
+  <main><div id="frame" class="frame"><div id="surface" class="surface"></div><img id="reference" class="reference" alt="QA-only source reference"></div></main>
+  <script>
+    const SPEC_URL = './reference-03-learning-remapping.json';
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const el = id => document.getElementById(id);
+    function s(tag, attrs = {}) { const n = document.createElementNS(SVG_NS, tag); for (const [k, v] of Object.entries(attrs)) if (v !== undefined && v !== null) n.setAttribute(k, v); return n; }
+    function add(p, tag, attrs = {}) { const n = s(tag, attrs); p.appendChild(n); return n; }
+    function txt(p, t, x, y, opt = {}) {
+      const n = add(p, 'text', {x, y, fill: opt.fill || '#111', 'font-family': opt.fontFamily || 'Arial, Helvetica, sans-serif', 'font-size': opt.size || 14, 'font-weight': opt.weight || 400, 'font-style': opt.style, 'text-anchor': opt.anchor || 'start', transform: opt.rotate ? `rotate(${opt.rotate} ${x} ${y})` : undefined, 'letter-spacing': 0, 'data-role': opt.role || 'text'});
+      String(t).split('\n').forEach((line, i) => { const sp = add(n, 'tspan', {x, dy: i ? (opt.size || 14) * 1.08 : 0}); sp.textContent = line; });
+      return n;
+    }
+    function rng(seed) { let t = seed >>> 0; return () => { t += 0x6D2B79F5; let r = Math.imul(t ^ t >>> 15, 1 | t); r ^= r + Math.imul(r ^ r >>> 7, 61 | r); return ((r ^ r >>> 14) >>> 0) / 4294967296; }; }
+    function map(v, d, r) { return r[0] + (v - d[0]) / (d[1] - d[0]) * (r[1] - r[0]); }
+    function interpColor(stops, v) {
+      let a = stops[0], b = stops[stops.length - 1];
+      for (let i = 0; i < stops.length - 1; i++) if (v >= stops[i].value && v <= stops[i + 1].value) { a = stops[i]; b = stops[i + 1]; break; }
+      const toRgb = hex => hex.match(/[0-9a-f]{2}/gi).map(h => parseInt(h, 16));
+      const ar = toRgb(a.color), br = toRgb(b.color), t = Math.max(0, Math.min(1, (v - a.value) / (b.value - a.value || 1)));
+      return ar.map((c, i) => Math.round(c + (br[i] - c) * t));
+    }
+    function colorScale(spec, id, v) { const sc = spec.colorScales.find(c => c.id === id); return interpColor(sc.stops, Math.max(sc.domain[0], Math.min(sc.domain[1], v))); }
+    function panelBase(svg, p) {
+      const g = add(svg, 'g', {'data-panel': p.id, transform: `translate(${p.bbox.x} ${p.bbox.y})`});
+      txt(g, p.label.text, p.label.x, p.label.y, {size: p.label.fontSize, weight: p.label.fontWeight});
+      txt(g, p.title.text, p.title.x, p.title.y, {size: p.title.fontSize, weight: p.title.fontWeight});
+      return g;
+    }
+    function axis(g, plot, xt, yt, xl, yl) {
+      const mx = v => map(v, plot.xDomain, [plot.x, plot.x + plot.width]);
+      const my = v => map(v, plot.yDomain, [plot.y + plot.height, plot.y]);
+      add(g, 'line', {x1: plot.x, y1: plot.y + plot.height, x2: plot.x + plot.width, y2: plot.y + plot.height, stroke: '#111'});
+      add(g, 'line', {x1: plot.x, y1: plot.y, x2: plot.x, y2: plot.y + plot.height, stroke: '#111'});
+      xt.forEach(v => { const x = mx(v); add(g, 'line', {x1: x, y1: plot.y + plot.height, x2: x, y2: plot.y + plot.height + 6, stroke: '#111'}); txt(g, String(v), x, plot.y + plot.height + 22, {size: 14, anchor: 'middle'}); });
+      yt.forEach(v => { const y = my(v); add(g, 'line', {x1: plot.x - 6, y1: y, x2: plot.x, y2: y, stroke: '#111'}); txt(g, String(v), plot.x - 12, y + 5, {size: 14, anchor: 'end'}); });
+      if (xl) txt(g, xl, plot.x + plot.width / 2, plot.y + plot.height + 55, {size: 16, anchor: 'middle'});
+      if (yl) txt(g, yl, plot.x - 56, plot.y + plot.height / 2, {size: 16, anchor: 'middle', rotate: -90});
+      return {x: mx, y: my};
+    }
+    function renderHeatmap(ctx, spec, box, recipe, scaleId, panelOffset) {
+      const rr = rng(recipe.seed), img = ctx.createImageData(box.width, box.height);
+      for (let y = 0; y < box.height; y++) {
+        const row = y / box.height, center = recipe.ridge.start + (recipe.ridge.end - recipe.ridge.start) * row + Math.sin(row * Math.PI * 2) * recipe.ridge.curve;
+        for (let x = 0; x < box.width; x++) {
+          const pos = map(x, [0, box.width], [0, 100]), band = Math.exp(-Math.pow((pos - center) / recipe.ridge.width, 2));
+          const secondary = 0.32 * Math.exp(-Math.pow((pos - center - 24) / 12, 2)) + 0.22 * Math.exp(-Math.pow((pos - center + 18) / 10, 2));
+          const noise = (rr() - 0.5) * 0.9 + (rr() > 0.985 ? 1.8 : 0);
+          const v = (scaleId === 'activity-rate') ? Math.max(0, band * recipe.ridge.brightness + secondary + noise * 0.22) : -0.65 + band * recipe.ridge.brightness + secondary + noise;
+          const [r, g, b] = colorScale(spec, scaleId, v), off = (y * box.width + x) * 4;
+          img.data[off] = r; img.data[off + 1] = g; img.data[off + 2] = b; img.data[off + 3] = 255;
+        }
+      }
+      ctx.putImageData(img, panelOffset.x + box.x, panelOffset.y + box.y);
+    }
+    function renderColorbar(g, spec, cb, scaleId) {
+      for (let i = 0; i < cb.height; i++) {
+        const v = map(i, [cb.height, 0], cb.domain), [r, gg, b] = colorScale(spec, scaleId, v);
+        add(g, 'rect', {x: cb.x, y: cb.y + i, width: cb.width, height: 1, fill: `rgb(${r},${gg},${b})`});
+      }
+      add(g, 'rect', {x: cb.x, y: cb.y, width: cb.width, height: cb.height, fill: 'none', stroke: '#111'});
+      txt(g, cb.label, cb.x + cb.width + 4, cb.y - 18, {size: 12});
+      cb.ticks.forEach(v => { const y = map(v, cb.domain, [cb.y + cb.height, cb.y]); add(g, 'line', {x1: cb.x + cb.width, y1: y, x2: cb.x + cb.width + 5, y2: y, stroke: '#111'}); txt(g, String(v), cb.x + cb.width + 9, y + 4, {size: 12}); });
+    }
+    function renderA(ctx, g, p, spec) {
+      const pg = p.plotGroup;
+      txt(g, pg.yLabel.text, pg.yLabel.x, pg.yLabel.y, {size: pg.yLabel.fontSize, anchor: 'middle', rotate: pg.yLabel.rotation});
+      add(g, 'line', {x1: pg.orientationArrow.x, y1: pg.orientationArrow.y1, x2: pg.orientationArrow.x, y2: pg.orientationArrow.y2, stroke: '#111', 'marker-start': 'url(#arrow)', 'marker-end': 'url(#arrow)'});
+      pg.orientationArrow.labels.forEach(l => txt(g, l.text, l.x, l.y, {size: 13}));
+      pg.heatmaps.forEach(h => {
+        txt(g, h.title, h.bbox.x + h.bbox.width / 2, 65, {size: 14, anchor: 'middle'});
+        renderHeatmap(ctx, spec, h.bbox, h, 'df-f-zscore', p.bbox);
+        add(g, 'rect', {x: h.bbox.x, y: h.bbox.y, width: h.bbox.width, height: h.bbox.height, fill: 'none', stroke: '#111', 'stroke-width': 0.8});
+        pg.xTicks.forEach(v => txt(g, String(v), map(v, [0, 100], [h.bbox.x, h.bbox.x + h.bbox.width]), h.bbox.y + h.bbox.height + 21, {size: 13, anchor: 'middle'}));
+      });
+      txt(g, pg.xLabel.text, pg.xLabel.x, pg.xLabel.y, {size: pg.xLabel.fontSize, anchor: 'middle'});
+      renderColorbar(g, spec, pg.colorbar, 'df-f-zscore');
+    }
+    function renderB(g, p, spec) {
+      const m = p.matrix, b = m.box, n = m.days.length, cell = b.width / n;
+      for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+        const v = m.values[r][c], x = b.x + c * cell, y = b.y + r * cell;
+        const col = v == null ? [246, 246, 246] : colorScale(spec, 'similarity-pearson', v);
+        add(g, 'rect', {x, y, width: cell, height: cell, fill: `rgb(${col[0]},${col[1]},${col[2]})`, stroke: '#b9b9b9', 'stroke-width': 0.8});
+        txt(g, v == null ? '—' : v.toFixed(2), x + cell / 2, y + cell / 2 + 5, {size: 13, anchor: 'middle'});
+      }
+      m.days.forEach((d, i) => { txt(g, String(d), b.x + i * cell + cell / 2, b.y + b.height + 28, {size: 16, anchor: 'middle'}); txt(g, String(d), b.x - 18, b.y + i * cell + cell / 2 + 5, {size: 16, anchor: 'middle'}); });
+      txt(g, m.xLabel.text, m.xLabel.x, m.xLabel.y, {size: m.xLabel.fontSize, anchor: 'middle'});
+      txt(g, m.yLabel.text, m.yLabel.x, m.yLabel.y, {size: m.yLabel.fontSize, anchor: 'middle', rotate: m.yLabel.rotation});
+      renderColorbar(g, spec, p.colorbar, 'similarity-pearson');
+    }
+    function tracePath(row, box) {
+      const rr = rng(row.seed), n = 430, pts = [];
+      for (let i = 0; i < n; i++) {
+        let y = row.y + (rr() - 0.5) * 8;
+        if (row.id === 'speed') y = row.y - Math.max(0, (rr() * rr()) * row.amplitude);
+        else if (rr() > 0.94) y -= rr() * 25 * row.amplitude;
+        pts.push([box.x + i / (n - 1) * box.width, y]);
+      }
+      return pts.map((q, i) => `${i ? 'L' : 'M'} ${q[0].toFixed(1)} ${q[1].toFixed(1)}`).join(' ');
+    }
+    function renderC(g, p) {
+      const tg = p.traceGroup, b = tg.plotBox;
+      tg.dayLines.forEach(x => add(g, 'line', {x1: b.x + x, y1: 56, x2: b.x + x, y2: 437, stroke: '#aaa', 'stroke-dasharray': '2 3'}));
+      tg.rows.forEach(row => {
+        txt(g, row.label, 58, row.y - 28, {size: 13});
+        add(g, 'path', {d: tracePath(row, b), fill: 'none', stroke: row.stroke || '#5b1798', 'stroke-width': row.id === 'speed' ? 1 : 1.2});
+      });
+      [-2, 0, 2].forEach(v => txt(g, String(v), 28, map(v, [-2, 2], [119, 67]) + 4, {size: 13, anchor: 'end'}));
+      [40, 0, 20].forEach((v, i) => txt(g, String(v), 28, [398, 438, 418][i] + 4, {size: 13, anchor: 'end'}));
+      txt(g, tg.yLabel.text, tg.yLabel.x, tg.yLabel.y, {size: tg.yLabel.fontSize, anchor: 'middle', rotate: tg.yLabel.rotation});
+      tg.days.forEach((d, i) => txt(g, `Day ${d}`, b.x + 22 + i * 58, 466, {size: 13, anchor: 'middle'}));
+      add(g, 'line', {x1: tg.scaleBar.x, y1: tg.scaleBar.y, x2: tg.scaleBar.x + tg.scaleBar.lengthPx, y2: tg.scaleBar.y, stroke: '#111'});
+      txt(g, tg.scaleBar.label, tg.scaleBar.x + tg.scaleBar.lengthPx / 2, tg.scaleBar.y + 16, {size: 12, anchor: 'middle'});
+    }
+    function renderD(g, p) {
+      const m = axis(g, p.plot, p.xTicks, p.yTicks, p.xLabel, p.yLabel);
+      const pts = p.series.values.map((v, i) => [m.x(i + 1), m.y(v)]);
+      const bandTop = p.series.values.map((v, i) => [m.x(i + 1), m.y(v + p.series.sem[i])]);
+      const bandBot = p.series.values.map((v, i) => [m.x(i + 1), m.y(v - p.series.sem[i])]).reverse();
+      add(g, 'path', {d: [...bandTop, ...bandBot].map((q, i) => `${i ? 'L' : 'M'} ${q[0]} ${q[1]}`).join(' ') + ' Z', fill: 'rgba(91,24,154,.16)'});
+      add(g, 'path', {d: pts.map((q, i) => `${i ? 'L' : 'M'} ${q[0]} ${q[1]}`).join(' '), fill: 'none', stroke: '#5b189a', 'stroke-width': 2});
+      pts.forEach((q, i) => { add(g, 'circle', {cx: q[0], cy: q[1], r: 4, fill: '#5b189a'}); txt(g, p.series.labels[i], q[0], q[1] - 22, {size: 13, anchor: 'middle'}); txt(g, String(p.series.n[i]), q[0], p.plot.y + p.plot.height - 14, {size: 12, anchor: 'middle', style: i === 0 ? 'italic' : undefined}); });
+    }
+    function renderE(g, p) {
+      const m = axis(g, p.plot, p.xTicks, p.yTicks, p.xLabel, p.yLabel);
+      add(g, 'line', {x1: p.plot.x, y1: m.y(0), x2: p.plot.x + p.plot.width, y2: m.y(0), stroke: '#777', 'stroke-dasharray': '5 4'});
+      p.points.forEach(d => { const x = m.x(d.x), y = m.y(d.y), e = Math.abs(m.y(d.y + d.err) - y); add(g, 'line', {x1: x, y1: y - e, x2: x, y2: y + e, stroke: '#5b189a'}); add(g, 'circle', {cx: x, cy: y, r: 4, fill: '#5b189a'}); });
+      txt(g, p.annotation.text, p.annotation.x, p.annotation.y, {size: p.annotation.fontSize, fill: p.annotation.fill});
+    }
+    function renderF(ctx, g, p, spec) {
+      renderHeatmap(ctx, spec, p.heatmap.bbox, p.heatmap, 'activity-rate', p.bbox);
+      const b = p.heatmap.bbox;
+      add(g, 'rect', {x: b.x, y: b.y, width: b.width, height: b.height, fill: 'none', stroke: '#111'});
+      p.xTicks.forEach(v => txt(g, String(v), map(v, [0, 150], [b.x, b.x + b.width]), b.y + b.height + 22, {size: 13, anchor: 'middle'}));
+      txt(g, p.xLabel.text, p.xLabel.x, p.xLabel.y, {size: p.xLabel.fontSize, anchor: 'middle'});
+      txt(g, p.yLabel.text, p.yLabel.x, p.yLabel.y, {size: p.yLabel.fontSize, anchor: 'middle', rotate: p.yLabel.rotation});
+      add(g, 'line', {x1: p.orientationArrow.x, y1: p.orientationArrow.y1, x2: p.orientationArrow.x, y2: p.orientationArrow.y2, stroke: '#111', 'marker-start': 'url(#arrow)', 'marker-end': 'url(#arrow)'});
+      p.orientationArrow.labels.forEach(l => txt(g, l.text, l.x, l.y, {size: 13}));
+      renderColorbar(g, spec, p.colorbar, 'activity-rate');
+      const ob = p.occupancy.box, rr = rng(p.occupancy.seed), vals = [];
+      for (let i = 0; i < 180; i++) vals.push(8 + 43 * Math.exp(-Math.pow((i / 180 - 0.55) / 0.28, 2)) + (rr() - 0.5) * 12);
+      add(g, 'path', {d: vals.map((v, i) => `${i ? 'L' : 'M'} ${ob.x + Math.max(0, Math.min(ob.width, v))} ${ob.y + i / (vals.length - 1) * ob.height}`).join(' '), fill: 'none', stroke: '#111'});
+      add(g, 'line', {x1: ob.x, y1: ob.y, x2: ob.x, y2: ob.y + ob.height, stroke: '#111'});
+      add(g, 'line', {x1: ob.x, y1: ob.y + ob.height, x2: ob.x + ob.width, y2: ob.y + ob.height, stroke: '#111'});
+      txt(g, p.occupancy.label, ob.x + ob.width / 2, ob.y - 24, {size: 13, anchor: 'middle'});
+      p.occupancy.xTicks.forEach(v => txt(g, String(v), map(v, [0, 50], [ob.x, ob.x + ob.width]), ob.y + ob.height + 22, {size: 13, anchor: 'middle'}));
+    }
+    function renderG(g, p) {
+      p.blocks.forEach((b, i) => {
+        txt(g, b.heading, b.x, b.y, {size: 14, fill: b.headingFill});
+        b.lines.forEach((line, j) => txt(g, line, b.x, b.y + 48 + j * 25, {size: 14, fill: line.startsWith('p =') ? b.headingFill : '#111', style: line.startsWith('p =') ? 'italic' : undefined}));
+        if (i < p.blocks.length - 1) add(g, 'line', {x1: b.x, y1: b.y + 129, x2: 290, y2: b.y + 129, stroke: '#999'});
+      });
+      txt(g, p.footnote.text, p.footnote.x, p.footnote.y, {size: p.footnote.fontSize});
+    }
+    function render(spec) {
+      const frame = el('frame'), surface = el('surface'); frame.style.width = spec.canvas.width + 'px'; frame.style.height = spec.canvas.height + 'px'; surface.innerHTML = '';
+      const canvas = document.createElement('canvas'); canvas.width = spec.canvas.width; canvas.height = spec.canvas.height; surface.appendChild(canvas);
+      const ctx = canvas.getContext('2d'); ctx.fillStyle = spec.canvas.background; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const svg = s('svg', {width: spec.canvas.width, height: spec.canvas.height, viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`}); surface.appendChild(svg);
+      const defs = add(svg, 'defs'); const marker = add(defs, 'marker', {id: 'arrow', markerWidth: 7, markerHeight: 7, refX: 3.5, refY: 3.5, orient: 'auto'}); add(marker, 'path', {d: 'M 0 0 L 7 3.5 L 0 7 z', fill: '#111'});
+      spec.panels.forEach(p => { const g = panelBase(svg, p); if (p.id === 'A') renderA(ctx, g, p, spec); if (p.id === 'B') renderB(g, p, spec); if (p.id === 'C') renderC(g, p); if (p.id === 'D') renderD(g, p); if (p.id === 'E') renderE(g, p); if (p.id === 'F') renderF(ctx, g, p, spec); if (p.id === 'G') renderG(g, p); });
+      el('reference').src = spec.source.path; el('doc-title').textContent = spec.id;
+    }
+    fetch(SPEC_URL).then(r => r.json()).then(render);
+    el('generated-button').onclick = () => { el('frame').classList.remove('show-reference'); el('generated-button').classList.add('active'); el('reference-button').classList.remove('active'); };
+    el('reference-button').onclick = () => { el('frame').classList.add('show-reference'); el('reference-button').classList.add('active'); el('generated-button').classList.remove('active'); };
+  </script>
+</body>
+</html>

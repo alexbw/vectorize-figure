@@ -1,0 +1,94 @@
+{
+  "schema": "no_image_generated_reconstruction.v1",
+  "note": "Generated-only reconstructions. Source PNGs were used for visual inspection but are not referenced, embedded, or drawn by the HTML.",
+  "panels": [
+    {
+      "id": "reference-01-place-code-opto-A",
+      "label": "A",
+      "title": "Hippocampal CA1 place cells (n = 162)",
+      "strategy": "hybrid_canvas_dom_heatmaps",
+      "width": 512,
+      "height": 512,
+      "type": "paired_position_heatmaps",
+      "layout": {
+        "left": {"x": 70, "y": 90, "width": 170, "height": 354, "title": "Control (no light)", "seed": 101},
+        "right": {"x": 260, "y": 90, "width": 165, "height": 354, "title": "Optogenetic inhibition\n(ArchT, 532 nm)", "seed": 109},
+        "colorbar": {"x": 443, "y": 250, "width": 18, "height": 190}
+      },
+      "axes": {"x_domain": [0, 200], "y_domain": [1, 162]},
+      "colorbar": {"label": "Firing rate\n(z-scored)", "ticks": [2, 1, 0, -1, -2]}
+    },
+    {
+      "id": "reference-01-place-code-opto-C",
+      "label": "C",
+      "title": "Event-aligned responses to light onset",
+      "strategy": "hybrid_canvas_dom_raster_timeseries",
+      "width": 560,
+      "height": 512,
+      "type": "raster_and_time_series",
+      "event": {"x": 251, "text": "532 nm light ON"},
+      "raster": {"x": 95, "y": 75, "width": 435, "height": 185, "control_seed": 203, "archt_seed": 211},
+      "lineplot": {"x": 80, "y": 310, "width": 450, "height": 108},
+      "x_domain": [-1, 2],
+      "y_domain": [0, 30]
+    },
+    {
+      "id": "reference-01-place-code-opto-E",
+      "label": "E",
+      "title": "Decoding accuracy reduction (0–2 s)",
+      "strategy": "dom_vector_editable_points_lines",
+      "width": 464,
+      "height": 512,
+      "type": "event_aligned_line_plot",
+      "plot": {"x": 64, "y": 65, "width": 360, "height": 327},
+      "x_labels": ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "All"],
+      "y_domain": [-20, 100],
+      "black_series": [
+        [78, 42, 16, 63, 30, 24, 17, 67],
+        [68, 28, 47, 20, 28, 23, 31, 57],
+        [48, 7, 44, -5, 16, 37, -2, 49],
+        [34, 31, 51, 6, 22, -2, 25, 42]
+      ],
+      "teal_series": [
+        [18, -4, 18, -12, 8, 2, -19, 28],
+        [8, -6, 3, -8, 0, 3, -10, 18]
+      ],
+      "summary": {"x_index": 8, "value": 18, "low": 6, "high": 28},
+      "annotation": "Paired t-test: P = 3.1 x 10^-5"
+    },
+    {
+      "id": "reference-02-decision-dynamics-A",
+      "label": "A",
+      "title": "Trial timeline",
+      "strategy": "dom_css_schematic",
+      "width": 430,
+      "height": 514,
+      "type": "trial_table_schematic",
+      "timeline": {
+        "x": 25,
+        "y": 248,
+        "width": 385,
+        "ticks": [
+          {"label": "-500", "x": 27},
+          {"label": "0", "x": 105},
+          {"label": "200", "x": 160},
+          {"label": "1,200", "x": 265},
+          {"label": "1,400", "x": 330},
+          {"label": "1,900", "x": 396}
+        ]
+      },
+      "epochs": [
+        {"name": "Fixate", "duration": "500 ms", "x": 16, "y": 136, "w": 72, "kind": "fixate"},
+        {"name": "Stimulus", "duration": "200 ms", "x": 100, "y": 136, "w": 70, "kind": "stimulus"},
+        {"name": "Delay", "duration": "~1,000 ms", "x": 182, "y": 136, "w": 72, "kind": "fixate"},
+        {"name": "Go", "duration": "(response)", "x": 268, "y": 136, "w": 68, "kind": "response"},
+        {"name": "Outcome", "duration": "500 ms", "x": 346, "y": 136, "w": 64, "kind": "outcome"}
+      ],
+      "process_rows": [
+        ["Baseline", "Stim", "Delay", "Response", "Outcome"],
+        ["Cognitive\nprocess", "Evidence\nencoding", "Evidence\naccumulation", "Decision\nexecution", "Feedback\nprocessing"],
+        ["Example behavior", "L / R", "Hold", "Saccade\nL or R", "Reward\nor no reward"]
+      ]
+    }
+  ]
+}

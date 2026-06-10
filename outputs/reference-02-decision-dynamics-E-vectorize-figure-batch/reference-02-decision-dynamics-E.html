@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-02-decision-dynamics-E reconstruction</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.2;
+    }
+
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+
+    .toggle {
+      display: inline-flex;
+      overflow: hidden;
+      border: 1px solid #999999;
+      border-radius: 4px;
+    }
+
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+
+    main {
+      display: grid;
+      place-items: center;
+      min-height: calc(100vh - 50px);
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #111111;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.12);
+      overflow: hidden;
+    }
+
+    .surface,
+    .reference-wrap {
+      position: absolute;
+      inset: 0;
+    }
+
+    .reference-wrap {
+      display: none;
+      background: #ffffff;
+    }
+
+    .reference-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .reference-label {
+      position: absolute;
+      left: 8px;
+      bottom: 8px;
+      padding: 3px 6px;
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid #777777;
+      font-size: 11px;
+      color: #111111;
+    }
+
+    .show-reference .surface {
+      display: none;
+    }
+
+    .show-reference .reference-wrap {
+      display: block;
+    }
+
+    svg {
+      position: absolute;
+      inset: 0;
+    }
+
+    text {
+      dominant-baseline: alphabetic;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="page-title">reference-02-decision-dynamics-E</h1>
+      <div class="note">Generated candidate is rendered from JSON primitives. Source image is QA/reference-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generated-button" class="active" type="button">Generated</button>
+      <button id="reference-button" type="button">Reference</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <div class="reference-wrap" aria-label="QA reference source image">
+        <img id="reference-image" alt="QA reference source image">
+        <div class="reference-label">QA reference only: source raster is not used in generated view</div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const SPEC_URL = 'reference-02-decision-dynamics-E.json';
+
+    function make(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function textNode(textSpec, defaults = {}) {
+      const node = make('text', {
+        id: textSpec.id,
+        x: textSpec.x,
+        y: textSpec.y,
+        'font-family': textSpec.fontFamily || defaults.fontFamily,
+        'font-size': textSpec.fontSize || defaults.fontSize,
+        'font-weight': textSpec.fontWeight || defaults.fontWeight || 400,
+        fill: textSpec.fill || defaults.fill || '#111111',
+        'text-anchor': textSpec.anchor || defaults.anchor || 'start'
+      });
+      if (textSpec.rotate) {
+        node.setAttribute('transform', `rotate(${textSpec.rotate} ${textSpec.x} ${textSpec.y})`);
+      }
+      const lines = String(textSpec.text).split('\n');
+      const lineHeight = (textSpec.lineHeight || defaults.lineHeight || 1.1) * (textSpec.fontSize || defaults.fontSize || 16);
+      lines.forEach((line, index) => {
+        const tspan = make('tspan', {x: textSpec.x, dy: index === 0 ? 0 : lineHeight});
+        tspan.textContent = line;
+        node.appendChild(tspan);
+      });
+      return node;
+    }
+
+    function interpolateColor(a, b, t) {
+      const ca = a.match(/[0-9a-f]{2}/gi).map(v => parseInt(v, 16));
+      const cb = b.match(/[0-9a-f]{2}/gi).map(v => parseInt(v, 16));
+      const rgb = ca.map((v, i) => Math.round(v + (cb[i] - v) * t));
+      return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+    }
+
+    function colorForValue(scale, value) {
+      const [d0, d1, d2] = scale.domain;
+      const [c0, c1, c2] = scale.range;
+      if (value <= d1) return interpolateColor(c0, c1, (value - d0) / (d1 - d0));
+      return interpolateColor(c1, c2, (value - d1) / (d2 - d1));
+    }
+
+    function renderMatrix(svg, panel, coord, colorScale, typography) {
+      const matrix = panel.matrix;
+      const box = matrix.bbox;
+      const cellW = box.width / coord.columns.length;
+      const cellH = box.height / coord.rows.length;
+      const group = make('g', {'id': matrix.id, 'data-transform': matrix.usesTransform});
+      svg.appendChild(group);
+
+      matrix.cells.forEach(cell => {
+        const colIndex = coord.columns.indexOf(cell.column);
+        const rowIndex = coord.rows.indexOf(cell.row);
+        const x = box.x + colIndex * cellW;
+        const y = box.y + rowIndex * cellH;
+        group.appendChild(make('rect', {
+          id: `${cell.id}-fill`,
+          x,
+          y,
+          width: cellW,
+          height: cellH,
+          fill: colorForValue(colorScale, cell.value),
+          stroke: 'none',
+          'data-row': cell.row,
+          'data-column': cell.column,
+          'data-value': cell.value
+        }));
+        group.appendChild(textNode({
+          id: `${cell.id}-label`,
+          text: cell.label,
+          x: x + cellW / 2,
+          y: y + cellH / 2 + 6,
+          fontSize: matrix.cellLabelStyle.fontSize,
+          fontWeight: matrix.cellLabelStyle.fontWeight,
+          fill: cell.value > 70 ? '#ffffff' : '#111111',
+          anchor: 'middle'
+        }, typography));
+      });
+
+      group.appendChild(make('rect', {
+        id: `${matrix.id}-border`,
+        x: box.x,
+        y: box.y,
+        width: box.width,
+        height: box.height,
+        fill: 'none',
+        stroke: matrix.border.stroke,
+        'stroke-width': matrix.border.strokeWidth
+      }));
+    }
+
+    function renderColorbar(svg, colorbar, colorScale, typography) {
+      const box = colorbar.bbox;
+      const defs = svg.querySelector('defs') || svg.insertBefore(make('defs'), svg.firstChild);
+      const gradient = make('linearGradient', {
+        id: `${colorbar.id}-gradient`,
+        x1: '0%',
+        y1: '100%',
+        x2: '0%',
+        y2: '0%'
+      });
+      [
+        ['0%', colorScale.range[0]],
+        ['50%', colorScale.range[1]],
+        ['100%', colorScale.range[2]]
+      ].forEach(([offset, color]) => gradient.appendChild(make('stop', {'offset': offset, 'stop-color': color})));
+      defs.appendChild(gradient);
+
+      const group = make('g', {'id': colorbar.id, 'data-transform': colorbar.usesTransform});
+      svg.appendChild(group);
+      group.appendChild(textNode(colorbar.title, typography));
+      group.appendChild(make('rect', {
+        x: box.x,
+        y: box.y,
+        width: box.width,
+        height: box.height,
+        fill: `url(#${colorbar.id}-gradient)`,
+        stroke: colorbar.border.stroke,
+        'stroke-width': colorbar.border.strokeWidth
+      }));
+
+      colorbar.ticks.forEach(tick => {
+        const t = (tick.value - colorScale.domain[0]) / (colorScale.domain[2] - colorScale.domain[0]);
+        const y = box.y + box.height - t * box.height;
+        group.appendChild(make('line', {
+          x1: box.x + box.width,
+          y1: y,
+          x2: box.x + box.width + colorbar.tickLength,
+          y2: y,
+          stroke: '#111111',
+          'stroke-width': 1
+        }));
+        group.appendChild(textNode({
+          id: `${colorbar.id}-tick-${tick.value}`,
+          text: tick.label,
+          x: box.x + box.width + colorbar.labelOffset,
+          y: y + 5,
+          fontSize: 15,
+          anchor: 'start'
+        }, typography));
+      });
+    }
+
+    function render(spec) {
+      document.getElementById('page-title').textContent = spec.id;
+      const frame = document.getElementById('frame');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      frame.style.background = spec.canvas.background;
+
+      const surface = document.getElementById('surface');
+      surface.innerHTML = '';
+      const svg = make('svg', {
+        xmlns: SVG_NS,
+        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
+        width: spec.canvas.width,
+        height: spec.canvas.height,
+        role: 'img',
+        'aria-label': `${spec.id} generated reconstruction`
+      });
+      surface.appendChild(svg);
+      svg.appendChild(make('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
+
+      const typography = {
+        fontFamily: spec.typography.fontFamily,
+        fontSize: spec.typography.defaultSize,
+        fill: spec.typography.color,
+        lineHeight: spec.typography.calibration?.lineHeight || 1.08
+      };
+      const panel = spec.panels[0];
+      const coord = spec.coordinateSystems.find(item => item.id === panel.matrix.usesTransform);
+      const colorScale = spec.coordinateSystems.find(item => item.id === panel.colorbar.usesTransform);
+
+      svg.appendChild(textNode(panel.label, typography));
+      svg.appendChild(textNode(panel.title, typography));
+      panel.layoutObjects.forEach(item => svg.appendChild(textNode(item, typography)));
+      renderMatrix(svg, panel, coord, colorScale, typography);
+      renderColorbar(svg, panel.colorbar, colorScale, typography);
+
+      document.getElementById('reference-image').src = spec.source.path;
+    }
+
+    async function loadSpec() {
+      const response = await fetch(SPEC_URL);
+      if (!response.ok) throw new Error(`Unable to load ${SPEC_URL}: ${response.status}`);
+      return response.json();
+    }
+
+    loadSpec().then(render).catch(error => {
+      document.getElementById('surface').textContent = error.message;
+      console.error(error);
+    });
+
+    const frame = document.getElementById('frame');
+    const generatedButton = document.getElementById('generated-button');
+    const referenceButton = document.getElementById('reference-button');
+    generatedButton.addEventListener('click', () => {
+      frame.classList.remove('show-reference');
+      generatedButton.classList.add('active');
+      referenceButton.classList.remove('active');
+    });
+    referenceButton.addEventListener('click', () => {
+      frame.classList.add('show-reference');
+      referenceButton.classList.add('active');
+      generatedButton.classList.remove('active');
+    });
+  </script>
+</body>
+</html>

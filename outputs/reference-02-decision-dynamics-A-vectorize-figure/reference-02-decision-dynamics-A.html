@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-02-decision-dynamics-A reconstruction</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #aaaaaa;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .surface,
+    .reference {
+      position: absolute;
+      inset: 0;
+    }
+
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+    }
+
+    .show-reference .surface {
+      display: none;
+    }
+
+    .show-reference .reference {
+      display: block;
+    }
+
+    svg {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-02-decision-dynamics-A</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="Reference source image">
+    </div>
+  </main>
+
+  <script>
+    const SPEC_URL = './reference-02-decision-dynamics-A.json';
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function byId(id) {
+      return document.getElementById(id);
+    }
+
+    function svgNode(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function textNode(spec, defaults = {}) {
+      const node = svgNode('text', {
+        x: spec.x,
+        y: spec.y,
+        fill: spec.fill || spec.color || defaults.color || '#111111',
+        'font-size': spec.fontSize || defaults.defaultSize || 13,
+        'font-weight': spec.fontWeight || 400,
+        'font-family': spec.fontFamily || defaults.fontFamily || 'Arial, Helvetica, sans-serif',
+        'letter-spacing': spec.letterSpacing ?? defaults.calibration?.letterSpacing,
+        'text-anchor': spec.anchor || 'start',
+        'dominant-baseline': spec.baseline || 'alphabetic',
+        transform: spec.rotation ? `rotate(${spec.rotation} ${spec.x} ${spec.y})` : undefined,
+        textLength: spec.textLength,
+        lengthAdjust: spec.lengthAdjust,
+        'data-id': spec.id,
+        'data-role': spec.role || 'text'
+      });
+
+      const lines = String(spec.text || '').split('\n');
+      lines.forEach((lineText, index) => {
+        const tspan = svgNode('tspan', {
+          x: spec.x,
+          dy: index === 0 ? 0 : (spec.lineHeight || defaults.calibration?.lineHeight || 1.08) * (spec.fontSize || defaults.defaultSize || 13)
+        });
+        tspan.textContent = lineText;
+        node.appendChild(tspan);
+      });
+      return node;
+    }
+
+    function nodeBox(node) {
+      const box = node.getBBox();
+      return {x: box.x, y: box.y, width: box.width, height: box.height};
+    }
+
+    function unionBoxes(boxes) {
+      const valid = boxes.filter(Boolean);
+      if (!valid.length) return {x: 0, y: 0, width: 0, height: 0};
+      const x1 = Math.min(...valid.map(box => box.x));
+      const y1 = Math.min(...valid.map(box => box.y));
+      const x2 = Math.max(...valid.map(box => box.x + box.width));
+      const y2 = Math.max(...valid.map(box => box.y + box.height));
+      return {x: x1, y: y1, width: x2 - x1, height: y2 - y1};
+    }
+
+    function boxesOverlap(a, b, minGap = 0) {
+      return !(
+        a.x + a.width + minGap <= b.x ||
+        b.x + b.width + minGap <= a.x ||
+        a.y + a.height + minGap <= b.y ||
+        b.y + b.height + minGap <= a.y
+      );
+    }
+
+    function shiftTextY(node, dy) {
+      const y = Number(node.getAttribute('y') || 0) + dy;
+      node.setAttribute('y', y);
+    }
+
+    function resolveHorizontalTextCollisions(nodes, options = {}) {
+      const minGap = options.minGap ?? 2;
+      const minScale = options.minScale ?? 0.72;
+      const staggerDy = options.staggerDy ?? 12;
+      const sorted = [...nodes].sort((a, b) => Number(a.getAttribute('x')) - Number(b.getAttribute('x')));
+
+      for (let pass = 0; pass < 3; pass += 1) {
+        let changed = false;
+        for (let index = 0; index < sorted.length - 1; index += 1) {
+          const left = sorted[index];
+          const right = sorted[index + 1];
+          const leftBox = nodeBox(left);
+          const rightBox = nodeBox(right);
+          if (!boxesOverlap(leftBox, rightBox, minGap)) continue;
+
+          const leftX = Number(left.getAttribute('x'));
+          const rightX = Number(right.getAttribute('x'));
+          const available = Math.max(0, rightX - leftX - minGap);
+          const halfWidths = leftBox.width / 2 + rightBox.width / 2;
+          const scaleFactor = halfWidths > 0 ? available / halfWidths : 1;
+
+          if (scaleFactor >= minScale) {
+            [left, right].forEach(node => {
+              const box = nodeBox(node);
+              const currentLength = Number(node.getAttribute('textLength')) || box.width;
+              node.setAttribute('textLength', Math.max(1, currentLength * scaleFactor));
+              node.setAttribute('lengthAdjust', 'spacingAndGlyphs');
+            });
+          } else if (right.dataset.staggered !== 'true') {
+            shiftTextY(right, staggerDy);
+            right.dataset.staggered = 'true';
+          }
+          changed = true;
+        }
+        if (!changed) break;
+      }
+    }
+
+    function placeLabelBelowBand(svg, label, bandBox, defaults) {
+      const minGap = label.minGapFromTarget ?? label.dy ?? 6;
+      const resolved = anchoredLabel(label, bandBox);
+      const node = textNode(resolved, defaults);
+      svg.appendChild(node);
+      const box = nodeBox(node);
+      const requiredY = bandBox.y + bandBox.height + minGap;
+      if (box.y < requiredY) shiftTextY(node, requiredY - box.y);
+      return node;
+    }
+
+    function validateProtectedText(svg) {
+      const protectedRoles = new Set(['axis-title', 'tick-label', 'colorbar-title', 'phase-label']);
+      const nodes = [...svg.querySelectorAll('text')].filter(node => protectedRoles.has(node.dataset.role));
+      const overlaps = [];
+      for (let i = 0; i < nodes.length; i += 1) {
+        for (let j = i + 1; j < nodes.length; j += 1) {
+          if (boxesOverlap(nodeBox(nodes[i]), nodeBox(nodes[j]), 1)) {
+            overlaps.push([nodes[i].textContent, nodes[j].textContent]);
+          }
+        }
+      }
+      svg.dataset.textOverlapCount = overlaps.length;
+      if (overlaps.length) console.warn('Protected text overlaps detected', overlaps);
+      return overlaps;
+    }
+
+    function line(svg, attrs) {
+      const node = svgNode('line', {
+        x1: attrs.x1,
+        y1: attrs.y1,
+        x2: attrs.x2,
+        y2: attrs.y2,
+        stroke: attrs.stroke || '#111111',
+        'stroke-width': attrs.strokeWidth || 1.25,
+        'stroke-dasharray': attrs.dasharray,
+        'stroke-linecap': attrs.linecap || 'butt',
+        'data-role': attrs.role || 'line'
+      });
+      svg.appendChild(node);
+      return node;
+    }
+
+    function rect(svg, attrs) {
+      const node = svgNode('rect', {
+        x: attrs.x,
+        y: attrs.y,
+        width: attrs.width,
+        height: attrs.height,
+        rx: attrs.rx,
+        ry: attrs.ry,
+        fill: attrs.fill || 'none',
+        stroke: attrs.stroke || 'none',
+        'stroke-width': attrs.strokeWidth,
+        'data-role': attrs.role || 'rect'
+      });
+      svg.appendChild(node);
+      return node;
+    }
+
+    function circle(svg, attrs) {
+      const node = svgNode('circle', {
+        cx: attrs.cx,
+        cy: attrs.cy,
+        r: attrs.r,
+        fill: attrs.fill || '#ffffff',
+        stroke: attrs.stroke || 'none',
+        'stroke-width': attrs.strokeWidth,
+        'data-role': attrs.role || 'circle'
+      });
+      svg.appendChild(node);
+      return node;
+    }
+
+    function path(svg, attrs) {
+      const node = svgNode('path', {
+        d: attrs.d,
+        fill: attrs.fill || 'none',
+        stroke: attrs.stroke || '#111111',
+        'stroke-width': attrs.strokeWidth || 1,
+        'stroke-linecap': attrs.linecap || 'round',
+        'stroke-linejoin': attrs.linejoin || 'round',
+        'data-role': attrs.role || 'path'
+      });
+      svg.appendChild(node);
+      return node;
+    }
+
+    function pointOnBox(box, point) {
+      const [verticalRaw, horizontalRaw] = point.includes('-') ? point.split('-') : ['middle', point];
+      const horizontal = horizontalRaw || 'center';
+      const vertical = verticalRaw || 'middle';
+      return {
+        x: horizontal === 'right' ? box.x + box.width : horizontal === 'center' ? box.x + box.width / 2 : box.x,
+        y: vertical === 'bottom' ? box.y + box.height : vertical === 'middle' || vertical === 'center' ? box.y + box.height / 2 : box.y
+      };
+    }
+
+    function lineBox(axis) {
+      const lineSpec = axis.line;
+      return {
+        x: Math.min(lineSpec.x1, lineSpec.x2),
+        y: Math.min(lineSpec.y1, lineSpec.y2),
+        width: Math.abs(lineSpec.x2 - lineSpec.x1),
+        height: Math.abs(lineSpec.y2 - lineSpec.y1)
+      };
+    }
+
+    function anchoredLabel(label, box) {
+      const resolved = {...label};
+      const target = pointOnBox(box, label.targetPoint || 'top-left');
+      const anchorPoint = label.anchorPoint || 'top-left';
+      const lines = String(label.text || '').split('\n');
+      const fontSize = label.fontSize || 13;
+      const lineHeight = label.lineHeight || 1.08;
+      const blockHeight = label.height || lines.length * fontSize * lineHeight;
+      resolved.x = target.x + (label.dx || 0);
+      resolved.y = target.y + (label.dy || 0);
+      resolved.baseline = label.baseline || 'hanging';
+      if (anchorPoint.startsWith('bottom')) resolved.y -= blockHeight;
+      if (anchorPoint.startsWith('middle') || anchorPoint.startsWith('center')) resolved.y -= blockHeight / 2;
+      return resolved;
+    }
+
+    function scale(domain, range, value) {
+      return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+    }
+
+    function timelineX(timeline, value) {
+      const l = timeline.axis.line;
+      return scale(timeline.domain, [l.x1, l.x2], value);
+    }
+
+    function eventX(timeline, event) {
+      return event.x ?? timelineX(timeline, event.value);
+    }
+
+    function screenGradient(svg, id) {
+      const defs = svg.querySelector('defs') || svg.appendChild(svgNode('defs'));
+      const grad = svgNode('radialGradient', {id, cx: '50%', cy: '45%', r: '70%'});
+      grad.appendChild(svgNode('stop', {offset: '0%', 'stop-color': '#202020'}));
+      grad.appendChild(svgNode('stop', {offset: '70%', 'stop-color': '#050505'}));
+      grad.appendChild(svgNode('stop', {offset: '100%', 'stop-color': '#000000'}));
+      defs.appendChild(grad);
+    }
+
+    function renderScreen(svg, epoch, index) {
+      const box = epoch.screen;
+      const gradId = `screen-gradient-${index}`;
+      screenGradient(svg, gradId);
+      rect(svg, {x: box.x, y: box.y, width: box.width, height: box.height, rx: 1, fill: `url(#${gradId})`, stroke: '#000000', strokeWidth: 1, role: 'task-screen'});
+      if (epoch.border) rect(svg, {x: box.x, y: box.y, width: box.width, height: box.height, fill: 'none', stroke: epoch.border.stroke, strokeWidth: epoch.border.strokeWidth, role: 'response-highlight'});
+
+      const cx = box.x + box.width / 2;
+      const cy = box.y + box.height / 2;
+      if (epoch.screenType === 'fixation') {
+        circle(svg, {cx, cy, r: 5, fill: '#ffffff', role: 'fixation-dot'});
+      } else if (epoch.screenType === 'stimulus') {
+        const dots = [
+          [-19, -13, '#ffffff'], [-9, -19, '#ffffff'], [2, -15, '#ffffff'], [16, -12, '#ffffff'],
+          [-24, 0, '#1b62b6'], [-14, 3, '#1b62b6'], [-5, 1, '#ffffff'], [6, 0, '#ff2b18'], [16, 3, '#ff2b18'],
+          [-20, 15, '#1b62b6'], [-9, 14, '#ffffff'], [2, 15, '#ffffff'], [13, 14, '#ffffff'], [23, 11, '#ffffff'],
+          [-4, -7, '#ffffff'], [11, -5, '#ff2b18'], [24, -2, '#ffffff']
+        ];
+        for (const dot of dots) circle(svg, {cx: cx + dot[0], cy: cy + dot[1], r: 1.8, fill: dot[2], role: 'stimulus-dot'});
+      } else if (epoch.screenType === 'response') {
+        circle(svg, {cx: box.x + 14, cy, r: 9, fill: 'none', stroke: '#ffffff', strokeWidth: 1.2, role: 'response-target'});
+        circle(svg, {cx, cy, r: 5, fill: '#ffffff', role: 'fixation-dot'});
+        circle(svg, {cx: box.x + box.width - 14, cy, r: 9, fill: 'none', stroke: '#ffffff', strokeWidth: 1.2, role: 'response-target'});
+      } else if (epoch.screenType === 'outcome') {
+        path(svg, {d: `M${cx} ${cy - 14} C${cx + 9} ${cy - 2} ${cx + 8} ${cy + 11} ${cx} ${cy + 11} C${cx - 8} ${cy + 11} ${cx - 9} ${cy - 2} ${cx} ${cy - 14}Z`, fill: '#ffffff', stroke: '#ffffff', strokeWidth: 1, role: 'reward-drop'});
+      }
+    }
+
+    function renderTimeline(svg, panel, defaults) {
+      const timeline = panel.timeline;
+      const tickLabelStyle = timeline.tickLabels || {};
+      line(svg, {...timeline.axis.line, strokeWidth: timeline.axis.strokeWidth, role: 'timeline-axis'});
+      for (const guide of timeline.guides) {
+        const x = eventX(timeline, guide);
+        line(svg, {x1: x, y1: guide.y1, x2: x, y2: guide.y2, strokeWidth: 1.2, dasharray: '5 3', role: 'timeline-guide'});
+      }
+      const tickLabelNodes = [];
+      for (const tick of timeline.ticks) {
+        const x = eventX(timeline, tick);
+        line(svg, {x1: x, y1: timeline.axis.line.y1 - 4, x2: x, y2: timeline.axis.line.y1 + timeline.axis.tickLength, strokeWidth: 1, role: 'timeline-tick'});
+        const tickLabel = textNode({
+          id: `tick-${tick.value}`,
+          text: tick.label,
+          x,
+          y: timeline.axis.line.y1 + (tickLabelStyle.dy ?? 22),
+          fontSize: tickLabelStyle.fontSize || 14,
+          anchor: 'middle',
+          role: 'tick-label'
+        }, defaults);
+        svg.appendChild(tickLabel);
+        tickLabelNodes.push(tickLabel);
+      }
+      resolveHorizontalTextCollisions(tickLabelNodes, {
+        minGap: tickLabelStyle.minGap,
+        minScale: tickLabelStyle.collision?.minScale,
+        staggerDy: tickLabelStyle.collision?.staggerDy
+      });
+      const tickLabelBand = unionBoxes(tickLabelNodes.map(nodeBox));
+      if (timeline.label.anchorTo === 'tickLabelBand') {
+        placeLabelBelowBand(svg, timeline.label, tickLabelBand, defaults);
+      } else {
+        svg.appendChild(textNode(anchoredLabel(timeline.label, lineBox(timeline.axis)), defaults));
+      }
+    }
+
+    function renderEpochs(svg, panel, defaults) {
+      panel.epochs.forEach((epoch, index) => {
+        svg.appendChild(textNode({text: epoch.title, x: epoch.titleX, y: epoch.titleY, fontSize: 14, anchor: 'middle', lineHeight: 1.15}, defaults));
+        renderScreen(svg, epoch, index);
+      });
+    }
+
+    function renderPhaseTable(svg, panel, defaults) {
+      const table = panel.phaseTable;
+      const style = table.style || {};
+      for (const cell of table.cells) {
+        rect(svg, {x: cell.x, y: table.y, width: cell.width, height: table.height, fill: cell.fill, stroke: 'none', role: 'phase-cell-fill'});
+        line(svg, {x1: cell.x, y1: table.y, x2: cell.x + cell.width, y2: table.y, stroke: style.rowStroke || '#bfbfbf', strokeWidth: style.rowStrokeWidth || 1, role: 'phase-cell-horizontal-rule'});
+        line(svg, {x1: cell.x, y1: table.y + table.height, x2: cell.x + cell.width, y2: table.y + table.height, stroke: style.rowStroke || '#bfbfbf', strokeWidth: style.rowStrokeWidth || 1, role: 'phase-cell-horizontal-rule'});
+      }
+      for (const cell of table.cells) {
+        if (!cell.highlightStroke) {
+          line(svg, {x1: cell.x, y1: table.y, x2: cell.x, y2: table.y + table.height, stroke: style.separatorStroke || '#d7d7d7', strokeWidth: style.separatorStrokeWidth || 0.55, role: 'phase-faint-edge'});
+          line(svg, {x1: cell.x + cell.width, y1: table.y, x2: cell.x + cell.width, y2: table.y + table.height, stroke: style.separatorStroke || '#d7d7d7', strokeWidth: style.separatorStrokeWidth || 0.55, role: 'phase-faint-edge'});
+        }
+        if (cell.highlightStroke) {
+          rect(svg, {x: cell.x, y: table.y, width: cell.width, height: table.height, fill: 'none', stroke: cell.highlightStroke, strokeWidth: cell.highlightStrokeWidth || 1, role: 'phase-cell-highlight'});
+        }
+        svg.appendChild(textNode({text: cell.label, x: cell.x + cell.width / 2, y: table.y + (style.labelDy ?? 22), fontSize: style.labelFontSize || 12, anchor: 'middle', role: 'phase-label'}, defaults));
+      }
+    }
+
+    function renderProcessRows(svg, panel, defaults) {
+      for (const row of panel.processRows) {
+        svg.appendChild(textNode(row.header, defaults));
+        for (const cell of row.cells) {
+          if (cell.styledWords) {
+            svg.appendChild(textNode({text: 'Saccade', x: cell.x, y: cell.y, fontSize: cell.fontSize, anchor: 'middle'}, defaults));
+            svg.appendChild(textNode({text: 'L', x: cell.x - 12, y: cell.y + 17, fontSize: cell.fontSize, fill: '#0056b8', anchor: 'middle'}, defaults));
+            svg.appendChild(textNode({text: 'or', x: cell.x, y: cell.y + 17, fontSize: cell.fontSize, anchor: 'middle'}, defaults));
+            svg.appendChild(textNode({text: 'R', x: cell.x + 13, y: cell.y + 17, fontSize: cell.fontSize, fill: '#e00000', anchor: 'middle'}, defaults));
+          } else {
+            svg.appendChild(textNode(cell, defaults));
+          }
+        }
+      }
+    }
+
+    function render(spec) {
+      const frame = byId('frame');
+      const surface = byId('surface');
+      const reference = byId('reference');
+      const defaults = spec.typography || {};
+      const canvasSpec = spec.canvas;
+
+      byId('title').textContent = spec.id;
+      document.title = `${spec.id} reconstruction`;
+      frame.style.width = `${canvasSpec.width}px`;
+      frame.style.height = `${canvasSpec.height}px`;
+      frame.style.background = canvasSpec.background || '#ffffff';
+      surface.innerHTML = '';
+      reference.src = spec.source.path;
+
+      const svg = svgNode('svg', {width: canvasSpec.width, height: canvasSpec.height, viewBox: `0 0 ${canvasSpec.width} ${canvasSpec.height}`, role: 'img', 'aria-label': `${spec.id} generated reconstruction`});
+      svg.appendChild(svgNode('defs'));
+      surface.appendChild(svg);
+
+      for (const panel of spec.panels) {
+        const group = svgNode('g', {'data-panel-id': panel.id, 'data-role': panel.type});
+        svg.appendChild(group);
+        group.appendChild(textNode(panel.label, defaults));
+        group.appendChild(textNode(panel.title, defaults));
+        renderEpochs(group, panel, defaults);
+        renderTimeline(group, panel, defaults);
+        renderPhaseTable(group, panel, defaults);
+        renderProcessRows(group, panel, defaults);
+      }
+      validateProtectedText(svg);
+    }
+
+    byId('generatedButton').onclick = () => {
+      byId('frame').classList.remove('show-reference');
+      byId('generatedButton').classList.add('active');
+      byId('referenceButton').classList.remove('active');
+    };
+
+    byId('referenceButton').onclick = () => {
+      byId('frame').classList.add('show-reference');
+      byId('referenceButton').classList.add('active');
+      byId('generatedButton').classList.remove('active');
+    };
+
+    fetch(SPEC_URL)
+      .then(response => response.json())
+      .then(render)
+      .catch(error => {
+        byId('surface').textContent = `Failed to load ${SPEC_URL}: ${error.message}`;
+      });
+  </script>
+</body>
+</html>

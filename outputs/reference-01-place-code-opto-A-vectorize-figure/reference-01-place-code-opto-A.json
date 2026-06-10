@@ -1,0 +1,715 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-01-place-code-opto-A",
+  "source": {
+    "path": "../../assets/reference/reference-01-place-code-opto-A-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Two heatmap subplots reconstructed from visual inspection. Heatmap values are generated from editable recipes approximating sorted place fields, not copied from the source raster."
+  },
+  "canvas": {
+    "width": 512,
+    "height": 512,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.04,
+      "notes": "Use regular Arial/Helvetica globally; apply targetWidth only to individual labels that need fitting."
+    }
+  },
+  "styles": {
+    "axis": "#111111",
+    "heatmapBorder": "#111111",
+    "colormap": [
+      {
+        "value": -2.2,
+        "color": "#481567"
+      },
+      {
+        "value": -1.1,
+        "color": "#3f4788"
+      },
+      {
+        "value": 0,
+        "color": "#26828e"
+      },
+      {
+        "value": 1,
+        "color": "#36b779"
+      },
+      {
+        "value": 2.2,
+        "color": "#fde725"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": "panel-a",
+      "type": "dual_sorted_place_cell_heatmaps",
+      "label": {
+        "text": "A",
+        "x": 17,
+        "y": 35,
+        "fontSize": 26,
+        "fontWeight": 700
+      },
+      "title": {
+        "text": "Hippocampal CA1 place cells (n = 162)",
+        "x": 58,
+        "y": 34,
+        "fontSize": 18,
+        "fontWeight": 700,
+        "fit": "scaleX",
+        "targetWidth": 321
+      },
+      "yAxis": {
+        "domain": [
+          1,
+          162
+        ],
+        "label": {
+          "text": "Neurons (sorted by peak position)",
+          "x": 38,
+          "y": 267,
+          "fontSize": 17,
+          "anchor": "middle",
+          "rotation": -90
+        },
+        "ticks": [
+          {
+            "value": 1,
+            "label": "1"
+          },
+          {
+            "value": 162,
+            "label": "162"
+          }
+        ]
+      },
+      "xAxis": {
+        "domain": [
+          0,
+          210
+        ],
+        "ticks": [
+          {
+            "value": 0,
+            "label": "0"
+          },
+          {
+            "value": 100,
+            "label": "100"
+          },
+          {
+            "value": 200,
+            "label": "200"
+          }
+        ],
+        "label": {
+          "text": "Position (cm)",
+          "fontSize": 17
+        }
+      },
+      "heatmaps": [
+        {
+          "id": "control-heatmap",
+          "title": {
+            "text": "Control (no light)",
+            "x": 155,
+            "y": 73,
+            "fontSize": 14,
+            "anchor": "middle"
+          },
+          "dataBbox": {
+            "x": 70,
+            "y": 91,
+            "width": 170,
+            "height": 354
+          },
+          "axes": {
+            "yAxisX": 64,
+            "xAxisY": 445,
+            "xTickLength": 7,
+            "yTickLength": 6,
+            "dataBorder": [
+              "top",
+              "right",
+              "bottom"
+            ]
+          },
+          "xLabel": {
+            "text": "Position (cm)",
+            "x": 155,
+            "y": 489,
+            "fontSize": 17,
+            "anchor": "middle"
+          },
+          "recipe": {
+            "kind": "sortedPlaceFieldHeatmap",
+            "seed": 1101,
+            "rows": 162,
+            "cols": 210,
+            "background": -1.72,
+            "backgroundNoise": 0.26,
+            "rowBanding": 0.13,
+            "peakStart": 17,
+            "peakEnd": 191,
+            "peakJitter": 6.8,
+            "ridgeWidth": 10.5,
+            "ridgeAmplitude": 3.55,
+            "haloWidth": 21,
+            "haloAmplitude": 0.4,
+            "secondaryFieldProbability": 0.1,
+            "secondaryAmplitude": 0.48,
+            "horizontalStreakProbability": 0.24,
+            "horizontalStreakAmplitude": 0.28
+          }
+        },
+        {
+          "id": "opto-heatmap",
+          "title": {
+            "text": "Optogenetic inhibition\n(ArchT, 532 nm)",
+            "x": 343,
+            "y": 65,
+            "fontSize": 14,
+            "anchor": "middle",
+            "lineHeight": 1.12
+          },
+          "dataBbox": {
+            "x": 258,
+            "y": 91,
+            "width": 168,
+            "height": 354
+          },
+          "axes": {
+            "yAxisX": 258,
+            "xAxisY": 445,
+            "xTickLength": 7,
+            "yTickLength": 0,
+            "dataBorder": [
+              "top",
+              "right",
+              "bottom",
+              "left"
+            ]
+          },
+          "xLabel": {
+            "text": "Position (cm)",
+            "x": 342,
+            "y": 489,
+            "fontSize": 17,
+            "anchor": "middle"
+          },
+          "recipe": {
+            "kind": "sortedPlaceFieldHeatmap",
+            "seed": 1117,
+            "rows": 162,
+            "cols": 210,
+            "background": -1.74,
+            "backgroundNoise": 0.24,
+            "rowBanding": 0.12,
+            "peakStart": 18,
+            "peakEnd": 190,
+            "peakJitter": 7.4,
+            "ridgeWidth": 9.6,
+            "ridgeAmplitude": 2.95,
+            "haloWidth": 19,
+            "haloAmplitude": 0.32,
+            "secondaryFieldProbability": 0.07,
+            "secondaryAmplitude": 0.36,
+            "horizontalStreakProbability": 0.22,
+            "horizontalStreakAmplitude": 0.25
+          }
+        }
+      ],
+      "colorbar": {
+        "label": {
+          "text": "Firing rate\n(z-scored)",
+          "anchorTo": "colorbar",
+          "targetPoint": "left-top",
+          "anchorPoint": "left-top",
+          "dx": -11,
+          "dy": -41,
+          "fontSize": 15,
+          "anchor": "start",
+          "baseline": "hanging",
+          "lineHeight": 1.03
+        },
+        "bbox": {
+          "x": 443,
+          "y": 250,
+          "width": 19,
+          "height": 189
+        },
+        "domain": [
+          -2.2,
+          2.2
+        ],
+        "ticks": [
+          {
+            "value": -2,
+            "label": "-2"
+          },
+          {
+            "value": -1,
+            "label": "-1"
+          },
+          {
+            "value": 0,
+            "label": "0"
+          },
+          {
+            "value": 1,
+            "label": "1"
+          },
+          {
+            "value": 2,
+            "label": "2"
+          }
+        ]
+      },
+      "provenance": [
+        {
+          "target": "panel-a.heatmaps",
+          "confidence": "medium",
+          "note": "Heatmaps use generated noisy diagonal place-field recipes; exact source matrix values are unavailable."
+        },
+        {
+          "target": "panel-a.heatmaps[].bbox",
+          "confidence": "high",
+          "note": "Subplot bounds inferred from visible heatmap frames and axes."
+        }
+      ],
+      "textCalibration": {
+        "panel-label": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 27.42,
+          "fontWeight": 600,
+          "lineHeight": 1,
+          "targetWidth": 17.04,
+          "fit": "scaleX",
+          "minScale": 1.05,
+          "maxScale": 1.05,
+          "overlayX": 19,
+          "overlayY": 35,
+          "sourceBox": {
+            "x": 19,
+            "y": 16,
+            "width": 17,
+            "height": 19
+          },
+          "calibrationScore": 0.11122
+        },
+        "panel-title": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 19.26,
+          "fontWeight": 600,
+          "lineHeight": 1,
+          "targetWidth": 288.36,
+          "fit": "scaleX",
+          "minScale": 1,
+          "maxScale": 1,
+          "overlayX": 56.25,
+          "overlayY": 34.75,
+          "sourceBox": {
+            "x": 58,
+            "y": 20,
+            "width": 287,
+            "height": 19
+          },
+          "calibrationScore": 0.25959
+        },
+        "control-title": {
+          "fontFamily": "Helvetica Neue, Helvetica, Arial, sans-serif",
+          "fontSize": 14,
+          "fontWeight": 500,
+          "lineHeight": 1,
+          "targetWidth": 107.11,
+          "fit": "scaleX",
+          "minScale": 1,
+          "maxScale": 1,
+          "overlayX": 155.75,
+          "overlayY": 73,
+          "sourceBox": {
+            "x": 104,
+            "y": 61,
+            "width": 105,
+            "height": 16
+          },
+          "calibrationScore": 0.34455
+        },
+        "opto-title": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 17.52,
+          "fontWeight": 300,
+          "lineHeight": 1.02,
+          "targetWidth": 138.19,
+          "fit": "scaleX",
+          "minScale": 1,
+          "maxScale": 1,
+          "overlayX": 344.25,
+          "overlayY": 65.25,
+          "sourceBox": {
+            "x": 276,
+            "y": 52,
+            "width": 140,
+            "height": 34
+          },
+          "calibrationScore": 0.50846
+        },
+        "y-tick-1": {
+          "fontFamily": "Helvetica Neue, Helvetica, Arial, sans-serif",
+          "fontSize": 14.56,
+          "fontWeight": 500,
+          "lineHeight": 1,
+          "targetWidth": 7.53,
+          "fit": "scaleX",
+          "minScale": 0.93,
+          "maxScale": 0.93,
+          "overlayX": 47.75,
+          "overlayY": 95.75,
+          "sourceBox": {
+            "x": 51,
+            "y": 86,
+            "width": 8,
+            "height": 13
+          },
+          "calibrationScore": 0.54326
+        },
+        "y-tick-162": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 17.92,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 23.91,
+          "fit": "scaleX",
+          "minScale": 0.975,
+          "maxScale": 0.975,
+          "overlayX": 30.25,
+          "overlayY": 449.75,
+          "sourceBox": {
+            "x": 31,
+            "y": 437,
+            "width": 23,
+            "height": 13
+          },
+          "calibrationScore": 0.32244
+        },
+        "y-label": {
+          "fontFamily": "Arial, Helvetica, sans-serif",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "lineHeight": 1.05,
+          "overlayX": 38,
+          "overlayY": 267,
+          "sourceBox": {
+            "x": 24,
+            "y": 151,
+            "width": 19,
+            "height": 224
+          },
+          "calibrationScore": 5.87738,
+          "calibrationNote": "manual visual override: rotated fitter placed the title too far inside the heatmap; final pass aligns the title to the source y-axis column"
+        },
+        "control-x-tick-0": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 16.8,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 7.85,
+          "fit": "scaleX",
+          "minScale": 1.025,
+          "maxScale": 1.025,
+          "overlayX": 71.25,
+          "overlayY": 467.75,
+          "sourceBox": {
+            "x": 67,
+            "y": 455,
+            "width": 7,
+            "height": 13
+          },
+          "calibrationScore": 0.44216
+        },
+        "control-x-tick-100": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 17.84,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 25.02,
+          "fit": "scaleX",
+          "minScale": 1.025,
+          "maxScale": 1.025,
+          "overlayX": 154.5,
+          "overlayY": 468.25,
+          "sourceBox": {
+            "x": 143,
+            "y": 455,
+            "width": 23,
+            "height": 13
+          },
+          "calibrationScore": 0.31408
+        },
+        "control-x-tick-200": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 17.84,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 25.02,
+          "fit": "scaleX",
+          "minScale": 1.025,
+          "maxScale": 1.025,
+          "overlayX": 229,
+          "overlayY": 468.25,
+          "sourceBox": {
+            "x": 217,
+            "y": 455,
+            "width": 24,
+            "height": 13
+          },
+          "calibrationScore": 0.22737
+        },
+        "control-x-label": {
+          "fontFamily": "Helvetica Neue, Helvetica, Arial, sans-serif",
+          "fontSize": 15.42,
+          "fontWeight": 400,
+          "lineHeight": 1,
+          "targetWidth": 83.13,
+          "fit": "scaleX",
+          "minScale": 0.93,
+          "maxScale": 0.93,
+          "overlayX": 157,
+          "overlayY": 488,
+          "sourceBox": {
+            "x": 116,
+            "y": 475,
+            "width": 82,
+            "height": 19
+          },
+          "calibrationScore": 0.41574
+        },
+        "opto-x-tick-0": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 17.84,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 8.18,
+          "fit": "scaleX",
+          "minScale": 1.005,
+          "maxScale": 1.005,
+          "overlayX": 259,
+          "overlayY": 468.25,
+          "sourceBox": {
+            "x": 255,
+            "y": 455,
+            "width": 8,
+            "height": 13
+          },
+          "calibrationScore": 0.15538
+        },
+        "opto-x-tick-100": {
+          "fontFamily": "Arimo, Helvetica, Arial, sans-serif",
+          "fontSize": 16.8,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 25.18,
+          "fit": "scaleX",
+          "minScale": 1,
+          "maxScale": 1,
+          "overlayX": 339.75,
+          "overlayY": 467,
+          "sourceBox": {
+            "x": 329,
+            "y": 455,
+            "width": 23,
+            "height": 13
+          },
+          "calibrationScore": 0.44446
+        },
+        "opto-x-tick-200": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 17.84,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 25.02,
+          "fit": "scaleX",
+          "minScale": 1.025,
+          "maxScale": 1.025,
+          "overlayX": 415,
+          "overlayY": 468.25,
+          "sourceBox": {
+            "x": 403,
+            "y": 455,
+            "width": 24,
+            "height": 13
+          },
+          "calibrationScore": 0.19543
+        },
+        "opto-x-label": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 18.59,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 84.95,
+          "fit": "scaleX",
+          "minScale": 0.955,
+          "maxScale": 0.955,
+          "overlayX": 342,
+          "overlayY": 490,
+          "sourceBox": {
+            "x": 301,
+            "y": 475,
+            "width": 82,
+            "height": 19
+          },
+          "calibrationScore": 0.27962
+        },
+        "colorbar-label": {
+          "fontFamily": "Arial, Helvetica, sans-serif",
+          "fontSize": 15,
+          "fontWeight": 400,
+          "lineHeight": 1.03,
+          "overlayX": 433,
+          "overlayY": 210,
+          "sourceBox": {
+            "x": 433,
+            "y": 208,
+            "width": 59,
+            "height": 37
+          },
+          "calibrationScore": 0.40013,
+          "calibrationNote": "manual visual override: multi-line colorbar title uses a hanging top anchor; pixel fitter had stored the first baseline as the overlay y; final pass nudged top anchor down to match source"
+        },
+        "colorbar-tick-2": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 17.5,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 7.02,
+          "fit": "scaleX",
+          "minScale": 0.88,
+          "maxScale": 0.88,
+          "overlayX": 470,
+          "overlayY": 270,
+          "sourceBox": {
+            "x": 470,
+            "y": 257,
+            "width": 7,
+            "height": 13
+          },
+          "calibrationScore": 0.15771
+        },
+        "colorbar-tick-1": {
+          "fontFamily": "Arial, Helvetica, sans-serif",
+          "fontSize": 15,
+          "fontWeight": 400,
+          "lineHeight": 1,
+          "overlayX": 471,
+          "overlayY": 312,
+          "sourceBox": {
+            "x": 471,
+            "y": 299,
+            "width": 4,
+            "height": 12
+          },
+          "calibrationScore": 0.64328
+        },
+        "colorbar-tick-0": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 16.85,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 7.14,
+          "fit": "scaleX",
+          "minScale": 0.93,
+          "maxScale": 0.93,
+          "overlayX": 470,
+          "overlayY": 351.75,
+          "sourceBox": {
+            "x": 470,
+            "y": 340,
+            "width": 7,
+            "height": 12
+          },
+          "calibrationScore": 0.16133
+        },
+        "colorbar-tick-minus-1": {
+          "fontFamily": "Helvetica Neue, Helvetica, Arial, sans-serif",
+          "fontSize": 16.85,
+          "fontWeight": 500,
+          "lineHeight": 1,
+          "targetWidth": 15.92,
+          "fit": "scaleX",
+          "minScale": 1,
+          "maxScale": 1,
+          "overlayX": 470.25,
+          "overlayY": 392.75,
+          "sourceBox": {
+            "x": 466,
+            "y": 381,
+            "width": 16,
+            "height": 13
+          },
+          "calibrationScore": 0.49207
+        },
+        "colorbar-tick-minus-2": {
+          "fontFamily": "Arial, Helvetica, Arial, sans-serif",
+          "fontSize": 16.3,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 15.2,
+          "fit": "scaleX",
+          "minScale": 1.05,
+          "maxScale": 1.05,
+          "overlayX": 470.75,
+          "overlayY": 434.25,
+          "sourceBox": {
+            "x": 470,
+            "y": 422,
+            "width": 15,
+            "height": 12
+          },
+          "calibrationScore": 0.32452
+        }
+      }
+    }
+  ],
+  "semanticFigureIR": {
+    "version": "relationship-inventory.v1",
+    "status": "metadata-only migration; renderer-visible output must remain unchanged",
+    "coordinateSystems": [
+      "panel-a.shared-position-domain",
+      "panel-a.control-heatmap-image-grid",
+      "panel-a.opto-heatmap-image-grid",
+      "panel-a.color-scale"
+    ],
+    "layoutObjects": [
+      "panel-a.yAxis",
+      "panel-a.xAxis",
+      "panel-a.control-heatmap.axes",
+      "panel-a.opto-heatmap.axes",
+      "panel-a.colorbar"
+    ],
+    "derivedRelationships": [
+      "each heatmap canvas field derives from its heatmap recipe and dataBbox",
+      "x/y tick labels and marks derive from shared xAxis/yAxis domains",
+      "colorbar gradient and colorbar ticks derive from styles.colormap"
+    ],
+    "validationConstraints": [
+      "source raster is QA-only",
+      "heatmap axes remain separate from dataBbox when source shows gaps",
+      "colorbar owns its ticks and title"
+    ]
+  },
+  "confidence": [
+    {
+      "target": "reference-01-place-code-opto-A",
+      "confidence": "medium",
+      "note": "Layout, labels, axes, and color scale are high-confidence; heatmap texture and individual row intensities are approximate generated data."
+    }
+  ]
+}

@@ -1,0 +1,242 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-07-cross-region-small-multiples-J",
+  "source": {
+    "path": "../../assets/reference/reference-07-cross-region-small-multiples-J-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Single cropped panel J reconstructed from visual inspection. The top edge contains fragments from neighboring panels and is intentionally not reconstructed as data."
+  },
+  "canvas": {
+    "width": 545,
+    "height": 319,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Arial", "Helvetica"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Condensed sans-serif selected to match the narrow title, labels, and numeric intervals in the raster."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "panel-j.autocorrelation",
+      "type": "cartesian",
+      "x": {"domain": [-0.4, 0.4], "range": [199, 406]},
+      "y": {"categories": ["CA1", "CA3", "DG", "PFC", "RSC"], "range": [105, 213]},
+      "layoutOwner": "panel-j-plot-box",
+      "notes": "The y range is categorical. Category centers were estimated from label and dot centers."
+    },
+    {
+      "id": "residual-z-color",
+      "type": "linearColorScale",
+      "domain": [-2, 2],
+      "stops": [
+        {"value": -2, "color": "#003bd1"},
+        {"value": 0, "color": "#ffffff"},
+        {"value": 2, "color": "#ee1c25"}
+      ]
+    }
+  ],
+  "layoutObjects": [
+    {
+      "id": "panel-j-label",
+      "type": "panelLabel",
+      "parent": "panel-j",
+      "text": "J",
+      "anchor": {"x": 166, "y": 74},
+      "anchorTo": "panel-j",
+      "targetPoint": "top-left",
+      "anchorPoint": "top-left",
+      "sourceCalibrated": true,
+      "fontSize": 20,
+      "fontWeight": 700,
+      "provenance": {"confidence": "medium", "note": "Panel label point was visually measured from the crop."}
+    },
+    {
+      "id": "panel-j-title",
+      "type": "title",
+      "parent": "panel-j",
+      "text": "Residual structuraler (lag-1 autocorr.)",
+      "anchor": {"x": 199, "y": 74},
+      "anchorTo": "panel-j-plot-box",
+      "targetPoint": "top-left",
+      "anchorPoint": "bottom-left",
+      "sourceCalibrated": true,
+      "fontSize": 16,
+      "fontWeight": 700,
+      "textCalibration": {
+        "sourceBox": {"x": 199, "y": 61, "width": 238, "height": 17},
+        "targetWidth": 238,
+        "fit": "condensed-family"
+      },
+      "provenance": {"confidence": "medium", "note": "Panel title is anchored to the plot box with source-calibrated resolved text coordinates."}
+    },
+    {
+      "id": "panel-j-plot-box",
+      "type": "plotBox",
+      "parent": "panel-j",
+      "bbox": {"x": 199, "y": 93, "width": 207, "height": 127},
+      "children": ["region-intervals", "region-labels", "numeric-interval-labels", "panel-j-x-axis", "panel-j-zero-line"]
+    },
+    {
+      "id": "panel-j-x-axis",
+      "type": "axis",
+      "orientation": "bottom",
+      "parent": "panel-j-plot-box",
+      "anchorTo": "panel-j-plot-box",
+      "usesTransform": "panel-j.autocorrelation",
+      "line": {"x1": 199, "y1": 225, "x2": 406, "y2": 225},
+      "ticks": [
+        {"value": -0.4, "label": "-0.4"},
+        {"value": -0.2, "label": "-0.2"},
+        {"value": 0, "label": "0"},
+        {"value": 0.2, "label": "0.2"},
+        {"value": 0.4, "label": "0.4"}
+      ],
+      "tickLength": 4,
+      "label": {
+        "id": "panel-j-x-axis-label",
+        "type": "text",
+        "text": "Lag-1 autocorrelation",
+        "anchor": {"x": 303, "y": 264},
+        "fontSize": 13,
+        "anchorTo": "panel-j-x-axis",
+        "targetPoint": "bottom-center",
+        "anchorPoint": "top-center",
+        "sourceCalibrated": true,
+        "provenance": {"confidence": "medium", "note": "Axis title is anchored to the bottom axis; anchor preserves the source-calibrated text point."}
+      }
+    },
+    {
+      "id": "panel-j-zero-line",
+      "type": "referenceLine",
+      "parent": "panel-j-plot-box",
+      "anchorTo": "panel-j-plot-box",
+      "usesTransform": "panel-j.autocorrelation",
+      "xValue": 0,
+      "y1": 93,
+      "y2": 220,
+      "style": {"stroke": "#c9c9c9", "strokeWidth": 1}
+    },
+    {
+      "id": "residual-colorbar",
+      "type": "colorbar",
+      "parent": "panel-j",
+      "usesColorScale": "residual-z-color",
+      "orientation": "vertical",
+      "tickSide": "right",
+      "tickDirection": "outward",
+      "tickLength": 4,
+      "labelAnchor": "right-center",
+      "bbox": {"x": 12, "y": 111, "width": 13, "height": 87},
+      "ticks": [
+        {"value": 2, "label": "2"},
+        {"value": 0, "label": "0"},
+        {"value": -2, "label": "-2"}
+      ],
+      "label": {
+        "id": "residual-colorbar-label",
+        "type": "text",
+        "text": "Residual\n(z-score)",
+        "anchor": {"x": 58, "y": 159},
+        "fontSize": 12,
+        "anchorTo": "residual-colorbar",
+        "targetPoint": "middle-right",
+        "anchorPoint": "middle-left",
+        "sourceCalibrated": true,
+        "provenance": {"confidence": "medium", "note": "Colorbar label is anchored to the right side of the residual z-score colorbar."}
+      }
+    }
+  ],
+  "data": {
+    "regions": [
+      {"id": "ca1", "label": "CA1", "mean": -0.02, "ciLow": -0.07, "ciHigh": 0.03, "display": "-0.02 [-0.07, 0.03]", "color": "#123ea9", "residualZApprox": -1.7},
+      {"id": "ca3", "label": "CA3", "mean": -0.03, "ciLow": -0.08, "ciHigh": 0.02, "display": "-0.03 [-0.08, 0.02]", "color": "#1c64c8", "residualZApprox": -1.2},
+      {"id": "dg", "label": "DG", "mean": 0.01, "ciLow": -0.06, "ciHigh": 0.04, "display": "-0.01 [-0.06, 0.04]", "color": "#189143", "residualZApprox": 0.1, "provenance": {"confidence": "low", "note": "Source label appears to show -0.01 while the point is almost centered on zero."}},
+      {"id": "pfc", "label": "PFC", "mean": 0.13, "ciLow": 0.00, "ciHigh": 0.24, "display": "0.05 [0.00, 0.10]", "color": "#ff5a1e", "residualZApprox": 1.3, "provenance": {"confidence": "low", "note": "Dot location was estimated visually and conflicts slightly with the readable numeric interval; both are retained."}},
+      {"id": "rsc", "label": "RSC", "mean": 0.15, "ciLow": 0.02, "ciHigh": 0.26, "display": "0.06 [0.01, 0.11]", "color": "#f21b16", "residualZApprox": 1.6, "provenance": {"confidence": "medium", "note": "Numeric text is clear; plotted mark is visually estimated."}}
+    ]
+  },
+  "panels": [
+    {
+      "id": "panel-j",
+      "bbox": {"x": 0, "y": 0, "width": 545, "height": 319},
+      "plot": {
+        "dataBbox": {"x": 199, "y": 93, "width": 207, "height": 127},
+        "x": {"scale": "linear", "domain": [-0.4, 0.4]},
+        "y": {"scale": "categorical", "categories": ["CA1", "CA3", "DG", "PFC", "RSC"]}
+      },
+      "marks": [
+        {
+          "id": "region-intervals",
+          "type": "confidenceIntervalDotPlot",
+          "usesTransform": "panel-j.autocorrelation",
+          "ownerBox": "panel-j-plot-box",
+          "clipToOwner": true,
+          "dataRef": "data.regions",
+          "intervalStrokeWidth": 1,
+          "capHeight": 5,
+          "dotRadius": 3.4
+        }
+      ],
+      "annotations": [
+        {
+          "id": "region-labels",
+          "type": "categoryLabels",
+          "usesTransform": "panel-j.autocorrelation",
+          "anchorTo": "panel-j-plot-box",
+          "x": 165,
+          "fontSize": 14,
+          "anchor": "start",
+          "sourceCalibrated": true,
+          "provenance": {"confidence": "medium", "note": "Region labels are anchored to categorical rows with a source-calibrated fixed label column."}
+        },
+        {
+          "id": "numeric-interval-labels",
+          "type": "rightValueLabels",
+          "usesTransform": "panel-j.autocorrelation",
+          "anchorTo": "region-intervals",
+          "x": 431,
+          "fontSize": 12,
+          "anchor": "start",
+          "sourceCalibrated": true,
+          "provenance": {"confidence": "medium", "note": "Numeric interval labels are anchored to the region interval rows with a source-calibrated fixed label column."}
+        }
+      ],
+      "provenance": [
+        {"confidence": "medium", "note": "Axis ticks, colorbar, and text are visually placed from the crop."}
+      ]
+    }
+  ],
+  "rendering": {
+    "renderer": "svg-dom",
+    "layerOrder": ["background", "colorbar", "axes", "intervals", "labels"],
+    "styleTokens": {
+      "axis": {"stroke": "#222222", "strokeWidth": 1},
+      "tick": {"stroke": "#222222", "strokeWidth": 1},
+      "text": {"fill": "#111111"}
+    }
+  },
+  "validation": {
+    "expected": {
+      "panels": 1,
+      "regionRows": 5,
+      "xTicks": 5,
+      "colorbarTicks": 3
+    },
+    "checks": [
+      "Generated view must not contain image layers, drawImage calls, or CSS backgrounds using the source raster.",
+      "The QA reference image is available only through the labeled Reference toggle."
+    ]
+  },
+  "confidence": [
+    {"target": "overall", "confidence": "medium", "note": "First-pass reconstruction optimized for editable visual inspection, not pixel-perfect matching."}
+  ]
+}

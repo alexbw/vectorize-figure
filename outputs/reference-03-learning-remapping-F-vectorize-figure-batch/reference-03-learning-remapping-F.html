@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-03-learning-remapping-F reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+    h1 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #aaaaaa;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .frame {
+      position: relative;
+      width: 425px;
+      height: 498px;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+    .surface, .reference {
+      position: absolute;
+      inset: 0;
+    }
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+    }
+    .show-reference .surface {
+      display: none;
+    }
+    .show-reference .reference {
+      display: block;
+    }
+    svg, canvas {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-03-learning-remapping-F</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA reference source image">
+    </div>
+  </main>
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const JSON_PATH = 'reference-03-learning-remapping-F.json';
+    function $(id) { return document.getElementById(id); }
+    function svgNode(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+    function rng(seed) {
+      return function random() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    function map(domain, range, value) {
+      return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+    }
+    function hexToRgb(hex) {
+      const n = parseInt(hex.slice(1), 16);
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    }
+    function colorAt(scale, value) {
+      const stops = scale.stops;
+      for (let i = 1; i < stops.length; i++) {
+        if (value <= stops[i].value) {
+          const a = stops[i - 1], b = stops[i];
+          const t = clamp((value - a.value) / (b.value - a.value), 0, 1);
+          const ar = hexToRgb(a.color), br = hexToRgb(b.color);
+          return [lerp(ar[0], br[0], t), lerp(ar[1], br[1], t), lerp(ar[2], br[2], t)];
+        }
+      }
+      return hexToRgb(stops[stops.length - 1].color);
+    }
+    function text(svg, spec) {
+      const node = svgNode('text', {
+        x: spec.x,
+        y: spec.y,
+        'font-size': spec.fontSize || 12,
+        'font-weight': spec.fontWeight || 400,
+        'text-anchor': spec.anchor || 'start',
+        fill: spec.fill || '#111111',
+        'data-id': spec.id || null,
+        'data-role': spec.role || null,
+        'data-protected-text': spec.protectedText || spec.role ? 'true' : null,
+        'data-axis': spec.axis || null,
+        'data-value': spec.value ?? null
+      });
+      const lines = String(spec.text).split('\n');
+      lines.forEach((line, i) => {
+        const tspan = svgNode('tspan', {x: spec.x, dy: i ? (spec.fontSize || 12) * 1.15 : 0});
+        tspan.textContent = line;
+        node.appendChild(tspan);
+      });
+      if (spec.rotation) node.setAttribute('transform', `rotate(${spec.rotation} ${spec.x} ${spec.y})`);
+      svg.appendChild(node);
+      return node;
+    }
+    function renderHeatmap(canvas, spec, panel, scaleDef) {
+      const plot = panel.layoutObjects.find(o => o.id === 'place-map-plot');
+      const recipe = panel.data.find(d => d.id === 'place-map-data-recipe');
+      const box = plot.bbox;
+      const rand = rng(recipe.seed);
+      const ctx = canvas.getContext('2d');
+      const image = ctx.createImageData(box.width, box.height);
+      const rowGain = Array.from({length: recipe.rows}, () => 0.8 + rand() * 0.42);
+      for (let py = 0; py < box.height; py++) {
+        const row = py / box.height * (recipe.rows - 1);
+        const drift = recipe.features.dominantBand.startPosition + row / (recipe.rows - 1) * (recipe.features.dominantBand.endPosition - recipe.features.dominantBand.startPosition);
+        const wiggle = Math.sin(row * 0.12) * 4 + Math.sin(row * 0.027) * 8;
+        for (let px = 0; px < box.width; px++) {
+          const pos = px / box.width * recipe.columns;
+          const band = Math.exp(-Math.pow(pos - drift - wiggle, 2) / (2 * Math.pow(recipe.features.dominantBand.widthCm, 2))) * recipe.features.dominantBand.amplitude;
+          const secondary = row > 35 && row < 155 ? Math.exp(-Math.pow(pos - 55 - Math.sin(row * 0.08) * 7, 2) / 120) * recipe.features.secondaryBand.amplitude : 0;
+          const sparse = rand() < 0.015 ? rand() * 1.1 : 0;
+          const streak = (Math.sin(px * 0.65 + row * 0.08) > 0.82 ? 0.1 : 0) + (rand() - 0.5) * recipe.features.noiseAmplitude;
+          const dropout = rand() < recipe.features.rowDropout * 0.012 ? -1.2 : 0;
+          const value = clamp((band + secondary + sparse + streak + dropout) * rowGain[Math.floor(row)], 0, 2);
+          const [r, g, b] = colorAt(scaleDef, value);
+          const i = (py * box.width + px) * 4;
+          image.data[i] = r;
+          image.data[i + 1] = g;
+          image.data[i + 2] = b;
+          image.data[i + 3] = 255;
+        }
+      }
+      ctx.putImageData(image, box.x, box.y);
+    }
+    function renderAxes(svg, panel) {
+      const plot = panel.layoutObjects.find(o => o.id === 'place-map-plot');
+      const box = plot.bbox;
+      svg.appendChild(svgNode('line', {x1: box.x, y1: box.y + box.height, x2: box.x + box.width, y2: box.y + box.height, stroke: '#111111', 'stroke-width': 1}));
+      plot.axes.x.ticks.forEach(t => {
+        const x = map(plot.axes.x.domain, [box.x, box.x + box.width], t.value);
+        svg.appendChild(svgNode('line', {x1: x, y1: box.y + box.height, x2: x, y2: box.y + box.height + 5, stroke: '#111111', 'stroke-width': 1}));
+        text(svg, {text: t.label, x, y: box.y + box.height + 21, fontSize: 14, anchor: 'middle'});
+      });
+      text(svg, {text: plot.axes.x.label.text, x: box.x + box.width / 2, y: box.y + box.height + plot.axes.x.label.offset, fontSize: plot.axes.x.label.fontSize, anchor: 'middle'});
+      text(svg, plot.axes.y.label);
+      const bracket = panel.layoutObjects.find(o => o.id === 'dorsal-ventral-bracket');
+      svg.appendChild(svgNode('line', {x1: bracket.x, y1: bracket.y1, x2: bracket.x, y2: bracket.y2, stroke: '#111111', 'stroke-width': 1}));
+      svg.appendChild(svgNode('path', {d: `M${bracket.x - 4},${bracket.y1 + 8} L${bracket.x},${bracket.y1} L${bracket.x + 4},${bracket.y1 + 8}`, fill: 'none', stroke: '#111111', 'stroke-width': 1}));
+      svg.appendChild(svgNode('path', {d: `M${bracket.x - 4},${bracket.y2 - 8} L${bracket.x},${bracket.y2} L${bracket.x + 4},${bracket.y2 - 8}`, fill: 'none', stroke: '#111111', 'stroke-width': 1}));
+      bracket.labels.forEach(label => text(svg, {...label, fontSize: 14}));
+    }
+    function renderColorbar(svg, panel, scaleDef) {
+      const bar = panel.layoutObjects.find(o => o.id === 'activity-colorbar');
+      const gradient = svgNode('linearGradient', {id: 'activity-gradient', x1: '0', y1: '1', x2: '0', y2: '0'});
+      scaleDef.stops.forEach(s => gradient.appendChild(svgNode('stop', {offset: `${s.value / 2 * 100}%`, 'stop-color': s.color})));
+      const defs = svgNode('defs');
+      defs.appendChild(gradient);
+      svg.appendChild(defs);
+      svg.appendChild(svgNode('rect', {x: bar.bbox.x, y: bar.bbox.y, width: bar.bbox.width, height: bar.bbox.height, fill: 'url(#activity-gradient)', stroke: '#888888', 'stroke-width': 0.5, 'data-role': 'colorbar', 'data-exclusion-zone': JSON.stringify(bar.bbox)}));
+      text(svg, {...bar.title, role: 'colorbar-title', protectedText: true});
+      bar.ticks.forEach(t => {
+        const y = map([0, 2], [bar.bbox.y + bar.bbox.height, bar.bbox.y], t.value);
+        const tickLeft = bar.tickSide === 'left';
+        const tickX = tickLeft ? bar.bbox.x : bar.bbox.x + bar.bbox.width;
+        svg.appendChild(svgNode('line', {x1: tickX, y1: y, x2: tickX + (tickLeft ? -5 : 5), y2: y, stroke: '#111111', 'stroke-width': 1, 'data-role': 'colorbar-tick-mark', 'data-axis': bar.id, 'data-value': t.value}));
+        text(svg, {id: `${bar.id}-tick-${t.value}`, text: t.label, x: tickLeft ? bar.bbox.x - 7 : bar.bbox.x + bar.bbox.width + 7, y: y + 4, fontSize: 11, anchor: tickLeft ? 'end' : 'start', role: 'tick-label', axis: bar.id, value: t.value, protectedText: true});
+      });
+    }
+    function renderOccupancy(svg, panel) {
+      const occ = panel.layoutObjects.find(o => o.id === 'occupancy-panel');
+      const recipe = panel.data.find(d => d.id === 'occupancy-trace-data-recipe');
+      const rand = rng(recipe.seed);
+      const box = occ.bbox;
+      text(svg, occ.title);
+      svg.appendChild(svgNode('line', {x1: box.x, y1: box.y, x2: box.x, y2: box.y + box.height, stroke: '#111111', 'stroke-width': 1}));
+      svg.appendChild(svgNode('line', {x1: box.x, y1: box.y + box.height, x2: box.x + box.width, y2: box.y + box.height, stroke: '#111111', 'stroke-width': 1}));
+      occ.axes.x.ticks.forEach(t => {
+        const x = map(occ.axes.x.domain, [box.x, box.x + box.width], t.value);
+        svg.appendChild(svgNode('line', {x1: x, y1: box.y + box.height, x2: x, y2: box.y + box.height + 5, stroke: '#111111', 'stroke-width': 1}));
+        text(svg, {text: t.label, x, y: box.y + box.height + 20, fontSize: 14, anchor: 'middle'});
+      });
+      const points = [];
+      for (let i = 0; i < recipe.samples; i++) {
+        const row = 1 + i / (recipe.samples - 1) * 311;
+        let value = recipe.features.baseline + Math.sin(row * 0.09) * 8 + Math.sin(row * 0.22) * 4 + (rand() - 0.5) * recipe.features.noise;
+        recipe.features.peaks.forEach(p => value += Math.exp(-Math.pow(row - p.row, 2) / 260) * p.height);
+        value = clamp(value, 1, 68);
+        points.push([map([0, 70], [box.x, box.x + box.width], value), map([1, 312], [box.y, box.y + box.height], row)]);
+      }
+      const d = points.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+      svg.appendChild(svgNode('path', {d, fill: 'none', stroke: '#111111', 'stroke-width': 1, 'data-mark-id': 'occupancy-trace'}));
+    }
+    async function loadSpec() {
+      const response = await fetch(JSON_PATH);
+      return response.json();
+    }
+    async function render() {
+      const spec = await loadSpec();
+      const frame = $('frame');
+      const surface = $('surface');
+      const reference = $('reference');
+      const panel = spec.panels[0];
+      const colorScale = spec.colorScales.find(s => s.id === 'activity-rate');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      reference.src = spec.source.path;
+      surface.innerHTML = '';
+      const canvas = document.createElement('canvas');
+      canvas.width = spec.canvas.width;
+      canvas.height = spec.canvas.height;
+      canvas.dataset.layer = 'generated-heatmap';
+      const svg = svgNode('svg', {viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, width: spec.canvas.width, height: spec.canvas.height, role: 'img'});
+      svg.style.fontFamily = spec.typography.fontFamily;
+      surface.appendChild(canvas);
+      surface.appendChild(svg);
+      canvas.getContext('2d').fillStyle = spec.canvas.background;
+      canvas.getContext('2d').fillRect(0, 0, spec.canvas.width, spec.canvas.height);
+      renderHeatmap(canvas, spec, panel, colorScale);
+      text(svg, panel.label);
+      text(svg, panel.title);
+      renderAxes(svg, panel);
+      renderColorbar(svg, panel, colorScale);
+      renderOccupancy(svg, panel);
+    }
+    $('generatedButton').addEventListener('click', () => {
+      $('frame').classList.remove('show-reference');
+      $('generatedButton').classList.add('active');
+      $('referenceButton').classList.remove('active');
+    });
+    $('referenceButton').addEventListener('click', () => {
+      $('frame').classList.add('show-reference');
+      $('referenceButton').classList.add('active');
+      $('generatedButton').classList.remove('active');
+    });
+    render().catch(error => {
+      console.error(error);
+      $('surface').textContent = 'Failed to load reconstruction JSON.';
+    });
+  </script>
+</body>
+</html>

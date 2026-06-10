@@ -1,0 +1,210 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-06-replay-stimulation-A",
+  "source": {
+    "path": "../../assets/reference/reference-06-replay-stimulation-A-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Single cropped panel reconstructed from visual inspection. Dense event positions are synthetic seeded recipes matching visible density, colors, and diagonal replay bands rather than extracted source pixels."
+  },
+  "canvas": {
+    "width": 378,
+    "height": 500,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Arial", "Helvetica"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "Condensed sans chosen to approximate compact source labels and title."
+    }
+  },
+  "styleTokens": {
+    "preStim": "#1b7d82",
+    "stim": "#ff7a1a",
+    "axis": "#111111",
+    "divider": "#888888",
+    "colorbarStroke": "#555555"
+  },
+  "coordinateSystems": [
+    {
+      "id": "panel-a.plot.xy",
+      "type": "cartesian",
+      "bbox": {"x": 51, "y": 94, "width": 239, "height": 318},
+      "xDomain": [1, 200],
+      "yDomain": [1, 200],
+      "yDirection": "up"
+    },
+    {
+      "id": "panel-a.colorbar.scale",
+      "type": "linearColorScale",
+      "domain": [0, 1],
+      "range": ["#f4f4f4", "#111111"],
+      "bbox": {"x": 317, "y": 156, "width": 10, "height": 222}
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-a",
+      "label": {
+        "id": "panel-a-label",
+        "text": "A",
+        "x": 8,
+        "y": 27,
+        "fontSize": 22,
+        "fontWeight": 700,
+        "anchor": "start"
+      },
+      "title": {
+        "id": "panel-a-title",
+        "text": "Replay event raster (position order)",
+        "x": 37,
+        "y": 27,
+        "fontSize": 21,
+        "fontWeight": 700,
+        "anchor": "start",
+        "targetWidth": 298,
+        "sourceBox": {"x": 37, "y": 9, "width": 297, "height": 23},
+        "fit": "condensed"
+      },
+      "bbox": {"x": 0, "y": 0, "width": 378, "height": 500},
+      "legend": {
+        "id": "panel-a-legend",
+        "items": [
+          {"id": "legend-pre-stim", "label": "Pre-stim", "series": "pre-stim-events", "x": 104, "y": 57, "color": "#1b7d82"},
+          {"id": "legend-stim", "label": "Stim", "series": "stim-events", "x": 203, "y": 57, "color": "#ff7a1a"}
+        ],
+        "markerRadius": 3.4,
+        "fontSize": 14
+      },
+      "plot": {
+        "id": "panel-a-raster-plot",
+        "dataBbox": {"x": 51, "y": 94, "width": 239, "height": 318},
+        "usesTransform": "panel-a.plot.xy",
+        "split": {
+          "id": "stim-boundary",
+          "yValue": 100,
+          "stroke": "#888888",
+          "strokeWidth": 1,
+          "dasharray": "5 3"
+        },
+        "axes": {
+          "xAxis": {"id": "panel-a-x-axis", "line": {"x1": 51, "y1": 412, "x2": 290, "y2": 412}, "tickLength": 5},
+          "yAxis": {"id": "panel-a-y-axis", "line": {"x1": 51, "y1": 94, "x2": 51, "y2": 412}, "tickLength": 5}
+        },
+        "x": {
+          "scale": "linear",
+          "domain": [1, 200],
+          "ticks": [
+            {"value": 1, "label": "1"},
+            {"value": 50, "label": "50"},
+            {"value": 100, "label": "100"},
+            {"value": 150, "label": "150"},
+            {"value": 200, "label": "200"}
+          ],
+          "label": {"id": "panel-a-x-label", "text": "Position bin", "x": 170.5, "y": 463, "fontSize": 19, "fontWeight": 400, "anchor": "middle"}
+        },
+        "y": {
+          "scale": "linear",
+          "domain": [1, 200],
+          "ticks": [
+            {"value": 1, "label": "1"},
+            {"value": 200, "label": "200"}
+          ],
+          "label": {"id": "panel-a-y-label", "text": "Replay events (sorted)", "x": 28, "y": 256, "fontSize": 16, "fontWeight": 400, "rotation": -90, "anchor": "middle"}
+        }
+      },
+      "marks": [
+        {
+          "id": "pre-stim-events",
+          "type": "raster",
+          "usesTransform": "panel-a.plot.xy",
+          "seriesRole": "Pre-stim",
+          "color": "#1b7d82",
+          "opacity": 0.72,
+          "markerRadius": 1.35,
+          "clipToPlot": true,
+          "recipe": {
+            "seed": 6101,
+            "rowDomain": [101, 200],
+            "positionDomain": [1, 200],
+            "backgroundCount": 890,
+            "bands": [
+              {"start": [29, 199], "end": [93, 111], "count": 190, "jitterX": 4.1, "jitterY": 3.7},
+              {"start": [141, 199], "end": [196, 126], "count": 118, "jitterX": 4.8, "jitterY": 4.2},
+              {"start": [92, 184], "end": [124, 102], "count": 76, "jitterX": 5.2, "jitterY": 4.4}
+            ]
+          }
+        },
+        {
+          "id": "stim-events",
+          "type": "raster",
+          "usesTransform": "panel-a.plot.xy",
+          "seriesRole": "Stim",
+          "color": "#ff7a1a",
+          "opacity": 0.72,
+          "markerRadius": 1.35,
+          "clipToPlot": true,
+          "recipe": {
+            "seed": 6202,
+            "rowDomain": [1, 100],
+            "positionDomain": [1, 200],
+            "backgroundCount": 760,
+            "bands": [
+              {"start": [143, 99], "end": [197, 2], "count": 190, "jitterX": 4.7, "jitterY": 4.5},
+              {"start": [63, 93], "end": [88, 5], "count": 82, "jitterX": 5.2, "jitterY": 5.0}
+            ]
+          }
+        }
+      ],
+      "annotations": [
+        {
+          "id": "panel-a-colorbar",
+          "type": "colorbar",
+          "usesTransform": "panel-a.colorbar.scale",
+          "bbox": {"x": 317, "y": 156, "width": 10, "height": 222},
+          "title": {"text": "Time within\nreplay (norm.)", "x": 304, "y": 117, "fontSize": 10, "anchor": "start", "lineHeight": 1.12},
+          "ticks": [
+            {"value": 1, "label": "1"},
+            {"value": 0.5, "label": "0.5"},
+            {"value": 0, "label": "0"}
+          ]
+        }
+      ],
+      "provenance": [
+        {"target": "panel-a.plot.xy", "confidence": "medium", "note": "Plot bounds and tick anchors were estimated from the raster crop."},
+        {"target": "pre-stim-events", "confidence": "low", "note": "Event dots are synthetic and preserve approximate density and diagonal replay streak grammar only."},
+        {"target": "stim-events", "confidence": "low", "note": "Event dots are synthetic and preserve approximate density and diagonal replay streak grammar only."}
+      ]
+    }
+  ],
+  "rendering": {
+    "strategy": "hybrid",
+    "layers": [
+      {"id": "points", "renderer": "canvas", "objects": ["pre-stim-events", "stim-events"]},
+      {"id": "structure", "renderer": "svg", "objects": ["axes", "ticks", "labels", "legend", "colorbar", "split"]}
+    ]
+  },
+  "validation": {
+    "required": [
+      "Generated candidate must not call drawImage with the source raster.",
+      "Generated candidate must not set the source raster as a CSS background.",
+      "Source raster may appear only in the QA/reference image element."
+    ],
+    "expected": {
+      "canvasSize": [378, 500],
+      "xTicks": 5,
+      "yTicks": 2,
+      "legendItems": 2,
+      "colorbarTicks": 3
+    }
+  },
+  "confidence": [
+    {"target": "overall", "confidence": "medium", "note": "First-pass visual reconstruction; semantic layout and style are editable, but exact event coordinates are inferred synthetically."}
+  ]
+}

@@ -1,0 +1,128 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-02-decision-dynamics-B",
+  "source": {
+    "path": "../../assets/reference/reference-02-decision-dynamics-B-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Single 3D state-space trajectory panel inferred visually from the raster. Generated layers use SVG geometry, projected 3D paths, and deterministic synthetic trial clouds."
+  },
+  "canvas": {
+    "width": 356,
+    "height": 514,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial Narrow, Helvetica Neue, Arial, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Narrow sans-serif approximates the compact publication typography; labels are source-position tuned."
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-b",
+      "type": "state_space_3d_trajectory",
+      "label": {"id": "panel-label", "text": "B", "x": 7, "y": 30, "fontSize": 22, "fontWeight": 700},
+      "title": {"id": "panel-title", "text": "Neural state-space trajectories\n(population activity)", "x": 34, "y": 30, "fontSize": 18, "fontWeight": 700, "lineHeight": 1.03},
+      "legend": {
+        "id": "choice-legend",
+        "y": 86,
+        "items": [
+          {"id": "left", "label": "Left choice", "x": 53, "color": "#0f4bb8", "type": "line"},
+          {"id": "right", "label": "Right choice", "x": 151, "color": "#d7191c", "type": "line"},
+          {"id": "timepoints", "label": "Time points", "x": 256, "color": "#000000", "type": "dot"}
+        ]
+      },
+      "scene": {
+        "projection": {
+          "type": "orthographicBasis",
+          "domainCorner": {"pc1": -2, "pc2": -2, "pc3": -2},
+          "corner": {"x": 57, "y": 327},
+          "basis": {
+            "pc1": {"x": 258, "y": 30},
+            "pc2": {"x": 145, "y": 90},
+            "pc3": {"x": 0, "y": -184}
+          }
+        },
+        "domains": {"pc1": [-2, 2], "pc2": [-2, 2], "pc3": [-2, 2]},
+        "boxEdges": [
+          [[-2, -2, -2], [-2, -2, 2]],
+          [[-2, -2, -2], [-2, 2, -2]],
+          [[-2, 2, -2], [2, 2, -2]],
+          [[2, 2, -2], [2, 2, 2]],
+          [[-2, -2, 2], [2, -2, 2]],
+          [[2, -2, 2], [2, 2, 2]],
+          [[-2, -2, 2], [-2, 2, 2]]
+        ],
+        "grid": {
+          "stroke": "#b7b7b7",
+          "opacity": 0.55,
+          "dasharray": "1.5 3",
+          "planes": [
+            {"id": "floor", "fixed": {"pc3": -2}, "families": [{"axis": "pc1", "values": [-1, 0, 1]}, {"axis": "pc2", "values": [-1, 0, 1]}]},
+            {"id": "left-wall", "fixed": {"pc1": -2}, "families": [{"axis": "pc2", "values": [-1, 0, 1]}, {"axis": "pc3", "values": [-1, 0, 1]}]},
+            {"id": "right-wall", "fixed": {"pc2": 2}, "families": [{"axis": "pc1", "values": [-1, 0, 1]}, {"axis": "pc3", "values": [-1, 0, 1]}]}
+          ]
+        },
+        "axes": [
+          {"id": "pc1", "label": "PC 1\n(25%)", "from": [-2, 2, -2], "to": [2, 2, -2], "ticks": [{"value": -2, "label": "-2"}, {"value": 0, "label": "0"}, {"value": 2, "label": "2"}], "labelPosition": {"x": 281, "y": 426}, "tickLabelOffset": {"x": -6, "y": 18}},
+          {"id": "pc2", "label": "PC 2\n(12%)", "from": [-2, -2, -2], "to": [-2, 2, -2], "ticks": [{"value": -2, "label": "-2"}, {"value": 0, "label": "0"}, {"value": 2, "label": "2"}], "labelPosition": {"x": 83, "y": 402}, "tickLabelOffset": {"x": -24, "y": 10}},
+          {"id": "pc3", "label": "PC 3\n(8%)", "from": [-2, -2, -2], "to": [-2, -2, 2], "ticks": [{"value": -2, "label": "-2"}, {"value": 0, "label": "0"}, {"value": 2, "label": "2"}], "labelPosition": {"x": 8, "y": 259}, "tickLabelOffset": {"x": -18, "y": 4}}
+        ],
+        "eventAnchors": [
+          {"id": "stim", "label": "Stim\n(0 ms)", "point": [-1.28, -1.06, -0.43], "labelPosition": {"x": 69, "y": 229}},
+          {"id": "go", "label": "Go", "point": [0.55, -0.88, 1.35], "labelPosition": {"x": 255, "y": 164}},
+          {"id": "outcome", "label": "Outcome", "point": [1.73, 1.24, -0.28], "labelPosition": {"x": 272, "y": 284}}
+        ]
+      },
+      "data": {
+        "series": [
+          {
+            "id": "left-choice",
+            "label": "Left choice",
+            "color": "#0f4bb8",
+            "mean": [[-1.28, -1.06, -0.43], [-0.84, -0.92, 0.28], [-0.22, -0.92, 0.88], [0.45, -0.78, 1.18], [1.03, -0.62, 1.40], [1.54, -0.42, 1.55]],
+            "timepoints": [0, 1, 2, 3, 5],
+            "cloudRecipe": {"seed": 1202, "count": 42, "jitter": [0.18, 0.28, 0.22], "strokeOpacity": 0.18}
+          },
+          {
+            "id": "right-choice",
+            "label": "Right choice",
+            "color": "#d7191c",
+            "mean": [[-1.28, -1.06, -0.43], [-0.64, -0.12, -0.35], [0.02, 0.44, -0.58], [0.67, 0.88, -0.86], [1.34, 1.12, -1.06], [1.86, 1.25, -0.82]],
+            "timepoints": [0, 1, 2, 3, 5],
+            "cloudRecipe": {"seed": 2217, "count": 46, "jitter": [0.2, 0.3, 0.18], "strokeOpacity": 0.17}
+          }
+        ]
+      },
+      "marks": [
+        {"id": "trial-clouds", "type": "generatedTrajectoryCloud", "renderer": "svg", "series": ["left-choice", "right-choice"]},
+        {"id": "mean-trajectories", "type": "lineSeries3d", "renderer": "svg", "series": ["left-choice", "right-choice"], "strokeWidth": 2.2},
+        {"id": "timepoint-dots", "type": "scatter3d", "renderer": "svg", "series": ["left-choice", "right-choice"], "radius": 4.1}
+      ],
+      "annotations": [
+        {"id": "stim-label", "anchorTo": "stim", "text": "Stim\n(0 ms)"},
+        {"id": "go-label", "anchorTo": "go", "text": "Go"},
+        {"id": "outcome-label", "anchorTo": "outcome", "text": "Outcome"}
+      ],
+      "provenance": [
+        {"confidence": "medium", "note": "Projection and trajectory points are visually inferred from the source crop, not digitized data."},
+        {"confidence": "medium", "note": "Dense trial paths are deterministic generated variants around the visible mean trajectories."}
+      ]
+    }
+  ],
+  "validation": {
+    "nativeDimensions": [356, 514],
+    "mustNotUseSourceRasterAsGeneratedLayer": true,
+    "expectedGeneratedSeries": 2,
+    "expectedLegendItems": 3
+  },
+  "confidence": [
+    {"item": "3D box and axes", "level": "medium"},
+    {"item": "trajectory data values", "level": "low", "reason": "Approximated from visible paths for editable first pass."},
+    {"item": "text placement", "level": "medium"}
+  ]
+}

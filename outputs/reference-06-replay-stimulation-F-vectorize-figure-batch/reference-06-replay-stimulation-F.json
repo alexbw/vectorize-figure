@@ -1,0 +1,171 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-06-replay-stimulation-F",
+  "source": {
+    "path": "../../assets/reference/reference-06-replay-stimulation-F-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Single forest-plot panel reconstructed by visual inspection. Session counts are transcribed from the raster; effect sizes and intervals are approximate source-calibrated values."
+  },
+  "canvas": {
+    "width": 374,
+    "height": 524,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Arial", "Helvetica"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Condensed sans approximates the compact source text. Title and axis labels are visually fitted, not OCR-calibrated."
+    }
+  },
+  "styleTokens": {
+    "axis": "#111111",
+    "guide": "#666666",
+    "pointFill": "#0b7777",
+    "pointStroke": "#064f4f",
+    "summaryFill": "#000000",
+    "rule": "#777777"
+  },
+  "coordinateSystems": [
+    {
+      "id": "panel-f.effect.x",
+      "type": "linear",
+      "domain": [-1, 2],
+      "range": [92, 321],
+      "zeroX": 168.3333333333
+    },
+    {
+      "id": "panel-f.session.y",
+      "type": "ordinal",
+      "categories": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      "range": [81, 330]
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-f",
+      "label": {
+        "id": "panel-f-label",
+        "text": "F",
+        "x": 10,
+        "y": 24,
+        "fontSize": 24,
+        "fontWeight": 700,
+        "anchor": "start"
+      },
+      "title": {
+        "id": "panel-f-title",
+        "text": "Effect size by session (Cohen's d)",
+        "x": 38,
+        "y": 24,
+        "fontSize": 21,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 38, "y": 5, "width": 299, "height": 24},
+        "targetWidth": 300,
+        "fit": "condensed"
+      },
+      "bbox": {"x": 0, "y": 0, "width": 374, "height": 524},
+      "layout": {
+        "leftTable": {
+          "headers": [
+            {"id": "session-header", "text": "Session", "x": 23, "y": 61, "fontSize": 14, "anchor": "middle"},
+            {"id": "events-header", "text": "n. events\n(Stim / Pre)", "x": 91, "y": 51, "fontSize": 14, "lineHeight": 1.05, "anchor": "middle"}
+          ],
+          "sessionX": 24,
+          "countsX": 91
+        },
+        "plot": {
+          "dataBbox": {"x": 92, "y": 75, "width": 229, "height": 255},
+          "zeroGuide": {"x": 168.3333333333, "y1": 74, "y2": 391, "strokeDasharray": "7 8"},
+          "bottomAxis": {"x1": 92, "y1": 392, "x2": 321, "y2": 392, "tickLength": 5},
+          "x": {
+            "domain": [-1, 2],
+            "ticks": [
+              {"value": -1, "label": "-1"},
+              {"value": 0, "label": "0"},
+              {"value": 1, "label": "1"},
+              {"value": 2, "label": "2"}
+            ],
+            "label": {"id": "x-label", "text": "Cohen's d (Stim \u2013 Pre)", "x": 206, "y": 441, "fontSize": 19, "anchor": "middle"}
+          },
+          "separator": {"x1": 0, "y1": 350, "x2": 291, "y2": 350, "strokeDasharray": "5 6"}
+        }
+      },
+      "data": {
+        "sessions": [
+          {"session": 1, "events": "512 / 471", "effect": 1.02, "ciLow": 0.78, "ciHigh": 1.23},
+          {"session": 2, "events": "498 / 450", "effect": 1.15, "ciLow": 0.88, "ciHigh": 1.35},
+          {"session": 3, "events": "620 / 584", "effect": 0.96, "ciLow": 0.70, "ciHigh": 1.17},
+          {"session": 4, "events": "534 / 488", "effect": 1.38, "ciLow": 1.15, "ciHigh": 1.60},
+          {"session": 5, "events": "475 / 452", "effect": 0.99, "ciLow": 0.76, "ciHigh": 1.23},
+          {"session": 6, "events": "610 / 570", "effect": 1.16, "ciLow": 0.92, "ciHigh": 1.37},
+          {"session": 7, "events": "502 / 468", "effect": 0.91, "ciLow": 0.65, "ciHigh": 1.14},
+          {"session": 8, "events": "559 / 516", "effect": 1.02, "ciLow": 0.78, "ciHigh": 1.25},
+          {"session": 9, "events": "583 / 544", "effect": 0.95, "ciLow": 0.73, "ciHigh": 1.18},
+          {"session": 10, "events": "478 / 439", "effect": 0.89, "ciLow": 0.63, "ciHigh": 1.13},
+          {"session": 11, "events": "621 / 590", "effect": 1.09, "ciLow": 0.83, "ciHigh": 1.31},
+          {"session": 12, "events": "505 / 487", "effect": 0.91, "ciLow": 0.65, "ciHigh": 1.16},
+          {"session": 13, "events": "567 / 532", "effect": 1.04, "ciLow": 0.78, "ciHigh": 1.31},
+          {"session": 14, "events": "540 / 505", "effect": 0.93, "ciLow": 0.66, "ciHigh": 1.18},
+          {"session": 15, "events": "489 / 463", "effect": 0.94, "ciLow": 0.70, "ciHigh": 1.18}
+        ],
+        "summary": {
+          "label": "RE Model",
+          "effect": 0.84,
+          "ciLow": 0.65,
+          "ciHigh": 1.02,
+          "text": "0.61 [0.40, 0.82]",
+          "note": "Diamond position follows visible mark; right-side text is transcribed from source and appears partly cropped."
+        }
+      },
+      "marks": [
+        {
+          "id": "session-effects",
+          "type": "forestPointInterval",
+          "usesTransform": "panel-f.effect.x",
+          "dataRef": "panel-f.data.sessions",
+          "pointShape": "circle",
+          "pointRadius": 3.3,
+          "ciCapHeight": 6,
+          "strokeWidth": 0.9,
+          "fill": "#0b7777",
+          "stroke": "#064f4f"
+        },
+        {
+          "id": "summary-diamond",
+          "type": "diamondInterval",
+          "usesTransform": "panel-f.effect.x",
+          "dataRef": "panel-f.data.summary",
+          "centerY": 373,
+          "height": 12,
+          "fill": "#000000"
+        }
+      ],
+      "annotations": [
+        {"id": "summary-label", "type": "text", "text": "RE Model", "x": 10, "y": 379, "fontSize": 16, "anchor": "start"},
+        {"id": "summary-ci-text", "type": "text", "text": "0.61 [0.40, 0.82]", "x": 295, "y": 388, "fontSize": 14, "anchor": "start"}
+      ],
+      "provenance": [
+        {"confidence": "high", "note": "Counts and visible labels are manually transcribed."},
+        {"confidence": "medium", "note": "Point estimates and confidence intervals are approximate from pixel positions."},
+        {"confidence": "low", "note": "The right summary interval text is clipped in the crop; semantic summary values preserve the visible text separately from the diamond geometry."}
+      ]
+    }
+  ],
+  "validation": {
+    "expectedCounts": {
+      "sessionRows": 15,
+      "forestIntervals": 15,
+      "summaryDiamonds": 1,
+      "xTicks": 4
+    },
+    "candidateLayerRule": "Generated marks must be SVG/DOM from this semantic spec; the source raster is reserved for the labeled QA/reference view."
+  }
+}

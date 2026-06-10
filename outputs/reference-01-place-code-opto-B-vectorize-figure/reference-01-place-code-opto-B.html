@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-01-place-code-opto-B reconstruction</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #aaaaaa;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .surface,
+    .reference {
+      position: absolute;
+      inset: 0;
+    }
+
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+    }
+
+    .show-reference .surface {
+      display: none;
+    }
+
+    .show-reference .reference {
+      display: block;
+    }
+
+    svg {
+      position: absolute;
+      inset: 0;
+      overflow: visible;
+    }
+
+    text {
+      font-family: inherit;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-01-place-code-opto-B</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="Reference source image">
+    </div>
+  </main>
+
+  <script>
+    const SPEC_URL = './reference-01-place-code-opto-B.json';
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function byId(id) {
+      return document.getElementById(id);
+    }
+
+    function svgNode(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function textNode(rawSpec, defaults = {}) {
+      const spec = calibratedText(rawSpec);
+      const fontSize = spec.fontSize || defaults.defaultSize || 14;
+      const x = spec.overlayX !== undefined ? spec.overlayX : spec.x;
+      const y = spec.overlayY !== undefined ? spec.overlayY : spec.y;
+      const node = svgNode('text', {
+        x,
+        y,
+        fill: spec.fill || spec.color || defaults.color || '#111111',
+        'font-family': spec.fontFamily || defaults.fontFamily || 'Arial, Helvetica, sans-serif',
+        'font-size': fontSize,
+        'font-weight': spec.fontWeight || 400,
+        'text-anchor': spec.anchor || 'start',
+        'dominant-baseline': spec.baseline || 'alphabetic',
+        transform: spec.rotation ? `rotate(${spec.rotation} ${x} ${y})` : undefined,
+        'data-role': spec.role || 'text',
+        'data-text-id': spec.id,
+        'data-fit': spec.fit,
+        'data-target-width': spec.targetWidth,
+        'data-min-scale': spec.minScale,
+        'data-max-scale': spec.maxScale
+      });
+      node.textContent = spec.text || '';
+      return node;
+    }
+
+    let activeTextCalibration = {};
+
+    function calibratedText(spec = {}) {
+      if (!spec.id || !activeTextCalibration[spec.id]) return spec;
+      return {...spec, ...activeTextCalibration[spec.id]};
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function applyTextFits(svg) {
+      for (const node of svg.querySelectorAll('text[data-fit="scaleX"]')) {
+        const targetWidth = Number(node.dataset.targetWidth || 0);
+        if (!targetWidth) continue;
+        const box = node.getBBox();
+        if (!box.width) continue;
+        const scale = clamp(
+          targetWidth / box.width,
+          Number(node.dataset.minScale || 0.4),
+          Number(node.dataset.maxScale || 1.45)
+        );
+        const x = Number(node.getAttribute('x') || 0);
+        const y = Number(node.getAttribute('y') || 0);
+        const existing = node.getAttribute('transform') || '';
+        const fitTransform = `translate(${x} ${y}) scale(${scale} 1) translate(${-x} ${-y})`;
+        node.setAttribute('transform', [existing, fitTransform].filter(Boolean).join(' '));
+      }
+    }
+
+    function line(svg, attrs) {
+      const node = svgNode('line', {
+        x1: attrs.x1,
+        y1: attrs.y1,
+        x2: attrs.x2,
+        y2: attrs.y2,
+        stroke: attrs.stroke || '#111111',
+        'stroke-width': attrs.strokeWidth || 1.3,
+        'stroke-linecap': attrs.linecap || 'butt',
+        'stroke-dasharray': attrs.dasharray,
+        'data-role': attrs.role || 'line'
+      });
+      svg.appendChild(node);
+      return node;
+    }
+
+    function path(svg, attrs) {
+      const node = svgNode('path', {
+        d: attrs.d,
+        fill: attrs.fill || 'none',
+        stroke: attrs.stroke || 'none',
+        'stroke-width': attrs.strokeWidth,
+        'stroke-linecap': attrs.linecap || 'round',
+        'stroke-linejoin': attrs.linejoin || 'round',
+        opacity: attrs.opacity,
+        'clip-path': attrs.clipPath,
+        'data-mark-id': attrs.markId,
+        'data-role': attrs.role || 'path'
+      });
+      svg.appendChild(node);
+      return node;
+    }
+
+    function scale(domain, range, value) {
+      return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+    }
+
+    function xScale(plot, value) {
+      return scale(plot.x.domain, [plot.bbox.x, plot.bbox.x + plot.bbox.width], value);
+    }
+
+    function yScale(plot, value) {
+      return scale(plot.y.domain, [plot.bbox.y + plot.bbox.height, plot.bbox.y], value);
+    }
+
+    function pathFromPoints(points, plot) {
+      return points.map((point, index) => {
+        const command = index === 0 ? 'M' : 'L';
+        return `${command}${xScale(plot, point[0]).toFixed(2)} ${yScale(plot, point[1]).toFixed(2)}`;
+      }).join(' ');
+    }
+
+    function interpolate(points, x) {
+      if (x <= points[0][0]) return points[0][1];
+      for (let index = 1; index < points.length; index += 1) {
+        const prev = points[index - 1];
+        const next = points[index];
+        if (x <= next[0]) {
+          const t = (x - prev[0]) / (next[0] - prev[0]);
+          return prev[1] + (next[1] - prev[1]) * t;
+        }
+      }
+      return points[points.length - 1][1];
+    }
+
+    function rng(seed) {
+      return function random() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function bandPath(series, band, plot) {
+      const sampleXs = series.points.map(point => point[0]);
+      const upper = sampleXs.map(x => [x, interpolate(series.points, x) + interpolate(band.halfWidth, x)]);
+      const lower = sampleXs.slice().reverse().map(x => [x, interpolate(series.points, x) - interpolate(band.halfWidth, x)]);
+      return upper.concat(lower).map((point, index) => {
+        const command = index === 0 ? 'M' : 'L';
+        return `${command}${xScale(plot, point[0]).toFixed(2)} ${yScale(plot, point[1]).toFixed(2)}`;
+      }).join(' ') + ' Z';
+    }
+
+    function tracePoints(series, recipe, traceIndex) {
+      const random = rng(recipe.seed + traceIndex * 101);
+      const xDomain = [series.points[0][0], series.points[series.points.length - 1][0]];
+      const peakShift = (random() - 0.5) * (recipe.peakJitter || 0);
+      const amplitude = (0.45 + random() * 0.9) * (recipe.amplitude || 1);
+      const baselineShift = (random() - 0.5) * (recipe.baselineJitter || 0);
+      const points = [];
+
+      for (let step = 0; step <= 28; step += 1) {
+        const x = xDomain[0] + (xDomain[1] - xDomain[0]) * step / 28;
+        const shiftedX = Math.max(xDomain[0], Math.min(xDomain[1], x + peakShift));
+        const mean = interpolate(series.points, shiftedX);
+        const localBump = Math.exp(-Math.pow((x - 95 - peakShift) / 39, 2));
+        const waviness = Math.sin((x * 0.055) + random() * 4.2) * 0.32;
+        const noise = (random() - 0.5) * amplitude * (0.4 + localBump);
+        const y = Math.max(0, mean + baselineShift + waviness + noise);
+        points.push([x, y]);
+      }
+
+      return points;
+    }
+
+    function renderAxes(svg, panel, defaults) {
+      const plot = panel.plot;
+      const box = plot.bbox;
+
+      line(svg, {x1: box.x, y1: box.y + box.height, x2: box.x + box.width, y2: box.y + box.height, strokeWidth: 1.25, role: 'x-axis'});
+      line(svg, {x1: box.x, y1: box.y, x2: box.x, y2: box.y + box.height, strokeWidth: 1.25, role: 'y-axis'});
+
+      for (const tick of plot.x.ticks) {
+        const x = xScale(plot, tick.value);
+        line(svg, {x1: x, y1: box.y + box.height, x2: x, y2: box.y + box.height + 7, strokeWidth: 1.2, role: 'x-tick'});
+        svg.appendChild(textNode({id: `x-tick-${tick.label}`, text: tick.label, x, y: box.y + box.height + 23, fontSize: 16, anchor: 'middle'}, defaults));
+      }
+
+      for (const tick of plot.y.ticks) {
+        const y = yScale(plot, tick.value);
+        line(svg, {x1: box.x - 7, y1: y, x2: box.x, y2: y, strokeWidth: 1.2, role: 'y-tick'});
+        svg.appendChild(textNode({id: `y-tick-${tick.label}`, text: tick.label, x: box.x - 10, y: y + 5, fontSize: 16, anchor: 'end'}, defaults));
+      }
+
+      svg.appendChild(textNode({...plot.x.label, id: 'x-label'}, defaults));
+      svg.appendChild(textNode({...plot.y.label, id: 'y-label'}, defaults));
+    }
+
+    function renderMarks(svg, panel) {
+      const plotSpec = panel.plot;
+      const defs = svgNode('defs');
+      const clipId = `${panel.id}-plot-clip`;
+      const clip = svgNode('clipPath', {id: clipId});
+      clip.appendChild(svgNode('rect', {
+        x: plotSpec.bbox.x,
+        y: plotSpec.bbox.y,
+        width: plotSpec.bbox.width,
+        height: plotSpec.bbox.height
+      }));
+      defs.appendChild(clip);
+      svg.appendChild(defs);
+
+      const series = panel.marks.filter(mark => mark.type === 'lineSeries');
+      const seriesById = new Map(series.map(mark => [mark.id, mark]));
+      const clipUrl = `url(#${clipId})`;
+
+      for (const mark of panel.marks.filter(item => item.type === 'traceCloud')) {
+        const baseSeries = seriesById.get(mark.seriesId);
+        if (!baseSeries) continue;
+        for (let index = 0; index < mark.count; index += 1) {
+          path(svg, {
+            d: pathFromPoints(tracePoints(baseSeries, mark, index), plotSpec),
+            stroke: mark.stroke,
+            strokeWidth: mark.strokeWidth,
+            clipPath: clipUrl,
+            markId: `${mark.id}-${index}`,
+            role: 'individual-trace'
+          });
+        }
+      }
+
+      for (const mark of panel.marks.filter(item => item.type === 'uncertaintyBand')) {
+        const baseSeries = seriesById.get(mark.seriesId);
+        if (!baseSeries) continue;
+        path(svg, {
+          d: bandPath(baseSeries, mark, plotSpec),
+          fill: mark.fill,
+          clipPath: clipUrl,
+          markId: mark.id,
+          role: 'uncertainty-band'
+        });
+      }
+
+      for (const mark of series) {
+        path(svg, {
+          d: pathFromPoints(mark.points, plotSpec),
+          stroke: mark.stroke,
+          strokeWidth: mark.strokeWidth,
+          clipPath: clipUrl,
+          markId: mark.id,
+          role: 'mean-line'
+        });
+      }
+    }
+
+    function renderLegend(svg, panel, defaults) {
+      const seriesById = new Map(
+        panel.marks.filter(mark => mark.type === 'lineSeries').map(mark => [mark.id, mark])
+      );
+
+      for (const item of panel.legend || []) {
+        const series = seriesById.get(item.seriesId);
+        if (!series) continue;
+        line(svg, {
+          x1: item.x,
+          y1: item.y,
+          x2: item.x + (item.lineLength || 28),
+          y2: item.y,
+          stroke: series.stroke,
+          strokeWidth: 3,
+          linecap: 'round',
+          role: 'legend-line'
+        });
+        svg.appendChild(textNode({
+          id: series.id === 'control-mean' ? 'legend-control' : 'legend-opto',
+          text: series.label,
+          x: item.textX,
+          y: item.textY,
+          fontSize: item.fontSize || 14,
+          anchor: 'start'
+        }, defaults));
+      }
+    }
+
+    function render(spec) {
+      const frame = byId('frame');
+      const surface = byId('surface');
+      const reference = byId('reference');
+      const canvasSpec = spec.canvas;
+      const defaults = spec.typography || {};
+      activeTextCalibration = Object.assign({}, ...(spec.panels || []).map(panel => panel.textCalibration || {}));
+
+      byId('title').textContent = spec.id;
+      document.title = `${spec.id} reconstruction`;
+      frame.style.width = `${canvasSpec.width}px`;
+      frame.style.height = `${canvasSpec.height}px`;
+      frame.style.background = canvasSpec.background || '#ffffff';
+      surface.innerHTML = '';
+      reference.src = spec.source.path;
+
+      const svg = svgNode('svg', {
+        width: canvasSpec.width,
+        height: canvasSpec.height,
+        viewBox: `0 0 ${canvasSpec.width} ${canvasSpec.height}`,
+        role: 'img',
+        'aria-label': `${spec.id} generated reconstruction`
+      });
+      surface.appendChild(svg);
+
+      for (const panel of spec.panels) {
+        const group = svgNode('g', {'data-panel-id': panel.id, 'data-role': panel.type});
+        svg.appendChild(group);
+        group.appendChild(textNode({...panel.label, id: 'panel-label'}, defaults));
+        group.appendChild(textNode({...panel.title, id: 'panel-title'}, defaults));
+        renderMarks(group, panel);
+        renderAxes(group, panel, defaults);
+        renderLegend(group, panel, defaults);
+      }
+
+      const afterFonts = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+      afterFonts.then(() => applyTextFits(svg));
+    }
+
+    byId('generatedButton').onclick = () => {
+      byId('frame').classList.remove('show-reference');
+      byId('generatedButton').classList.add('active');
+      byId('referenceButton').classList.remove('active');
+    };
+
+    byId('referenceButton').onclick = () => {
+      byId('frame').classList.add('show-reference');
+      byId('referenceButton').classList.add('active');
+      byId('generatedButton').classList.remove('active');
+    };
+
+    fetch(SPEC_URL)
+      .then(response => response.json())
+      .then(render)
+      .catch(error => {
+        byId('surface').textContent = `Failed to load ${SPEC_URL}: ${error.message}`;
+      });
+  </script>
+</body>
+</html>

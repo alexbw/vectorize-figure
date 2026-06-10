@@ -1,0 +1,152 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-04-motor-manifold-H",
+  "source": {
+    "path": "../../assets/reference/reference-04-motor-manifold-H-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "First-pass reconstruction inferred visually from the native 619 x 363 raster crop. Generated visual layers are SVG axes, labels, bands, lines, shaded epochs, and legend; the source raster is only available in a labeled QA/reference view."
+  },
+  "canvas": {
+    "width": 619,
+    "height": 363,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Liberation Sans", "Roboto Condensed"],
+    "calibration": {
+      "fontStretch": "condensed",
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "Approximate compact publication typography from visual inspection; no OCR/font calibration run for this first pass."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "residual-time-log",
+      "type": "cartesian",
+      "x": {
+        "scale": "linear",
+        "domain": [-1.0, 1.1],
+        "ticks": [
+          {"value": -1.0, "label": "-1.0"},
+          {"value": 0, "label": "0"},
+          {"value": 1.0, "label": "1.0"}
+        ],
+        "label": "Time (s)"
+      },
+      "y": {
+        "scale": "log10",
+        "domain": [0.001, 1],
+        "ticks": [
+          {"value": 1, "label": "10^0"},
+          {"value": 0.1, "label": "10^-1"},
+          {"value": 0.01, "label": "10^-2"},
+          {"value": 0.001, "label": "10^-3"}
+        ],
+        "label": "Residual variance"
+      },
+      "eventAnchors": [
+        {"id": "movement-onset", "value": 0, "label": "0 s"}
+      ]
+    }
+  ],
+  "layoutObjects": [
+    {"id": "panel-label", "type": "panelLabel", "text": "H", "anchor": {"x": 31, "y": 45}, "fontSize": 23, "fontWeight": 700},
+    {"id": "figure-title", "type": "title", "text": "Residuals (data - reconstruction)", "anchor": {"x": 58, "y": 44}, "fontSize": 14},
+    {"id": "shared-y-title", "type": "axisTitle", "text": "Residual variance", "axis": "y", "anchor": {"x": 21, "y": 176}, "rotation": -90, "fontSize": 14},
+    {"id": "shared-x-title", "type": "axisTitle", "text": "Time (s)", "axis": "x", "anchor": {"x": 240, "y": 300}, "fontSize": 14},
+    {
+      "id": "epoch-legend",
+      "type": "legend",
+      "bbox": {"x": 564, "y": 132, "width": 54, "height": 101},
+      "items": [
+        {"id": "cue", "label": "Cue", "fill": "#f2f2f2", "stroke": "#808080", "y": 132},
+        {"id": "delay", "label": "Delay", "fill": "#e8e8e8", "stroke": "#808080", "y": 160},
+        {"id": "move", "label": "Move", "fill": "#d6d6d6", "stroke": "#808080", "y": 188},
+        {"id": "hold", "label": "Hold", "fill": "#a6a6a6", "stroke": "#808080", "y": 216}
+      ]
+    }
+  ],
+  "panels": [
+    {
+      "id": "pca-10d",
+      "title": {"text": "PCA (10D)", "anchor": {"x": 118, "y": 89}},
+      "plot": {"dataBbox": {"x": 66, "y": 99, "width": 105, "height": 154}},
+      "series": {"id": "series-pca-10d", "label": "PCA (10D)", "color": "#7e35c8", "uncertaintyColor": "#caa9ef", "seed": 4041, "bandFraction": 0.24, "points": [[-1.0,0.44],[-0.85,0.25],[-0.7,0.18],[-0.55,0.17],[-0.4,0.15],[-0.25,0.17],[-0.1,0.12],[0.0,0.065],[0.18,0.038],[0.35,0.075],[0.55,0.095],[0.78,0.125],[1.0,0.14],[1.1,0.13]]}
+    },
+    {
+      "id": "pca-20d",
+      "title": {"text": "PCA (20D)", "anchor": {"x": 241, "y": 89}},
+      "plot": {"dataBbox": {"x": 190, "y": 99, "width": 105, "height": 154}},
+      "series": {"id": "series-pca-20d", "label": "PCA (20D)", "color": "#2b83d3", "uncertaintyColor": "#a9cbee", "seed": 4042, "bandFraction": 0.28, "points": [[-1.0,0.25],[-0.84,0.15],[-0.68,0.085],[-0.5,0.06],[-0.32,0.05],[-0.12,0.032],[0.0,0.018],[0.16,0.0078],[0.33,0.012],[0.55,0.018],[0.78,0.027],[1.0,0.038],[1.1,0.047]]}
+    },
+    {
+      "id": "pls",
+      "title": {"text": "PLS", "anchor": {"x": 367, "y": 89}},
+      "plot": {"dataBbox": {"x": 315, "y": 99, "width": 105, "height": 154}},
+      "series": {"id": "series-pls", "label": "PLS", "color": "#5aa02c", "uncertaintyColor": "#b9d7a9", "seed": 4043, "bandFraction": 0.22, "points": [[-1.0,0.19],[-0.82,0.15],[-0.65,0.11],[-0.48,0.083],[-0.3,0.058],[-0.12,0.032],[0.0,0.018],[0.15,0.013],[0.34,0.017],[0.55,0.024],[0.78,0.036],[1.0,0.052],[1.1,0.062]]}
+    },
+    {
+      "id": "lda",
+      "title": {"text": "LDA", "anchor": {"x": 495, "y": 89}},
+      "plot": {"dataBbox": {"x": 442, "y": 99, "width": 100, "height": 154}},
+      "series": {"id": "series-lda", "label": "LDA", "color": "#f47a2b", "uncertaintyColor": "#f6c29c", "seed": 4044, "bandFraction": 0.22, "points": [[-1.0,0.16],[-0.82,0.105],[-0.62,0.065],[-0.42,0.055],[-0.22,0.04],[-0.08,0.024],[0.0,0.014],[0.12,0.0084],[0.26,0.014],[0.44,0.023],[0.65,0.035],[0.88,0.051],[1.1,0.067]]}
+    }
+  ],
+  "data": {
+    "curveRecipe": {
+      "type": "sampledApproximation",
+      "description": "Line points are visually sampled from the raster and rendered in data coordinates. A deterministic low-amplitude wiggle approximates jagged mean traces; uncertainty bands follow the line shape and are not rectangular boxes."
+    },
+    "epochs": [
+      {"id": "cue-window", "label": "Cue", "x0": -1.0, "x1": -0.58, "fill": "#f7f7f7", "opacity": 0.85},
+      {"id": "delay-window", "label": "Delay", "x0": -0.58, "x1": -0.05, "fill": "#eeeeee", "opacity": 0.85},
+      {"id": "move-window", "label": "Move", "x0": 0.45, "x1": 0.85, "fill": "#e3e3e3", "opacity": 0.75}
+    ]
+  },
+  "marks": [
+    {"id": "residual-curves", "type": "lineSeriesGroup", "coordinateSystem": "residual-time-log", "seriesRefs": ["series-pca-10d", "series-pca-20d", "series-pls", "series-lda"]},
+    {"id": "epoch-shading", "type": "rectGroup", "coordinateSystem": "residual-time-log", "epochRefs": ["cue-window", "delay-window", "move-window"]},
+    {"id": "movement-onset-lines", "type": "eventLineGroup", "coordinateSystem": "residual-time-log", "eventAnchor": "movement-onset"}
+  ],
+  "rendering": {
+    "renderer": "svg",
+    "layers": ["background", "epochShading", "axes", "uncertaintyBands", "lineSeries", "titles", "legend"],
+    "styles": {
+      "axisStroke": "#222222",
+      "axisStrokeWidth": 1,
+      "tickStrokeWidth": 1,
+      "eventLineStroke": "#111111",
+      "eventLineWidth": 1.25,
+      "frameStroke": "#222222",
+      "curveStrokeWidth": 2,
+      "uncertaintyOpacity": 0.42,
+      "epochOpacity": 0.72
+    }
+  },
+  "constraints": [
+    {"id": "shared-log-scale", "type": "sharedScale", "panels": "all", "coordinateSystem": "residual-time-log"},
+    {"id": "event-line-shared-anchor", "type": "eventAnchor", "event": "movement-onset", "xValue": 0},
+    {"id": "legend-items-reference-epochs", "type": "legendReference", "legend": "epoch-legend", "items": ["cue-window", "delay-window", "move-window", "hold"]},
+    {"id": "qa-separation", "type": "sourceUsage", "rule": "Source raster appears only in labeled reference view and is not used for generated candidate layers."}
+  ],
+  "validation": {
+    "expectedPanelCount": 4,
+    "expectedSeriesCount": 4,
+    "expectedEventLines": 4,
+    "expectedEpochRectsPerPanel": 3,
+    "expectedLegendItems": 4,
+    "jsonEditableFields": ["panels[].series.points", "coordinateSystems[0].x.domain", "coordinateSystems[0].y.domain", "data.epochs", "layoutObjects"]
+  },
+  "confidence": [
+    {"target": "curve values", "confidence": "medium-low", "note": "Curves are visually approximated from the raster rather than digitized."},
+    {"target": "uncertainty bands", "confidence": "medium-low", "note": "Band widths are estimated and generated to follow the mean line geometry."},
+    {"target": "layout", "confidence": "medium", "note": "Plot boxes, shared labels, legend, and event lines were measured by visual inspection at native resolution."},
+    {"target": "typography", "confidence": "medium-low", "note": "Publication typography is approximated with Arial/Helvetica-like sans-serif metrics for this first pass."}
+  ]
+}

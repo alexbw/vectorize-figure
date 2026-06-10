@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-02-decision-dynamics-H reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #aaaaaa;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+    .surface,
+    .reference-wrap {
+      position: absolute;
+      inset: 0;
+    }
+    .reference-wrap {
+      display: none;
+      background: #ffffff;
+    }
+    .reference-wrap img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .reference-label {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      padding: 3px 6px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid #777777;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .show-reference .surface {
+      display: none;
+    }
+    .show-reference .reference-wrap {
+      display: block;
+    }
+    svg {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-02-decision-dynamics-H</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">QA Reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <div id="referenceWrap" class="reference-wrap" aria-label="QA reference view">
+        <img id="reference" alt="QA reference source image">
+        <div class="reference-label">QA reference only</div>
+      </div>
+    </div>
+  </main>
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const SPEC_URL = 'reference-02-decision-dynamics-H.json';
+
+    function $(id) {
+      return document.getElementById(id);
+    }
+
+    function make(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function scale(domain, range, value) {
+      return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+    }
+
+    function plotScale(plot) {
+      const box = plot.dataBbox;
+      const categories = new Map(plot.x.categories.map(item => [item.value, item.x]));
+      return {
+        x: category => categories.get(category),
+        y: value => scale(plot.y.domain, [box.y + box.height, box.y], value)
+      };
+    }
+
+    function textNode(item, defaults = {}) {
+      const node = make('text', {
+        id: item.id,
+        x: item.x,
+        y: item.y,
+        'font-size': item.fontSize || defaults.fontSize || 14,
+        'font-weight': item.fontWeight || defaults.fontWeight || 400,
+        'font-style': item.fontStyle || defaults.fontStyle,
+        'text-anchor': item.anchor || defaults.anchor || 'start',
+        fill: item.fill || defaults.fill || '#111111',
+        transform: item.rotation ? `rotate(${item.rotation} ${item.x} ${item.y})` : null
+      });
+      node.textContent = item.text;
+      return node;
+    }
+
+    function renderWrappedLabel(group, label, index, yBase) {
+      const text = textNode({
+        id: `${label.id}-label`,
+        text: '',
+        x: label.x,
+        y: yBase,
+        fontSize: 14,
+        anchor: 'middle',
+        fill: label.fill
+      });
+      text.setAttribute('data-category-index', index);
+      label.labelLines.forEach((line, lineIndex) => {
+        const tspan = make('tspan', {
+          x: label.x,
+          dy: lineIndex === 0 ? 0 : 18
+        });
+        tspan.textContent = line;
+        text.appendChild(tspan);
+      });
+      group.appendChild(text);
+    }
+
+    function renderAxes(svg, plot, sx) {
+      const group = make('g', {id: `${plot.id}-axes`, 'data-layer': 'axes', 'stroke-linecap': 'square'});
+      const xAxis = plot.axes.xAxis.line;
+      const yAxis = plot.axes.yAxis.line;
+      group.appendChild(make('line', {id: plot.axes.xAxis.id, x1: xAxis.x1, y1: xAxis.y1, x2: xAxis.x2, y2: xAxis.y2, stroke: '#111111', 'stroke-width': 1.4}));
+      group.appendChild(make('line', {id: plot.axes.yAxis.id, x1: yAxis.x1, y1: yAxis.y1, x2: yAxis.x2, y2: yAxis.y2, stroke: '#111111', 'stroke-width': 1.4}));
+
+      plot.x.categories.forEach((category, index) => {
+        group.appendChild(make('line', {
+          'data-axis': 'x',
+          'data-category': category.value,
+          x1: category.x,
+          y1: xAxis.y1,
+          x2: category.x,
+          y2: xAxis.y1 + plot.axes.xAxis.tickLength,
+          stroke: '#111111',
+          'stroke-width': 1
+        }));
+        renderWrappedLabel(group, category, index, xAxis.y1 + 25);
+      });
+
+      plot.y.ticks.forEach((tick, index) => {
+        const y = sx.y(tick.value);
+        group.appendChild(make('line', {
+          'data-axis': 'y',
+          'data-value': tick.value,
+          x1: yAxis.x1 - plot.axes.yAxis.tickLength,
+          y1: y,
+          x2: yAxis.x1,
+          y2: y,
+          stroke: '#111111',
+          'stroke-width': 1
+        }));
+        const label = textNode({id: `${plot.id}-y-tick-${index}`, text: tick.label, x: yAxis.x1 - 10, y: y + 5, fontSize: 14, anchor: 'end'});
+        label.setAttribute('data-axis', 'y');
+        label.setAttribute('data-value', tick.value);
+        group.appendChild(label);
+      });
+
+      group.appendChild(textNode(plot.title));
+      svg.appendChild(group);
+    }
+
+    function renderPairedMarks(svg, plot, sx) {
+      const group = make('g', {id: `${plot.id}-marks`, 'data-layer': 'marks'});
+      const data = plot.data.pairedAnimals;
+      const leftCategory = plot.x.categories[0].value;
+      const rightCategory = plot.x.categories[1].value;
+      const leftX = sx.x(leftCategory);
+      const rightX = sx.x(rightCategory);
+
+      plot.marks.forEach(mark => {
+        if (mark.type === 'pairedLineSeries') {
+          data.forEach((row, index) => {
+            group.appendChild(make('line', {
+              id: `${mark.id}-${index}`,
+              'data-animal': row.animal,
+              x1: leftX,
+              y1: sx.y(row[mark.leftField]),
+              x2: rightX,
+              y2: sx.y(row[mark.rightField]),
+              stroke: mark.stroke,
+              'stroke-width': mark.strokeWidth
+            }));
+          });
+        }
+      });
+
+      plot.marks.forEach(mark => {
+        if (mark.type === 'pairedScatter') {
+          const x = sx.x(mark.xCategory);
+          data.forEach((row, index) => {
+            group.appendChild(make('circle', {
+              id: `${mark.id}-${index}`,
+              'data-animal': row.animal,
+              'data-field': mark.field,
+              cx: x,
+              cy: sx.y(row[mark.field]),
+              r: mark.marker.radius,
+              fill: mark.marker.fill,
+              stroke: mark.marker.stroke,
+              'stroke-width': mark.marker.strokeWidth
+            }));
+          });
+        }
+      });
+
+      svg.appendChild(group);
+    }
+
+    function renderBracket(svg, item) {
+      const group = make('g', {id: item.id, 'data-layer': 'annotation', 'data-type': 'bracket'});
+      const d = `M ${item.x1} ${item.y + item.height} L ${item.x1} ${item.y} L ${item.x2} ${item.y} L ${item.x2} ${item.y + item.height}`;
+      group.appendChild(make('path', {d, fill: 'none', stroke: item.stroke, 'stroke-width': item.strokeWidth}));
+      svg.appendChild(group);
+    }
+
+    function renderAnnotations(svg, annotations) {
+      const group = make('g', {'data-layer': 'annotations'});
+      annotations.forEach(item => {
+        if (item.type === 'bracket') {
+          renderBracket(group, item);
+        } else if (item.type === 'text') {
+          group.appendChild(textNode(item));
+        }
+      });
+      svg.appendChild(group);
+    }
+
+    function renderSpec(spec) {
+      const frame = $('frame');
+      const surface = $('surface');
+      const reference = $('reference');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      reference.src = spec.source.path;
+      $('title').textContent = spec.id;
+      surface.innerHTML = '';
+
+      const svg = make('svg', {
+        id: `${spec.id}-svg`,
+        width: spec.canvas.width,
+        height: spec.canvas.height,
+        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
+        role: 'img',
+        'aria-label': `${spec.id} generated reconstruction`
+      });
+      svg.appendChild(make('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
+
+      const panel = spec.panels[0];
+      svg.appendChild(textNode(panel.label));
+      svg.appendChild(textNode(panel.title));
+
+      panel.plots.forEach(plot => {
+        const sx = plotScale(plot);
+        renderAxes(svg, plot, sx);
+        renderPairedMarks(svg, plot, sx);
+        renderAnnotations(svg, plot.annotations);
+      });
+      renderAnnotations(svg, panel.annotations);
+      surface.appendChild(svg);
+    }
+
+    function wireToggle() {
+      const frame = $('frame');
+      const generatedButton = $('generatedButton');
+      const referenceButton = $('referenceButton');
+      generatedButton.addEventListener('click', () => {
+        frame.classList.remove('show-reference');
+        generatedButton.classList.add('active');
+        referenceButton.classList.remove('active');
+      });
+      referenceButton.addEventListener('click', () => {
+        frame.classList.add('show-reference');
+        referenceButton.classList.add('active');
+        generatedButton.classList.remove('active');
+      });
+    }
+
+    fetch(SPEC_URL)
+      .then(response => response.json())
+      .then(renderSpec)
+      .then(wireToggle)
+      .catch(error => {
+        document.body.textContent = `Unable to load reconstruction JSON: ${error}`;
+      });
+  </script>
+</body>
+</html>

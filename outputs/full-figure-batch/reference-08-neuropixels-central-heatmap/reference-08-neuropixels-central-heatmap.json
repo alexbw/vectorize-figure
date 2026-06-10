@@ -1,0 +1,200 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-08-neuropixels-central-heatmap",
+  "source": {
+    "path": "../../../assets/full-reference/reference-08-neuropixels-central-heatmap.png",
+    "usage": "QA-only reference view; not used by generated candidate layers.",
+    "notes": "First-pass full composite reconstruction from visual inspection. Dense fields, raster dots, line traces, manifold trajectory, schematic outlines, and matrices are generated from editable recipes rather than sampled from the source raster."
+  },
+  "canvas": {
+    "width": 1536,
+    "height": 1024,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 13,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Source Sans 3", "Roboto", "Noto Sans"],
+    "calibration": {
+      "fontStretch": "normal",
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "Arial-like sans-serif chosen for first-pass matching of the reference text hierarchy."
+    }
+  },
+  "styles": {
+    "colors": {
+      "teal": "#006c6d",
+      "teal2": "#49aaa6",
+      "tealLight": "#9ccfca",
+      "orange": "#f28a00",
+      "yellow": "#f1c900",
+      "gray": "#777777",
+      "black": "#111111",
+      "heatLow": "#002025",
+      "heatMid": "#0b1111",
+      "heatHigh": "#f0bd16"
+    },
+    "axis": {"stroke": "#111111", "strokeWidth": 1.2, "tickLength": 6},
+    "chance": {"stroke": "#8a8a8a", "dash": "5 4"}
+  },
+  "panels": [
+    {
+      "id": "A",
+      "kind": "behavior-line-and-track",
+      "bbox": {"x": 0, "y": 0, "width": 430, "height": 280},
+      "label": {"text": "A", "x": 4, "y": 25, "fontSize": 24, "fontWeight": 700},
+      "title": {"text": "Behavior (virtual track)", "x": 34, "y": 24, "fontSize": 18, "fontWeight": 700},
+      "track": {
+        "x": 58, "y": 72, "width": 310, "height": 3,
+        "ticks": [{"value": 0, "label": "0 cm"}, {"value": 100, "label": "100"}, {"value": 200, "label": "200"}, {"value": 300, "label": "300 cm"}],
+        "start": {"x": 58, "y": 71, "r": 6, "label": "Start"},
+        "goal": {"x": 365, "y": 71, "r": 10, "label": "Goal"}
+      },
+      "plot": {
+        "dataBbox": {"x": 74, "y": 116, "width": 288, "height": 116},
+        "x": {"domain": [0, 210], "ticks": [{"value": 0, "label": "0"}, {"value": 50, "label": "50"}, {"value": 100, "label": "100"}, {"value": 150, "label": "150"}, {"value": 200, "label": "200"}], "label": "Time (s)"},
+        "yLeft": {"domain": [0, 300], "ticks": [{"value": 0, "label": "0"}, {"value": 100, "label": "100"}, {"value": 200, "label": "200"}, {"value": 300, "label": "300"}], "label": "Position (cm)"},
+        "yRight": {"domain": [0, 60], "ticks": [{"value": 0, "label": "0"}, {"value": 20, "label": "20"}, {"value": 40, "label": "40"}, {"value": 60, "label": "60"}], "label": "Speed (cm/s)"},
+        "phaseBands": [{"from": 16, "to": 24}, {"from": 36, "to": 57}, {"from": 75, "to": 95}, {"from": 115, "to": 136}, {"from": 150, "to": 170}, {"from": 182, "to": 191}, {"from": 203, "to": 210}],
+        "series": [
+          {"id": "position", "type": "lineSeries", "recipe": "piecewiseRunningPosition", "stroke": "#006c6d", "width": 2},
+          {"id": "speed", "type": "lineSeries", "recipe": "lowSpeedWithBursts", "stroke": "#f28a00", "width": 1.4}
+        ]
+      }
+    },
+    {
+      "id": "B",
+      "kind": "spike-raster-and-probe-schematic",
+      "bbox": {"x": 0, "y": 286, "width": 430, "height": 475},
+      "label": {"text": "B", "x": 4, "y": 312, "fontSize": 24, "fontWeight": 700},
+      "title": {"text": "Spike raster (example neurons)", "x": 34, "y": 310, "fontSize": 18, "fontWeight": 700},
+      "plot": {
+        "dataBbox": {"x": 62, "y": 328, "width": 330, "height": 164},
+        "x": {"domain": [100, 140], "ticks": [{"value": 100, "label": "100"}, {"value": 110, "label": "110"}, {"value": 120, "label": "120"}, {"value": 130, "label": "130"}, {"value": 140, "label": "140"}], "label": "Time (s)"},
+        "y": {"domain": [1, 200], "ticks": [{"value": 1, "label": "1"}, {"value": 50, "label": "50"}, {"value": 100, "label": "100"}, {"value": 150, "label": "150"}, {"value": 200, "label": "200"}], "label": "Neuron #"},
+        "marks": [{"type": "raster", "seed": 8082, "rows": 200, "density": 0.055, "bursts": [102, 114, 116, 128, 138]}]
+      },
+      "schematic": {
+        "probe": {"x": 43, "y": 605, "width": 12, "height": 145, "segments": [{"y": 605, "height": 31, "fill": "#777777"}, {"y": 636, "height": 36, "fill": "#49aaa6"}, {"y": 672, "height": 40, "fill": "#9ccfca"}, {"y": 712, "height": 28, "fill": "#f28a00"}, {"y": 740, "height": 10, "fill": "#d7d7d7"}]},
+        "labels": [{"text": "Neuropixels\nprobe\n(384 channels)", "x": 20, "y": 560}, {"text": "Cortex", "x": 116, "y": 596, "fill": "#006c6d"}, {"text": "L2/3", "x": 116, "y": 619}, {"text": "L5", "x": 116, "y": 644}, {"text": "L6", "x": 116, "y": 669}, {"text": "Hippocampus", "x": 116, "y": 694, "fill": "#f28a00"}, {"text": "CA1", "x": 116, "y": 718}, {"text": "DG", "x": 116, "y": 742}, {"text": "1-96", "x": 176, "y": 619}, {"text": "97-192", "x": 176, "y": 644}, {"text": "193-288", "x": 176, "y": 669}, {"text": "289-336", "x": 176, "y": 718}, {"text": "337-384", "x": 176, "y": 742}],
+        "brain": {"x": 240, "y": 604, "width": 145, "height": 145, "outline": "schematicCoronal", "probeX": 325, "probeY": 556, "probeHeight": 165}
+      }
+    },
+    {
+      "id": "C",
+      "kind": "central-sorted-activity-heatmap",
+      "bbox": {"x": 458, "y": 0, "width": 640, "height": 730},
+      "label": {"text": "C", "x": 462, "y": 25, "fontSize": 24, "fontWeight": 700},
+      "title": {"text": "Sorted neural activity (z-scored firing rate)", "x": 494, "y": 24, "fontSize": 18, "fontWeight": 700},
+      "plot": {
+        "dataBbox": {"x": 506, "y": 38, "width": 542, "height": 566},
+        "x": {"domain": [0, 200], "ticks": [{"value": 0, "label": "0"}, {"value": 50, "label": "50"}, {"value": 100, "label": "100"}, {"value": 150, "label": "150"}, {"value": 200, "label": "200"}], "label": "Time (s)"},
+        "y": {"domain": [1, 384], "ticks": [{"value": 1, "label": "1"}, {"value": 96, "label": "96"}, {"value": 192, "label": "192"}, {"value": 288, "label": "288"}, {"value": 336, "label": "336"}, {"value": 384, "label": "384"}], "label": "Neuron # (sorted by peak location)"},
+        "eventLines": [48, 98, 148],
+        "helperStrip": {"x": 506, "y": 660, "width": 542, "height": 42, "domain": [0, 300], "ticks": [{"value": 0, "label": "0"}, {"value": 100, "label": "100"}, {"value": 200, "label": "200"}, {"value": 300, "label": "300"}], "label": "Track position (cm)"},
+        "regionStrip": {"x": 491, "y": 38, "width": 13, "height": 566, "segments": [{"from": 1, "to": 288, "fill": "#49aaa6"}, {"from": 289, "to": 384, "fill": "#f28a00"}]},
+        "marks": [{"type": "heatmap", "seed": 8031, "rows": 384, "columns": 200, "colorScale": "zscoreTealGold", "recipe": "sortedPlaceActivity"}],
+        "colorbar": {"x": 1064, "y": 233, "width": 15, "height": 225, "domain": [-3, 3], "ticks": [{"value": -3, "label": "-3"}, {"value": -2, "label": "-2"}, {"value": -1, "label": "-1"}, {"value": 0, "label": "0"}, {"value": 1, "label": "1"}, {"value": 2, "label": "2"}, {"value": 3, "label": "3"}], "label": "z-score"}
+      }
+    },
+    {
+      "id": "D",
+      "kind": "position-decoding-timecourse",
+      "bbox": {"x": 1120, "y": 0, "width": 390, "height": 225},
+      "label": {"text": "D", "x": 1122, "y": 25, "fontSize": 24, "fontWeight": 700},
+      "title": {"text": "Decoding position", "x": 1151, "y": 24, "fontSize": 18, "fontWeight": 700},
+      "plot": {
+        "dataBbox": {"x": 1182, "y": 38, "width": 258, "height": 156},
+        "x": {"domain": [0, 220], "ticks": [{"value": 0, "label": "0"}, {"value": 50, "label": "50"}, {"value": 100, "label": "100"}, {"value": 150, "label": "150"}, {"value": 200, "label": "200"}], "label": "Time (s)"},
+        "y": {"domain": [0, 1], "ticks": [{"value": 0, "label": "0.0"}, {"value": 0.2, "label": "0.2"}, {"value": 0.4, "label": "0.4"}, {"value": 0.6, "label": "0.6"}, {"value": 0.8, "label": "0.8"}, {"value": 1, "label": "1.0"}], "label": "Decoding accuracy"},
+        "phaseBands": [{"from": 18, "to": 26}, {"from": 40, "to": 65}, {"from": 85, "to": 110}, {"from": 130, "to": 153}, {"from": 178, "to": 200}, {"from": 211, "to": 220}],
+        "series": [{"id": "observed", "stroke": "#006c6d", "band": "#49aaa666"}, {"id": "chance", "stroke": "#8a8a8a", "dash": "5 4"}],
+        "annotations": [{"text": "Observed", "x": 1443, "y": 69, "fill": "#006c6d"}, {"text": "Chance\n(5 cm bins)", "x": 1443, "y": 160, "fill": "#666666"}]
+      }
+    },
+    {
+      "id": "E",
+      "kind": "latent-trajectory",
+      "bbox": {"x": 1120, "y": 246, "width": 430, "height": 225},
+      "label": {"text": "E", "x": 1122, "y": 267, "fontSize": 24, "fontWeight": 700},
+      "title": {"text": "Latent trajectory (neural manifold)", "x": 1151, "y": 266, "fontSize": 18, "fontWeight": 700},
+      "plot": {
+        "dataBbox": {"x": 1176, "y": 284, "width": 276, "height": 148},
+        "x": {"domain": [-2, 4], "ticks": [{"value": -2, "label": "-2"}, {"value": -1, "label": "-1"}, {"value": 0, "label": "0"}, {"value": 1, "label": "1"}, {"value": 2, "label": "2"}, {"value": 3, "label": "3"}], "label": "Latent dim 1"},
+        "y": {"domain": [-2, 2], "ticks": [{"value": -2, "label": "-2"}, {"value": -1, "label": "-1"}, {"value": 0, "label": "0"}, {"value": 1, "label": "1"}, {"value": 2, "label": "2"}], "label": "Latent dim 2"},
+        "marks": [{"type": "coloredPath", "recipe": "closedManifoldTrajectory", "colorScale": "positionViridis", "points": 160}],
+        "arrow": {"from": [2.35, 0.84], "to": [3.25, 0.35]},
+        "colorbar": {"x": 1480, "y": 328, "width": 11, "height": 110, "domain": [0, 300], "ticks": [{"value": 0, "label": "0"}, {"value": 100, "label": "100"}, {"value": 200, "label": "200"}, {"value": 300, "label": "300"}], "label": "Position\n(cm)"}
+      }
+    },
+    {
+      "id": "F",
+      "kind": "region-comparison-errorbars",
+      "bbox": {"x": 1120, "y": 492, "width": 420, "height": 230},
+      "label": {"text": "F", "x": 1122, "y": 511, "fontSize": 24, "fontWeight": 700},
+      "title": {"text": "Region comparison (decoding accuracy)", "x": 1151, "y": 510, "fontSize": 18, "fontWeight": 700},
+      "plot": {
+        "dataBbox": {"x": 1182, "y": 526, "width": 320, "height": 150},
+        "xCategories": [{"id": "L2/3", "x": 1211, "fill": "#49aaa6"}, {"id": "L5", "x": 1270, "fill": "#49aaa6"}, {"id": "L6", "x": 1327, "fill": "#49aaa6"}, {"id": "CA1", "x": 1392, "fill": "#f28a00"}, {"id": "DG", "x": 1467, "fill": "#f28a00"}],
+        "y": {"domain": [0, 1], "ticks": [{"value": 0, "label": "0.0"}, {"value": 0.2, "label": "0.2"}, {"value": 0.4, "label": "0.4"}, {"value": 0.6, "label": "0.6"}, {"value": 0.8, "label": "0.8"}, {"value": 1, "label": "1.0"}], "label": "Decoding accuracy"},
+        "points": [{"category": "L2/3", "mean": 0.46, "sem": 0.08}, {"category": "L5", "mean": 0.43, "sem": 0.07}, {"category": "L6", "mean": 0.48, "sem": 0.06}, {"category": "CA1", "mean": 0.69, "sem": 0.07}, {"category": "DG", "mean": 0.48, "sem": 0.12}],
+        "groupLabels": [{"text": "Cortex", "x": 1269, "y": 721, "stroke": "#49aaa6"}, {"text": "Hippocampus", "x": 1430, "y": 721, "stroke": "#f28a00"}],
+        "brackets": [{"from": "L2/3", "to": "L6", "y": 0.76, "text": "**"}, {"from": "L6", "to": "CA1", "y": 0.9, "text": "***"}, {"from": "CA1", "to": "DG", "y": 0.84, "text": "*"}],
+        "separatorX": 1352
+      }
+    },
+    {
+      "id": "G",
+      "kind": "decoding-accuracy-along-track",
+      "bbox": {"x": 0, "y": 760, "width": 935, "height": 250},
+      "label": {"text": "G", "x": 4, "y": 794, "fontSize": 24, "fontWeight": 700},
+      "title": {"text": "Decoding accuracy along track", "x": 34, "y": 793, "fontSize": 18, "fontWeight": 700},
+      "plot": {
+        "dataBbox": {"x": 64, "y": 808, "width": 720, "height": 118},
+        "x": {"domain": [0, 320], "ticks": [{"value": 0, "label": "0"}, {"value": 50, "label": "50"}, {"value": 100, "label": "100"}, {"value": 150, "label": "150"}, {"value": 200, "label": "200"}, {"value": 250, "label": "250"}, {"value": 300, "label": "300"}], "label": "Track position (cm)"},
+        "y": {"domain": [0, 1], "ticks": [{"value": 0, "label": "0.0"}, {"value": 0.5, "label": "0.5"}, {"value": 1, "label": "1.0"}], "label": "Decoding accuracy"},
+        "series": [{"id": "L2/3", "stroke": "#006c6d", "level": 0.36}, {"id": "L5", "stroke": "#008b8a", "level": 0.43}, {"id": "L6", "stroke": "#79c7c2", "level": 0.55}, {"id": "CA1", "stroke": "#f28a00", "level": 0.82}, {"id": "DG", "stroke": "#f6a21a", "level": 0.72}, {"id": "Chance", "stroke": "#8a8a8a", "level": 0.18, "dash": "5 4"}],
+        "legend": {"x": 815, "y": 790, "items": ["L2/3", "L5", "L6", "CA1", "DG", "Chance"]}
+      }
+    },
+    {
+      "id": "H",
+      "kind": "confusion-matrix-and-error-profile",
+      "bbox": {"x": 980, "y": 728, "width": 545, "height": 270},
+      "label": {"text": "H", "x": 982, "y": 756, "fontSize": 24, "fontWeight": 700},
+      "title": {"text": "Position decoding confusion matrix (5 cm bins)", "x": 1016, "y": 756, "fontSize": 18, "fontWeight": 700},
+      "matrix": {
+        "dataBbox": {"x": 1018, "y": 773, "width": 230, "height": 156},
+        "x": {"domain": [0, 300], "ticks": [{"value": 0, "label": "0"}, {"value": 75, "label": "75"}, {"value": 150, "label": "150"}, {"value": 225, "label": "225"}, {"value": 300, "label": "300"}], "label": "Decoded position (cm)"},
+        "y": {"domain": [0, 300], "ticks": [{"value": 0, "label": "0"}, {"value": 75, "label": "75"}, {"value": 150, "label": "150"}, {"value": 225, "label": "225"}, {"value": 300, "label": "300"}], "label": "True position (cm)"},
+        "marks": [{"type": "heatmap", "seed": 8830, "rows": 60, "columns": 60, "colorScale": "probabilityTealGold", "recipe": "diagonalConfusion"}],
+        "colorbar": {"x": 1288, "y": 812, "width": 14, "height": 93, "domain": [0, 0.15], "ticks": [{"value": 0, "label": "0"}, {"value": 0.15, "label": "0.15"}], "label": "Probability"}
+      },
+      "profile": {
+        "dataBbox": {"x": 1378, "y": 773, "width": 78, "height": 156},
+        "x": {"domain": [0, 30], "ticks": [{"value": 0, "label": "0"}, {"value": 15, "label": "15"}, {"value": 30, "label": "30"}], "label": "Mean |error| (cm)"},
+        "y": {"domain": [0, 300], "ticks": [{"value": 0, "label": ""}, {"value": 75, "label": ""}, {"value": 150, "label": ""}, {"value": 225, "label": ""}, {"value": 300, "label": ""}], "label": null},
+        "series": [{"id": "meanError", "stroke": "#006c6d", "recipe": "jaggedErrorProfile"}]
+      }
+    }
+  ],
+  "colorScales": {
+    "zscoreTealGold": {"domain": [-3, 3], "stops": [{"value": -3, "color": "#6fc7be"}, {"value": -1, "color": "#01292d"}, {"value": 0, "color": "#0b1111"}, {"value": 1, "color": "#6f5200"}, {"value": 3, "color": "#f1c900"}]},
+    "positionViridis": {"domain": [0, 300], "stops": [{"value": 0, "color": "#482576"}, {"value": 100, "color": "#1e8f8a"}, {"value": 200, "color": "#55b85a"}, {"value": 300, "color": "#f1d719"}]},
+    "probabilityTealGold": {"domain": [0, 0.15], "stops": [{"value": 0, "color": "#002025"}, {"value": 0.05, "color": "#008b8a"}, {"value": 0.1, "color": "#b0bf24"}, {"value": 0.15, "color": "#f1c900"}]}
+  },
+  "confidence": [
+    {"area": "panel geometry", "level": "medium", "notes": "Panel positions and plot boxes are visually estimated from the 1536x1024 source."},
+    {"area": "data values", "level": "low", "notes": "All quantitative traces are generated recipes shaped to match visual grammar; no measured data were extracted."},
+    {"area": "dense fields", "level": "medium", "notes": "Heatmaps and rasters preserve density, ordering, event lines, and color grammar but are synthetic."}
+  ],
+  "provenance": {
+    "createdBy": "Codex vectorize-figure first pass",
+    "generatedLayers": "SVG/DOM for editable labels, axes, legends, annotations, schematic paths, line series, and markers; canvas for synthetic heatmaps, raster dots, and dense matrices.",
+    "sourceReusePolicy": "The source PNG is only referenced by the optional QA view metadata and is never used as a generated visual layer."
+  }
+}

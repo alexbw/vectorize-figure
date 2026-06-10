@@ -1,0 +1,135 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-01-place-code-opto-D",
+  "source": {
+    "path": "../../assets/reference/reference-01-place-code-opto-D-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Single cropped panel reconstructed from visual inspection. Source may be shown only in the labeled reference view."
+  },
+  "canvas": {
+    "width": 512,
+    "height": 512,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Roboto"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Approximate first-pass typography matched visually to the raster panel."
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-d",
+      "bbox": {"x": 0, "y": 0, "width": 512, "height": 512},
+      "label": {"id": "panel-label", "text": "D", "x": 17, "y": 26, "fontSize": 25, "fontWeight": 700, "anchor": "start"},
+      "title": {"id": "panel-title", "text": "Position decoding accuracy over time", "x": 56, "y": 26, "fontSize": 18, "fontWeight": 700, "anchor": "start"},
+      "plot": {
+        "id": "time-accuracy-plot",
+        "bbox": {"x": 68, "y": 66, "width": 397, "height": 339},
+        "x": {
+          "scale": "linear",
+          "domain": [-2, 5],
+          "ticks": [
+            {"value": -2, "label": "-2"},
+            {"value": -1, "label": "-1"},
+            {"value": 0, "label": "0"},
+            {"value": 1, "label": "1"},
+            {"value": 2, "label": "2"},
+            {"value": 3, "label": "3"},
+            {"value": 4, "label": "4"},
+            {"value": 5, "label": "5"}
+          ],
+          "label": {"id": "x-title", "text": "Time from light onset (s)", "fontSize": 18, "offset": 50}
+        },
+        "y": {
+          "scale": "linear",
+          "domain": [33, 100],
+          "ticks": [
+            {"value": 40, "label": "40"},
+            {"value": 50, "label": "50"},
+            {"value": 60, "label": "60"},
+            {"value": 70, "label": "70"},
+            {"value": 80, "label": "80"},
+            {"value": 90, "label": "90"},
+            {"value": 100, "label": "100"}
+          ],
+          "label": {"id": "y-title", "text": "Decoding accuracy (%)", "fontSize": 18, "offset": 47}
+        },
+        "axes": {
+          "xAxis": {"id": "x-axis", "tickLength": 6, "stroke": "#111111", "strokeWidth": 1},
+          "yAxis": {"id": "y-axis", "tickLength": 6, "stroke": "#111111", "strokeWidth": 1}
+        }
+      },
+      "coordinateSystems": [
+        {"id": "panel-d.xy", "type": "cartesian2d", "xDomain": [-2, 5], "yDomain": [33, 100], "pixelBbox": {"x": 68, "y": 66, "width": 397, "height": 339}},
+        {"id": "light-onset", "type": "eventAnchor", "xValue": 0, "usesTransform": "panel-d.xy"}
+      ],
+      "layoutObjects": [
+        {
+          "id": "legend",
+          "type": "legend",
+          "x": 93,
+          "y": 50,
+          "items": [
+            {"series": "control", "label": "Control (no light)", "line": {"x1": 0, "x2": 28, "y": 0}},
+            {"series": "opto-inhibition", "label": "Optogenetic inhibition (ArchT)", "line": {"x1": 0, "x2": 28, "y": 21}}
+          ]
+        }
+      ],
+      "data": {
+        "series": [
+          {
+            "id": "control",
+            "label": "Control (no light)",
+            "color": "#111111",
+            "bandColor": "#9e9e9e",
+            "bandOpacity": 0.6,
+            "points": [[-2,78.7],[-1.75,79.0],[-1.5,79.2],[-1.25,79.4],[-1,79.6],[-0.75,79.2],[-0.5,79.3],[-0.25,78.9],[0,78.2],[0.25,76.3],[0.5,75.4],[0.75,74.8],[1,74.4],[1.25,74.2],[1.5,74.8],[1.75,75.4],[2,76.1],[2.25,76.8],[2.5,77.1],[2.75,77.6],[3,78.0],[3.25,78.2],[3.5,78.4],[3.75,78.7],[4,78.9],[4.25,78.7],[4.5,79.0],[4.75,78.6],[5,78.8]],
+            "bandHalfWidth": [[-2,1.1],[-1,1.0],[0,1.0],[1,1.2],[2,1.1],[3,1.2],[4,1.3],[5,1.6]]
+          },
+          {
+            "id": "opto-inhibition",
+            "label": "Optogenetic inhibition (ArchT)",
+            "color": "#008b95",
+            "bandColor": "#86c7c9",
+            "bandOpacity": 0.75,
+            "points": [[-2,74.5],[-1.75,74.1],[-1.5,74.0],[-1.25,74.2],[-1,74.3],[-0.75,74.1],[-0.5,73.4],[-0.25,71.8],[0,67.5],[0.12,58.0],[0.22,49.2],[0.35,42.6],[0.55,41.8],[0.75,42.0],[1,42.4],[1.25,43.6],[1.5,44.8],[1.75,46.0],[2,47.4],[2.25,49.1],[2.5,50.4],[2.75,51.7],[3,52.4],[3.25,53.5],[3.5,54.8],[3.75,56.1],[4,57.0],[4.25,57.8],[4.5,58.1],[4.75,58.3],[5,58.9]],
+            "bandHalfWidth": [[-2,1.5],[-1,1.5],[0,1.7],[0.5,1.2],[1,1.1],[2,1.3],[3,1.6],[4,1.8],[5,1.9]]
+          }
+        ]
+      },
+      "marks": [
+        {"id": "control-band", "type": "uncertaintyBand", "series": "control", "usesTransform": "panel-d.xy"},
+        {"id": "control-line", "type": "lineSeries", "series": "control", "usesTransform": "panel-d.xy", "strokeWidth": 2.4, "roughness": {"seed": 101, "amplitude": 0.65, "samplesPerSegment": 4}},
+        {"id": "opto-band", "type": "uncertaintyBand", "series": "opto-inhibition", "usesTransform": "panel-d.xy"},
+        {"id": "opto-line", "type": "lineSeries", "series": "opto-inhibition", "usesTransform": "panel-d.xy", "strokeWidth": 2.8, "roughness": {"seed": 202, "amplitude": 0.55, "samplesPerSegment": 4}},
+        {"id": "event-line", "type": "eventLine", "anchor": "light-onset", "yRange": [33, 97], "stroke": "#00a3ad", "strokeWidth": 1.1, "dasharray": "5 5"},
+        {"id": "chance-line", "type": "horizontalRule", "yValue": 40, "xRange": [-2, 5.1], "stroke": "#777777", "strokeWidth": 1.2, "dasharray": "5 4"},
+        {"id": "light-on-bar", "type": "intervalBar", "xRange": [0, 2.12], "y": 380, "height": 18, "fill": "#079b9c", "label": {"text": "Light ON", "fontSize": 16, "fill": "#ffffff"}}
+      ],
+      "annotations": [
+        {"id": "chance-label", "type": "text", "text": "Chance (20%)", "x": 80, "yValue": 40, "fontSize": 14, "anchor": "start", "fill": "#111111"}
+      ],
+      "provenance": [
+        {"target": "plot.bbox", "confidence": "medium", "note": "Measured visually from axis endpoints in source raster."},
+        {"target": "series.points", "confidence": "medium", "note": "Editable approximations sampled from visible mean curves; not original data."},
+        {"target": "uncertaintyBand", "confidence": "low", "note": "Band widths approximate the visible shaded envelopes."}
+      ]
+    }
+  ],
+  "validation": {
+    "requiredGeneratedLayers": ["svg.axes", "svg.marks", "svg.annotations"],
+    "forbiddenGeneratedUse": ["source raster drawing calls", "source raster CSS image layers"],
+    "expectedPanelCount": 1
+  },
+  "confidence": [
+    {"target": "overall", "confidence": "medium", "note": "Independent first-pass semantic reconstruction for visual inspection."}
+  ]
+}

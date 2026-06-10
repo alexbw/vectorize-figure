@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-06-replay-stimulation-B reconstruction</title>
+  <style>
+    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #cfcfcf; }
+    h1 { margin: 0; font-size: 16px; font-weight: 700; }
+    .note { margin-top: 3px; font-size: 12px; color: #555555; }
+    .toggle { display: inline-flex; border: 1px solid #aaaaaa; border-radius: 4px; overflow: hidden; }
+    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
+    .toggle button.active { background: #111111; color: #ffffff; }
+    main { min-height: calc(100vh - 48px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
+    .frame { position: relative; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
+    .surface, .reference { position: absolute; inset: 0; }
+    .reference { display: none; width: 100%; height: 100%; object-fit: contain; background: #ffffff; }
+    .show-reference .surface { display: none; }
+    .show-reference .reference { display: block; }
+    svg, canvas { position: absolute; inset: 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-06-replay-stimulation-B</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA-only reference source image">
+    </div>
+  </main>
+  <script>
+    const SVG_NS = "http://www.w3.org/2000/svg";
+    const JSON_PATH = "reference-06-replay-stimulation-B.json";
+
+    function $(id) { return document.getElementById(id); }
+    function make(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+    function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+    function mulberry32(seed) {
+      return function() {
+        seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+        let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+    function normal(rand) {
+      const u = Math.max(rand(), 1e-9);
+      const v = Math.max(rand(), 1e-9);
+      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+    function hexToRgb(hex) {
+      return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+    }
+    function rgbToHex(rgb) {
+      return "#" + rgb.map((v) => clamp(Math.round(v), 0, 255).toString(16).padStart(2, "0")).join("");
+    }
+    function divergingColor(scale, value) {
+      const stops = scale.stops;
+      const lower = value <= 0 ? stops[0] : stops[1];
+      const upper = value <= 0 ? stops[1] : stops[2];
+      const t = value <= 0 ? (value - scale.domain[0]) / (scale.domain[1] - scale.domain[0]) : (value - scale.domain[1]) / (scale.domain[2] - scale.domain[1]);
+      const a = hexToRgb(lower.color);
+      const b = hexToRgb(upper.color);
+      return rgbToHex(a.map((channel, i) => channel + (b[i] - channel) * clamp(t, 0, 1)));
+    }
+    function xScale(group, value) {
+      const box = group.dataBbox;
+      const [min, max] = group.domain.x;
+      return box.x + ((value - min) / (max - min)) * box.width;
+    }
+    function yScale(group, value) {
+      const box = group.dataBbox;
+      const [min, max] = group.domain.y;
+      return box.y + box.height - ((value - min) / (max - min)) * box.height;
+    }
+    function addText(svg, obj) {
+      const node = make("text", {
+        x: obj.x,
+        y: obj.y,
+        fill: obj.fill || "#111111",
+        opacity: obj.opacity,
+        "font-size": obj.fontSize,
+        "font-weight": obj.fontWeight || 400,
+        "text-anchor": obj.anchor || "start",
+        "dominant-baseline": obj.baseline || "alphabetic",
+        transform: obj.rotation ? `rotate(${obj.rotation} ${obj.x} ${obj.y})` : null,
+        "data-id": obj.id
+      });
+      node.textContent = obj.text;
+      svg.appendChild(node);
+      return node;
+    }
+    function gaussian(value, sigma) {
+      return Math.exp(-0.5 * (value / sigma) * (value / sigma));
+    }
+    function buildBands(rand, count, length, amplitude, width) {
+      const bands = [];
+      for (let i = 0; i < count; i++) {
+        bands.push({pos: rand() * length, amp: (rand() * 2 - 1) * amplitude, width: width * (0.65 + rand() * 1.1)});
+      }
+      return bands;
+    }
+    function recipeValue(recipe, x, y, rand, xBands, yBands) {
+      const diagY = recipe.diagonal.slope * x + recipe.diagonal.intercept;
+      let value = recipe.backgroundBias + recipe.diagonal.amplitude * gaussian(y - diagY, recipe.diagonal.sigma);
+      for (const patch of recipe.offDiagonalPatches || []) {
+        value += patch.amplitude * gaussian(x - patch.x, patch.sigmaX) * gaussian(y - patch.y, patch.sigmaY);
+      }
+      for (const band of xBands) value += band.amp * gaussian(x - band.pos, band.width);
+      for (const band of yBands) value += band.amp * gaussian(y - band.pos, band.width);
+      value += normal(rand) * recipe.noise;
+      return clamp(value, -3, 3);
+    }
+    function renderHeatmap(ctx, group, colorScale) {
+      const recipe = group.data;
+      const rand = mulberry32(recipe.seed);
+      const xBands = buildBands(rand, recipe.verticalBanding.count, recipe.cols, recipe.verticalBanding.amplitude, recipe.verticalBanding.width);
+      const yBands = buildBands(rand, recipe.horizontalBanding.count, recipe.rows, recipe.horizontalBanding.amplitude, recipe.horizontalBanding.width);
+      const cellW = group.dataBbox.width / recipe.cols;
+      const cellH = group.dataBbox.height / recipe.rows;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(group.dataBbox.x, group.dataBbox.y, group.dataBbox.width, group.dataBbox.height);
+      ctx.clip();
+      for (let row = 0; row < recipe.rows; row++) {
+        for (let col = 0; col < recipe.cols; col++) {
+          const x = group.domain.x[0] + col / (recipe.cols - 1) * (group.domain.x[1] - group.domain.x[0]);
+          const y = group.domain.y[1] - row / (recipe.rows - 1) * (group.domain.y[1] - group.domain.y[0]);
+          ctx.fillStyle = divergingColor(colorScale, recipeValue(recipe, x, y, rand, xBands, yBands));
+          ctx.fillRect(group.dataBbox.x + col * cellW, group.dataBbox.y + row * cellH, Math.ceil(cellW) + 0.5, Math.ceil(cellH) + 0.5);
+        }
+      }
+      ctx.restore();
+    }
+    function renderAxes(svg, group) {
+      const box = group.dataBbox;
+      svg.appendChild(make("rect", {x: box.x, y: box.y, width: box.width, height: box.height, fill: "none", stroke: "#111111", "stroke-width": 1.05, "data-id": `${group.id}-plot-frame`}));
+      const tickStyle = {"stroke": "#111111", "stroke-width": 1};
+      for (const tick of group.axes.y.ticks) {
+        const y = yScale(group, tick.value);
+        svg.appendChild(make("line", {x1: box.x - 5, y1: y, x2: box.x, y2: y, ...tickStyle, "data-axis": "y", "data-value": tick.value}));
+        addText(svg, {text: tick.label, x: box.x - 9, y: y + 4, fontSize: 14, anchor: "end"});
+      }
+      if (group.axes.x.visible) {
+        for (const tick of group.axes.x.ticks) {
+          const x = xScale(group, tick.value);
+          svg.appendChild(make("line", {x1: x, y1: box.y + box.height, x2: x, y2: box.y + box.height + 5, ...tickStyle, "data-axis": "x", "data-value": tick.value}));
+          addText(svg, {text: tick.label, x, y: box.y + box.height + 23, fontSize: 14, anchor: "middle"});
+        }
+        addText(svg, group.axes.x.label);
+      }
+      addText(svg, group.groupLabel);
+    }
+    function renderColorbar(svg, item, colorScale) {
+      const defs = make("defs");
+      const grad = make("linearGradient", {id: "sequence-score-gradient", x1: "0%", y1: "0%", x2: "100%", y2: "0%"});
+      colorScale.stops.forEach((stop, i) => grad.appendChild(make("stop", {offset: `${(i / (colorScale.stops.length - 1)) * 100}%`, "stop-color": stop.color})));
+      defs.appendChild(grad);
+      svg.appendChild(defs);
+      addText(svg, item.title);
+      svg.appendChild(make("rect", {x: item.x, y: item.y, width: item.width, height: item.height, fill: "url(#sequence-score-gradient)", stroke: "#111111", "stroke-width": 0.8, "data-id": item.id}));
+      for (const tick of item.ticks) {
+        const x = item.x + ((tick.value - colorScale.domain[0]) / (colorScale.domain[2] - colorScale.domain[0])) * item.width;
+        svg.appendChild(make("line", {x1: x, y1: item.y + item.height, x2: x, y2: item.y + item.height + 6, stroke: "#111111", "stroke-width": 1, "data-value": tick.value}));
+        addText(svg, {text: tick.label, x, y: item.y + item.height + 22, fontSize: 14, anchor: "middle"});
+      }
+    }
+    function render(spec) {
+      $("title").textContent = spec.id;
+      const frame = $("frame");
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      $("reference").src = spec.source.path;
+      const surface = $("surface");
+      surface.innerHTML = "";
+      const canvas = document.createElement("canvas");
+      canvas.width = spec.canvas.width;
+      canvas.height = spec.canvas.height;
+      surface.appendChild(canvas);
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = spec.canvas.background;
+      ctx.fillRect(0, 0, spec.canvas.width, spec.canvas.height);
+      const svg = make("svg", {width: spec.canvas.width, height: spec.canvas.height, viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`});
+      svg.style.fontFamily = spec.typography.fontFamily;
+      surface.appendChild(svg);
+      const panel = spec.panels[0];
+      addText(svg, panel.label);
+      addText(svg, panel.title);
+      const colorScale = spec.coordinateSystems.find((item) => item.id === "sequence-score-z");
+      for (const item of spec.layoutObjects.filter((entry) => entry.type === "colorbar")) renderColorbar(svg, item, colorScale);
+      for (const group of panel.plotGroups) {
+        renderHeatmap(ctx, group, colorScale);
+        renderAxes(svg, group);
+      }
+      for (const ann of panel.annotations) addText(svg, ann);
+    }
+    async function loadSpec() {
+      const response = await fetch(JSON_PATH);
+      if (!response.ok) throw new Error(`Unable to load ${JSON_PATH}`);
+      return response.json();
+    }
+    $("generatedButton").addEventListener("click", () => {
+      $("frame").classList.remove("show-reference");
+      $("generatedButton").classList.add("active");
+      $("referenceButton").classList.remove("active");
+    });
+    $("referenceButton").addEventListener("click", () => {
+      $("frame").classList.add("show-reference");
+      $("referenceButton").classList.add("active");
+      $("generatedButton").classList.remove("active");
+    });
+    loadSpec().then(render).catch((error) => {
+      console.error(error);
+      $("surface").textContent = error.message;
+    });
+  </script>
+</body>
+</html>

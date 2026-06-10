@@ -1,0 +1,178 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-07-cross-region-small-multiples-D",
+  "source": {
+    "path": "../../assets/reference/reference-07-cross-region-small-multiples-D-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Single cropped panel reconstructed from visual inspection. The generated heatmap, labels, values, border, and colorbar are SVG/DOM objects derived from semantic matrix data; no source pixels are used as generated marks."
+  },
+  "canvas": {
+    "width": 398,
+    "height": 375,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Arial", "Helvetica"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "Condensed sans approximates the compact panel title, region labels, and numeric cell labels."
+    }
+  },
+  "styleTokens": {
+    "regionCA1": "#153ac7",
+    "regionCA3": "#0066c7",
+    "regionDG": "#0b8a18",
+    "regionPFC": "#ff5a1a",
+    "regionRSC": "#ff1717",
+    "matrixBorder": "#6f7c8a",
+    "cellStroke": "#d4dce8",
+    "heatmapLow": "#ffffff",
+    "heatmapMid": "#d5e3f5",
+    "heatmapHigh": "#08206f",
+    "tick": "#111111"
+  },
+  "coordinateSystems": [
+    {
+      "id": "panel-d.matrix-categories",
+      "type": "categoricalGrid",
+      "xCategories": ["CA1", "CA3", "DG", "PFC", "RSC"],
+      "yCategories": ["CA1", "CA3", "DG", "PFC", "RSC"],
+      "bbox": {"x": 74, "y": 37, "width": 299, "height": 241}
+    },
+    {
+      "id": "panel-d.pearson-r-color",
+      "type": "linearColorScale",
+      "domain": [0, 1],
+      "range": ["#ffffff", "#d5e3f5", "#08206f"],
+      "bbox": {"x": 113, "y": 326, "width": 227, "height": 14}
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-d",
+      "label": {
+        "id": "panel-d-label",
+        "text": "D",
+        "x": 37,
+        "y": 20,
+        "fontSize": 22,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 36, "y": 4, "width": 16, "height": 19}
+      },
+      "title": {
+        "id": "panel-d-title",
+        "text": "Cross-region correlation",
+        "x": 68,
+        "y": 20,
+        "fontSize": 17,
+        "fontWeight": 700,
+        "anchor": "start",
+        "targetWidth": 190,
+        "sourceBox": {"x": 68, "y": 5, "width": 191, "height": 19},
+        "fit": "condensed"
+      },
+      "bbox": {"x": 0, "y": 0, "width": 398, "height": 375},
+      "plot": {
+        "id": "panel-d-correlation-heatmap",
+        "type": "correlationMatrix",
+        "dataBbox": {"x": 74, "y": 37, "width": 299, "height": 241},
+        "usesTransform": "panel-d.matrix-categories",
+        "x": {
+          "scale": "categorical",
+          "categories": [
+            {"id": "ca1-x", "label": "CA1", "color": "#153ac7"},
+            {"id": "ca3-x", "label": "CA3", "color": "#0066c7"},
+            {"id": "dg-x", "label": "DG", "color": "#0b8a18"},
+            {"id": "pfc-x", "label": "PFC", "color": "#ff5a1a"},
+            {"id": "rsc-x", "label": "RSC", "color": "#ff1717"}
+          ],
+          "tickBand": {"y": 296, "fontSize": 15, "anchor": "middle"}
+        },
+        "y": {
+          "scale": "categorical",
+          "categories": [
+            {"id": "ca1-y", "label": "CA1", "color": "#153ac7"},
+            {"id": "ca3-y", "label": "CA3", "color": "#0066c7"},
+            {"id": "dg-y", "label": "DG", "color": "#0b8a18"},
+            {"id": "pfc-y", "label": "PFC", "color": "#ff5a1a"},
+            {"id": "rsc-y", "label": "RSC", "color": "#ff1717"}
+          ],
+          "tickBand": {"x": 64, "fontSize": 15, "anchor": "end"}
+        }
+      },
+      "data": {
+        "matrix": {
+          "id": "panel-d-pearson-r",
+          "rowOrder": ["CA1", "CA3", "DG", "PFC", "RSC"],
+          "columnOrder": ["CA1", "CA3", "DG", "PFC", "RSC"],
+          "values": [
+            [1.00, 0.65, 0.48, 0.34, 0.41],
+            [0.65, 1.00, 0.53, 0.31, 0.40],
+            [0.48, 0.53, 1.00, 0.28, 0.36],
+            [0.34, 0.31, 0.28, 1.00, 0.57],
+            [0.41, 0.40, 0.36, 0.57, 1.00]
+          ],
+          "valueFormat": ".2f",
+          "symmetric": true
+        }
+      },
+      "marks": [
+        {
+          "id": "panel-d-heatmap-cells",
+          "type": "heatmap",
+          "matrixRef": "panel-d-pearson-r",
+          "usesTransform": "panel-d.matrix-categories",
+          "colorScaleRef": "panel-d.pearson-r-color",
+          "cellStroke": "#d4dce8",
+          "cellStrokeWidth": 0.8,
+          "label": {"fontSize": 13, "fontWeight": 400, "anchor": "middle", "baseline": "middle"}
+        }
+      ],
+      "colorbar": {
+        "id": "panel-d-colorbar",
+        "title": {"text": "Pearson r", "x": 226, "y": 319, "fontSize": 13, "anchor": "middle"},
+        "bbox": {"x": 113, "y": 326, "width": 227, "height": 14},
+        "usesTransform": "panel-d.pearson-r-color",
+        "ticks": [
+          {"value": 0, "label": "0"},
+          {"value": 0.5, "label": "0.5"},
+          {"value": 1, "label": "1.0"}
+        ],
+        "tickLabelY": 358,
+        "tickLength": 6
+      },
+      "provenance": [
+        {
+          "target": "panel-d-correlation-heatmap",
+          "confidence": "high",
+          "note": "Matrix values are directly legible from the source raster; cell and label positions are visually measured to first-pass precision."
+        },
+        {
+          "target": "panel-d.pearson-r-color",
+          "confidence": "medium",
+          "note": "Blue-white ramp approximates the visible Pearson r legend; exact colormap is inferred."
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    {"id": "matrix-cell-count", "type": "expectedCount", "selector": "[data-mark='heatmap-cell']", "count": 25},
+    {"id": "matrix-value-count", "type": "expectedCount", "selector": "[data-mark='cell-value']", "count": 25},
+    {"id": "x-label-count", "type": "expectedCount", "selector": "[data-axis='x'][data-mark='category-label']", "count": 5},
+    {"id": "y-label-count", "type": "expectedCount", "selector": "[data-axis='y'][data-mark='category-label']", "count": 5}
+  ],
+  "confidence": [
+    {
+      "target": "overall",
+      "confidence": "first-pass",
+      "note": "Editable reconstruction intended for visual inspection; typography, grid line weight, and color ramp may need browser overlay tuning."
+    }
+  ]
+}

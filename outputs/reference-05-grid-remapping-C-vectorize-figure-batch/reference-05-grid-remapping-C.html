@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-05-grid-remapping-C reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #aaaaaa;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+    .surface, .reference {
+      position: absolute;
+      inset: 0;
+    }
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+    }
+    .show-reference .surface {
+      display: none;
+    }
+    .show-reference .reference {
+      display: block;
+    }
+    svg, canvas {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-05-grid-remapping-C</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA/reference-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA reference source image">
+    </div>
+  </main>
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const $ = id => document.getElementById(id);
+
+    function make(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function mulberry32(seed) {
+      return function random() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function hexToRgb(hex) {
+      const v = parseInt(hex.slice(1), 16);
+      return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
+    }
+
+    function colorAt(scale, value) {
+      const stops = scale.stops;
+      const v = Math.max(scale.domain[0], Math.min(scale.domain[1], value));
+      let lo = stops[0];
+      let hi = stops[stops.length - 1];
+      for (let i = 0; i < stops.length - 1; i++) {
+        if (v >= stops[i].value && v <= stops[i + 1].value) {
+          lo = stops[i];
+          hi = stops[i + 1];
+          break;
+        }
+      }
+      const span = hi.value - lo.value || 1;
+      const t = (v - lo.value) / span;
+      const a = hexToRgb(lo.color);
+      const b = hexToRgb(hi.color);
+      return [Math.round(lerp(a[0], b[0], t)), Math.round(lerp(a[1], b[1], t)), Math.round(lerp(a[2], b[2], t))];
+    }
+
+    function mapX(transform, value) {
+      return lerp(transform.range.x[0], transform.range.x[1], (value - transform.domain.x[0]) / (transform.domain.x[1] - transform.domain.x[0]));
+    }
+
+    function mapY(transform, value) {
+      return lerp(transform.range.y[0], transform.range.y[1], (value - transform.domain.y[0]) / (transform.domain.y[1] - transform.domain.y[0]));
+    }
+
+    function inverseX(transform, pixel) {
+      return lerp(transform.domain.x[0], transform.domain.x[1], (pixel - transform.range.x[0]) / (transform.range.x[1] - transform.range.x[0]));
+    }
+
+    function inverseY(transform, pixel) {
+      return lerp(transform.domain.y[0], transform.domain.y[1], (pixel - transform.range.y[0]) / (transform.range.y[1] - transform.range.y[0]));
+    }
+
+    function renderField(ctx, spec, transform, scale, mark) {
+      const box = spec.plot.dataBbox;
+      const recipe = mark.recipe;
+      const rand = mulberry32(recipe.seed);
+      const image = ctx.createImageData(box.width, box.height);
+      const theta = recipe.rotationDegrees * Math.PI / 180;
+      const spacing = recipe.gridSpacing;
+      const sigma2 = recipe.sigma * recipe.sigma * 2;
+      const noise = recipe.backgroundNoise || {amplitude: 0, cellSize: 2};
+      const noiseGrid = [];
+      const nx = Math.ceil(box.width / noise.cellSize) + 1;
+      const ny = Math.ceil(box.height / noise.cellSize) + 1;
+      for (let j = 0; j < ny; j++) {
+        noiseGrid[j] = [];
+        for (let i = 0; i < nx; i++) noiseGrid[j][i] = rand();
+      }
+      const peaks = [...recipe.peaks, [recipe.centralPeak.x, recipe.centralPeak.y, recipe.centralPeak.amplitude, recipe.centralPeak.sigma]];
+
+      for (let py = 0; py < box.height; py++) {
+        for (let px = 0; px < box.width; px++) {
+          const dataX = inverseX(transform, box.x + px);
+          const dataY = inverseY(transform, box.y + py);
+          const rx = dataX * Math.cos(theta) - dataY * Math.sin(theta);
+          const ry = dataX * Math.sin(theta) + dataY * Math.cos(theta);
+          const lattice = Math.max(0, Math.cos(2 * Math.PI * rx / spacing) * 0.35 + Math.cos(2 * Math.PI * (0.5 * rx + 0.866 * ry) / spacing) * 0.33 + Math.cos(2 * Math.PI * (-0.5 * rx + 0.866 * ry) / spacing) * 0.32);
+          let value = 0.08 * Math.pow(lattice, 2.4);
+          for (const peak of peaks) {
+            const ps = peak[3] || recipe.sigma;
+            const p2 = ps * ps * 2 || sigma2;
+            const dx = dataX - peak[0];
+            const dy = dataY - peak[1];
+            value += peak[2] * Math.exp(-(dx * dx + dy * dy) / p2);
+          }
+          const gx = Math.floor(px / noise.cellSize);
+          const gy = Math.floor(py / noise.cellSize);
+          value += noise.amplitude * (noiseGrid[gy][gx] - 0.5);
+          value = Math.max(0, Math.min(1, value));
+          const rgb = colorAt(scale, value);
+          const k = (py * box.width + px) * 4;
+          image.data[k] = rgb[0];
+          image.data[k + 1] = rgb[1];
+          image.data[k + 2] = rgb[2];
+          image.data[k + 3] = 255;
+        }
+      }
+      ctx.putImageData(image, box.x, box.y);
+    }
+
+    function text(svg, attrs, content) {
+      const node = make('text', attrs);
+      node.textContent = content;
+      svg.appendChild(node);
+      return node;
+    }
+
+    function renderAxes(svg, panel, transform) {
+      const box = panel.plot.dataBbox;
+      svg.appendChild(make('rect', {
+        x: box.x, y: box.y, width: box.width, height: box.height,
+        fill: 'none', stroke: '#111111', 'stroke-width': 1
+      }));
+      for (const tick of panel.plot.x.ticks) {
+        const x = mapX(transform, tick.value);
+        svg.appendChild(make('line', {x1: x, y1: box.y + box.height, x2: x, y2: box.y + box.height + 7, stroke: '#111111', 'stroke-width': 1}));
+        text(svg, {x, y: box.y + box.height + 28, 'text-anchor': 'middle', 'font-size': 18, 'font-weight': 400, fill: '#111111'}, tick.label);
+      }
+      for (const tick of panel.plot.y.ticks) {
+        const y = mapY(transform, tick.value);
+        svg.appendChild(make('line', {x1: box.x, y1: y, x2: box.x - 7, y2: y, stroke: '#111111', 'stroke-width': 1}));
+        if (tick.label) text(svg, {x: box.x - 13, y: y + 6, 'text-anchor': 'end', 'font-size': 18, 'font-weight': 400, fill: '#111111'}, tick.label);
+      }
+      if (panel.plot.x.label) {
+        text(svg, {
+          x: panel.plot.x.label.x, y: panel.plot.x.label.y,
+          'text-anchor': 'middle', 'font-size': panel.plot.x.label.fontSize,
+          'font-weight': 400, fill: '#111111'
+        }, panel.plot.x.label.text);
+      }
+    }
+
+    function renderColorbar(svg, layout, colorScale) {
+      const box = layout.bbox;
+      const defs = make('defs');
+      const grad = make('linearGradient', {id: 'norm-counts-gradient', x1: '0', y1: '1', x2: '0', y2: '0'});
+      for (const stop of colorScale.stops) {
+        const offset = (stop.value - colorScale.domain[0]) / (colorScale.domain[1] - colorScale.domain[0]) * 100;
+        grad.appendChild(make('stop', {offset: `${offset}%`, 'stop-color': stop.color}));
+      }
+      defs.appendChild(grad);
+      svg.appendChild(defs);
+      svg.appendChild(make('rect', {x: box.x, y: box.y, width: box.width, height: box.height, fill: 'url(#norm-counts-gradient)', stroke: '#111111', 'stroke-width': 1}));
+      for (const tick of layout.ticks) {
+        const y = lerp(box.y + box.height, box.y, (tick.value - colorScale.domain[0]) / (colorScale.domain[1] - colorScale.domain[0]));
+        text(svg, {x: box.x + box.width + 8, y: y + 5, 'font-size': 16, fill: '#111111'}, tick.label);
+      }
+      const lines = layout.title.text.split('\n');
+      lines.forEach((line, i) => text(svg, {x: layout.title.x, y: layout.title.y + i * 17, 'font-size': layout.title.fontSize, fill: '#111111'}, line));
+    }
+
+    async function loadSpec() {
+      const response = await fetch('reference-05-grid-remapping-C.json');
+      return response.json();
+    }
+
+    function render(spec) {
+      const frame = $('frame');
+      const surface = $('surface');
+      const reference = $('reference');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      reference.src = spec.source.path;
+      surface.innerHTML = '';
+
+      const canvas = document.createElement('canvas');
+      canvas.width = spec.canvas.width;
+      canvas.height = spec.canvas.height;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = spec.canvas.background;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      surface.appendChild(canvas);
+
+      const svg = make('svg', {viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, width: spec.canvas.width, height: spec.canvas.height});
+      svg.style.fontFamily = spec.typography.fontFamily;
+      surface.appendChild(svg);
+
+      const transforms = Object.fromEntries(spec.coordinateSystems.filter(d => d.type === 'cartesian2d').map(d => [d.id, d]));
+      const scales = Object.fromEntries(spec.coordinateSystems.filter(d => d.type === 'colorScale').map(d => [d.id, d]));
+
+      for (const panel of spec.panels) {
+        const transform = transforms[panel.plot.usesTransform];
+        for (const mark of panel.marks) renderField(ctx, panel, transform, scales[mark.colorScale], mark);
+      }
+
+      for (const item of spec.layoutObjects) {
+        if (item.type === 'panelLabel' || item.type === 'title') {
+          text(svg, {x: item.x, y: item.y, 'font-size': item.fontSize, 'font-weight': item.fontWeight, fill: item.fill || '#111111'}, item.text);
+        } else if (item.type === 'axisTitle') {
+          text(svg, {x: item.x, y: item.y, transform: `rotate(${item.rotation} ${item.x} ${item.y})`, 'text-anchor': 'middle', 'font-size': item.fontSize, 'font-weight': item.fontWeight, fill: '#111111'}, item.text);
+        } else if (item.type === 'colorbar') {
+          renderColorbar(svg, item, scales[item.scale]);
+        }
+      }
+
+      for (const panel of spec.panels) {
+        const transform = transforms[panel.plot.usesTransform];
+        text(svg, {x: panel.title.x, y: panel.title.y, 'font-size': panel.title.fontSize, 'font-weight': panel.title.fontWeight, fill: panel.title.fill}, panel.title.text);
+        renderAxes(svg, panel, transform);
+      }
+    }
+
+    $('generatedButton').addEventListener('click', () => {
+      $('frame').classList.remove('show-reference');
+      $('generatedButton').classList.add('active');
+      $('referenceButton').classList.remove('active');
+    });
+    $('referenceButton').addEventListener('click', () => {
+      $('frame').classList.add('show-reference');
+      $('referenceButton').classList.add('active');
+      $('generatedButton').classList.remove('active');
+    });
+
+    loadSpec().then(render).catch(error => {
+      document.body.insertAdjacentHTML('beforeend', `<pre>${String(error)}</pre>`);
+      throw error;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,191 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-07-cross-region-small-multiples-B",
+  "source": {
+    "path": "../../assets/reference/reference-07-cross-region-small-multiples-B-reference.png",
+    "usage": "QA-only; never used as a generated visual layer.",
+    "nativeSize": {"width": 364, "height": 375},
+    "notes": "Single panel B from a multi-panel figure, visually reconstructed as stacked firing-field ridge plots."
+  },
+  "canvas": {"width": 364, "height": 375, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "Arial/Helvetica-like bold title and compact axis labels visually match the source crop at first pass."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "main-x",
+      "type": "linear",
+      "domain": [0, 315],
+      "range": [10, 303],
+      "sharedBy": ["CA1", "CA3", "DG", "PFC", "RSC"]
+    }
+  ],
+  "layoutObjects": [
+    {
+      "id": "panel-label",
+      "type": "panelLabel",
+      "text": "B",
+      "x": 14,
+      "y": 19,
+      "fontSize": 18,
+      "fontWeight": 700,
+      "sourceBox": {"x": 14, "y": 4, "width": 12, "height": 18}
+    },
+    {
+      "id": "panel-title",
+      "type": "title",
+      "text": "Example firing fields (ridge plots)",
+      "x": 42,
+      "y": 18,
+      "fontSize": 16,
+      "fontWeight": 700,
+      "sourceBox": {"x": 43, "y": 7, "width": 240, "height": 15}
+    },
+    {
+      "id": "x-axis",
+      "type": "axis",
+      "usesTransform": "main-x",
+      "line": {"x1": 10, "y1": 344, "x2": 303, "y2": 344},
+      "ticks": [
+        {"value": 0, "label": "0"},
+        {"value": 100, "label": "100"},
+        {"value": 200, "label": "200"},
+        {"value": 300, "label": "300"}
+      ],
+      "tickLength": 6,
+      "label": {"text": "Position (cm)", "x": 157, "y": 381, "fontSize": 11}
+    },
+    {
+      "id": "right-reference-guide",
+      "type": "eventAnchor",
+      "usesTransform": "main-x",
+      "value": 306,
+      "line": {"y1": 88, "y2": 345},
+      "style": {"stroke": "#b9b9b9", "strokeWidth": 1, "dashArray": "5 4"}
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-b",
+      "label": {"text": "B", "x": 14, "y": 19, "fontSize": 18, "fontWeight": 700},
+      "title": {"text": "Example firing fields (ridge plots)", "x": 42, "y": 18, "fontSize": 16, "fontWeight": 700},
+      "bbox": {"x": 0, "y": 0, "width": 364, "height": 375},
+      "plot": {
+        "dataBbox": {"x": 10, "y": 52, "width": 293, "height": 292},
+        "x": {
+          "scale": "linear",
+          "domain": [0, 315],
+          "ticks": [
+            {"value": 0, "label": "0"},
+            {"value": 100, "label": "100"},
+            {"value": 200, "label": "200"},
+            {"value": 300, "label": "300"}
+          ],
+          "label": {"text": "Position (cm)", "confidence": "low", "note": "Only the top of the label is visible in the cropped source."}
+        },
+        "y": {"scale": "stackedRegionBaseline", "visibleTicks": false}
+      },
+      "marks": [
+        {
+          "id": "ridge-groups",
+          "type": "ridgePlotStack",
+          "usesTransform": "main-x",
+          "baselineStyle": {"strokeWidth": 1.2},
+          "ridgeStyle": {"strokeWidth": 1.15, "fillOpacity": 0.16, "backgroundOpacity": 0.28},
+          "regions": [
+            {
+              "id": "CA1",
+              "label": {"text": "CA1", "x": 20, "y": 98},
+              "baselineY": 117,
+              "color": "#1729b3",
+              "cellCount": {"text": "142 cells", "x": 310, "y": 110},
+              "ridges": [
+                {"id": "CA1-01", "height": 57, "width": 4.1, "peaks": [[60, 1.00], [88, 1.08], [126, 0.78], [176, 0.83], [242, 0.34], [279, 0.86]]},
+                {"id": "CA1-02", "height": 30, "width": 5.9, "peaks": [[55, 0.72], [103, 0.32], [142, 0.38], [191, 0.36], [236, 0.46]]},
+                {"id": "CA1-03", "height": 19, "width": 8.5, "peaks": [[81, 0.65], [124, 0.48], [164, 0.32], [213, 0.40], [270, 0.55]]},
+                {"id": "CA1-04", "height": 15, "width": 7.5, "peaks": [[118, 0.50], [154, 0.35], [199, 0.55], [230, 0.28]]},
+                {"id": "CA1-05", "height": 11, "width": 11, "peaks": [[96, 0.45], [150, 0.42], [212, 0.36], [290, 0.30]]}
+              ]
+            },
+            {
+              "id": "CA3",
+              "label": {"text": "CA3", "x": 20, "y": 157},
+              "baselineY": 176,
+              "color": "#0066c8",
+              "cellCount": {"text": "123 cells", "x": 310, "y": 169},
+              "ridges": [
+                {"id": "CA3-01", "height": 41, "width": 4.7, "peaks": [[58, 0.94], [82, 0.77], [136, 0.55], [168, 1.00], [229, 0.52], [273, 0.30]]},
+                {"id": "CA3-02", "height": 24, "width": 6.6, "peaks": [[50, 0.60], [111, 0.42], [151, 0.34], [193, 0.25], [230, 0.72], [267, 0.48]]},
+                {"id": "CA3-03", "height": 17, "width": 8.2, "peaks": [[72, 0.54], [122, 0.35], [184, 0.42], [241, 0.33], [283, 0.27]]},
+                {"id": "CA3-04", "height": 12, "width": 10.4, "peaks": [[92, 0.56], [140, 0.41], [197, 0.36], [259, 0.25]]}
+              ]
+            },
+            {
+              "id": "DG",
+              "label": {"text": "DG", "x": 23, "y": 217},
+              "baselineY": 234,
+              "color": "#148b34",
+              "cellCount": {"text": "96 cells", "x": 310, "y": 229},
+              "ridges": [
+                {"id": "DG-01", "height": 37, "width": 5.7, "peaks": [[62, 0.85], [82, 0.42], [116, 0.34], [148, 0.67], [181, 0.92], [204, 0.66], [236, 1.00], [281, 0.55]]},
+                {"id": "DG-02", "height": 22, "width": 9.4, "peaks": [[58, 0.54], [95, 0.33], [140, 0.40], [190, 0.34], [232, 0.52], [274, 0.31]]},
+                {"id": "DG-03", "height": 13, "width": 13, "peaks": [[76, 0.34], [124, 0.40], [170, 0.28], [220, 0.30], [260, 0.24]]}
+              ]
+            },
+            {
+              "id": "PFC",
+              "label": {"text": "PFC", "x": 20, "y": 275},
+              "baselineY": 290,
+              "color": "#ff6b16",
+              "cellCount": {"text": "118 cells", "x": 310, "y": 286},
+              "ridges": [
+                {"id": "PFC-01", "height": 39, "width": 5.1, "peaks": [[60, 0.88], [89, 0.75], [117, 0.86], [151, 0.83], [184, 0.77], [244, 0.58]]},
+                {"id": "PFC-02", "height": 24, "width": 7.4, "peaks": [[66, 0.56], [119, 0.64], [160, 0.44], [197, 0.36], [249, 0.35]]},
+                {"id": "PFC-03", "height": 14, "width": 11.5, "peaks": [[79, 0.41], [136, 0.36], [180, 0.65], [225, 0.31], [274, 0.23]]},
+                {"id": "PFC-04", "height": 10, "width": 12.5, "peaks": [[103, 0.36], [159, 0.32], [209, 0.24], [259, 0.30]]}
+              ]
+            },
+            {
+              "id": "RSC",
+              "label": {"text": "RSC", "x": 20, "y": 329},
+              "baselineY": 343,
+              "color": "#e22222",
+              "cellCount": {"text": "110 cells", "x": 310, "y": 339},
+              "ridges": [
+                {"id": "RSC-01", "height": 38, "width": 4.9, "peaks": [[59, 0.86], [90, 0.92], [123, 0.66], [158, 0.64], [185, 0.96], [243, 0.58], [290, 0.50]]},
+                {"id": "RSC-02", "height": 25, "width": 7.6, "peaks": [[66, 0.62], [111, 0.52], [149, 0.33], [178, 0.70], [232, 0.55], [276, 0.31]]},
+                {"id": "RSC-03", "height": 16, "width": 10.2, "peaks": [[55, 0.39], [98, 0.42], [139, 0.54], [199, 0.35], [250, 0.30]]},
+                {"id": "RSC-04", "height": 11, "width": 13, "peaks": [[82, 0.25], [129, 0.30], [172, 0.28], [223, 0.26], [270, 0.23]]}
+              ]
+            }
+          ]
+        }
+      ],
+      "annotations": [
+        {"id": "guide-300", "type": "verticalGuide", "anchor": "right-reference-guide"}
+      ],
+      "provenance": [
+        {"object": "ridge-groups", "confidence": "medium", "note": "Peak positions and amplitudes are visually estimated from the raster and encoded as editable generation recipes."},
+        {"object": "x-axis", "confidence": "high", "note": "Tick labels 0, 100, 200, 300 and baseline positions are visible."}
+      ]
+    }
+  ],
+  "validation": {
+    "expectedRegionCount": 5,
+    "expectedCellCountLabels": ["142 cells", "123 cells", "96 cells", "118 cells", "110 cells"],
+    "mustNotUseSourceAsGeneratedLayer": true,
+    "qaReferenceMayUseSource": true
+  },
+  "confidence": [
+    {"aspect": "layout", "value": "medium-high"},
+    {"aspect": "individual firing-field traces", "value": "medium"},
+    {"aspect": "cropped x-axis title", "value": "low"}
+  ]
+}

@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>No-image generated reconstructions</title>
+  <style>
+    html, body { margin: 0; background: #eeeeee; font-family: Arial, Helvetica, sans-serif; color: #111; }
+    header { position: sticky; top: 0; z-index: 5; background: #fff; border-bottom: 1px solid #d0d0d0; padding: 12px 16px; }
+    h1 { margin: 0 0 4px; font-size: 18px; }
+    .note { color: #555; font-size: 13px; }
+    main { padding: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(560px, 1fr)); gap: 16px; align-items: start; }
+    .card { background: #fff; border: 1px solid #d2d2d2; border-radius: 6px; padding: 12px; }
+    .card h2 { margin: 0 0 3px; font-size: 16px; }
+    .strategy { color: #00616b; font-weight: 700; margin-left: 8px; font-size: 13px; }
+    .surface { margin-top: 10px; position: relative; background: #fff; overflow: hidden; border: 1px solid #eee; }
+    .text { position: absolute; white-space: pre; line-height: 1.1; color: #111; }
+    .bold { font-weight: 700; }
+    canvas { position: absolute; }
+    .line { position: absolute; height: 0; border-top: 1.5px solid #111; transform-origin: 0 0; }
+    .vline { position: absolute; width: 0; border-left: 1.5px solid #111; }
+    .dash-v { position: absolute; width: 0; border-left: 1.4px dashed #999; }
+    .dash-h { position: absolute; height: 0; border-top: 1.4px dashed #999; }
+    .point { position: absolute; border-radius: 50%; box-sizing: border-box; transform: translate(-50%, -50%); }
+    .box { position: absolute; background: #0d0d0d; border-radius: 2px; box-shadow: inset 0 0 20px rgba(255,255,255,0.04); }
+    .epoch-cell { position: absolute; border: 1px solid #bbb; background: linear-gradient(#fff, #f3f3f3); text-align: center; font-size: 12px; padding-top: 8px; box-sizing: border-box; height: 34px; }
+    .epoch-cell.stim { background: #eef4ff; border-color: #9eb8e5; }
+    .epoch-cell.response { background: #fff1f1; border-color: #ff6b6b; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>No-image generated reconstructions</h1>
+    <div class="note">Four panels rendered from generated recipes/layout only. No original PNGs, image tags, or drawImage calls are used.</div>
+  </header>
+  <main id="grid"></main>
+
+  <script>
+    const DATA_URL = './no-image-four.json';
+
+    function rng(seed) {
+      return function random() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function normal(random) {
+      let u = 0, v = 0;
+      while (u === 0) u = random();
+      while (v === 0) v = random();
+      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+
+    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+    function px(v) { return `${Number(v).toFixed(2)}px`; }
+
+    function add(parent, tag, attrs = {}, text = '') {
+      const node = document.createElement(tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (key === 'style') Object.assign(node.style, value);
+        else if (key.startsWith('data-')) node.setAttribute(key, value);
+        else node[key] = value;
+      }
+      node.textContent = text;
+      parent.appendChild(node);
+      return node;
+    }
+
+    function label(root, text, x, y, size = 14, weight = 400, extra = {}) {
+      return add(root, 'div', {
+        className: `text ${weight >= 700 ? 'bold' : ''}`,
+        style: { left: px(x), top: px(y), fontSize: px(size), fontWeight: String(weight), color: extra.color || '#111', textAlign: extra.align || 'left', transform: extra.transform || '' }
+      }, text);
+    }
+
+    function centeredLabel(root, text, x, y, width, size = 14, extra = {}) {
+      return add(root, 'div', {
+        className: 'text',
+        style: {
+          left: px(x),
+          top: px(y),
+          width: px(width),
+          fontSize: px(size),
+          color: extra.color || '#111',
+          textAlign: 'center',
+          lineHeight: extra.lineHeight || '1.1'
+        }
+      }, text);
+    }
+
+    function centeredMultilineLabel(root, text, centerX, y, width, size = 14, extra = {}) {
+      return centeredLabel(root, text, centerX - width / 2, y, width, size, {
+        color: extra.color || '#111',
+        lineHeight: extra.lineHeight || '1.12'
+      });
+    }
+
+    function verticalLabel(root, text, x, y, size = 14) {
+      return add(root, 'div', {
+        className: 'text',
+        style: {
+          left: px(x),
+          top: px(y),
+          fontSize: px(size),
+          writingMode: 'vertical-rl',
+          transform: 'rotate(180deg)',
+          lineHeight: '1'
+        }
+      }, text);
+    }
+
+    function verticalCenteredLabel(root, text, x, centerY, size = 14) {
+      return add(root, 'div', {
+        className: 'text',
+        style: {
+          left: px(x),
+          top: px(centerY),
+          fontSize: px(size),
+          writingMode: 'vertical-rl',
+          transform: 'translateY(-50%) rotate(180deg)',
+          lineHeight: '1'
+        }
+      }, text);
+    }
+
+    function line(root, x1, y1, x2, y2, color = '#111', width = 1.5, className = 'line') {
+      const len = Math.hypot(x2 - x1, y2 - y1);
+      const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+      return add(root, 'div', { className, style: { left: px(x1), top: px(y1), width: px(len), borderTopColor: color, borderTopWidth: px(width), transform: `rotate(${angle}deg)` } });
+    }
+
+    function vline(root, x, y, h, color = '#111', width = 1.5, dashed = false) {
+      return add(root, 'div', { className: dashed ? 'dash-v' : 'vline', style: { left: px(x), top: px(y), height: px(h), borderLeftColor: color, borderLeftWidth: px(width) } });
+    }
+
+    function hline(root, x, y, w, color = '#111', width = 1.5, dashed = false) {
+      return add(root, 'div', { className: dashed ? 'dash-h' : 'line', style: { left: px(x), top: px(y), width: px(w), borderTopColor: color, borderTopWidth: px(width) } });
+    }
+
+    function viridisLike(v) {
+      const stops = [
+        [0, [68, 1, 84]], [0.25, [54, 92, 141]], [0.5, [39, 173, 129]], [0.75, [170, 220, 50]], [1, [252, 231, 37]]
+      ];
+      const t = clamp(v, 0, 1);
+      for (let i = 0; i < stops.length - 1; i++) {
+        const [a, ca] = stops[i], [b, cb] = stops[i + 1];
+        if (t >= a && t <= b) {
+          const u = (t - a) / (b - a);
+          return ca.map((c, j) => Math.round(c + (cb[j] - c) * u));
+        }
+      }
+      return stops[stops.length - 1][1];
+    }
+
+    function heatValuePosition(x, y, width, height, random) {
+      const row = y / height;
+      const center = 18 + row * (width - 34);
+      const band = Math.exp(-Math.pow(x - center, 2) / (2 * 9 * 9));
+      const shoulder = 0.32 * Math.exp(-Math.pow(x - center - 20, 2) / (2 * 17 * 17));
+      const texture = 0.18 * random() + 0.08 * Math.sin(y * 0.22) + 0.04 * Math.sin(x * 0.13);
+      return clamp(0.18 + band * 0.86 + shoulder + texture, 0, 1);
+    }
+
+    function drawPlaceHeatmap(canvas, seed) {
+      const random = rng(seed);
+      const ctx = canvas.getContext('2d');
+      const img = ctx.createImageData(canvas.width, canvas.height);
+      for (let y = 0; y < canvas.height; y++) {
+        const rowJitter = normal(random) * 1.8;
+        for (let x = 0; x < canvas.width; x++) {
+          const [r, g, b] = viridisLike(heatValuePosition(x + rowJitter, y, canvas.width, canvas.height, random));
+          const off = (y * canvas.width + x) * 4;
+          img.data[off] = r; img.data[off + 1] = g; img.data[off + 2] = b; img.data[off + 3] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+    }
+
+    function drawColorbar(canvas) {
+      const ctx = canvas.getContext('2d');
+      const img = ctx.createImageData(canvas.width, canvas.height);
+      for (let y = 0; y < canvas.height; y++) {
+        const [r, g, b] = viridisLike(1 - y / (canvas.height - 1));
+        for (let x = 0; x < canvas.width; x++) {
+          const off = (y * canvas.width + x) * 4;
+          img.data[off] = r; img.data[off + 1] = g; img.data[off + 2] = b; img.data[off + 3] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      ctx.strokeStyle = '#111'; ctx.strokeRect(0.5, 0.5, canvas.width - 1, canvas.height - 1);
+    }
+
+    function render1A(root, p) {
+      label(root, 'A', 17, 16, 30, 700);
+      label(root, p.title, 57, 21, 20, 700);
+      label(root, p.layout.left.title, 104, 63, 14);
+      label(root, p.layout.right.title, 276, 53, 14);
+      for (const hm of [p.layout.left, p.layout.right]) {
+        const c = add(root, 'canvas', { style: { left: px(hm.x), top: px(hm.y), width: px(hm.width), height: px(hm.height) } });
+        c.width = hm.width; c.height = hm.height; drawPlaceHeatmap(c, hm.seed);
+        vline(root, hm.x, hm.y, hm.height); hline(root, hm.x, hm.y + hm.height, hm.width);
+        for (const [value, tx] of [[0, hm.x], [100, hm.x + hm.width * 0.5], [200, hm.x + hm.width]]) {
+          vline(root, tx, hm.y + hm.height, 8);
+          label(root, String(value), tx - (value === 0 ? 3 : value === 100 ? 12 : 24), hm.y + hm.height + 10, 16);
+        }
+        label(root, 'Position (cm)', hm.x + 45, hm.y + hm.height + 34, 16);
+      }
+      label(root, '1', 49, 88, 16); label(root, '162', 34, 434, 16);
+      verticalLabel(root, 'Neurons (sorted by peak position)', 25, 150, 16);
+      const cb = p.layout.colorbar;
+      const c = add(root, 'canvas', { style: { left: px(cb.x), top: px(cb.y), width: px(cb.width), height: px(cb.height) } });
+      c.width = cb.width; c.height = cb.height; drawColorbar(c);
+      label(root, 'Firing rate\n(z-scored)', 431, 208, 14);
+      for (const [t, y] of [[2, 251], [1, 298], [0, 345], [-1, 392], [-2, 435]]) label(root, String(t), 470, y, 14);
+    }
+
+    function xMap(domain, box, x) { return box.x + (x - domain[0]) / (domain[1] - domain[0]) * box.width; }
+    function yMap(domain, box, y) { return box.y + (domain[1] - y) / (domain[1] - domain[0]) * box.height; }
+
+    function eventTimeX(box, eventX, t) {
+      if (t <= 0) return eventX + t * (eventX - box.x);
+      return eventX + (t / 2) * (box.x + box.width - eventX);
+    }
+
+    function drawRaster(canvas, seed, color, depressed = false) {
+      const random = rng(seed);
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = color;
+      const nRows = 62;
+      for (let row = 0; row < nRows; row++) {
+        const y = row / nRows * canvas.height + random() * 1.5;
+        const rate = depressed ? 0.42 : 0.58;
+        for (let i = 0; i < 34; i++) {
+          const x = random() * canvas.width;
+          if (depressed && x > canvas.width * 0.36 && random() < 0.58) continue;
+          if (random() < rate) ctx.fillRect(x, y, 1.6, 1.6);
+        }
+      }
+    }
+
+    function drawLineCanvas(canvas, p) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const box = { x: 0, y: 0, width: canvas.width, height: canvas.height };
+      const domainX = p.x_domain, domainY = p.y_domain;
+      function curve(x, teal) {
+        if (!teal) return 17 - 8 / (1 + Math.exp(-(x - 0.1) * 12)) + 7 / (1 + Math.exp(-(x - 0.8) * 4));
+        return 14 - 12 / (1 + Math.exp(-(x - 0.04) * 18)) + 9 / (1 + Math.exp(-(x - 0.9) * 4));
+      }
+      function drawCurve(color, teal) {
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = 0.16;
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        for (let i = 0; i <= 90; i++) {
+          const x = domainX[0] + i / 90 * (domainX[1] - domainX[0]);
+          const y = curve(x, teal) + Math.sin(i * 0.8) * 0.35;
+          const pxv = xMap(domainX, box, x), pyv = yMap(domainY, box, y);
+          if (i === 0) ctx.moveTo(pxv, pyv); else ctx.lineTo(pxv, pyv);
+        }
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        for (let i = 0; i <= 90; i++) {
+          const x = domainX[0] + i / 90 * (domainX[1] - domainX[0]);
+          const y = curve(x, teal) + Math.sin(i * 0.8) * 0.35;
+          const pxv = xMap(domainX, box, x), pyv = yMap(domainY, box, y);
+          if (i === 0) ctx.moveTo(pxv, pyv); else ctx.lineTo(pxv, pyv);
+        }
+        ctx.stroke();
+      }
+      drawCurve('#111', false);
+      drawCurve('#009da3', true);
+    }
+
+    function render1C(root, p) {
+      label(root, 'C', 0, 18, 28, 700);
+      label(root, p.title, 34, 22, 18, 700);
+      const eventX = p.event.x;
+      centeredMultilineLabel(root, '532 nm light ON', eventX, 52, 136, 16, { color: '#009da3' });
+      centeredMultilineLabel(root, 'Control\n(no light)', 48, 82, 72, 14);
+      centeredMultilineLabel(root, 'n = 123\ncells', 48, 126, 72, 14);
+      centeredMultilineLabel(root, 'Optogenetic\ninhibition\n(ArchT)', 48, 182, 88, 14, { color: '#008f96' });
+      centeredMultilineLabel(root, 'n = 123\ncells', 48, 238, 72, 14, { color: '#008f96' });
+      const r1 = add(root, 'canvas', { style: { left: '95px', top: '75px', width: '435px', height: '82px' } });
+      r1.width = 435; r1.height = 82; drawRaster(r1, p.raster.control_seed, '#111', false);
+      const r2 = add(root, 'canvas', { style: { left: '95px', top: '168px', width: '435px', height: '82px' } });
+      r2.width = 435; r2.height = 82; drawRaster(r2, p.raster.archt_seed, '#009da3', true);
+      vline(root, eventX, 68, 205, '#009da3', 1.5, true);
+      hline(root, 95, 262, 435);
+      for (const t of [-1, -0.5, 0, 0.5, 1, 1.5, 2]) {
+        const x = eventTimeX(p.raster, eventX, t);
+        vline(root, x, 262, 7);
+        label(root, String(t), x - 10, 272, 16);
+      }
+      label(root, 'Time from light onset (s)', 213, 292, 16);
+      const lc = add(root, 'canvas', { style: { left: '80px', top: '310px', width: '450px', height: '108px' } });
+      lc.width = 450; lc.height = 108; drawLineCanvas(lc, p);
+      vline(root, eventX, 306, 116, '#009da3', 1.5, true);
+      hline(root, 80, 418, 450); vline(root, 80, 310, 108);
+      for (const y of [0, 10, 20, 30]) { const yy = yMap(p.y_domain, p.lineplot, y); hline(root, 75, yy, 5); label(root, String(y), 55, yy - 8, 16); }
+      for (const t of [-1, -0.5, 0, 0.5, 1, 1.5, 2]) {
+        const x = eventTimeX(p.lineplot, eventX, t);
+        vline(root, x, 418, 7);
+        label(root, String(t), x - 10, 430, 14);
+      }
+      verticalCenteredLabel(root, 'Mean firing rate (Hz)', 20, p.lineplot.y + p.lineplot.height / 2, 16);
+      hline(root, eventX, 452, 131, '#009da3', 8);
+      label(root, 'Light ON', 287, 462, 16, 400, { color: '#009da3' });
+      label(root, 'Time from light onset (s)', 213, 486, 16);
+      label(root, 'Control (no light)', 380, 318, 12);
+      label(root, 'Opto inhibition (ArchT)', 380, 337, 12);
+      hline(root, 342, 322, 28, '#111', 3); hline(root, 342, 342, 28, '#009da3', 3);
+    }
+
+    function addPoint(root, x, y, color, filled = true, r = 4) {
+      add(root, 'div', { className: 'point', style: { left: px(x), top: px(y), width: px(r * 2), height: px(r * 2), background: filled ? color : '#fff', border: `1.4px solid ${color}` } });
+    }
+
+    function render1E(root, p) {
+      label(root, 'E', 19, 16, 28, 700);
+      label(root, p.title, 60, 17, 19, 700);
+      label(root, p.annotation, 120, 61, 16);
+      const box = p.plot;
+      vline(root, box.x, box.y, box.height); hline(root, box.x, box.y + box.height, box.width);
+      hline(root, box.x, yMap(p.y_domain, box, 0), box.width, '#999', 1.2, true);
+      vline(root, box.x + box.width * 0.875, box.y - 10, box.height + 28, '#999', 1.2, true);
+      for (const y of [-20, 0, 20, 40, 60, 80, 100]) {
+        const yy = yMap(p.y_domain, box, y); hline(root, box.x - 5, yy, 5); label(root, String(y), box.x - 35, yy - 8, 14);
+      }
+      verticalCenteredLabel(root, 'Δ Accuracy (% points) (control − opto)', 5, box.y + box.height / 2, 15);
+      const xs = p.x_labels.map((_, i) => box.x + 20 + i * 39);
+      for (let i = 0; i < p.x_labels.length; i++) {
+        vline(root, xs[i], box.y + box.height, 7);
+        label(root, p.x_labels[i], xs[i] - 10, box.y + box.height + 16, 15);
+      }
+      label(root, 'Animal', 180, 448, 17);
+      for (const series of p.black_series) {
+        for (let i = 0; i < series.length - 1; i++) line(root, xs[i], yMap(p.y_domain, box, series[i]), xs[i + 1], yMap(p.y_domain, box, series[i + 1]), '#111', 1);
+        for (let i = 0; i < series.length; i++) addPoint(root, xs[i], yMap(p.y_domain, box, series[i]), '#111', true, 4);
+      }
+      for (const series of p.teal_series) {
+        for (let i = 0; i < series.length - 1; i++) line(root, xs[i], yMap(p.y_domain, box, series[i]), xs[i + 1], yMap(p.y_domain, box, series[i + 1]), '#009da3', 1.2);
+        for (let i = 0; i < series.length; i++) addPoint(root, xs[i], yMap(p.y_domain, box, series[i]), '#009da3', false, 4);
+      }
+      const sx = xs[p.summary.x_index]; addPoint(root, sx, yMap(p.y_domain, box, p.summary.value), '#008f96', true, 7);
+      vline(root, sx, yMap(p.y_domain, box, p.summary.high), yMap(p.y_domain, box, p.summary.low) - yMap(p.y_domain, box, p.summary.high), '#111', 1.2);
+      label(root, 'All', sx - 9, box.y + box.height + 16, 15);
+    }
+
+    function renderObjectBox(root, epoch) {
+      label(root, epoch.name, epoch.x + 10, 82, 14);
+      label(root, epoch.duration, epoch.x + 14, 102, 12);
+      const box = add(root, 'div', { className: 'box', style: { left: px(epoch.x), top: px(epoch.y), width: px(epoch.w), height: '74px' } });
+      if (epoch.kind === 'fixate') addPoint(root, epoch.x + epoch.w / 2, epoch.y + 37, '#fff', true, 5);
+      if (epoch.kind === 'stimulus') {
+        const random = rng(311);
+        for (let i = 0; i < 34; i++) addPoint(root, epoch.x + 10 + random() * (epoch.w - 20), epoch.y + 12 + random() * 48, random() > 0.5 ? '#dc2f2f' : '#2e76d0', true, 2);
+        for (let i = 0; i < 16; i++) addPoint(root, epoch.x + 10 + random() * (epoch.w - 20), epoch.y + 12 + random() * 48, '#ddd', true, 2);
+      }
+      if (epoch.kind === 'response') {
+        box.style.border = '3px solid #f02a22';
+        addPoint(root, epoch.x + 15, epoch.y + 37, '#fff', false, 9); addPoint(root, epoch.x + 34, epoch.y + 37, '#fff', true, 4); addPoint(root, epoch.x + 53, epoch.y + 37, '#fff', false, 9);
+      }
+      if (epoch.kind === 'outcome') {
+        const drop = add(root, 'div', { style: { position: 'absolute', left: px(epoch.x + 29), top: px(epoch.y + 24), width: '16px', height: '22px', background: '#eee', borderRadius: '50% 50% 55% 55%', transform: 'rotate(8deg)' } });
+        drop.style.clipPath = 'polygon(50% 0%, 100% 70%, 50% 100%, 0% 70%)';
+      }
+    }
+
+    function render2A(root, p) {
+      label(root, 'A', 14, 15, 27, 700);
+      label(root, p.title, 38, 16, 20);
+      for (const epoch of p.epochs) renderObjectBox(root, epoch);
+      hline(root, p.timeline.x, p.timeline.y, p.timeline.width, '#111', 2);
+      for (const tick of p.timeline.ticks) {
+        vline(root, tick.x, 214, 53, '#777', 1.2, true);
+        label(root, tick.label, tick.x - 14, 263, 13);
+      }
+      label(root, 'Time from stimulus onset (ms)', 121, 288, 14);
+      const cellY = 312, cellW = 82;
+      ['Baseline', 'Stim', 'Delay', 'Response', 'Outcome'].forEach((name, i) => add(root, 'div', { className: `epoch-cell ${name.toLowerCase()}`, style: { left: px(16 + i * cellW), top: px(cellY), width: px(cellW) } }, name));
+      label(root, 'Cognitive\nprocess', 16, 363, 12);
+      label(root, 'Evidence\nencoding', 112, 363, 12);
+      label(root, 'Evidence\naccumulation', 195, 363, 12);
+      label(root, 'Decision\nexecution', 285, 363, 12);
+      label(root, 'Feedback\nprocessing', 357, 363, 12);
+      label(root, 'Example behavior', 16, 422, 12);
+      label(root, 'L / ', 119, 424, 14, 400, { color: '#2e76d0' }); label(root, 'R', 143, 424, 14, 400, { color: '#dc2f2f' });
+      label(root, 'Hold', 203, 424, 14);
+      label(root, 'Saccade\nL or R', 286, 416, 12);
+      label(root, 'Reward\nor no reward', 357, 416, 12);
+    }
+
+    function renderPanel(panel) {
+      const card = add(document.getElementById('grid'), 'article', { className: 'card' });
+      card.innerHTML = `<h2>${panel.id}<span class="strategy">${panel.strategy}</span></h2>`;
+      const surface = add(card, 'div', { className: 'surface', style: { width: px(panel.width), height: px(panel.height) } });
+      if (panel.id.endsWith('-A') && panel.type === 'paired_position_heatmaps') render1A(surface, panel);
+      else if (panel.id.endsWith('-C')) render1C(surface, panel);
+      else if (panel.id.endsWith('-E')) render1E(surface, panel);
+      else if (panel.id === 'reference-02-decision-dynamics-A') render2A(surface, panel);
+    }
+
+    fetch(DATA_URL).then(r => r.json()).then(data => data.panels.forEach(renderPanel));
+  </script>
+</body>
+</html>

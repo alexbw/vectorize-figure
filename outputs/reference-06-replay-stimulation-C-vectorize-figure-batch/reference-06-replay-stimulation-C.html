@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-06-replay-stimulation-C reconstruction</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cccccc;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #999999;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+
+    main {
+      min-height: calc(100vh - 50px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .surface,
+    .reference-wrap {
+      position: absolute;
+      inset: 0;
+    }
+
+    .reference-wrap {
+      display: none;
+      background: #ffffff;
+    }
+
+    .reference-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .reference-label {
+      position: absolute;
+      left: 8px;
+      bottom: 8px;
+      padding: 3px 6px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid #999999;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .show-reference .surface {
+      display: none;
+    }
+
+    .show-reference .reference-wrap {
+      display: block;
+    }
+
+    svg {
+      position: absolute;
+      inset: 0;
+      overflow: visible;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-06-replay-stimulation-C</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <div class="reference-wrap" aria-label="QA reference only">
+        <img id="reference" alt="QA reference source image">
+        <div class="reference-label">QA reference only</div>
+      </div>
+    </div>
+  </main>
+
+  <script id="fallback-spec" type="application/json">
+{}
+  </script>
+
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function $(id) {
+      return document.getElementById(id);
+    }
+
+    function make(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function scale(domain, range, value) {
+      return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+    }
+
+    function transformFor(spec, id) {
+      for (const panel of spec.panels) {
+        const found = (panel.coordinateSystems || []).find(system => system.id === id);
+        if (found) return found;
+      }
+      throw new Error(`Unknown coordinate system: ${id}`);
+    }
+
+    function pointProjector(system) {
+      const box = system.plotBox;
+      return {
+        x: value => scale(system.xDomain, [box.x, box.x + box.width], value),
+        y: value => scale(system.yDomain, [box.y + box.height, box.y], value)
+      };
+    }
+
+    function appendText(svg, textSpec, inherited = {}) {
+      const lines = String(textSpec.text || '').split('\n');
+      const fontSize = textSpec.fontSize || inherited.fontSize || 12;
+      const lineHeight = textSpec.lineHeight || inherited.lineHeight || 1.1;
+      const text = make('text', {
+        x: textSpec.x,
+        y: textSpec.y,
+        fill: textSpec.fill || inherited.fill || '#111111',
+        'font-family': textSpec.fontFamily || inherited.fontFamily,
+        'font-size': fontSize,
+        'font-weight': textSpec.fontWeight || inherited.fontWeight || 400,
+        'text-anchor': textSpec.anchor || inherited.anchor || 'start',
+        'dominant-baseline': textSpec.baseline || 'alphabetic',
+        transform: textSpec.rotation ? `rotate(${textSpec.rotation} ${textSpec.x} ${textSpec.y})` : undefined,
+        'data-object-id': textSpec.id
+      });
+      lines.forEach((line, index) => {
+        const tspan = make('tspan', {
+          x: textSpec.x,
+          dy: index === 0 ? 0 : fontSize * lineHeight
+        });
+        tspan.textContent = line;
+        text.appendChild(tspan);
+      });
+      svg.appendChild(text);
+      return text;
+    }
+
+    function renderAxes(svg, plot, fontFamily, tokens) {
+      const box = plot.plotBox;
+      const axisStroke = tokens.axisStroke || '#111111';
+      const axisWidth = tokens.axisWidth || 1;
+      const tickLength = tokens.tickLength || 5;
+      const tickFontSize = tokens.tickFontSize || 14;
+
+      svg.appendChild(make('line', {
+        x1: box.x,
+        y1: box.y,
+        x2: box.x,
+        y2: box.y + box.height,
+        stroke: axisStroke,
+        'stroke-width': axisWidth,
+        'data-axis': `${plot.id}-y`
+      }));
+
+      const yDomain = plot.y.domain;
+      for (const tick of plot.y.ticks || []) {
+        const y = scale(yDomain, [box.y + box.height, box.y], tick.value);
+        svg.appendChild(make('line', {
+          x1: box.x - tickLength,
+          y1: y,
+          x2: box.x,
+          y2: y,
+          stroke: axisStroke,
+          'stroke-width': axisWidth,
+          'data-axis': `${plot.id}-y`,
+          'data-value': tick.value
+        }));
+        appendText(svg, {
+          text: tick.label,
+          x: box.x - tickLength - 4,
+          y: y + 4,
+          fontSize: tickFontSize,
+          anchor: 'end'
+        }, {fontFamily});
+      }
+
+      if (plot.x.axisLine !== false) {
+        svg.appendChild(make('line', {
+          x1: box.x,
+          y1: box.y + box.height + 20,
+          x2: box.x + box.width,
+          y2: box.y + box.height + 20,
+          stroke: axisStroke,
+          'stroke-width': axisWidth,
+          'data-axis': `${plot.id}-x`
+        }));
+      }
+
+      const xDomain = plot.x.domain;
+      for (const tick of plot.x.ticks || []) {
+        const x = scale(xDomain, [box.x, box.x + box.width], tick.value);
+        svg.appendChild(make('line', {
+          x1: x,
+          y1: box.y + box.height + 20,
+          x2: x,
+          y2: box.y + box.height + 26,
+          stroke: axisStroke,
+          'stroke-width': axisWidth,
+          'data-axis': `${plot.id}-x`,
+          'data-value': tick.value
+        }));
+        appendText(svg, {
+          text: tick.label,
+          x,
+          y: box.y + box.height + 41,
+          fontSize: tickFontSize,
+          anchor: 'middle'
+        }, {fontFamily});
+      }
+
+      if (plot.x.label) appendText(svg, plot.x.label, {fontFamily});
+      if (plot.y.label) appendText(svg, plot.y.label, {fontFamily});
+    }
+
+    function renderLine(svg, mark, system) {
+      const project = pointProjector(system);
+      const d = mark.points.map((point, index) => {
+        const command = index === 0 ? 'M' : 'L';
+        return `${command}${project.x(point[0]).toFixed(2)},${project.y(point[1]).toFixed(2)}`;
+      }).join(' ');
+      if (mark.fillUnder) {
+        const first = mark.points[0];
+        const last = mark.points[mark.points.length - 1];
+        const areaD = d + ` L${project.x(last[0]).toFixed(2)},${project.y(0).toFixed(2)} L${project.x(first[0]).toFixed(2)},${project.y(0).toFixed(2)} Z`;
+        svg.appendChild(make('path', {
+          d: areaD,
+          fill: mark.fillUnder,
+          opacity: mark.fillOpacity || 0.16,
+          stroke: 'none',
+          'data-mark-id': `${mark.id}-under-curve`,
+          'data-mark-type': 'areaFill'
+        }));
+      }
+      svg.appendChild(make('path', {
+        d,
+        fill: mark.fill || 'none',
+        stroke: mark.stroke,
+        'stroke-width': mark.strokeWidth || 1.5,
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round',
+        'data-mark-id': mark.id,
+        'data-mark-type': mark.type
+      }));
+    }
+
+    function renderRaster(svg, mark, system) {
+      const project = pointProjector(system);
+      for (const value of mark.values) {
+        const x = project.x(value);
+        svg.appendChild(make('line', {
+          x1: x,
+          y1: mark.y,
+          x2: x,
+          y2: mark.y + mark.height,
+          stroke: mark.stroke,
+          'stroke-width': mark.strokeWidth || 1,
+          'data-mark-id': mark.id,
+          'data-value': value
+        }));
+      }
+    }
+
+    function render(spec) {
+      const frame = $('frame');
+      const surface = $('surface');
+      const reference = $('reference');
+      const fontFamily = spec.typography.fontFamily;
+      const tokens = (spec.rendering && spec.rendering.styleTokens) || {};
+
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      surface.innerHTML = '';
+      reference.src = spec.source.path;
+      $('title').textContent = spec.id;
+
+      const svg = make('svg', {
+        width: spec.canvas.width,
+        height: spec.canvas.height,
+        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
+        role: 'img',
+        'aria-label': `${spec.id} generated reconstruction`
+      });
+      svg.style.background = spec.canvas.background;
+      surface.appendChild(svg);
+
+      for (const panel of spec.panels) {
+        appendText(svg, panel.label, {fontFamily});
+        appendText(svg, panel.title, {fontFamily});
+
+        for (const plot of panel.plots || []) {
+          appendText(svg, plot.label, {fontFamily});
+          renderAxes(svg, plot, fontFamily, tokens);
+        }
+
+        for (const mark of panel.marks || []) {
+          const system = transformFor(spec, mark.usesTransform);
+          if (mark.type === 'lineSeries') renderLine(svg, mark, system);
+          if (mark.type === 'rasterTicks') renderRaster(svg, mark, system);
+        }
+      }
+    }
+
+    async function loadSpec() {
+      try {
+        const response = await fetch('./reference-06-replay-stimulation-C.json');
+        if (!response.ok) throw new Error(response.statusText);
+        return response.json();
+      } catch (error) {
+        const fallback = JSON.parse($('fallback-spec').textContent);
+        if (!fallback.id) throw error;
+        return fallback;
+      }
+    }
+
+    function bindToggle() {
+      const frame = $('frame');
+      const generated = $('generatedButton');
+      const reference = $('referenceButton');
+      generated.addEventListener('click', () => {
+        frame.classList.remove('show-reference');
+        generated.classList.add('active');
+        reference.classList.remove('active');
+      });
+      reference.addEventListener('click', () => {
+        frame.classList.add('show-reference');
+        reference.classList.add('active');
+        generated.classList.remove('active');
+      });
+    }
+
+    bindToggle();
+    loadSpec().then(render).catch(error => {
+      $('surface').textContent = `Unable to load figure spec: ${error.message}`;
+    });
+  </script>
+</body>
+</html>

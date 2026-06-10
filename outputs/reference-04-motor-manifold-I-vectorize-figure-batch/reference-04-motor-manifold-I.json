@@ -1,0 +1,146 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-04-motor-manifold-I",
+  "source": {
+    "path": "../../assets/reference/reference-04-motor-manifold-I-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "nativeSize": {"width": 587, "height": 363},
+    "notes": "Four summary-distribution panels reconstructed from visible axes, titles, colors, boxplots, jittered points, and shared legend. Numeric samples are approximate visual recipes, not recovered source data."
+  },
+  "canvas": {"width": 587, "height": 363, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Roboto Condensed", "Nimbus Sans"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "First-pass visual typography fit only; no automated font calibration harness was run."
+    }
+  },
+  "series": [
+    {"id": "pca10", "label": "PCA (10D)", "color": "#9b5cc8"},
+    {"id": "pca20", "label": "PCA (20D)", "color": "#2f82d0"},
+    {"id": "pls", "label": "PLS", "color": "#65b83d"},
+    {"id": "lda", "label": "LDA", "color": "#ff6f14"},
+    {"id": "ridge", "label": "Ridge", "color": "#e6252c"}
+  ],
+  "coordinateSystems": [
+    {"id": "peak-decoding.xy", "type": "categoricalBoxplot", "xCategories": ["pca10", "pca20", "pls", "lda", "ridge"], "y": {"domain": [0, 100], "range": [257, 105]}},
+    {"id": "time-to-peak.xy", "type": "categoricalBoxplot", "xCategories": ["pca10", "pca20", "pls", "lda", "ridge"], "y": {"domain": [-0.6, 1.0], "range": [257, 105]}},
+    {"id": "residual-variance.xy", "type": "categoricalBoxplot", "xCategories": ["pca10", "pca20", "pls", "lda", "ridge"], "y": {"domain": [-3, 1], "range": [257, 105], "scale": "log10Power"}},
+    {"id": "dimensionality.xy", "type": "categoricalBoxplot", "xCategories": ["pca10", "pca20", "pls", "lda", "ridge"], "y": {"domain": [0, 50], "range": [257, 105]}}
+  ],
+  "panels": [
+    {
+      "id": "panel-i",
+      "label": {"id": "panel-label", "text": "I", "x": 36, "y": 45, "fontSize": 23, "fontWeight": 700, "sourceBox": {"x": 34, "y": 28, "width": 8, "height": 19}},
+      "title": {"id": "summary-title", "text": "Summary distributions", "x": 59, "y": 45, "fontSize": 17, "fontWeight": 700, "sourceBox": {"x": 59, "y": 33, "width": 156, "height": 15}},
+      "subtitle": {"id": "summary-subtitle", "text": "(movement epoch)", "x": 220, "y": 45, "fontSize": 15, "fontWeight": 400, "sourceBox": {"x": 220, "y": 33, "width": 110, "height": 15}},
+      "bbox": {"x": 0, "y": 0, "width": 587, "height": 363},
+      "plots": [
+        {
+          "id": "peak-decoding",
+          "usesTransform": "peak-decoding.xy",
+          "bbox": {"x": 63, "y": 105, "width": 96, "height": 152},
+          "title": {"text": "Peak decoding\naccuracy (%)", "x": 108, "y": 78, "fontSize": 14, "anchor": "middle"},
+          "yAxis": {"ticks": [{"value": 0, "label": "0"}, {"value": 25, "label": "25"}, {"value": 50, "label": "50"}, {"value": 75, "label": "75"}, {"value": 100, "label": "100"}]},
+          "xAxis": {"showTicks": false},
+          "boxWidth": 12,
+          "data": [
+            {"series": "pca10", "summary": {"min": 15, "q1": 43, "median": 66, "q3": 83, "max": 90}, "points": [15, 24, 33, 42, 48, 56, 61, 66, 73, 80, 84, 88, 91]},
+            {"series": "pca20", "summary": {"min": 44, "q1": 58, "median": 73, "q3": 82, "max": 93}, "points": [44, 50, 55, 60, 68, 73, 78, 82, 86, 93]},
+            {"series": "pls", "summary": {"min": 50, "q1": 62, "median": 72, "q3": 79, "max": 88}, "points": [50, 56, 60, 66, 70, 74, 78, 82, 86, 88]},
+            {"series": "lda", "summary": {"min": 48, "q1": 62, "median": 75, "q3": 84, "max": 92}, "points": [48, 55, 62, 67, 73, 78, 82, 86, 91]},
+            {"series": "ridge", "summary": {"min": 46, "q1": 60, "median": 72, "q3": 82, "max": 96}, "points": [46, 52, 59, 64, 70, 76, 81, 86, 92, 96]}
+          ]
+        },
+        {
+          "id": "time-to-peak",
+          "usesTransform": "time-to-peak.xy",
+          "bbox": {"x": 196, "y": 105, "width": 101, "height": 152},
+          "title": {"text": "Time to peak\n(s)", "x": 246, "y": 78, "fontSize": 14, "anchor": "middle"},
+          "yAxis": {"ticks": [{"value": -0.5, "label": "-0.5"}, {"value": 0, "label": "0"}, {"value": 0.5, "label": "0.5"}, {"value": 1.0, "label": "1.0"}]},
+          "xAxis": {"showTicks": false},
+          "boxWidth": 12,
+          "data": [
+            {"series": "pca10", "summary": {"min": -0.50, "q1": -0.38, "median": -0.25, "q3": -0.12, "max": -0.05}, "points": [-0.49, -0.42, -0.36, -0.31, -0.24, -0.16, -0.09, -0.05]},
+            {"series": "pca20", "summary": {"min": 0.10, "q1": 0.22, "median": 0.42, "q3": 0.61, "max": 0.86}, "points": [0.08, 0.17, 0.28, 0.39, 0.52, 0.65, 0.82, 0.86]},
+            {"series": "pls", "summary": {"min": -0.33, "q1": -0.22, "median": -0.11, "q3": -0.02, "max": 0.07}, "points": [-0.35, -0.28, -0.21, -0.14, -0.08, -0.01, 0.06]},
+            {"series": "lda", "summary": {"min": -0.22, "q1": -0.12, "median": -0.02, "q3": 0.10, "max": 0.26}, "points": [-0.23, -0.16, -0.08, -0.01, 0.07, 0.18, 0.28]},
+            {"series": "ridge", "summary": {"min": -0.43, "q1": -0.33, "median": -0.25, "q3": -0.14, "max": -0.02}, "points": [-0.45, -0.38, -0.32, -0.26, -0.20, -0.12, -0.05]}
+          ]
+        },
+        {
+          "id": "residual-variance",
+          "usesTransform": "residual-variance.xy",
+          "bbox": {"x": 342, "y": 105, "width": 98, "height": 152},
+          "title": {"text": "Residual variance\n(x 10^-2)", "x": 390, "y": 78, "fontSize": 14, "anchor": "middle"},
+          "yAxis": {"ticks": [{"value": 1, "label": "10^1"}, {"value": 0, "label": "10^0"}, {"value": -1, "label": "10^-1"}, {"value": -2, "label": "10^-2"}, {"value": -3, "label": "10^-3"}]},
+          "xAxis": {"showTicks": false},
+          "boxWidth": 12,
+          "data": [
+            {"series": "pca10", "summary": {"min": -1.5, "q1": -0.6, "median": -0.15, "q3": 0.55, "max": 0.85}, "points": [-1.4, -0.9, -0.5, -0.2, 0.1, 0.4, 0.65, 0.75]},
+            {"series": "pca20", "summary": {"min": -1.8, "q1": -0.7, "median": -0.35, "q3": 0.15, "max": 0.62}, "points": [-1.8, -1.2, -0.75, -0.4, -0.1, 0.15, 0.45]},
+            {"series": "pls", "summary": {"min": -1.2, "q1": -0.45, "median": -0.15, "q3": 0.25, "max": 0.55}, "points": [-1.2, -0.8, -0.45, -0.2, 0.05, 0.3, 0.55]},
+            {"series": "lda", "summary": {"min": -2.0, "q1": -1.55, "median": -1.25, "q3": -0.95, "max": -0.45}, "points": [-2.0, -1.75, -1.45, -1.25, -1.0, -0.75, -0.45]},
+            {"series": "ridge", "summary": {"min": -2.7, "q1": -2.35, "median": -1.95, "q3": -1.55, "max": -1.25}, "points": [-2.7, -2.5, -2.25, -2.0, -1.75, -1.5, -1.25]}
+          ]
+        },
+        {
+          "id": "dimensionality",
+          "usesTransform": "dimensionality.xy",
+          "bbox": {"x": 476, "y": 105, "width": 95, "height": 152},
+          "title": {"text": "Dimensionality\n(95% var)", "x": 522, "y": 78, "fontSize": 14, "anchor": "middle"},
+          "yAxis": {"ticks": [{"value": 0, "label": "0"}, {"value": 10, "label": "10"}, {"value": 20, "label": "20"}, {"value": 30, "label": "30"}, {"value": 40, "label": "40"}, {"value": 50, "label": "50"}]},
+          "xAxis": {"showTicks": false},
+          "boxWidth": 12,
+          "data": [
+            {"series": "pca10", "summary": {"min": 20, "q1": 29, "median": 34, "q3": 39, "max": 42}, "points": [20, 24, 28, 31, 34, 37, 40, 42]},
+            {"series": "pca20", "summary": {"min": 22, "q1": 30, "median": 35, "q3": 39, "max": 41}, "points": [22, 26, 30, 34, 37, 40, 41]},
+            {"series": "pls", "summary": {"min": 13, "q1": 17, "median": 21, "q3": 25, "max": 27}, "points": [13, 16, 18, 21, 23, 26, 27]},
+            {"series": "lda", "summary": {"min": 11, "q1": 14, "median": 17, "q3": 19, "max": 22}, "points": [11, 13, 15, 17, 18, 20, 22]},
+            {"series": "ridge", "summary": {"min": 5, "q1": 7, "median": 9, "q3": 11, "max": 13}, "points": [5, 6, 8, 9, 10, 12, 13]}
+          ]
+        }
+      ],
+      "legend": {
+        "id": "method-legend",
+        "bbox": {"x": 51, "y": 288, "width": 454, "height": 37},
+        "items": [
+          {"series": "pca10", "x": 64, "y": 306},
+          {"series": "pca20", "x": 172, "y": 306},
+          {"series": "pls", "x": 281, "y": 306},
+          {"series": "lda", "x": 357, "y": 306},
+          {"series": "ridge", "x": 436, "y": 306}
+        ]
+      },
+      "provenance": [
+        {"target": "plot bboxes", "confidence": "medium", "note": "Measured visually from visible y axes, baselines, and inter-panel spacing."},
+        {"target": "boxplot summaries and points", "confidence": "low", "note": "Approximated from the raster for editable first-pass visual inspection; exact original observations were not available."},
+        {"target": "axis text and legend", "confidence": "medium-high", "note": "Visible labels transcribed from the source crop."}
+      ]
+    }
+  ],
+  "constraints": [
+    {"id": "source-is-qa-only", "description": "Generated candidate must not render the source raster as a candidate layer."},
+    {"id": "series-legend-linkage", "description": "Legend swatches reference the same series ids and colors used by boxplot marks."},
+    {"id": "editable-axes", "description": "Axes, ticks, titles, boxplots, points, and legend entries are generated SVG objects from JSON."}
+  ],
+  "validation": {
+    "expectedCanvas": {"width": 587, "height": 363},
+    "expectedPlotCount": 4,
+    "expectedSeriesPerPlot": 5,
+    "sourceReuseCheck": [
+      "No candidate drawImage calls.",
+      "No CSS background using the source path.",
+      "Source image appears only in the QA reference img element."
+    ]
+  },
+  "confidence": [
+    {"target": "overall first-pass visual match", "confidence": "medium-low", "note": "Layout, axes, text hierarchy, colors, distribution grammar, and legend are represented; numeric samples are approximate."}
+  ]
+}

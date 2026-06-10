@@ -1,0 +1,241 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-08-neuropixels-central-heatmap-E",
+  "source": {
+    "path": "../../assets/reference/reference-08-neuropixels-central-heatmap-E-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Single cropped panel E from a Neuropixels latent trajectory figure. Geometry and text were inferred visually from the raster at 440 x 229 px."
+  },
+  "canvas": {
+    "width": 440,
+    "height": 229,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Source Sans 3", "Roboto", "Noto Sans"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "First-pass visual match to compact journal sans typography; no font harness was run."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "panel-e.xy",
+      "type": "cartesian2d",
+      "dataBbox": {"x": 96, "y": 59, "width": 276, "height": 148},
+      "x": {"domain": [-2, 3.65]},
+      "y": {"domain": [-2.1, 2.05]}
+    },
+    {
+      "id": "panel-e.timeColor",
+      "type": "linearColor",
+      "domain": [0, 300],
+      "stops": [
+        {"value": 0, "color": "#34115f"},
+        {"value": 75, "color": "#2c788e"},
+        {"value": 150, "color": "#42b173"},
+        {"value": 225, "color": "#95d843"},
+        {"value": 300, "color": "#fde725"}
+      ]
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-e",
+      "bbox": {"x": 0, "y": 0, "width": 440, "height": 229},
+      "label": {
+        "id": "panel-e-label",
+        "text": "E",
+        "x": 41,
+        "y": 40,
+        "fontSize": 20,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 41, "y": 22, "width": 16, "height": 22}
+      },
+      "title": {
+        "id": "panel-e-title",
+        "text": "Latent trajectory (neural manifold)",
+        "x": 69,
+        "y": 38,
+        "fontSize": 16,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 69, "y": 25, "width": 245, "height": 18}
+      },
+      "plot": {
+        "id": "panel-e-plot",
+        "usesTransform": "panel-e.xy",
+        "dataBbox": {"x": 96, "y": 59, "width": 276, "height": 148},
+        "axes": {
+          "xAxis": {
+            "id": "panel-e-x-axis",
+            "line": {"x1": 96, "y1": 207, "x2": 372, "y2": 207},
+            "tickLength": 6,
+            "stroke": "#111111",
+            "strokeWidth": 1.2
+          },
+          "yAxis": {
+            "id": "panel-e-y-axis",
+            "line": {"x1": 96, "y1": 59, "x2": 96, "y2": 207},
+            "tickLength": 6,
+            "stroke": "#111111",
+            "strokeWidth": 1.2
+          }
+        },
+        "x": {
+          "scale": "linear",
+          "domain": [-2, 3.65],
+          "ticks": [
+            {"value": -2, "label": "-2"},
+            {"value": -1, "label": "-1"},
+            {"value": 0, "label": "0"},
+            {"value": 1, "label": "1"},
+            {"value": 2, "label": "2"},
+            {"value": 3, "label": "3"}
+          ]
+        },
+        "y": {
+          "scale": "linear",
+          "domain": [-2.1, 2.05],
+          "ticks": [
+            {"value": -2, "label": "-2"},
+            {"value": -1, "label": "-1"},
+            {"value": 0, "label": "0"},
+            {"value": 1, "label": "1"},
+            {"value": 2, "label": "2"}
+          ],
+          "label": {
+            "id": "panel-e-y-label",
+            "text": "Latent dim 2",
+            "fontSize": 14,
+            "fontWeight": 700,
+            "x": 57,
+            "y": 134,
+            "rotation": -90,
+            "anchor": "middle",
+            "sourceBox": {"x": 47, "y": 80, "width": 14, "height": 106}
+          }
+        }
+      },
+      "marks": [
+        {
+          "id": "latent-trajectory",
+          "type": "lineSeries",
+          "usesTransform": "panel-e.xy",
+          "colorScale": "panel-e.timeColor",
+          "strokeWidth": 3.1,
+          "strokeLinecap": "round",
+          "strokeLinejoin": "round",
+          "interpolation": "linear",
+          "points": [
+            {"x": -1.63, "y": 0.04, "t": 120},
+            {"x": -1.52, "y": 0.28, "t": 135},
+            {"x": -1.29, "y": 0.57, "t": 150},
+            {"x": -1.02, "y": 0.89, "t": 168},
+            {"x": -0.72, "y": 1.15, "t": 188},
+            {"x": -0.38, "y": 1.39, "t": 214},
+            {"x": -0.06, "y": 1.75, "t": 278},
+            {"x": 0.32, "y": 1.72, "t": 300},
+            {"x": 0.75, "y": 1.61, "t": 288},
+            {"x": 1.17, "y": 1.39, "t": 274},
+            {"x": 1.60, "y": 1.13, "t": 254},
+            {"x": 1.96, "y": 0.78, "t": 235},
+            {"x": 2.35, "y": 0.20, "t": 196},
+            {"x": 2.78, "y": -0.05, "t": 178},
+            {"x": 3.22, "y": -0.35, "t": 170},
+            {"x": 3.39, "y": -0.82, "t": 168},
+            {"x": 3.10, "y": -1.13, "t": 158},
+            {"x": 2.65, "y": -1.27, "t": 148},
+            {"x": 2.16, "y": -1.47, "t": 132},
+            {"x": 1.77, "y": -1.59, "t": 106},
+            {"x": 1.35, "y": -1.76, "t": 60},
+            {"x": 0.91, "y": -1.66, "t": 42},
+            {"x": 0.48, "y": -1.38, "t": 30},
+            {"x": 0.12, "y": -1.15, "t": 20},
+            {"x": -0.32, "y": -1.09, "t": 16},
+            {"x": -0.72, "y": -0.88, "t": 12},
+            {"x": -1.10, "y": -0.81, "t": 30},
+            {"x": -1.45, "y": -0.66, "t": 58},
+            {"x": -1.63, "y": 0.04, "t": 100}
+          ],
+          "generatedDetail": {
+            "type": "deterministicWiggle",
+            "seed": 8093,
+            "subdivisionsPerSegment": 5,
+            "amplitudeDataUnits": 0.045,
+            "notes": "Adds small source-like unevenness while preserving editable control points."
+          }
+        }
+      ],
+      "annotations": [
+        {
+          "id": "position-colorbar",
+          "type": "colorbar",
+          "colorScale": "panel-e.timeColor",
+          "bbox": {"x": 399, "y": 103, "width": 11, "height": 109},
+          "title": {"text": "Position", "x": 392, "y": 67, "fontSize": 14, "anchor": "start"},
+          "subtitle": {"text": "(cm)", "x": 404, "y": 85, "fontSize": 14, "anchor": "start"},
+          "ticks": [
+            {"value": 0, "label": "0"},
+            {"value": 100, "label": "100"},
+            {"value": 200, "label": "200"},
+            {"value": 300, "label": "300"}
+          ],
+          "tickSide": "right"
+        },
+        {
+          "id": "trajectory-direction",
+          "type": "arrow",
+          "usesTransform": "panel-e.xy",
+          "start": {"x": 2.27, "y": 0.80},
+          "end": {"x": 2.86, "y": 0.31},
+          "stroke": "#111111",
+          "strokeWidth": 1.2,
+          "headLength": 7,
+          "headWidth": 5
+        }
+      ],
+      "provenance": [
+        {
+          "target": "latent-trajectory",
+          "confidence": "medium",
+          "note": "Trajectory control points are visually estimated from the raster, not algorithmically digitized."
+        },
+        {
+          "target": "position-colorbar",
+          "confidence": "medium",
+          "note": "Colorbar ticks and viridis-like colors are reconstructed from visible labels and hue progression."
+        },
+        {
+          "target": "panel-e-title",
+          "confidence": "medium",
+          "note": "Typography is approximate Arial/Helvetica bold rather than source-calibrated."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "expectedSourceDimensions": {"width": 440, "height": 229},
+    "requiredChecks": [
+      "generated candidate must not render the source raster through a canvas image copy",
+      "generated candidate must not use the source raster as a CSS background",
+      "axis ticks are editable SVG text and line elements",
+      "colorbar references panel-e.timeColor",
+      "source image appears only in the QA reference view"
+    ]
+  },
+  "confidence": [
+    {
+      "target": "overall",
+      "confidence": "first-pass",
+      "note": "Independent reconstruction for visual inspection. Suitable for editing labels, domains, color scale, trajectory control points, and layout anchors."
+    }
+  ]
+}

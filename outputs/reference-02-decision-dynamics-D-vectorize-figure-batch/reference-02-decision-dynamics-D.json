@@ -1,0 +1,161 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-02-decision-dynamics-D",
+  "source": {
+    "path": "../../assets/reference/reference-02-decision-dynamics-D-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Single panel psychometric curve reconstructed from visual inspection of the raster crop."
+  },
+  "canvas": {
+    "width": 389,
+    "height": 514,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Arial Narrow", "Roboto Condensed"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "First-pass typography tuned visually; source appears close to compact Helvetica/Arial with narrow axis label spacing."
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-d",
+      "bbox": {"x": 0, "y": 0, "width": 389, "height": 514},
+      "label": {
+        "id": "panel-label-d",
+        "text": "D",
+        "x": 10,
+        "y": 29,
+        "fontSize": 21,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 10, "y": 13, "width": 16, "height": 20}
+      },
+      "title": {
+        "id": "panel-title",
+        "text": "Psychometric curve",
+        "x": 36,
+        "y": 30,
+        "fontSize": 17,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 36, "y": 17, "width": 145, "height": 18}
+      },
+      "coordinateSystems": [
+        {
+          "id": "panel-d.data",
+          "type": "cartesian2d",
+          "xDomain": [-55, 60],
+          "yDomain": [0, 1],
+          "dataBbox": {"x": 64, "y": 82, "width": 285, "height": 327}
+        }
+      ],
+      "plot": {
+        "dataBbox": {"x": 64, "y": 82, "width": 285, "height": 327},
+        "axes": {
+          "xAxis": {"id": "panel-d-x-axis", "line": {"x1": 64, "y1": 409, "x2": 349, "y2": 409}, "tickLength": 7},
+          "yAxis": {"id": "panel-d-y-axis", "line": {"x1": 64, "y1": 82, "x2": 64, "y2": 409}, "tickLength": 7}
+        },
+        "x": {
+          "scale": "linear",
+          "domain": [-55, 60],
+          "ticks": [
+            {"value": -50, "label": "-50"},
+            {"value": -25, "label": "-25"},
+            {"value": 0, "label": "0"},
+            {"value": 25, "label": "25"},
+            {"value": 50, "label": "50"}
+          ],
+          "label": {
+            "id": "x-axis-title",
+            "text": "Evidence strength (coherence %)",
+            "x": 207,
+            "y": 469,
+            "fontSize": 16,
+            "fontWeight": 400,
+            "anchor": "middle",
+            "sourceBox": {"x": 97, "y": 456, "width": 220, "height": 20}
+          }
+        },
+        "y": {
+          "scale": "linear",
+          "domain": [0, 1],
+          "ticks": [
+            {"value": 0, "label": "0.0"},
+            {"value": 0.5, "label": "0.5"},
+            {"value": 1, "label": "1.0"}
+          ],
+          "label": {
+            "id": "y-axis-title",
+            "text": "P(right choice)",
+            "x": 20,
+            "y": 245,
+            "rotation": -90,
+            "fontSize": 16,
+            "fontWeight": 400,
+            "anchor": "middle",
+            "sourceBox": {"x": 8, "y": 180, "width": 20, "height": 130}
+          }
+        }
+      },
+      "data": {
+        "psychometricPoints": [
+          {"x": -50, "y": 0.055, "yError": 0.025},
+          {"x": -40, "y": 0.065, "yError": 0.026},
+          {"x": -30, "y": 0.095, "yError": 0.035},
+          {"x": -20, "y": 0.135, "yError": 0.045},
+          {"x": -12, "y": 0.240, "yError": 0.046},
+          {"x": -5, "y": 0.375, "yError": 0.050},
+          {"x": 5, "y": 0.595, "yError": 0.055},
+          {"x": 12, "y": 0.735, "yError": 0.058},
+          {"x": 22, "y": 0.855, "yError": 0.060},
+          {"x": 35, "y": 0.910, "yError": 0.060},
+          {"x": 45, "y": 0.950, "yError": 0.045},
+          {"x": 55, "y": 0.925, "yError": 0.045}
+        ],
+        "fitCurve": {
+          "type": "logistic",
+          "formula": "lower + (upper - lower) / (1 + exp(-slope * (x - midpoint)))",
+          "parameters": {"lower": 0.045, "upper": 0.955, "midpoint": 0.9, "slope": 0.108},
+          "sampleDomain": [-52, 58],
+          "sampleCount": 160
+        }
+      },
+      "marks": [
+        {"id": "chance-line", "type": "referenceLine", "orientation": "horizontal", "value": 0.5, "stroke": "#777777", "strokeWidth": 1.2, "dasharray": "4 2"},
+        {"id": "threshold-line", "type": "referenceLine", "orientation": "vertical", "value": 0, "fromY": 0, "toY": 0.5, "stroke": "#777777", "strokeWidth": 1.1, "dasharray": "4 2"},
+        {"id": "psychometric-fit", "type": "lineSeries", "dataRef": "fitCurve", "stroke": "#ff0000", "strokeWidth": 1.5, "fill": "none"},
+        {"id": "choice-points", "type": "scatterWithErrorBars", "dataRef": "psychometricPoints", "marker": {"shape": "circle", "radius": 4.1, "fill": "#ffffff", "stroke": "#111111", "strokeWidth": 1.2}, "errorBar": {"stroke": "#111111", "strokeWidth": 1.1, "capWidth": 5}}
+      ],
+      "annotations": [
+        {"id": "trial-count", "type": "text", "text": "n = 280 trials", "x": 78, "y": 109, "fontSize": 14, "fontStyle": "italic", "anchor": "start"},
+        {"id": "sessions", "type": "text", "text": "(2 sessions)", "x": 78, "y": 127, "fontSize": 14, "anchor": "start"},
+        {"id": "pse", "type": "text", "text": "PSE = 1.8%", "x": 274, "y": 357, "fontSize": 16, "fill": "#ff0000", "anchor": "start"},
+        {"id": "slope", "type": "text", "text": "Slope = 4.7", "x": 274, "y": 381, "fontSize": 16, "fill": "#ff0000", "anchor": "start"}
+      ],
+      "provenance": [
+        {"target": "plot geometry", "confidence": "medium", "note": "Axis box and tick anchors estimated from source pixels."},
+        {"target": "psychometricPoints", "confidence": "medium", "note": "Data points and error bars visually approximated from the raster."},
+        {"target": "fitCurve", "confidence": "medium", "note": "Logistic parameters selected to visually match the red curve and annotated PSE/Slope text."}
+      ]
+    }
+  ],
+  "validation": {
+    "expectedMarks": {"scatterPoints": 12, "errorBars": 12, "xTicks": 5, "yTicks": 3},
+    "constraints": [
+      "Generated candidate must not render the source raster as a figure layer.",
+      "Dashed horizontal chance line and dashed vertical threshold line share the same data transform as points and curve.",
+      "Axis ticks and labels remain editable SVG text/line elements."
+    ]
+  },
+  "confidence": [
+    {"target": "overall", "confidence": "medium", "note": "Independent first-pass reconstruction intended for visual inspection, not digitized-data fidelity."}
+  ]
+}

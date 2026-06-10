@@ -1,0 +1,164 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-04-motor-manifold",
+  "source": {
+    "path": "../../../assets/full-reference/reference-04-motor-manifold.png",
+    "usage": "QA-only reference view; never used as a generated visual layer.",
+    "nativeSize": {"width": 1536, "height": 1024},
+    "notes": "Independent first-pass reconstruction from visual inspection of the full composite. Dense fields, trajectories, polar profiles, matrices, and distributions are procedural approximations, not source pixels."
+  },
+  "canvas": {"width": 1536, "height": 1024, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "calibration": {"letterSpacing": 0, "lineHeight": 1.05}
+  },
+  "styles": {
+    "axis": "#111111",
+    "grid": "#dddddd",
+    "phaseBand": "rgba(0,0,0,0.055)",
+    "semAlpha": 0.22,
+    "colors": {
+      "pca10": "#7c2cc2",
+      "pca20": "#1673c9",
+      "pls": "#55ad2b",
+      "lda": "#ff6b16",
+      "ridge": "#ec1b24",
+      "red": "#e53935",
+      "orange": "#ff7f2a",
+      "yellow": "#ffc928",
+      "green": "#7bc34a",
+      "cyan": "#40c3c8",
+      "blue": "#2d95df",
+      "indigo": "#5867e8",
+      "purple": "#9b4cc2"
+    }
+  },
+  "panels": [
+    {
+      "id": "A",
+      "bbox": {"x": 0, "y": 0, "width": 460, "height": 350},
+      "label": {"text": "A", "x": 8, "y": 28, "fontSize": 22, "fontWeight": 700},
+      "title": {"text": "Neural manifold (reach epoch)", "x": 34, "y": 28, "fontSize": 16, "fontWeight": 700},
+      "plotBox": {"x": 58, "y": 52, "width": 300, "height": 260},
+      "coordinateSystem": {"type": "orthographic3D", "domains": {"pc1": [-6, 6], "pc2": [-5, 5], "pc3": [-4, 4]}, "basis": {"origin": [62, 282], "pc1": [205, 35], "pc2": [114, -62], "pc3": [0, -176]}},
+      "axes": [
+        {"dimension": "pc1", "label": "PC 1 (23%)", "ticks": [-6, -3, 0, 3, 6]},
+        {"dimension": "pc2", "label": "PC 2 (14%)", "ticks": [-5, 0, 5]},
+        {"dimension": "pc3", "label": "PC 3 (9%)", "ticks": [-4, -2, 0, 2, 4]}
+      ],
+      "legend": {"type": "startEnd", "x": 373, "y": 154},
+      "colorWheel": {"x": 392, "y": 78, "radius": 36, "labels": [{"text": "0°", "dx": 58, "dy": 6}, {"text": "90°", "dx": 0, "dy": -48}, {"text": "180°", "dx": -63, "dy": 6}, {"text": "270°", "dx": 0, "dy": 60}]},
+      "marks": [{"type": "manifoldTrajectories", "seed": 4001, "conditions": [0, 45, 90, 135, 180, 225, 270, 315], "trialsPerCondition": 18}]
+    },
+    {
+      "id": "B",
+      "bbox": {"x": 485, "y": 0, "width": 430, "height": 350},
+      "label": {"text": "B", "x": 485, "y": 28, "fontSize": 22, "fontWeight": 700},
+      "title": {"text": "Condition-aligned trajectories (mean ± SEM)", "x": 512, "y": 28, "fontSize": 16, "fontWeight": 700},
+      "smallMultiples": {"cols": 4, "rows": 2, "plotBoxes": [{"x": 527, "y": 68, "width": 83, "height": 102}, {"x": 623, "y": 68, "width": 83, "height": 102}, {"x": 718, "y": 68, "width": 83, "height": 102}, {"x": 814, "y": 68, "width": 83, "height": 102}, {"x": 527, "y": 203, "width": 83, "height": 102}, {"x": 623, "y": 203, "width": 83, "height": 102}, {"x": 718, "y": 203, "width": 83, "height": 102}, {"x": 814, "y": 203, "width": 83, "height": 102}]},
+      "x": {"domain": [-6, 6], "ticks": [-6, 0, 6], "label": "PC 1 (23%)"},
+      "y": {"domain": [-4, 4], "ticks": [-4, 0, 4], "label": "PC 3 (9%)"},
+      "conditions": [{"angle": 0, "color": "#e53935"}, {"angle": 45, "color": "#ff7f2a"}, {"angle": 90, "color": "#ffc928"}, {"angle": 135, "color": "#7bc34a"}, {"angle": 180, "color": "#40c3c8"}, {"angle": 225, "color": "#2d95df"}, {"angle": 270, "color": "#5867e8"}, {"angle": 315, "color": "#9b4cc2"}],
+      "orientationKey": {"x": 882, "y": 316, "xLabel": "PC 1", "yLabel": "PC 3"},
+      "marks": [{"type": "alignedTrajectorySem", "seed": 4002}]
+    },
+    {
+      "id": "C",
+      "bbox": {"x": 950, "y": 0, "width": 535, "height": 350},
+      "label": {"text": "C", "x": 957, "y": 28, "fontSize": 22, "fontWeight": 700},
+      "title": {"text": "Velocity tuning (reach epoch)", "x": 985, "y": 28, "fontSize": 16, "fontWeight": 700},
+      "polarGrid": {"centers": [[1044, 100], [1149, 100], [1254, 100], [1358, 100], [1044, 232], [1149, 232], [1254, 232], [1358, 232]], "radius": 42, "radialTicks": [0.5, 1.0], "angleLabels": [0, 90, 180, 270]},
+      "units": [{"label": "N = 1"}, {"label": "N = 2"}, {"label": "N = 3"}, {"label": "N = 4"}, {"label": "N = 5"}, {"label": "N = 6"}, {"label": "N = 7"}, {"label": "N = 8"}],
+      "legend": {"title": "FR (a.u.)", "x": 1444, "y": 198, "items": [{"label": "1.0", "width": 5}, {"label": "0.5", "width": 3}, {"label": "0.2", "width": 1}]},
+      "marks": [{"type": "polarTuning", "seed": 4003}]
+    },
+    {
+      "id": "D",
+      "bbox": {"x": 0, "y": 372, "width": 420, "height": 265},
+      "label": {"text": "D", "x": 8, "y": 394, "fontSize": 22, "fontWeight": 700},
+      "title": {"text": "Peristimulus time (aligned to movement onset)", "x": 34, "y": 394, "fontSize": 16},
+      "plotBox": {"x": 56, "y": 423, "width": 294, "height": 196},
+      "x": {"domain": [-1, 1], "ticks": [-1, -0.5, 0, 0.5, 1], "labels": ["-1.0", "-0.5", "0", "0.5", "1.0"], "label": "Time (s)"},
+      "y": {"domain": [1, 200], "ticks": [1, 50, 100, 150, 200], "label": "Neuron (sorted)"},
+      "phaseLabels": [{"text": "Cue", "x": 92}, {"text": "Delay", "x": 160}, {"text": "Move", "x": 228}, {"text": "Hold", "x": 304}],
+      "colorbar": {"x": 373, "y": 511, "width": 14, "height": 93, "title": "z-score", "ticks": [{"value": 2, "label": "2"}, {"value": 0, "label": "0"}, {"value": -2, "label": "-2"}]},
+      "marks": [{"type": "peristimulusHeatmap", "seed": 4004}]
+    },
+    {
+      "id": "E",
+      "bbox": {"x": 464, "y": 372, "width": 450, "height": 265},
+      "label": {"text": "E", "x": 465, "y": 394, "fontSize": 22, "fontWeight": 700},
+      "title": {"text": "Cross-validated decoding of reach direction", "x": 491, "y": 394, "fontSize": 16},
+      "plotBox": {"x": 507, "y": 424, "width": 286, "height": 194},
+      "x": {"domain": [-1, 1], "ticks": [-1, -0.5, 0, 0.5, 1], "label": "Time (s)"},
+      "y": {"domain": [0, 100], "ticks": [0, 25, 50, 75, 100], "label": "Decoding accuracy (%)"},
+      "phaseBands": [{"label": "Cue", "from": -1, "to": -0.6}, {"label": "Delay", "from": -0.6, "to": 0}, {"label": "Move", "from": 0, "to": 0.6}, {"label": "Hold", "from": 0.6, "to": 1}],
+      "chance": {"value": 12.5, "label": "Chance (12.5%)"},
+      "series": [{"id": "pca10", "label": "PCA (10D)"}, {"id": "pca20", "label": "PCA (20D)"}, {"id": "pls", "label": "PLS"}, {"id": "lda", "label": "LDA"}, {"id": "ridge", "label": "Ridge"}],
+      "legend": {"x": 823, "y": 462},
+      "marks": [{"type": "decodingTimeSeries", "seed": 4005}]
+    },
+    {
+      "id": "F",
+      "bbox": {"x": 950, "y": 372, "width": 535, "height": 265},
+      "label": {"text": "F", "x": 957, "y": 394, "fontSize": 22, "fontWeight": 700},
+      "title": {"text": "Cross-validated confusion matrices (movement epoch)", "x": 983, "y": 394, "fontSize": 16},
+      "matrices": [{"title": "PCA (10D)", "x": 999, "y": 455}, {"title": "PCA (20D)", "x": 1095, "y": 455}, {"title": "PLS", "x": 1191, "y": 455}, {"title": "LDA", "x": 1286, "y": 455}, {"title": "Ridge", "x": 1381, "y": 455}],
+      "matrix": {"width": 84, "height": 113, "size": 8, "xTicks": [0, 180], "yTicks": [0, 90, 180, 270]},
+      "xLabel": {"text": "Predicted dir. (°)", "x": 1188, "y": 622},
+      "yLabel": {"text": "True dir. (°)", "x": 964, "y": 520, "rotation": -90},
+      "colorbar": {"x": 1492, "y": 500, "width": 12, "height": 84, "title": "Prob.", "ticks": [{"value": 1, "label": "1.0"}, {"value": 0.5, "label": "0.5"}, {"value": 0, "label": "0"}]},
+      "marks": [{"type": "confusionMatrices", "seed": 4006}]
+    },
+    {
+      "id": "G",
+      "bbox": {"x": 0, "y": 682, "width": 330, "height": 260},
+      "label": {"text": "G", "x": 8, "y": 706, "fontSize": 22, "fontWeight": 700},
+      "title": {"text": "Eigenvalue spectrum", "x": 35, "y": 706, "fontSize": 16},
+      "plotBox": {"x": 70, "y": 729, "width": 235, "height": 193},
+      "x": {"domain": [1, 50], "ticks": [1, 10, 20, 30, 40, 50], "label": "Component # (i)"},
+      "y": {"domain": [-3, 1], "ticks": [-3, -2, -1, 0, 1], "labels": ["10^-3", "10^-2", "10^-1", "10^0", "10^1"], "label": "Eigenvalue (λᵢ)", "scale": "log10"},
+      "annotations": [{"xValue": 10, "label": "10D (70% var)"}, {"xValue": 20, "label": "20D (89% var)"}],
+      "marks": [{"type": "eigenSpectrum", "seed": 4007}]
+    },
+    {
+      "id": "H",
+      "bbox": {"x": 360, "y": 682, "width": 560, "height": 260},
+      "label": {"text": "H", "x": 361, "y": 706, "fontSize": 22, "fontWeight": 700},
+      "title": {"text": "Residuals (data − reconstruction)", "x": 390, "y": 706, "fontSize": 16},
+      "plots": [{"title": "PCA (10D)", "x": 397, "y": 759}, {"title": "PCA (20D)", "x": 520, "y": 759}, {"title": "PLS", "x": 644, "y": 759}, {"title": "LDA", "x": 771, "y": 759}],
+      "plot": {"width": 104, "height": 155},
+      "x": {"domain": [-1, 1], "ticks": [-1, 0, 1], "label": "Time (s)"},
+      "y": {"domain": [-3, 0], "ticks": [-3, -2, -1, 0], "labels": ["10^-3", "10^-2", "10^-1", "10^0"], "label": "Residual variance", "scale": "log10"},
+      "phaseLegend": {"x": 895, "y": 793, "items": ["Cue", "Delay", "Move", "Hold"]},
+      "marks": [{"type": "residualCurves", "seed": 4008}]
+    },
+    {
+      "id": "I",
+      "bbox": {"x": 950, "y": 682, "width": 535, "height": 310},
+      "label": {"text": "I", "x": 983, "y": 706, "fontSize": 22, "fontWeight": 700},
+      "title": {"text": "Summary distributions", "x": 1008, "y": 706, "fontSize": 16, "fontWeight": 700},
+      "subtitle": {"text": "(movement epoch)", "x": 1170, "y": 706, "fontSize": 14},
+      "plots": [
+        {"id": "peak", "title": "Peak decoding\naccuracy (%)", "x": 1000, "y": 768, "width": 97, "height": 150, "domain": [0, 100], "ticks": [0, 25, 50, 75, 100]},
+        {"id": "time", "title": "Time to peak\n(s)", "x": 1130, "y": 768, "width": 100, "height": 150, "domain": [-0.6, 1.0], "ticks": [-0.5, 0, 0.5, 1.0]},
+        {"id": "resid", "title": "Residual variance\n(x 10^-2)", "x": 1264, "y": 768, "width": 98, "height": 150, "domain": [-3, 1], "ticks": [-3, -2, -1, 0, 1], "labels": ["10^-3", "10^-2", "10^-1", "10^0", "10^1"], "scale": "log10"},
+        {"id": "dim", "title": "Dimensionality\n(95% var)", "x": 1398, "y": 768, "width": 96, "height": 150, "domain": [0, 50], "ticks": [0, 10, 20, 30, 40, 50]}
+      ],
+      "series": [{"id": "pca10", "label": "PCA (10D)"}, {"id": "pca20", "label": "PCA (20D)"}, {"id": "pls", "label": "PLS"}, {"id": "lda", "label": "LDA"}, {"id": "ridge", "label": "Ridge"}],
+      "legend": {"x": 1000, "y": 950, "width": 454, "height": 37},
+      "marks": [{"type": "summaryDistributions", "seed": 4009}]
+    }
+  ],
+  "provenance": [
+    {"target": "all panels", "confidence": "medium-low", "note": "Full composite layout and major plot grammar were visually inferred from the supplied reference raster."},
+    {"target": "dense fields", "confidence": "low", "note": "Generated heatmaps, matrices, raster-like traces, polar profiles, and point clouds are deterministic procedural recipes for editable visual inspection."},
+    {"target": "source usage", "confidence": "high", "note": "The source PNG path is included only for the labeled QA/reference view in the HTML."}
+  ],
+  "constraints": [
+    {"id": "no-source-raster-as-generated-layer", "note": "No candidate layer may use drawImage, CSS background images, or the source PNG."},
+    {"id": "semantic-editability", "note": "Panel boxes, plot boxes, ticks, labels, legends, colorbars, helper phase bands, and recipes are explicit in JSON."}
+  ]
+}

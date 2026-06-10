@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-08-neuropixels-central-heatmap-C reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #aaaaaa;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+
+    main {
+      min-height: calc(100vh - 49px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .frame {
+      position: relative;
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    .surface,
+    .reference-pane {
+      position: absolute;
+      inset: 0;
+    }
+
+    .reference-pane {
+      display: none;
+      background: #ffffff;
+    }
+
+    .reference-pane img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .reference-label {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      padding: 4px 7px;
+      border: 1px solid #111111;
+      background: rgba(255, 255, 255, 0.92);
+      color: #111111;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .show-reference .surface {
+      display: none;
+    }
+
+    .show-reference .reference-pane {
+      display: block;
+    }
+
+    canvas,
+    svg {
+      position: absolute;
+      inset: 0;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="pageTitle">Neuropixels heatmap C reconstruction</h1>
+      <div class="note">Generated candidate is JSON-rendered. Source image appears only in the labeled QA/reference view.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">QA reference</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <div id="referencePane" class="reference-pane">
+        <img id="referenceImage" alt="QA reference source image">
+        <div class="reference-label">QA reference only</div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function $(id) {
+      return document.getElementById(id);
+    }
+
+    function svgEl(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function rng(seed) {
+      return function random() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function scale(domain, range, value) {
+      return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+    }
+
+    function xScale(panel, value) {
+      const box = panel.plot.dataBbox;
+      return scale(panel.plot.x.domain, [box.x, box.x + box.width], value);
+    }
+
+    function yScale(panel, value) {
+      const box = panel.plot.dataBbox;
+      return scale(panel.plot.y.domain, [box.y, box.y + box.height], value);
+    }
+
+    function hexToRgb(hex) {
+      const clean = hex.replace('#', '');
+      return {
+        r: parseInt(clean.slice(0, 2), 16),
+        g: parseInt(clean.slice(2, 4), 16),
+        b: parseInt(clean.slice(4, 6), 16)
+      };
+    }
+
+    function interpolateColor(stops, value) {
+      const sorted = stops.slice().sort((a, b) => a.value - b.value);
+      if (value <= sorted[0].value) return hexToRgb(sorted[0].color);
+      if (value >= sorted[sorted.length - 1].value) return hexToRgb(sorted[sorted.length - 1].color);
+      for (let i = 0; i < sorted.length - 1; i += 1) {
+        const a = sorted[i];
+        const b = sorted[i + 1];
+        if (value >= a.value && value <= b.value) {
+          const t = (value - a.value) / (b.value - a.value);
+          const ca = hexToRgb(a.color);
+          const cb = hexToRgb(b.color);
+          return {
+            r: Math.round(ca.r + (cb.r - ca.r) * t),
+            g: Math.round(ca.g + (cb.g - ca.g) * t),
+            b: Math.round(ca.b + (cb.b - ca.b) * t)
+          };
+        }
+      }
+      return hexToRgb('#101311');
+    }
+
+    function gaussian(x, y, blob) {
+      const dx = (x - blob.centerX) / blob.sigmaX;
+      const dy = (y - blob.centerY) / blob.sigmaY;
+      return blob.amplitude * Math.exp(-0.5 * (dx * dx + dy * dy));
+    }
+
+    function renderHeatmap(ctx, spec, panel, mark) {
+      const box = panel.plot.dataBbox;
+      const recipe = mark.recipe;
+      const random = rng(recipe.seed);
+      const rows = mark.matrix.rows;
+      const columns = mark.matrix.columns;
+      const colorScale = spec.coordinateSystems.find(item => item.id === mark.colorScale);
+      const rowOffsets = Array.from({length: rows}, () => (random() - 0.5) * recipe.rowTextureStrength);
+      const rowGates = Array.from({length: rows}, () => random());
+
+      ctx.fillStyle = panel.plot.background;
+      ctx.fillRect(box.x, box.y, box.width, box.height);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(box.x, box.y, box.width, box.height);
+      ctx.clip();
+
+      for (let row = 0; row < rows; row += 1) {
+        const yData = 1 + row;
+        const y = Math.round(yScale(panel, yData));
+        const nextY = Math.round(yScale(panel, yData + 1));
+        const h = Math.max(1, Math.abs(nextY - y));
+        const sparseRow = rowGates[row] < recipe.horizontalLineProbability;
+        for (let col = 0; col < columns; col += 1) {
+          const xData = col;
+          let value = recipe.baseline + rowOffsets[row] * 0.35;
+          value += (random() - 0.5) * recipe.noise;
+          value += Math.sin((row * 0.052) + (col * 0.11)) * recipe.columnBandStrength;
+
+          for (const blob of recipe.eventResponses) value += gaussian(xData, yData, blob);
+          for (const blob of recipe.cyanSuppressions) value += gaussian(xData, yData, blob);
+
+          if (!sparseRow && random() > 0.18) value *= 0.45;
+          if (random() > 0.965) value += 1.2 * random();
+          if (random() < 0.035) value -= 0.9 * random();
+
+          const color = interpolateColor(colorScale.stops, clamp(value, colorScale.domain[0], colorScale.domain[1]));
+          const x = Math.round(xScale(panel, xData));
+          const nextX = Math.round(xScale(panel, xData + 1));
+          const w = Math.max(2, nextX - x + 1);
+          ctx.fillStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
+          ctx.globalAlpha = sparseRow ? 0.9 : 0.44;
+          ctx.fillRect(x, Math.min(y, nextY), w, h);
+        }
+      }
+
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    }
+
+    function appendText(svg, textSpec, extra = {}) {
+      const node = svgEl('text', {
+        id: textSpec.id || null,
+        x: textSpec.x,
+        y: textSpec.y,
+        fill: textSpec.fill || '#111111',
+        'font-size': textSpec.fontSize,
+        'font-weight': textSpec.fontWeight || 400,
+        'text-anchor': textSpec.anchor || 'start',
+        'dominant-baseline': extra.baseline || 'alphabetic',
+        transform: textSpec.rotation ? `rotate(${textSpec.rotation} ${textSpec.x} ${textSpec.y})` : null,
+        'data-role': textSpec.role || extra.role || 'text',
+        'data-text-id': textSpec.id || null,
+        'data-anchor-to': textSpec.anchorTo || textSpec.anchor_to || extra.anchorTo || null,
+        'data-protected-text': extra.protectedText ? 'true' : null
+      });
+      node.textContent = textSpec.text;
+      svg.appendChild(node);
+    }
+
+    function renderAxes(svg, panel) {
+      const plot = panel.plot;
+      const box = plot.dataBbox;
+      const xAxis = plot.axes.xAxis;
+      const yAxis = plot.axes.yAxis;
+      const xAxisLine = xAxis.line || {x1: box.x, y1: box.y + box.height, x2: box.x + box.width, y2: box.y + box.height};
+      const yAxisLine = yAxis.line || {x1: box.x, y1: box.y, x2: box.x, y2: box.y + box.height};
+      svg.appendChild(svgEl('rect', {
+        x: box.x,
+        y: box.y,
+        width: box.width,
+        height: box.height,
+        fill: 'none',
+        stroke: '#111111',
+        'stroke-width': 1
+      }));
+      svg.appendChild(svgEl('line', {
+        x1: xAxisLine.x1,
+        y1: xAxisLine.y1,
+        x2: xAxisLine.x2,
+        y2: xAxisLine.y2,
+        stroke: xAxis.stroke || '#111111',
+        'stroke-width': xAxis.strokeWidth || 1,
+        'data-role': 'axis-line',
+        'data-axis': xAxis.id
+      }));
+      svg.appendChild(svgEl('line', {
+        x1: yAxisLine.x1,
+        y1: yAxisLine.y1,
+        x2: yAxisLine.x2,
+        y2: yAxisLine.y2,
+        stroke: yAxis.stroke || '#111111',
+        'stroke-width': yAxis.strokeWidth || 1,
+        'data-role': 'axis-line',
+        'data-axis': yAxis.id
+      }));
+
+      for (const tick of plot.x.ticks) {
+        const x = xScale(panel, tick.value);
+        svg.appendChild(svgEl('line', {
+          x1: x,
+          y1: xAxisLine.y1,
+          x2: x,
+          y2: xAxisLine.y1 + xAxis.tickLength,
+          stroke: '#111111',
+          'stroke-width': 1,
+          'data-role': 'axis-tick-mark',
+          'data-axis': xAxis.id,
+          'data-value': tick.value,
+          'data-anchor-to': tick.anchorTo || tick.anchor_to || tick.alignment?.target || null,
+          'data-alignment-id': tick.alignment?.id || null,
+          'data-alignment-target': tick.alignment?.target || null,
+          'data-alignment-delta-px': tick.alignment?.deltaPx ?? tick.alignment?.delta_px ?? null
+        }));
+        const label = svgEl('text', {
+          x,
+          y: xAxisLine.y1 + 15,
+          fill: '#111111',
+          'font-size': 14,
+          'font-weight': 400,
+          'text-anchor': 'middle',
+          'data-role': 'tick-label',
+          'data-axis': xAxis.id,
+          'data-value': tick.value,
+          'data-text-id': `${xAxis.id}-tick-${tick.value}-label`,
+          'data-anchor-to': tick.anchorTo || tick.anchor_to || xAxis.tickLabelBand?.id || xAxis.id,
+          'data-alignment-id': tick.alignment?.id || null,
+          'data-alignment-target': tick.alignment?.target || null,
+          'data-alignment-delta-px': tick.alignment?.deltaPx ?? tick.alignment?.delta_px ?? null,
+          'data-protected-text': 'true'
+        });
+        label.textContent = tick.label;
+        svg.appendChild(label);
+      }
+
+      for (const tick of plot.y.ticks) {
+        const y = yScale(panel, tick.value);
+        svg.appendChild(svgEl('line', {
+          x1: yAxisLine.x1 - yAxis.tickLength,
+          y1: y,
+          x2: yAxisLine.x1,
+          y2: y,
+          stroke: '#111111',
+          'stroke-width': 1,
+          'data-role': 'axis-tick-mark',
+          'data-axis': yAxis.id,
+          'data-value': tick.value
+        }));
+        const label = svgEl('text', {
+          x: yAxisLine.x1 - 10,
+          y: y + 5,
+          fill: '#111111',
+          'font-size': 16,
+          'font-weight': 400,
+          'text-anchor': 'end',
+          'data-role': 'tick-label',
+          'data-axis': yAxis.id,
+          'data-value': tick.value,
+          'data-text-id': `${yAxis.id}-tick-${tick.value}-label`,
+          'data-anchor-to': yAxis.tickLabelBand?.id || yAxis.id,
+          'data-protected-text': 'true'
+        });
+        label.textContent = tick.label;
+        svg.appendChild(label);
+      }
+
+      if (plot.y.label) appendText(svg, {...plot.y.label, role: 'y-axis-label'}, {baseline: 'middle', anchorTo: yAxis.tickLabelBand?.id || yAxis.id, protectedText: true});
+    }
+
+    function renderEventLines(svg, panel, mark) {
+      const box = panel.plot.dataBbox;
+      for (const value of mark.values) {
+        const x = xScale(panel, value);
+        svg.appendChild(svgEl('line', {
+          x1: x,
+          y1: box.y,
+          x2: x,
+          y2: box.y + box.height,
+          stroke: mark.stroke,
+          'stroke-width': mark.strokeWidth,
+          'stroke-dasharray': mark.dasharray,
+          opacity: mark.opacity,
+          'data-mark-id': mark.id,
+          'data-event-value': value
+        }));
+      }
+    }
+
+    function renderColorStrip(svg, panel) {
+      for (const item of panel.layoutObjects || []) {
+        if (!['sideRowBlockStrip', 'rowBlockSideStrip', 'rowBlockStrip', 'segmentedColorbar'].includes(item.type)) continue;
+        const group = svgEl('g', {
+          'data-role': 'side-row-block-strip',
+          'data-layout-id': item.id,
+          'data-linked-axis': item.linkedAxis || item.linked_axis,
+          'data-shared-layout-frame': item.sharedLayoutFrame || item.shared_layout_frame || null,
+          'data-alignments': Array.isArray(item.alignments) ? item.alignments.map(alignment => alignment.id).join(' ') : null
+        });
+        svg.appendChild(group);
+        if (Array.isArray(item.components) && item.components.length) {
+          for (const component of item.components) {
+            group.appendChild(svgEl('rect', {
+              x: component.bbox.x,
+              y: component.bbox.y,
+              width: component.bbox.width,
+              height: component.bbox.height,
+              fill: component.fill,
+              stroke: 'none',
+              'data-role': 'side-row-block-component',
+              'data-layout-id': item.id,
+              'data-component-id': component.id,
+              'data-component-kind': component.kind
+            }));
+          }
+        } else for (const segment of item.segments) {
+          const horizontal = item.orientation === 'horizontal';
+          group.appendChild(svgEl('rect', {
+            x: horizontal ? segment.fromX : item.bbox.x,
+            y: horizontal ? item.bbox.y : segment.fromY,
+            width: horizontal ? segment.toX - segment.fromX : item.bbox.width,
+            height: horizontal ? item.bbox.height : segment.toY - segment.fromY,
+            fill: segment.fill,
+            stroke: 'none',
+            'data-role': 'side-row-block-segment',
+            'data-layout-id': item.id,
+            'data-segment-id': segment.id
+          }));
+        }
+        for (const separator of item.separators || item.boundaries || []) {
+          const horizontal = item.orientation === 'horizontal';
+          const at = horizontal ? (separator.atX ?? separator.x) : (separator.atY ?? separator.y);
+          if (at === undefined) continue;
+          group.appendChild(svgEl('line', {
+            x1: horizontal ? at : item.bbox.x,
+            y1: horizontal ? item.bbox.y : at,
+            x2: horizontal ? at : item.bbox.x + item.bbox.width,
+            y2: horizontal ? item.bbox.y + item.bbox.height : at,
+            stroke: separator.stroke || '#ffffff',
+            'stroke-width': separator.strokeWidth || separator.stroke_width || 1,
+            'data-role': 'side-row-block-separator',
+            'data-layout-id': item.id,
+            'data-separator-id': separator.id
+          }));
+        }
+        for (const border of item.borders || []) {
+          const width = border.width ?? border.strokeWidth ?? border.stroke_width ?? 1;
+          const fill = border.fill || border.stroke || '#111111';
+          if (border.side === 'right') {
+            group.appendChild(svgEl('rect', {
+              x: item.bbox.x + item.bbox.width - width,
+              y: item.bbox.y,
+              width,
+              height: item.bbox.height,
+              fill,
+              'data-role': 'side-row-block-border',
+              'data-layout-id': item.id,
+              'data-border-side': border.side
+            }));
+          } else if (border.side === 'left') {
+            group.appendChild(svgEl('rect', {
+              x: item.bbox.x,
+              y: item.bbox.y,
+              width,
+              height: item.bbox.height,
+              fill,
+              'data-role': 'side-row-block-border',
+              'data-layout-id': item.id,
+              'data-border-side': border.side
+            }));
+          }
+        }
+      }
+    }
+
+    async function loadSpec() {
+      const jsonPath = 'reference-08-neuropixels-central-heatmap-C.json';
+      const response = await fetch(jsonPath);
+      if (!response.ok) throw new Error(`Unable to load ${jsonPath}`);
+      return response.json();
+    }
+
+    function render(spec) {
+      const panel = spec.panels[0];
+      const frame = $('frame');
+      const surface = $('surface');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      surface.replaceChildren();
+
+      $('pageTitle').textContent = `${spec.id} reconstruction`;
+      $('referenceImage').src = spec.source.path;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = spec.canvas.width;
+      canvas.height = spec.canvas.height;
+      canvas.setAttribute('aria-label', 'Generated synthetic heatmap layer');
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = spec.canvas.background;
+      ctx.fillRect(0, 0, spec.canvas.width, spec.canvas.height);
+      surface.appendChild(canvas);
+
+      const svg = svgEl('svg', {
+        width: spec.canvas.width,
+        height: spec.canvas.height,
+        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
+        role: 'img',
+        'aria-label': 'Generated axes, ticks, labels, and event lines'
+      });
+      svg.style.fontFamily = spec.typography.fontFamily;
+      surface.appendChild(svg);
+
+      for (const mark of panel.marks) {
+        if (mark.type === 'heatmap') renderHeatmap(ctx, spec, panel, mark);
+      }
+
+      renderColorStrip(svg, panel);
+      for (const mark of panel.marks) {
+        if (mark.type === 'eventLines') renderEventLines(svg, panel, mark);
+      }
+      renderAxes(svg, panel);
+      appendText(svg, {...panel.label, role: 'panel-label', anchorTo: panel.id}, {protectedText: true});
+      appendText(svg, {...panel.title, role: 'panel-title', anchorTo: panel.id}, {protectedText: true});
+    }
+
+    $('generatedButton').addEventListener('click', () => {
+      $('frame').classList.remove('show-reference');
+      $('generatedButton').classList.add('active');
+      $('referenceButton').classList.remove('active');
+    });
+
+    $('referenceButton').addEventListener('click', () => {
+      $('frame').classList.add('show-reference');
+      $('referenceButton').classList.add('active');
+      $('generatedButton').classList.remove('active');
+    });
+
+    loadSpec().then(render).catch(error => {
+      console.error(error);
+      $('surface').textContent = error.message;
+    });
+  </script>
+</body>
+</html>

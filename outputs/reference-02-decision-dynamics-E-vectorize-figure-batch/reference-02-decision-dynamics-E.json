@@ -1,0 +1,308 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-02-decision-dynamics-E",
+  "source": {
+    "path": "../../assets/reference/reference-02-decision-dynamics-E-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Single panel E reconstruction inferred from the raster. Generated candidate renders editable SVG/DOM primitives only."
+  },
+  "canvas": {
+    "width": 430,
+    "height": 510,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial Narrow, Helvetica Condensed, Arial, Helvetica, sans-serif",
+    "defaultSize": 16,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": [
+      "Arial Narrow",
+      "Helvetica Condensed",
+      "Arial",
+      "Helvetica"
+    ],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Condensed sans chosen to approximate the source panel labels and title."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "panel-e.matrix",
+      "type": "categoricalMatrix",
+      "bbox": {
+        "x": 71,
+        "y": 130,
+        "width": 220,
+        "height": 238
+      },
+      "columns": [
+        "Left",
+        "Right"
+      ],
+      "rows": [
+        "Left",
+        "Right"
+      ],
+      "columnAxis": "Actual choice",
+      "rowAxis": "Decoded choice"
+    },
+    {
+      "id": "panel-e.percent-color",
+      "type": "divergingColorScale",
+      "domain": [
+        0,
+        50,
+        100
+      ],
+      "range": [
+        "#084ead",
+        "#f8f8f8",
+        "#d7191c"
+      ],
+      "label": "% of trials"
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-e",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 430,
+        "height": 510
+      },
+      "label": {
+        "id": "panel-e-label",
+        "text": "E",
+        "x": 14,
+        "y": 28,
+        "fontSize": 24,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {
+          "x": 14,
+          "y": 9,
+          "width": 16,
+          "height": 26
+        },
+        "fit": "source-calibrated"
+      },
+      "title": {
+        "id": "panel-e-title",
+        "text": "Decoding: choice from population activity\n(at response time)",
+        "x": 42,
+        "y": 28,
+        "fontSize": 19,
+        "fontWeight": 700,
+        "lineHeight": 1.15,
+        "anchor": "start",
+        "sourceBox": {
+          "x": 43,
+          "y": 16,
+          "width": 270,
+          "height": 42
+        },
+        "fit": "source-calibrated"
+      },
+      "matrix": {
+        "id": "panel-e-choice-confusion",
+        "usesTransform": "panel-e.matrix",
+        "bbox": {
+          "x": 71,
+          "y": 130,
+          "width": 220,
+          "height": 238
+        },
+        "border": {
+          "stroke": "#111111",
+          "strokeWidth": 1.6
+        },
+        "cells": [
+          {
+            "id": "actual-left-decoded-left",
+            "column": "Left",
+            "row": "Left",
+            "value": 11,
+            "label": "11"
+          },
+          {
+            "id": "actual-right-decoded-left",
+            "column": "Right",
+            "row": "Left",
+            "value": 89,
+            "label": "89"
+          },
+          {
+            "id": "actual-left-decoded-right",
+            "column": "Left",
+            "row": "Right",
+            "value": 87,
+            "label": "87"
+          },
+          {
+            "id": "actual-right-decoded-right",
+            "column": "Right",
+            "row": "Right",
+            "value": 13,
+            "label": "13"
+          }
+        ],
+        "cellLabelStyle": {
+          "fontSize": 17,
+          "fontWeight": 400
+        }
+      },
+      "layoutObjects": [
+        {
+          "id": "panel-e-column-axis-title",
+          "type": "axisTitle",
+          "text": "Actual choice",
+          "x": 181,
+          "y": 91,
+          "fontSize": 16,
+          "anchor": "middle",
+          "anchorTo": "panel-e.matrix.columnAxis"
+        },
+        {
+          "id": "panel-e-row-axis-title",
+          "type": "axisTitle",
+          "text": "Decoded choice",
+          "x": 24,
+          "y": 249,
+          "fontSize": 17,
+          "anchor": "middle",
+          "rotate": -90,
+          "anchorTo": "panel-e.matrix.rowAxis"
+        },
+        {
+          "id": "panel-e-column-left-label",
+          "type": "categoryLabel",
+          "text": "Left",
+          "x": 126,
+          "y": 117,
+          "fontSize": 16,
+          "fill": "#003fa3",
+          "anchor": "middle",
+          "category": "Left"
+        },
+        {
+          "id": "panel-e-column-right-label",
+          "type": "categoryLabel",
+          "text": "Right",
+          "x": 236,
+          "y": 117,
+          "fontSize": 16,
+          "fill": "#ff0000",
+          "anchor": "middle",
+          "category": "Right"
+        },
+        {
+          "id": "panel-e-row-left-label",
+          "type": "categoryLabel",
+          "text": "Left",
+          "x": 62,
+          "y": 190,
+          "fontSize": 16,
+          "fill": "#003fa3",
+          "anchor": "end",
+          "category": "Left"
+        },
+        {
+          "id": "panel-e-row-right-label",
+          "type": "categoryLabel",
+          "text": "Right",
+          "x": 62,
+          "y": 309,
+          "fontSize": 16,
+          "fill": "#ff0000",
+          "anchor": "end",
+          "category": "Right"
+        },
+        {
+          "id": "panel-e-caption",
+          "type": "text",
+          "text": "Decoding accuracy: 88% (shuffle: 50%)",
+          "x": 65,
+          "y": 401,
+          "fontSize": 16,
+          "anchor": "start"
+        }
+      ],
+      "colorbar": {
+        "id": "panel-e-percent-colorbar",
+        "usesTransform": "panel-e.percent-color",
+        "bbox": {
+          "x": 334,
+          "y": 151,
+          "width": 18,
+          "height": 194
+        },
+        "title": {
+          "text": "% of trials",
+          "x": 325,
+          "y": 132,
+          "fontSize": 16,
+          "anchor": "start"
+        },
+        "ticks": [
+          {
+            "value": 100,
+            "label": "100"
+          },
+          {
+            "value": 50,
+            "label": "50"
+          },
+          {
+            "value": 0,
+            "label": "0"
+          }
+        ],
+        "tickLength": 7,
+        "labelOffset": 13,
+        "border": {
+          "stroke": "#111111",
+          "strokeWidth": 1
+        }
+      },
+      "provenance": [
+        {
+          "target": "matrix bbox",
+          "confidence": "medium",
+          "note": "Measured visually from raster; cell proportions tuned to source crop."
+        },
+        {
+          "target": "matrix colors",
+          "confidence": "medium",
+          "note": "Approximate diverging red-white-blue scale inferred from four displayed percentages."
+        },
+        {
+          "target": "typography",
+          "confidence": "medium",
+          "note": "First-pass condensed sans approximation; no font calibration harness run."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "expectedPanels": 1,
+    "expectedMatrixCells": 4,
+    "expectedColorbarTicks": 3,
+    "constraints": [
+      "Generated candidate must not render the source raster as a figure layer.",
+      "Matrix cell labels remain editable text and cell fills derive from numeric values.",
+      "Colorbar ticks reference the same percent color scale as the heatmap cells."
+    ]
+  },
+  "confidence": [
+    {
+      "target": "overall first pass",
+      "confidence": "medium",
+      "note": "Suitable for visual inspection; minor text and gradient tuning may remain."
+    }
+  ]
+}

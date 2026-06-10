@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-07-cross-region-small-multiples-B reconstruction</title>
+  <style>
+    :root {
+      --page-bg: #f5f5f5;
+      --ink: #111;
+      --muted: #666;
+      --panel-bg: #fff;
+      --control-bg: #e9e9e9;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: start center;
+      background: var(--page-bg);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    .wrap {
+      display: grid;
+      gap: 10px;
+      padding: 16px;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      user-select: none;
+    }
+    .stage {
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+    }
+    .figure-frame {
+      background: var(--panel-bg);
+      box-shadow: 0 0 0 1px #ddd;
+      width: 364px;
+      height: 375px;
+      position: relative;
+    }
+    svg {
+      display: block;
+      width: 364px;
+      height: 375px;
+      background: #fff;
+    }
+    .qa {
+      display: none;
+      width: 364px;
+    }
+    .qa.on {
+      display: grid;
+      gap: 4px;
+    }
+    .qa-label {
+      font-size: 12px;
+      color: #444;
+      font-weight: 700;
+    }
+    .qa img {
+      width: 364px;
+      height: 375px;
+      object-fit: contain;
+      background: #fff;
+      box-shadow: 0 0 0 1px #ddd;
+    }
+    text {
+      font-family: Arial, Helvetica, sans-serif;
+      letter-spacing: 0;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="toolbar">
+      <label class="toggle"><input id="qaToggle" type="checkbox"> Show QA reference image</label>
+      <span>Generated candidate is SVG from semantic JSON; reference is separate QA only.</span>
+    </div>
+    <div class="stage">
+      <div class="figure-frame" id="candidate"></div>
+      <aside class="qa" id="qaReference" aria-label="QA reference only">
+        <div class="qa-label">QA reference only: source raster, not a generated layer</div>
+        <img alt="QA reference raster" src="../../assets/reference/reference-07-cross-region-small-multiples-B-reference.png">
+      </aside>
+    </div>
+  </main>
+  <script>
+    const fallbackSpec = null;
+    const specUrl = "reference-07-cross-region-small-multiples-B.json";
+
+    function svgEl(name, attrs = {}) {
+      const node = document.createElementNS("http://www.w3.org/2000/svg", name);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function xScale(spec, value) {
+      const cs = spec.coordinateSystems.find((item) => item.id === "main-x");
+      const [d0, d1] = cs.domain;
+      const [r0, r1] = cs.range;
+      return r0 + ((value - d0) / (d1 - d0)) * (r1 - r0);
+    }
+
+    function gaussian(x, mean, sigma) {
+      const z = (x - mean) / sigma;
+      return Math.exp(-0.5 * z * z);
+    }
+
+    function ridgeSamples(ridge, domain) {
+      const samples = [];
+      const [d0, d1] = domain;
+      const step = 2.5;
+      for (let x = d0; x <= d1; x += step) {
+        let y = 0;
+        for (const [mean, weight] of ridge.peaks) y += weight * gaussian(x, mean, ridge.width);
+        samples.push({x, y: Math.min(1.18, y)});
+      }
+      return samples;
+    }
+
+    function linePath(spec, region, ridge) {
+      const cs = spec.coordinateSystems.find((item) => item.id === "main-x");
+      const samples = ridgeSamples(ridge, cs.domain);
+      return samples.map((point, index) => {
+        const x = xScale(spec, point.x);
+        const y = region.baselineY - point.y * ridge.height;
+        return `${index === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(" ");
+    }
+
+    function fillPath(spec, region, ridge) {
+      const cs = spec.coordinateSystems.find((item) => item.id === "main-x");
+      const top = linePath(spec, region, ridge);
+      return `${top} L${xScale(spec, cs.domain[1]).toFixed(1)},${region.baselineY} L${xScale(spec, cs.domain[0]).toFixed(1)},${region.baselineY} Z`;
+    }
+
+    function addText(svg, item, attrs = {}) {
+      svg.appendChild(svgEl("text", {
+        x: item.x,
+        y: item.y,
+        "font-size": item.fontSize || attrs.fontSize || 12,
+        "font-weight": item.fontWeight || attrs.fontWeight || 400,
+        fill: attrs.fill || "#111",
+        "text-anchor": attrs.anchor || "start",
+        "dominant-baseline": attrs.baseline || "alphabetic",
+        "data-object-id": item.id || attrs.id || ""
+      })).textContent = item.text;
+    }
+
+    function render(spec) {
+      const root = document.getElementById("candidate");
+      root.innerHTML = "";
+      const svg = svgEl("svg", {
+        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
+        role: "img",
+        "aria-label": "Generated reconstruction of firing field ridge plots"
+      });
+      svg.appendChild(svgEl("rect", {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
+
+      for (const obj of spec.layoutObjects) {
+        if (obj.type === "panelLabel" || obj.type === "title") addText(svg, obj);
+      }
+
+      const groupMark = spec.panels[0].marks.find((mark) => mark.type === "ridgePlotStack");
+      for (const region of groupMark.regions) {
+        const baseline = svgEl("line", {
+          x1: xScale(spec, 0),
+          y1: region.baselineY,
+          x2: xScale(spec, 315),
+          y2: region.baselineY,
+          stroke: region.color,
+          "stroke-width": groupMark.baselineStyle.strokeWidth,
+          "data-region": region.id,
+          "data-object-id": `${region.id}-baseline`
+        });
+        svg.appendChild(baseline);
+
+        region.ridges.slice().reverse().forEach((ridge, reverseIndex) => {
+          const rank = region.ridges.length - reverseIndex;
+          svg.appendChild(svgEl("path", {
+            d: fillPath(spec, region, ridge),
+            fill: region.color,
+            "fill-opacity": rank === 1 ? groupMark.ridgeStyle.fillOpacity : groupMark.ridgeStyle.backgroundOpacity * 0.42,
+            stroke: "none",
+            "data-region": region.id,
+            "data-ridge-id": ridge.id,
+            "data-layer": "generated-ridge-fill"
+          }));
+        });
+
+        region.ridges.forEach((ridge, index) => {
+          svg.appendChild(svgEl("path", {
+            d: linePath(spec, region, ridge),
+            fill: "none",
+            stroke: region.color,
+            "stroke-width": index === 0 ? groupMark.ridgeStyle.strokeWidth : 0.95,
+            "stroke-opacity": index === 0 ? 1 : 0.72,
+            "stroke-linejoin": "round",
+            "stroke-linecap": "round",
+            "data-region": region.id,
+            "data-ridge-id": ridge.id,
+            "data-layer": "generated-ridge-line"
+          }));
+        });
+
+        addText(svg, {...region.label, fontSize: 14}, {fill: region.color});
+        addText(svg, {...region.cellCount, fontSize: 12}, {fill: "#111"});
+      }
+
+      const guide = spec.layoutObjects.find((item) => item.id === "right-reference-guide");
+      svg.appendChild(svgEl("line", {
+        x1: xScale(spec, guide.value),
+        x2: xScale(spec, guide.value),
+        y1: guide.line.y1,
+        y2: guide.line.y2,
+        stroke: guide.style.stroke,
+        "stroke-width": guide.style.strokeWidth,
+        "stroke-dasharray": guide.style.dashArray,
+        "data-object-id": guide.id
+      }));
+
+      const axis = spec.layoutObjects.find((item) => item.id === "x-axis");
+      svg.appendChild(svgEl("line", {
+        x1: axis.line.x1,
+        y1: axis.line.y1,
+        x2: axis.line.x2,
+        y2: axis.line.y2,
+        stroke: "#111",
+        "stroke-width": 1,
+        "data-object-id": axis.id
+      }));
+      axis.ticks.forEach((tick) => {
+        const x = xScale(spec, tick.value);
+        svg.appendChild(svgEl("line", {
+          x1: x,
+          x2: x,
+          y1: axis.line.y1,
+          y2: axis.line.y1 + axis.tickLength,
+          stroke: "#111",
+          "stroke-width": 1,
+          "data-axis": axis.id,
+          "data-value": tick.value
+        }));
+        addText(svg, {text: tick.label, x, y: axis.line.y1 + 20, fontSize: 14}, {anchor: "middle"});
+      });
+
+      root.appendChild(svg);
+    }
+
+    async function loadSpec() {
+      try {
+        const response = await fetch(specUrl);
+        if (!response.ok) throw new Error(`Could not load ${specUrl}`);
+        return await response.json();
+      } catch (error) {
+        if (fallbackSpec) return fallbackSpec;
+        throw error;
+      }
+    }
+
+    document.getElementById("qaToggle").addEventListener("change", (event) => {
+      document.getElementById("qaReference").classList.toggle("on", event.target.checked);
+    });
+
+    loadSpec().then(render).catch((error) => {
+      document.getElementById("candidate").textContent = error.message;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-08-neuropixels-central-heatmap-G",
+  "source": {
+    "path": "../../assets/reference/reference-08-neuropixels-central-heatmap-G-reference.png",
+    "usage": "QA-only; not used by generated candidate layers.",
+    "notes": "First-pass reconstruction from a 776x382 raster crop. Upper crop contains partial probe/layer legend, brain schematic, and heatmap/track-position fragments; bottom contains panel G line chart."
+  },
+  "canvas": {
+    "width": 776,
+    "height": 382,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Roboto", "Noto Sans"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Visual first pass; labels sized by source inspection rather than formal font calibration."
+    }
+  },
+  "styleTokens": {
+    "axis": "#222222",
+    "lightAxis": "#6e6e6e",
+    "cortex": "#78b9b2",
+    "cortexDark": "#1d7773",
+    "hippocampus": "#f0a21a",
+    "hippocampusLight": "#f7c36b",
+    "grey": "#7d7d7d"
+  },
+  "panels": [
+    {
+      "id": "top-context",
+      "bbox": {"x": 0, "y": 0, "width": 776, "height": 178},
+      "layoutObjects": [
+        {
+          "id": "probe-layer-legend",
+          "type": "probeLegend",
+          "probe": {
+            "outline": [[28, 12], [40, 12], [40, 151], [34, 161], [28, 151]],
+            "segments": [
+              {"id": "tip", "y1": 123, "y2": 151, "fill": "#c6b66b"},
+              {"id": "dg", "y1": 79, "y2": 123, "fill": "#f0a21a"},
+              {"id": "ca1", "y1": 46, "y2": 79, "fill": "#67c7bd"},
+              {"id": "cortex", "y1": 13, "y2": 46, "fill": "#243f3d"}
+            ],
+            "dashConnectors": [
+              {"from": [40, 31], "to": [96, 12]},
+              {"from": [40, 66], "to": [96, 54]},
+              {"from": [40, 101], "to": [96, 94]}
+            ]
+          },
+          "labels": [
+            {"text": "Cortex", "x": 101, "y": 5, "fill": "#1d7773", "fontSize": 15, "fontWeight": 700},
+            {"text": "L2/3", "x": 102, "y": 28},
+            {"text": "L5", "x": 102, "y": 57},
+            {"text": "L6", "x": 102, "y": 79},
+            {"text": "Hippocampus", "x": 102, "y": 101, "fill": "#e09200", "fontWeight": 700},
+            {"text": "CA1", "x": 102, "y": 127},
+            {"text": "DG", "x": 102, "y": 151},
+            {"text": "1-96", "x": 161, "y": 28},
+            {"text": "97-192", "x": 156, "y": 57},
+            {"text": "193-288", "x": 156, "y": 79},
+            {"text": "289-336", "x": 156, "y": 127},
+            {"text": "337-384", "x": 156, "y": 151}
+          ]
+        },
+        {
+          "id": "brain-schematic",
+          "type": "schematic",
+          "bbox": {"x": 226, "y": 24, "width": 158, "height": 140},
+          "paths": [
+            {"id": "brain-outline", "stroke": "#111111", "fill": "#fbfbfb", "strokeWidth": 1.1, "d": "M235 113 C235 80 261 43 303 31 C341 21 365 38 372 68 C384 76 387 96 378 115 C367 139 340 149 310 142 C286 160 253 163 238 146 C229 137 230 126 235 113 Z"},
+            {"id": "cortex-band", "stroke": "#245f5c", "fill": "#8bc2bb", "strokeWidth": 0.8, "opacity": 0.78, "d": "M229 107 C225 83 252 49 296 35 C329 25 355 34 365 55 C370 65 374 72 373 78 C364 80 355 72 349 63 C335 43 310 38 284 48 C255 59 239 82 235 104 Z"},
+            {"id": "hippocampus-band", "stroke": "#d88a00", "fill": "#f3b13b", "strokeWidth": 1.2, "opacity": 0.85, "d": "M281 116 C287 100 307 94 323 101 C338 108 343 124 334 136 C323 151 296 144 286 132 C294 135 312 137 321 128 C328 120 322 109 310 108 C299 107 291 111 285 121 Z"},
+            {"id": "inner-fold-1", "stroke": "#222222", "fill": "none", "strokeWidth": 1.1, "d": "M252 110 C263 76 294 54 326 55 C344 56 354 65 358 81"},
+            {"id": "inner-fold-2", "stroke": "#222222", "fill": "none", "strokeWidth": 1.1, "d": "M270 116 C279 89 301 75 324 76 C342 77 352 88 350 103"},
+            {"id": "inner-fold-3", "stroke": "#222222", "fill": "none", "strokeWidth": 1.1, "d": "M289 122 C296 101 319 96 332 107 C343 116 340 130 326 137"},
+            {"id": "probe-track", "stroke": "#333333", "fill": "none", "strokeWidth": 3.6, "d": "M309 -8 L309 132"},
+            {"id": "probe-track-highlight", "stroke": "#777777", "fill": "none", "strokeWidth": 1.1, "d": "M314 -8 L314 132"}
+          ],
+          "connectors": [
+            {"points": [[205, 18], [245, 38]], "dasharray": "3 4"},
+            {"points": [[205, 91], [276, 107]], "dasharray": "3 4"}
+          ]
+        },
+        {
+          "id": "partial-heatmap",
+          "type": "heatmapFragment",
+          "bbox": {"x": 489, "y": 0, "width": 287, "height": 29},
+          "matrix": {"rows": 36, "cols": 180, "seed": 8308, "base": "#061d1d", "hot": "#df9b23", "speckle": 0.28},
+          "colorbar": {"x": 478, "y": 0, "width": 12, "height": 26, "colors": ["#171717", "#0b5654", "#f2a116"], "tickLabels": [{"text": "384", "x": 443, "y": 17}, {"text": "0", "x": 489, "y": 33}, {"text": "50", "x": 616, "y": 33}, {"text": "100", "x": 750, "y": 33}]},
+          "labels": [
+            {"text": "Time (s)", "x": 728, "y": 57, "fontSize": 16},
+            {"text": "0", "x": 489, "y": 92, "fontSize": 16, "fill": "#006c69"},
+            {"text": "100", "x": 642, "y": 92, "fontSize": 16, "fill": "#006c69"},
+            {"text": "Track position", "x": 692, "y": 115, "fontSize": 16, "fill": "#006c69"}
+          ],
+          "axisLine": {"x1": 490, "y1": 68, "x2": 776, "y2": 68, "stroke": "#006c69", "strokeWidth": 2}
+        }
+      ],
+      "provenance": [{"confidence": "medium", "note": "Top elements are partial because the crop cuts off neighboring panels and labels."}]
+    },
+    {
+      "id": "panel-g",
+      "label": {"text": "G", "x": -5, "y": 203, "fontSize": 16, "fontWeight": 700},
+      "title": {"text": "Decoding accuracy along track", "x": 17, "y": 203, "fontSize": 16, "fontWeight": 700},
+      "bbox": {"x": 0, "y": 188, "width": 776, "height": 194},
+      "plot": {
+        "dataBbox": {"x": 48, "y": 216, "width": 724, "height": 120},
+        "axes": {
+          "xAxis": {"id": "panel-g-x-axis", "line": {"x1": 48, "y1": 336, "x2": 772, "y2": 336}, "tickLength": 6},
+          "yAxis": {"id": "panel-g-y-axis", "line": {"x1": 48, "y1": 216, "x2": 48, "y2": 336}, "tickLength": 6}
+        },
+        "x": {
+          "scale": "linear",
+          "domain": [0, 320],
+          "ticks": [{"value": 0, "label": "0"}, {"value": 50, "label": "50"}, {"value": 100, "label": "100"}, {"value": 150, "label": "150"}, {"value": 200, "label": "200"}, {"value": 250, "label": "250"}, {"value": 300, "label": "300"}],
+          "label": {"text": "Track position (cm)", "x": 410, "y": 380, "fontSize": 16, "anchor": "middle"}
+        },
+        "y": {
+          "scale": "linear",
+          "domain": [0, 1],
+          "ticks": [{"value": 0, "label": "0.0"}, {"value": 0.5, "label": "0.5"}, {"value": 1, "label": "1.0"}],
+          "label": {"text": "Decoding accuracy", "x": 8, "y": 278, "fontSize": 15, "rotation": -90, "anchor": "middle"}
+        }
+      },
+      "data": {
+        "seriesRecipe": {
+          "xValues": {"start": 0, "end": 320, "count": 210},
+          "note": "Curves are approximate visual reconstructions using anchor interpolation plus deterministic jitter."
+        },
+        "series": [
+          {"id": "hippocampus-high", "label": "Hippocampus upper", "color": "#ed9300", "strokeWidth": 1.8, "noiseSeed": 16, "noise": 0.010, "anchors": [[0, 0.70], [30, 0.79], [75, 0.83], [115, 0.88], [150, 0.92], [175, 0.97], [210, 0.86], [235, 0.80], [255, 0.89], [285, 0.82], [320, 0.72]]},
+          {"id": "hippocampus-low", "label": "Hippocampus lower", "color": "#f2a21a", "strokeWidth": 1.7, "noiseSeed": 27, "noise": 0.011, "anchors": [[0, 0.61], [30, 0.71], [80, 0.76], [120, 0.80], [150, 0.86], [175, 0.90], [205, 0.80], [235, 0.74], [255, 0.82], [285, 0.76], [320, 0.61]]},
+          {"id": "cortex-high", "label": "Cortex upper", "color": "#8bc8c2", "strokeWidth": 1.8, "noiseSeed": 42, "noise": 0.026, "anchors": [[0, 0.38], [25, 0.53], [60, 0.55], [90, 0.58], [130, 0.62], [165, 0.66], [200, 0.64], [225, 0.55], [250, 0.62], [285, 0.58], [320, 0.44]]},
+          {"id": "cortex-mid", "label": "Cortex middle", "color": "#65bdb6", "strokeWidth": 1.8, "noiseSeed": 77, "noise": 0.022, "anchors": [[0, 0.31], [25, 0.47], [60, 0.51], [90, 0.55], [130, 0.59], [165, 0.61], [200, 0.55], [225, 0.50], [250, 0.57], [285, 0.50], [320, 0.35]]},
+          {"id": "cortex-dark", "label": "Cortex lower", "color": "#0f7776", "strokeWidth": 2.0, "noiseSeed": 109, "noise": 0.018, "anchors": [[0, 0.33], [20, 0.42], [50, 0.43], [90, 0.34], [130, 0.38], [170, 0.35], [205, 0.42], [230, 0.34], [255, 0.36], [285, 0.44], [320, 0.26]]},
+          {"id": "chance", "label": "Chance baseline", "color": "#999999", "strokeWidth": 1.7, "dasharray": "2 5", "noiseSeed": 132, "noise": 0.004, "anchors": [[0, 0.16], [320, 0.15]]}
+        ]
+      },
+      "marks": [
+        {"id": "panel-g-series", "type": "lineSeriesGroup", "seriesSource": "data.series"}
+      ],
+      "annotations": [],
+      "provenance": [
+        {"confidence": "medium", "note": "Axis box and ticks visually estimated from raster."},
+        {"confidence": "low", "note": "Line values are approximate anchors with generated jitter; intended as editable first-pass visual reconstruction, not recovered data."}
+      ]
+    }
+  ],
+  "constraints": [
+    {"id": "panel-g-x-tick-links", "description": "X tick marks and labels derive from panel-g.plot.x.ticks and share the x scale."},
+    {"id": "panel-g-y-tick-links", "description": "Y tick marks and labels derive from panel-g.plot.y.ticks and share the y scale."},
+    {"id": "source-not-generated", "description": "Source raster is only exposed by the QA reference toggle, never as generated layer or canvas source."}
+  ],
+  "confidence": [
+    {"target": "overall", "confidence": "medium", "note": "Semantic first pass suitable for visual inspection and iterative tuning."}
+  ]
+}

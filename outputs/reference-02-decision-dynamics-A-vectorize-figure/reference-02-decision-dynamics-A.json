@@ -1,0 +1,432 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-02-decision-dynamics-A",
+  "source": {
+    "path": "../../assets/reference/reference-02-decision-dynamics-A-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Single schematic trial timeline panel. Task screens, timeline, process table, and labels are generated from semantic SVG/DOM instructions."
+  },
+  "canvas": {
+    "width": 430,
+    "height": 514,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial Narrow, Helvetica Neue, Arial, sans-serif",
+    "defaultSize": 13,
+    "color": "#111111",
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Panel-level narrow sans selected after visual text matching; dense table labels kept semantic rather than OCR-positioned."
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-a",
+      "type": "trial_timeline_schematic",
+      "label": {
+        "text": "A",
+        "x": 14,
+        "y": 31,
+        "fontSize": 24,
+        "fontWeight": 700
+      },
+      "title": {
+        "text": "Trial timeline",
+        "x": 39,
+        "y": 30,
+        "fontSize": 18,
+        "fontWeight": 700
+      },
+      "timeline": {
+        "domain": [
+          -600,
+          1950
+        ],
+        "axis": {
+          "id": "trial-time-axis",
+          "line": {
+            "x1": 13,
+            "y1": 249,
+            "x2": 411,
+            "y2": 249
+          },
+          "strokeWidth": 2.1,
+          "tickLength": 7
+        },
+        "tickLabels": {
+          "fontSize": 13,
+          "dy": 22,
+          "minGap": 7,
+          "collision": {
+            "strategy": "fit-or-stagger",
+            "minScale": 0.65,
+            "staggerDy": 13
+          }
+        },
+        "label": {
+          "text": "Time from stimulus onset (ms)",
+          "anchorTo": "tickLabelBand",
+          "targetPoint": "bottom-center",
+          "anchorPoint": "top-center",
+          "dx": 0,
+          "dy": 11,
+          "fontSize": 14,
+          "anchor": "middle",
+          "role": "axis-title",
+          "minGapFromTarget": 7,
+          "calibrationNote": "manual visual override: collision-aware tick label band placed the semantic axis title above the source baseline"
+        },
+        "ticks": [
+          {
+            "value": -500,
+            "label": "-500",
+            "x": 28
+          },
+          {
+            "value": 0,
+            "label": "0",
+            "x": 106
+          },
+          {
+            "value": 200,
+            "label": "200",
+            "x": 160
+          },
+          {
+            "value": 1200,
+            "label": "1,200",
+            "x": 266
+          },
+          {
+            "value": 1400,
+            "label": "1,400",
+            "x": 329
+          },
+          {
+            "value": 1900,
+            "label": "1,900",
+            "x": 396
+          }
+        ],
+        "guides": [
+          {
+            "value": -500,
+            "x": 28,
+            "y1": 211,
+            "y2": 256
+          },
+          {
+            "value": 0,
+            "x": 106,
+            "y1": 211,
+            "y2": 256
+          },
+          {
+            "value": 200,
+            "x": 160,
+            "y1": 211,
+            "y2": 256
+          },
+          {
+            "value": 1200,
+            "x": 266,
+            "y1": 211,
+            "y2": 256
+          },
+          {
+            "value": 1400,
+            "x": 329,
+            "y1": 211,
+            "y2": 256
+          },
+          {
+            "value": 1900,
+            "x": 396,
+            "y1": 211,
+            "y2": 256
+          }
+        ]
+      },
+      "epochs": [
+        {
+          "id": "fixate",
+          "title": "Fixate\n500 ms",
+          "titleX": 50,
+          "titleY": 96,
+          "screen": {
+            "x": 15,
+            "y": 136,
+            "width": 72,
+            "height": 73
+          },
+          "screenType": "fixation",
+          "timeGuide": -500
+        },
+        {
+          "id": "stimulus",
+          "title": "Stimulus\n200 ms",
+          "titleX": 136,
+          "titleY": 96,
+          "screen": {
+            "x": 100,
+            "y": 136,
+            "width": 72,
+            "height": 73
+          },
+          "screenType": "stimulus",
+          "timeGuide": 0
+        },
+        {
+          "id": "delay",
+          "title": "Delay\n~1,000 ms",
+          "titleX": 220,
+          "titleY": 96,
+          "screen": {
+            "x": 183,
+            "y": 136,
+            "width": 72,
+            "height": 73
+          },
+          "screenType": "fixation",
+          "timeGuide": null
+        },
+        {
+          "id": "response",
+          "title": "Go\n(response)",
+          "titleX": 304,
+          "titleY": 96,
+          "screen": {
+            "x": 269,
+            "y": 136,
+            "width": 68,
+            "height": 73
+          },
+          "screenType": "response",
+          "border": {
+            "stroke": "#ff1f1f",
+            "strokeWidth": 2.7
+          },
+          "timeGuide": 1200
+        },
+        {
+          "id": "outcome",
+          "title": "Outcome\n500 ms",
+          "titleX": 378,
+          "titleY": 96,
+          "screen": {
+            "x": 346,
+            "y": 136,
+            "width": 64,
+            "height": 73
+          },
+          "screenType": "outcome",
+          "timeGuide": 1900
+        }
+      ],
+      "phaseTable": {
+        "y": 312,
+        "height": 34,
+        "style": {
+          "rowStroke": "#9f9f9f",
+          "rowStrokeWidth": 1,
+          "separatorStroke": "#d7d7d7",
+          "separatorStrokeWidth": 0.55,
+          "labelFontSize": 12,
+          "labelDy": 22
+        },
+        "cells": [
+          {
+            "id": "baseline",
+            "label": "Baseline",
+            "x": 15,
+            "width": 84,
+            "fill": "#ffffff"
+          },
+          {
+            "id": "stim",
+            "label": "Stim",
+            "x": 101,
+            "width": 58,
+            "fill": "#eef5ff",
+            "highlightStroke": "#9bbbed",
+            "highlightStrokeWidth": 1
+          },
+          {
+            "id": "delay",
+            "label": "Delay",
+            "x": 162,
+            "width": 105,
+            "fill": "#ffffff"
+          },
+          {
+            "id": "response",
+            "label": "Response",
+            "x": 271,
+            "width": 70,
+            "fill": "#fff1f1",
+            "highlightStroke": "#ff514b",
+            "highlightStrokeWidth": 1
+          },
+          {
+            "id": "outcome",
+            "label": "Outcome",
+            "x": 344,
+            "width": 66,
+            "fill": "#ffffff"
+          }
+        ]
+      },
+      "processRows": [
+        {
+          "id": "cognitive-process",
+          "header": {
+            "text": "Cognitive\nprocess",
+            "x": 15,
+            "y": 363,
+            "fontSize": 12
+          },
+          "cells": [
+            {
+              "text": "Evidence\nencoding",
+              "x": 132,
+              "y": 374,
+              "fontSize": 12,
+              "anchor": "middle"
+            },
+            {
+              "text": "Evidence\naccumulation",
+              "x": 214,
+              "y": 374,
+              "fontSize": 12,
+              "anchor": "middle"
+            },
+            {
+              "text": "Decision\nexecution",
+              "x": 304,
+              "y": 374,
+              "fontSize": 12,
+              "anchor": "middle"
+            },
+            {
+              "text": "Feedback\nprocessing",
+              "x": 380,
+              "y": 374,
+              "fontSize": 12,
+              "anchor": "middle"
+            }
+          ]
+        },
+        {
+          "id": "example-behavior",
+          "header": {
+            "text": "Example behavior",
+            "x": 15,
+            "y": 433,
+            "fontSize": 12
+          },
+          "cells": [
+            {
+              "text": "L",
+              "x": 122,
+              "y": 434,
+              "fontSize": 14,
+              "fill": "#0056b8",
+              "anchor": "middle"
+            },
+            {
+              "text": "/",
+              "x": 134,
+              "y": 434,
+              "fontSize": 14,
+              "anchor": "middle"
+            },
+            {
+              "text": "R",
+              "x": 146,
+              "y": 434,
+              "fontSize": 14,
+              "fill": "#e00000",
+              "anchor": "middle"
+            },
+            {
+              "text": "Hold",
+              "x": 215,
+              "y": 434,
+              "fontSize": 13,
+              "anchor": "middle"
+            },
+            {
+              "text": "Saccade\nL or R",
+              "x": 304,
+              "y": 423,
+              "fontSize": 12,
+              "anchor": "middle",
+              "styledWords": [
+                {
+                  "text": "L",
+                  "fill": "#0056b8"
+                },
+                {
+                  "text": "R",
+                  "fill": "#e00000"
+                }
+              ]
+            },
+            {
+              "text": "Reward\nor no reward",
+              "x": 382,
+              "y": 423,
+              "fontSize": 12,
+              "anchor": "middle"
+            }
+          ]
+        }
+      ],
+      "provenance": [
+        {
+          "target": "panel-a.epochs",
+          "confidence": "high",
+          "note": "Epoch names, durations, screen positions, and timeline labels are read from the raster."
+        },
+        {
+          "target": "panel-a.taskScreens",
+          "confidence": "medium",
+          "note": "Stimulus dots, response targets, and reward droplet are generated approximations of schematic icons."
+        }
+      ]
+    }
+  ],
+  "confidence": [
+    {
+      "target": "reference-02-decision-dynamics-A",
+      "confidence": "medium",
+      "note": "Schematic structure and text are high-confidence; exact dot locations and screen gradients are approximate."
+    }
+  ],
+  "semanticFigureIR": {
+    "version": "relationship-inventory.v1",
+    "status": "metadata-only migration; renderer-visible output must remain unchanged",
+    "coordinateSystems": [
+      "panel-a.timeline-time-domain",
+      "panel-a.phase-table-grid"
+    ],
+    "layoutObjects": [
+      "panel-a.timeline",
+      "panel-a.epochs",
+      "panel-a.phaseTable",
+      "panel-a.processRows"
+    ],
+    "derivedRelationships": [
+      "epoch blocks, arrows, and timeline labels derive from timeline anchors",
+      "phase table cells, row rules, and text are separate semantic objects",
+      "process row labels and icons belong to process rows rather than absolute page text"
+    ],
+    "validationConstraints": [
+      "source raster is QA-only",
+      "protected schematic text does not overlap",
+      "table-like rows preserve shared rules separately from cell content"
+    ]
+  }
+}

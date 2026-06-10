@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-02-decision-dynamics reconstruction</title>
+  <style>
+    html, body { margin: 0; background: #eeeeee; color: #111; font-family: Arial, Helvetica, sans-serif; }
+    header { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 10px 14px; background: #fff; border-bottom: 1px solid #ccc; }
+    h1 { margin: 0; font-size: 16px; line-height: 1.1; }
+    .note { margin-top: 3px; font-size: 12px; color: #555; }
+    .toggle { display: inline-flex; border: 1px solid #999; border-radius: 4px; overflow: hidden; }
+    .toggle button { border: 0; padding: 5px 10px; background: #fff; color: #111; font: inherit; font-size: 12px; cursor: pointer; }
+    .toggle button.active { background: #111; color: #fff; }
+    main { min-height: calc(100vh - 52px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
+    .frame { position: relative; background: #fff; border: 1px solid #d3d3d3; box-shadow: 0 1px 5px rgba(0,0,0,.08); overflow: hidden; }
+    .surface, .reference { position: absolute; inset: 0; }
+    .reference { display: none; width: 100%; height: 100%; object-fit: contain; background: #fff; }
+    .show-reference .surface { display: none; }
+    .show-reference .reference { display: block; }
+    svg, canvas { position: absolute; inset: 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="doc-title">reference-02-decision-dynamics</h1>
+      <div class="note">Generated candidate is JSON-rendered SVG/canvas. Source image is QA/reference only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generated-button" class="active" type="button">Generated</button>
+      <button id="reference-button" type="button">Reference</button>
+    </div>
+  </header>
+  <main><div id="frame" class="frame"><div id="surface" class="surface"></div><img id="reference" class="reference" alt="QA-only source reference"></div></main>
+  <script>
+    const SPEC_URL = './reference-02-decision-dynamics.json';
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const el = id => document.getElementById(id);
+    function s(tag, attrs = {}) { const n = document.createElementNS(SVG_NS, tag); for (const [k, v] of Object.entries(attrs)) if (v !== undefined && v !== null) n.setAttribute(k, v); return n; }
+    function add(p, tag, attrs = {}) { const n = s(tag, attrs); p.appendChild(n); return n; }
+    function txt(p, t, x, y, opt = {}) {
+      const n = add(p, 'text', {x, y, fill: opt.fill || '#111', 'font-family': opt.fontFamily || 'Arial Narrow, Helvetica Neue, Arial, sans-serif', 'font-size': opt.size || 14, 'font-weight': opt.weight || 400, 'font-style': opt.style, 'text-anchor': opt.anchor || 'start', transform: opt.rotate ? `rotate(${opt.rotate} ${x} ${y})` : undefined, 'letter-spacing': 0, 'data-role': opt.role || 'text'});
+      String(t).split('\n').forEach((line, i) => { const sp = add(n, 'tspan', {x, dy: i ? (opt.size || 14) * 1.08 : 0}); sp.textContent = line; });
+      return n;
+    }
+    function rng(seed) { let t = seed >>> 0; return () => { t += 0x6D2B79F5; let r = Math.imul(t ^ t >>> 15, 1 | t); r ^= r + Math.imul(r ^ r >>> 7, 61 | r); return ((r ^ r >>> 14) >>> 0) / 4294967296; }; }
+    function map(v, d, r) { return r[0] + (v - d[0]) / (d[1] - d[0]) * (r[1] - r[0]); }
+    function dataMap(plot) { return {x: v => map(v, plot.xDomain, [plot.x, plot.x + plot.width]), y: v => map(v, plot.yDomain, [plot.y + plot.height, plot.y])}; }
+    function axis(g, plot, xt, yt, xl, yl) {
+      const m = dataMap(plot);
+      add(g, 'line', {x1: plot.x, y1: plot.y + plot.height, x2: plot.x + plot.width, y2: plot.y + plot.height, stroke: '#111', 'stroke-width': 1.5});
+      add(g, 'line', {x1: plot.x, y1: plot.y, x2: plot.x, y2: plot.y + plot.height, stroke: '#111', 'stroke-width': 1.5});
+      xt.forEach(v => { const x = m.x(v); add(g, 'line', {x1: x, y1: plot.y + plot.height, x2: x, y2: plot.y + plot.height + 6, stroke: '#111', 'data-role': 'axis-tick-mark'}); txt(g, String(v).replace('1000','1,000').replace('1200','1,200'), x, plot.y + plot.height + 22, {size: 14, anchor: 'middle', role: 'tick-label'}); });
+      yt.forEach(v => { const y = m.y(v); add(g, 'line', {x1: plot.x - 6, y1: y, x2: plot.x, y2: y, stroke: '#111', 'data-role': 'axis-tick-mark'}); txt(g, Number.isInteger(v) ? String(v) : v.toFixed(3).replace(/^0/,'0'), plot.x - 12, y + 5, {size: 14, anchor: 'end', role: 'tick-label'}); });
+      if (xl) txt(g, xl, plot.x + plot.width / 2, plot.y + plot.height + 60, {size: 16, anchor: 'middle'});
+      if (yl) txt(g, yl, plot.x - 48, plot.y + plot.height / 2, {size: 16, anchor: 'middle', rotate: -90});
+      return m;
+    }
+    function panelBase(svg, p) {
+      const g = add(svg, 'g', {'data-panel': p.id, transform: `translate(${p.bbox.x} ${p.bbox.y})`});
+      txt(g, p.label.text, p.label.x, p.label.y, {size: p.label.fontSize, weight: p.label.fontWeight});
+      txt(g, p.title.text, p.title.x, p.title.y, {size: p.title.fontSize, weight: p.title.fontWeight});
+      return g;
+    }
+    function renderA(g, p) {
+      const tl = p.timeline, xFor = v => map(v, tl.domain, [tl.axis.x1, tl.axis.x2]);
+      tl.frames.forEach(f => {
+        txt(g, f.label, f.x + f.width / 2, 94, {size: 14, anchor: 'middle'});
+        add(g, 'rect', {x: f.x, y: f.y, width: f.width, height: f.height, fill: '#050505', stroke: f.stroke || '#111', 'stroke-width': f.stroke ? 3 : 1, rx: 1});
+        if (f.center === 'dot') add(g, 'circle', {cx: f.x + f.width / 2, cy: f.y + 37, r: 5, fill: '#fff'});
+        if (f.center === 'choice') [16,35,54].forEach((dx,i)=>add(g,'circle',{cx:f.x+dx,cy:f.y+37,r:i===0?9:7,fill:'none',stroke:'#fff','stroke-width':1.5}));
+        if (f.center === 'drop') add(g, 'path', {d: `M ${f.x+32} ${f.y+23} C ${f.x+22} ${f.y+42} ${f.x+28} ${f.y+49} ${f.x+34} ${f.y+48} C ${f.x+42} ${f.y+46} ${f.x+41} ${f.y+35} ${f.x+32} ${f.y+23}`, fill: '#eee'});
+        if (f.center === 'dots') { const r = rng(f.seed); for (let i=0;i<38;i++) add(g,'circle',{cx:f.x+12+r()*49,cy:f.y+12+r()*49,r:1.8,fill:r()>.68?'#e22':(r()>.5?'#1e66d0':'#bdbdbd')}); }
+      });
+      add(g, 'line', {x1: tl.axis.x1, y1: tl.axis.y1, x2: tl.axis.x2, y2: tl.axis.y2, stroke: '#111', 'stroke-width': 2});
+      tl.ticks.forEach(t => { const x = xFor(t.value); add(g,'line',{x1:x,y1:211,x2:x,y2:257,stroke:'#111','stroke-dasharray':'4 3'}); add(g,'line',{x1:x,y1:249,x2:x,y2:256,stroke:'#111'}); txt(g,t.label,x,271,{size:13,anchor:'middle'}); });
+      txt(g, tl.axisLabel.text, tl.axisLabel.x, tl.axisLabel.y, {size: tl.axisLabel.fontSize, anchor: 'middle'});
+      tl.epochBoxes.forEach(b => { add(g,'rect',{x:b.x,y:b.y,width:b.width,height:b.height,fill:b.fill,stroke:b.stroke||'#bbb'}); txt(g,b.label,b.x+b.width/2,b.y+21,{size:12,anchor:'middle'}); });
+      txt(g, 'Cognitive\nprocess', 15, 373, {size: 12}); txt(g, 'Example behavior', 15, 431, {size: 12});
+      [[130,'Evidence\nencoding'],[215,'Evidence\naccumulation'],[306,'Decision\nexecution'],[378,'Feedback\nprocessing']].forEach(a=>txt(g,a[1],a[0],373,{size:12,anchor:'middle'}));
+      txt(g, 'L / ', 124, 431, {size: 16, fill: '#0048c7'}); txt(g, 'R', 148, 431, {size: 16, fill: '#f01414'}); txt(g, 'Hold', 215, 431, {size: 14, anchor: 'middle'}); txt(g, 'Saccade\nL or R', 306, 431, {size: 12, anchor: 'middle'}); txt(g, 'Reward\nor no reward', 378, 431, {size: 12, anchor: 'middle'});
+    }
+    function project(scene, p) { const d = scene.domains, b = scene.projection.basis, c = scene.projection.corner; const sx=(p[0]-d.pc1[0])/4, sy=(p[1]-d.pc2[0])/4, sz=(p[2]-d.pc3[0])/4; return {x:c.x+b.pc1.x*sx+b.pc2.x*sy+b.pc3.x*sz,y:c.y+b.pc1.y*sx+b.pc2.y*sy+b.pc3.y*sz}; }
+    function renderB(g, p) {
+      const sc = p.scene; txt(g, 'Left choice', 82, 88, {size: 13}); txt(g, 'Right choice', 176, 88, {size: 13}); add(g,'line',{x1:52,y1:85,x2:72,y2:85,stroke:'#0048c7','stroke-width':2}); add(g,'line',{x1:150,y1:85,x2:170,y2:85,stroke:'#f01414','stroke-width':2}); add(g,'circle',{cx:255,cy:85,r:4,fill:'#111'}); txt(g,'Time points',266,88,{size:13});
+      const corners=[[-2,-2,-2],[2,-2,-2],[-2,2,-2],[-2,-2,2],[2,2,-2],[2,-2,2],[-2,2,2],[2,2,2]].map(q=>project(sc,q)); [[0,1],[0,2],[0,3],[1,4],[1,5],[2,4],[2,6],[3,5],[3,6],[4,7],[5,7],[6,7]].forEach(e=>add(g,'line',{x1:corners[e[0]].x,y1:corners[e[0]].y,x2:corners[e[1]].x,y2:corners[e[1]].y,stroke:e[0]===0?'#111':'#ccc','stroke-width':e[0]===0?1.2:.8,'stroke-dasharray':e[0]===0?undefined:'2 3'}));
+      const rr = rng(sc.cloudRecipe.seed); for (let k=0;k<sc.cloudRecipe.count;k++){ const left=k%2===0, pts=[]; const base=left?sc.leftMean:sc.rightMean; for(let i=0;i<base.length;i++){pts.push(base[i].map(v=>v+(rr()-.5)*.55));} add(g,'path',{d:pts.map((q,i)=>{const m=project(sc,q);return`${i?'L':'M'} ${m.x} ${m.y}`}).join(' '),fill:'none',stroke:left?'#0048c7':'#f01414','stroke-opacity':.13,'stroke-width':1}); }
+      [sc.leftMean, sc.rightMean].forEach((arr,idx)=>{add(g,'path',{d:arr.map((q,i)=>{const m=project(sc,q);return`${i?'L':'M'} ${m.x} ${m.y}`}).join(' '),fill:'none',stroke:idx?'#f01414':'#0048c7','stroke-width':3}); arr.forEach((q,i)=>{if(i>0){const m=project(sc,q);add(g,'circle',{cx:m.x,cy:m.y,r:4,fill:'#111'});}});});
+      txt(g,'PC 3\n(8%)',18,245,{size:16,anchor:'middle'}); txt(g,'PC 2\n(12%)',75,414,{size:16,anchor:'middle'}); txt(g,'PC 1\n(25%)',244,417,{size:16,anchor:'middle'}); txt(g,'Stim\n(0 ms)',83,232,{size:13,anchor:'middle'}); txt(g,'Go',258,163,{size:13}); txt(g,'Outcome',272,283,{size:13});
+    }
+    function heatColor(v){ const c=Math.max(-3,Math.min(3,v)); if(c<0){const t=(c+3)/3; return [10+235*t,90+150*t,200+45*t];} const t=c/3; return [245+5*t,245-175*t,245-215*t]; }
+    function renderHeat(ctx, g, p) {
+      p.plots.forEach((pl, idx) => { const b=pl.box, rr=rng(pl.seed), img=ctx.createImageData(b.width,b.height); for(let y=0;y<b.height;y++)for(let x=0;x<b.width;x++){const row=y/b.height, time=map(x,[0,b.width],p.timeDomain); let v=(rr()-.5)*1.2 + Math.sin(row*9+time/260)*.3; v += Math.exp(-Math.pow((time-850)/430,2)-Math.pow((row-.62)/.25,2))*1.55; v += Math.exp(-Math.pow((time-1390)/330,2)-Math.pow((row-.18)/.18,2))*1.45; v -= Math.exp(-Math.pow((time-1500)/360,2)-Math.pow((row-.73)/.28,2))*1.8; if(idx) v += Math.exp(-Math.pow((time-520)/420,2)-Math.pow((row-.68)/.22,2))*1.0; const [r,gg,bb]=heatColor(v); const off=(y*b.width+x)*4; img.data[off]=r; img.data[off+1]=gg; img.data[off+2]=bb; img.data[off+3]=255;} ctx.putImageData(img, p.bbox.x+b.x, p.bbox.y+b.y); add(g,'rect',{x:b.x,y:b.y,width:b.width,height:b.height,fill:'none',stroke:'#111'}); txt(g,pl.title,b.x+36,b.y-10,{size:14,fill:pl.titleColor}); p.eventLines.forEach(v=>{const x=map(v,p.timeDomain,[b.x,b.x+b.width]);add(g,'line',{x1:x,y1:b.y,x2:x,y2:b.y+b.height,stroke:'#111','stroke-dasharray':'5 4'});}); txt(g,'1',b.x-8,b.y+5,{size:13,anchor:'end'}); txt(g,'N',b.x-8,b.y+b.height-5,{size:13,anchor:'end',style:'italic'}); });
+      const b=p.plots[1].box; p.ticks.forEach(v=>txt(g,String(v).replace('1000','1,000').replace('1500','1,500'),map(v,p.timeDomain,[b.x,b.x+b.width]),b.y+b.height+23,{size:13,anchor:'middle'})); txt(g,'Time from stimulus onset (ms)',166,450,{size:14,anchor:'middle'}); txt(g,'Neurons (sorted)',15,242,{size:16,anchor:'middle',rotate:-90});
+      const cb=p.colorbar; for(let i=0;i<cb.height;i++){const [r,gg,bb]=heatColor(map(i,[cb.height,0],cb.domain)); add(g,'rect',{x:cb.x,y:cb.y+i,width:cb.width,height:1,fill:`rgb(${r},${gg},${bb})`});} add(g,'rect',{x:cb.x,y:cb.y,width:cb.width,height:cb.height,fill:'none',stroke:'#111'}); txt(g,cb.label,cb.x-8,cb.y-12,{size:12}); [-3,0,3].forEach(v=>txt(g,String(v),cb.x+cb.width+8,map(v,cb.domain,[cb.y+cb.height,cb.y])+4,{size:12}));
+      let x=p.epochStrip.x; p.epochStrip.items.forEach(it=>{add(g,'rect',{x,y:p.epochStrip.y,width:it.width,height:p.epochStrip.height,fill:it.fill,stroke:'#ccc'});txt(g,it.label,x+it.width/2,p.epochStrip.y+19,{size:12,anchor:'middle'});x+=it.width+3;});
+    }
+    function renderPsych(g,p){ const m=axis(g,p.plot,p.xTicks,p.yTicks,'Evidence strength (coherence %)','P(right choice)'); add(g,'line',{x1:p.plot.x,y1:m.y(.5),x2:p.plot.x+p.plot.width,y2:m.y(.5),stroke:'#777','stroke-dasharray':'4 2'}); add(g,'line',{x1:m.x(0),y1:p.plot.y+p.plot.height,x2:m.x(0),y2:m.y(.5),stroke:'#777','stroke-dasharray':'4 2'}); const curve=[]; for(let i=0;i<150;i++){const x=map(i,[0,149],[-52,58]);const f=p.fit.lower+(p.fit.upper-p.fit.lower)/(1+Math.exp(-p.fit.slope*(x-p.fit.midpoint)));curve.push(`${i?'L':'M'} ${m.x(x)} ${m.y(f)}`);} add(g,'path',{d:curve.join(' '),fill:'none',stroke:'#f01414','stroke-width':2}); p.points.forEach(d=>{const x=m.x(d[0]),y=m.y(d[1]),e=Math.abs(m.y(d[1]+d[2])-m.y(d[1]));add(g,'line',{x1:x,y1:y-e,x2:x,y2:y+e,stroke:'#111'});add(g,'circle',{cx:x,cy:y,r:4,fill:'#fff',stroke:'#111'});}); txt(g,'n = 280 trials',78,109,{size:14,style:'italic'}); txt(g,'(2 sessions)',78,127,{size:14}); txt(g,'PSE = 1.8%',274,357,{size:16,fill:'#f01414'}); txt(g,'Slope = 4.7',274,381,{size:16,fill:'#f01414'}); }
+    function renderE(g,p){ txt(g,'Actual choice',183,92,{size:16,anchor:'middle'}); txt(g,'Left',123,124,{size:14,fill:'#0048c7',anchor:'middle'}); txt(g,'Right',235,124,{size:14,fill:'#f01414',anchor:'middle'}); txt(g,'Decoded choice',28,250,{size:16,anchor:'middle',rotate:-90}); const b=p.matrixBox, vals=p.values; for(let r=0;r<2;r++)for(let c=0;c<2;c++){const v=vals[r][c], x=b.x+c*b.width/2, y=b.y+r*b.height/2; const blue=r===c; add(g,'rect',{x,y,width:b.width/2,height:b.height/2,fill:blue?`rgb(${40-v*2},${118-v},${205})`:`rgb(${245-v*.5},${245-v*1.8},${245-v*2.1})`,stroke:'#fff'}); txt(g,String(v),x+b.width/4,y+b.height/4+6,{size:17,fill:v>50?'#fff':'#111',anchor:'middle'});} add(g,'rect',{x:b.x,y:b.y,width:b.width,height:b.height,fill:'none',stroke:'#111','stroke-width':1.5}); txt(g,'Left',63,196,{size:14,fill:'#0048c7',anchor:'end'}); txt(g,'Right',63,314,{size:14,fill:'#f01414',anchor:'end'}); txt(g,p.caption,64,405,{size:16}); txt(g,'% of trials',325,132,{size:13}); for(let i=0;i<96;i++){add(g,'rect',{x:334,y:153+i,width:20,height:1,fill:`rgb(${230-i*2},${238-i*.9},${250-i*.3})`});} txt(g,'100',362,160,{size:13}); txt(g,'50',362,249,{size:13}); txt(g,'0',362,346,{size:13}); }
+    function renderF(g,p){ const m=axis(g,p.plot,p.xTicks,p.yTicks,'Reaction time (ms)','Probability density'); ['left','right'].forEach(name=>{const rec=p.recipes[name], rr=rng(rec.seed), bins=[]; for(let i=0;i<56;i++){const x=map(i,[0,55],[170,1120]); const y=Math.exp(-Math.pow((x-(name==='left'?560:635))/190,2))*.0065*(.82+rr()*.35); bins.push([x,y]);} const d=bins.map((q,i)=>`${i?'L':'M'} ${m.x(q[0])} ${m.y(q[1])}`).join(' ')+` L ${m.x(1120)} ${m.y(0)} L ${m.x(170)} ${m.y(0)} Z`; add(g,'path',{d,fill:name==='left'?'rgba(0,72,199,.18)':'rgba(240,20,20,.13)',stroke:rec.color,'stroke-width':1.5}); add(g,'line',{x1:m.x(rec.median),y1:p.plot.y,x2:m.x(rec.median),y2:p.plot.y+p.plot.height,stroke:rec.color,'stroke-dasharray':'5 3'});}); txt(g,'Median RT (ms)\nLeft: 512\nRight: 525',80,98,{size:12,fill:'#0048c7'}); add(g,'line',{x1:245,y1:95,x2:265,y2:95,stroke:'#0048c7','stroke-width':2}); txt(g,'Left choice',270,99,{size:13}); add(g,'line',{x1:245,y1:123,x2:265,y2:123,stroke:'#f01414','stroke-width':2}); txt(g,'Right choice',270,127,{size:13}); }
+    function renderG(g,p){ const m=axis(g,p.plot,p.xTicks,p.yTicks,'PC 1 (25%)','PC 2 (12%)'); add(g,'line',{x1:p.plot.x,y1:m.y(0),x2:p.plot.x+p.plot.width,y2:m.y(0),stroke:'#777','stroke-dasharray':'5 4'}); add(g,'line',{x1:m.x(0),y1:p.plot.y,x2:m.x(0),y2:p.plot.y+p.plot.height,stroke:'#777','stroke-dasharray':'5 4'}); [p.left,p.right].forEach((arr,idx)=>{for(let j=0;j<15;j++){const rr=rng(700+j+idx*80); add(g,'path',{d:arr.map((q,i)=>`${i?'L':'M'} ${m.x(q[0]+(rr()-.5)*.18)} ${m.y(q[1]+(rr()-.5)*.18)}`).join(' '),fill:'none',stroke:idx?'#f01414':'#0048c7','stroke-opacity':.15});} add(g,'path',{d:arr.map((q,i)=>`${i?'L':'M'} ${m.x(q[0])} ${m.y(q[1])}`).join(' '),fill:'none',stroke:idx?'#f01414':'#0048c7','stroke-width':3}); arr.forEach((q,i)=>{if(i%2===0)add(g,'circle',{cx:m.x(q[0]),cy:m.y(q[1]),r:4,fill:'#111'});});}); add(g,'line',{x1:184,y1:78,x2:204,y2:78,stroke:'#0048c7','stroke-width':2});txt(g,'Left choice (n = 142)',212,82,{size:12});add(g,'line',{x1:184,y1:101,x2:204,y2:101,stroke:'#f01414','stroke-width':2});txt(g,'Right choice (n = 138)',212,105,{size:12});add(g,'circle',{cx:194,cy:124,r:5,fill:'#111'});txt(g,'Time points',212,128,{size:12});txt(g,'Stim\n(0 ms)',64,250,{size:13,anchor:'middle'});txt(g,'500 ms',167,197,{size:12});txt(g,'Go',323,199,{size:13});txt(g,'Outcome',300,364,{size:13}); }
+    function renderH(g,p){ p.plots.forEach(pl=>{const b=pl.box, m={y:v=>map(v,pl.yDomain,[b.y+b.height,b.y])}; txt(g,pl.title,b.x+b.width/2,b.y-35,{size:14,anchor:'middle'}); add(g,'line',{x1:b.x,y1:b.y+b.height,x2:b.x+b.width,y2:b.y+b.height,stroke:'#111','stroke-width':1.5}); add(g,'line',{x1:b.x,y1:b.y,x2:b.x,y2:b.y+b.height,stroke:'#111','stroke-width':1.5}); pl.yTicks.forEach(v=>{add(g,'line',{x1:b.x-5,y1:m.y(v),x2:b.x,y2:m.y(v),stroke:'#111'});txt(g,String(v),b.x-9,m.y(v)+4,{size:13,anchor:'end'});}); const x1=b.x+38,x2=b.x+b.width-38; pl.values.forEach(v=>{add(g,'line',{x1,y1:m.y(v[0]),x2,y2:m.y(v[1]),stroke:'#999'});add(g,'circle',{cx:x1,cy:m.y(v[0]),r:3.5,fill:'#0048c7'});add(g,'circle',{cx:x2,cy:m.y(v[1]),r:3.5,fill:'#f01414'});}); add(g,'path',{d:`M ${x1} ${b.y+11} v -12 h ${x2-x1} v 12`,fill:'none',stroke:'#111'}); txt(g,'n.s.',(x1+x2)/2,b.y-15,{size:13,anchor:'middle'}); txt(g,pl.leftLabel,x1,b.y+b.height+34,{size:14,fill:'#0048c7',anchor:'middle'}); txt(g,pl.rightLabel,x2,b.y+b.height+34,{size:14,fill:'#f01414',anchor:'middle'}); }); txt(g,p.caption,195,478,{size:14,anchor:'middle',style:'italic'}); }
+    function render(spec) {
+      const frame=el('frame'), surface=el('surface'); frame.style.width=spec.canvas.width+'px'; frame.style.height=spec.canvas.height+'px'; surface.innerHTML='';
+      const canvas=document.createElement('canvas'); canvas.width=spec.canvas.width; canvas.height=spec.canvas.height; surface.appendChild(canvas); const ctx=canvas.getContext('2d'); ctx.fillStyle=spec.canvas.background; ctx.fillRect(0,0,canvas.width,canvas.height);
+      const svg=s('svg',{width:spec.canvas.width,height:spec.canvas.height,viewBox:`0 0 ${spec.canvas.width} ${spec.canvas.height}`}); surface.appendChild(svg);
+      add(svg,'rect',{x:0,y:0,width:spec.canvas.width,height:spec.canvas.height,fill:'none',stroke:'#111','stroke-width':3});
+      [[430,0,430,1024],[786,0,786,1024],[1146,0,1146,1024],[0,512,1536,512]].forEach(l=>add(svg,'line',{x1:l[0],y1:l[1],x2:l[2],y2:l[3],stroke:'#111','stroke-width':1.5}));
+      spec.panels.forEach(p=>{const g=panelBase(svg,p); if(p.id==='A')renderA(g,p); if(p.id==='B')renderB(g,p); if(p.id==='C')renderHeat(ctx,g,p); if(p.id==='D')renderPsych(g,p); if(p.id==='E')renderE(g,p); if(p.id==='F')renderF(g,p); if(p.id==='G')renderG(g,p); if(p.id==='H')renderH(g,p);});
+      el('reference').src = spec.source.path; el('doc-title').textContent = spec.id;
+    }
+    fetch(SPEC_URL).then(r => r.json()).then(render);
+    el('generated-button').onclick = () => { el('frame').classList.remove('show-reference'); el('generated-button').classList.add('active'); el('reference-button').classList.remove('active'); };
+    el('reference-button').onclick = () => { el('frame').classList.add('show-reference'); el('reference-button').classList.add('active'); el('generated-button').classList.remove('active'); };
+  </script>
+</body>
+</html>

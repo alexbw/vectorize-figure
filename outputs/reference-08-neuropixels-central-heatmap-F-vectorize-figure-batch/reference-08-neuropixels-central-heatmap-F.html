@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-08-neuropixels-central-heatmap-F reconstruction</title>
+  <style>
+    html, body { margin: 0; background: #eeeeee; color: #111111; font-family: Arial, Helvetica, sans-serif; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; background: #ffffff; border-bottom: 1px solid #cfcfcf; }
+    h1 { margin: 0; font-size: 16px; font-weight: 700; }
+    .note { margin-top: 3px; font-size: 12px; color: #555555; }
+    .toggle { display: inline-flex; border: 1px solid #aaaaaa; border-radius: 4px; overflow: hidden; flex: 0 0 auto; }
+    .toggle button { border: 0; padding: 5px 10px; background: #ffffff; color: #111111; font: inherit; font-size: 12px; cursor: pointer; }
+    .toggle button.active { background: #111111; color: #ffffff; }
+    main { min-height: calc(100vh - 48px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
+    .frame { position: relative; width: 440px; height: 210px; background: #ffffff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,0.08); overflow: hidden; }
+    .surface, .reference-wrap { position: absolute; inset: 0; }
+    .reference-wrap { display: none; background: #ffffff; }
+    .reference-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .reference-label { position: absolute; top: 4px; right: 5px; padding: 2px 5px; font-size: 10px; color: #111111; background: rgba(255,255,255,0.88); border: 1px solid #bbbbbb; }
+    .show-reference .surface { display: none; }
+    .show-reference .reference-wrap { display: block; }
+    svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+    text { dominant-baseline: alphabetic; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">Region comparison reconstruction</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <div id="referenceWrap" class="reference-wrap">
+        <img id="referenceImage" alt="QA reference source image">
+        <div class="reference-label">QA reference only</div>
+      </div>
+    </div>
+  </main>
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function el(tag, attrs = {}, parent) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      if (parent) parent.appendChild(node);
+      return node;
+    }
+
+    function yScale(plot, value) {
+      const box = plot.dataBbox;
+      const domain = plot.y.domain;
+      return box.y + box.height - ((value - domain[0]) / (domain[1] - domain[0])) * box.height;
+    }
+
+    function categoryX(plot, category) {
+      const found = plot.x.categories.find(item => item.id === category);
+      return found ? found.x : 0;
+    }
+
+    function text(svg, item, defaults = {}) {
+      const attrs = {
+        id: item.id,
+        x: item.x,
+        y: item.y,
+        fill: item.fill || defaults.fill || '#111111',
+        'font-family': item.fontFamily || defaults.fontFamily,
+        'font-size': item.fontSize || defaults.fontSize || 14,
+        'font-weight': item.fontWeight || defaults.fontWeight || 400,
+        'text-anchor': item.anchor || defaults.anchor || 'start',
+        'data-object-id': item.id || '',
+        'data-object-type': 'text'
+      };
+      if (item.rotation) attrs.transform = `rotate(${item.rotation} ${item.x} ${item.y})`;
+      const node = el('text', attrs, svg);
+      node.textContent = item.text;
+      return node;
+    }
+
+    function line(svg, item, extra = {}) {
+      return el('line', {
+        id: item.id,
+        x1: item.x1,
+        y1: item.y1,
+        x2: item.x2,
+        y2: item.y2,
+        stroke: item.stroke || extra.stroke || '#111111',
+        'stroke-width': item.strokeWidth || extra.strokeWidth || 1,
+        'stroke-dasharray': item.dasharray || null,
+        'data-object-id': item.id || '',
+        'data-object-type': item.type || 'line'
+      }, svg);
+    }
+
+    function renderAxes(svg, panel, typography) {
+      const plot = panel.plot;
+      line(svg, {...plot.axes.xAxis.line, id: plot.axes.xAxis.id, stroke: plot.axes.xAxis.stroke, strokeWidth: plot.axes.xAxis.strokeWidth, type: 'axis'});
+      line(svg, {...plot.axes.yAxis.line, id: plot.axes.yAxis.id, stroke: plot.axes.yAxis.stroke, strokeWidth: plot.axes.yAxis.strokeWidth, type: 'axis'});
+      for (const tick of plot.y.ticks) {
+        const y = yScale(plot, tick.value);
+        el('line', {
+          x1: plot.axes.yAxis.line.x1,
+          y1: y,
+          x2: plot.axes.yAxis.line.x1 - plot.axes.yAxis.tickLength,
+          y2: y,
+          stroke: '#111111',
+          'stroke-width': 1,
+          'data-axis': 'y',
+          'data-tick-value': tick.value
+        }, svg);
+        text(svg, {
+          id: `panel-f-y-tick-${String(tick.value).replace('.', '-')}`,
+          text: tick.label,
+          x: plot.axes.yAxis.line.x1 - 12,
+          y: y + 4,
+          fontSize: 14,
+          anchor: 'end'
+        }, typography);
+      }
+      if (plot.y.label) text(svg, plot.y.label, typography);
+    }
+
+    function renderPointEstimateSeries(svg, panel, mark) {
+      const plot = panel.plot;
+      const dataset = panel.data.find(item => item.id === mark.data);
+      const rows = dataset.values.filter(row => row.group === mark.filter.group);
+      for (const row of rows) {
+        const x = categoryX(plot, row.category);
+        const y = yScale(plot, row.mean);
+        const yLow = yScale(plot, row.low);
+        const yHigh = yScale(plot, row.high);
+        const group = el('g', {
+          id: `${mark.id}-${row.id}`,
+          'data-mark-type': 'point-estimate',
+          'data-series-id': mark.id,
+          'data-category': row.category
+        }, svg);
+        el('line', {
+          x1: x,
+          y1: yHigh,
+          x2: x,
+          y2: yLow,
+          stroke: mark.stroke,
+          'stroke-width': mark.errorBar.strokeWidth
+        }, group);
+        el('line', {
+          x1: x - mark.errorBar.capWidth / 2,
+          y1: yHigh,
+          x2: x + mark.errorBar.capWidth / 2,
+          y2: yHigh,
+          stroke: mark.stroke,
+          'stroke-width': mark.errorBar.strokeWidth
+        }, group);
+        el('line', {
+          x1: x - mark.errorBar.capWidth / 2,
+          y1: yLow,
+          x2: x + mark.errorBar.capWidth / 2,
+          y2: yLow,
+          stroke: mark.stroke,
+          'stroke-width': mark.errorBar.strokeWidth
+        }, group);
+        el('line', {
+          x1: x - mark.meanLine.halfWidth,
+          y1: y,
+          x2: x + mark.meanLine.halfWidth,
+          y2: y,
+          stroke: mark.stroke,
+          'stroke-width': mark.meanLine.strokeWidth
+        }, group);
+        el('circle', {
+          cx: x,
+          cy: y,
+          r: mark.marker.radius,
+          fill: mark.marker.fill,
+          stroke: mark.marker.stroke,
+          'stroke-width': mark.marker.strokeWidth
+        }, group);
+      }
+    }
+
+    function renderBracket(svg, annotation, typography) {
+      const group = el('g', {
+        id: annotation.id,
+        'data-mark-type': 'bracket',
+        'data-object-type': 'annotation'
+      }, svg);
+      el('path', {
+        d: `M ${annotation.x1} ${annotation.y + annotation.height} L ${annotation.x1} ${annotation.y} L ${annotation.x2} ${annotation.y} L ${annotation.x2} ${annotation.y + annotation.height}`,
+        fill: 'none',
+        stroke: '#111111',
+        'stroke-width': 1.2
+      }, group);
+      text(group, annotation.label, typography);
+    }
+
+    function render(spec) {
+      const frame = document.getElementById('frame');
+      const surface = document.getElementById('surface');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      surface.replaceChildren();
+      const svg = el('svg', {viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`, role: 'img'}, surface);
+      el('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background, 'data-layer': 'background'}, svg);
+      const typography = {
+        fontFamily: spec.typography.fontFamily,
+        fontSize: spec.typography.defaultSize,
+        fill: spec.typography.color
+      };
+      for (const panel of spec.panels) {
+        text(svg, panel.label, typography);
+        text(svg, panel.title, typography);
+        renderAxes(svg, panel, typography);
+        for (const mark of panel.marks) {
+          if (mark.type === 'pointEstimateSeries') renderPointEstimateSeries(svg, panel, mark);
+          if (mark.type === 'line') line(svg, mark);
+        }
+        for (const annotation of panel.annotations) {
+          if (annotation.type === 'bracket') renderBracket(svg, annotation, typography);
+        }
+      }
+      document.getElementById('title').textContent = spec.panels[0].title.text;
+      document.getElementById('referenceImage').src = spec.source.path;
+    }
+
+    async function loadSpec() {
+      const response = await fetch('reference-08-neuropixels-central-heatmap-F.json');
+      if (!response.ok) throw new Error(`Could not load JSON spec: ${response.status}`);
+      return response.json();
+    }
+
+    function wireToggle() {
+      const frame = document.getElementById('frame');
+      const generatedButton = document.getElementById('generatedButton');
+      const referenceButton = document.getElementById('referenceButton');
+      generatedButton.addEventListener('click', () => {
+        frame.classList.remove('show-reference');
+        generatedButton.classList.add('active');
+        referenceButton.classList.remove('active');
+      });
+      referenceButton.addEventListener('click', () => {
+        frame.classList.add('show-reference');
+        referenceButton.classList.add('active');
+        generatedButton.classList.remove('active');
+      });
+    }
+
+    wireToggle();
+    loadSpec().then(render).catch(error => {
+      document.getElementById('surface').textContent = error.message;
+      console.error(error);
+    });
+  </script>
+</body>
+</html>

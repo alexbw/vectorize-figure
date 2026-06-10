@@ -1,0 +1,221 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-05-grid-remapping-D",
+  "source": {
+    "path": "../../assets/reference/reference-05-grid-remapping-D-reference.png",
+    "usage": "QA-only reference image; not used by generated candidate layers.",
+    "notes": "Panel D is a two-category gridness score distribution with jittered cell dots, violin density envelopes, summary median/IQR marks, y-axis ticks, dashed zero line, and a p-value bracket."
+  },
+  "canvas": {
+    "width": 486,
+    "height": 524,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 16,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Arimo", "Roboto", "Noto Sans"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Manual first-pass sizing from source crop; title resembles bold publication sans."
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-d",
+      "bbox": {"x": 0, "y": 0, "width": 486, "height": 524},
+      "label": {
+        "id": "panel-label",
+        "text": "D",
+        "x": 23,
+        "y": 55,
+        "fontSize": 29,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 23, "y": 31, "width": 20, "height": 29},
+        "fit": "manual"
+      },
+      "title": {
+        "id": "panel-title",
+        "text": "Gridness score distribution",
+        "x": 74,
+        "y": 59,
+        "fontSize": 23,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 75, "y": 40, "width": 258, "height": 25},
+        "fit": "manual"
+      },
+      "plot": {
+        "id": "gridness-violin-plot",
+        "dataBbox": {"x": 86, "y": 88, "width": 346, "height": 322},
+        "axisBbox": {"x": 86, "y": 88, "width": 346, "height": 322},
+        "x": {
+          "scale": "categorical",
+          "categories": [
+            {"id": "env-a", "label": "Environment A", "x": 169, "color": "#8a3f12", "n": 156},
+            {"id": "env-b", "label": "Environment B", "x": 340, "color": "#00747d", "n": 156}
+          ]
+        },
+        "y": {
+          "scale": "linear",
+          "domain": [-1.5, 1.5],
+          "ticks": [
+            {"value": -1.5, "label": "-1.5"},
+            {"value": -1.0, "label": "-1.0"},
+            {"value": -0.5, "label": "-0.5"},
+            {"value": 0, "label": "0"},
+            {"value": 0.5, "label": "0.5"},
+            {"value": 1.0, "label": "1.0"},
+            {"value": 1.5, "label": "1.5"}
+          ],
+          "label": {"text": "Gridness score", "x": 20, "y": 249, "rotation": -90}
+        }
+      },
+      "data": {
+        "distributions": [
+          {
+            "id": "env-a-dist",
+            "category": "env-a",
+            "seed": 5021,
+            "count": 156,
+            "recipe": "mixture-normal",
+            "components": [
+              {"weight": 0.66, "mean": 0.16, "sd": 0.25},
+              {"weight": 0.25, "mean": 0.45, "sd": 0.22},
+              {"weight": 0.09, "mean": -0.50, "sd": 0.36}
+            ],
+            "clip": [-1.24, 1.28],
+            "median": 0.28,
+            "iqr": [-0.04, 0.57],
+            "violin": {
+              "bandwidth": 0.16,
+              "maxHalfWidth": 49,
+              "sampleStep": 0.06,
+              "fill": "#b87743",
+              "stroke": "#8a3f12",
+              "fillOpacity": 0.46,
+              "strokeWidth": 1.8
+            }
+          },
+          {
+            "id": "env-b-dist",
+            "category": "env-b",
+            "seed": 6317,
+            "count": 156,
+            "recipe": "mixture-normal",
+            "components": [
+              {"weight": 0.65, "mean": 0.20, "sd": 0.24},
+              {"weight": 0.25, "mean": 0.43, "sd": 0.20},
+              {"weight": 0.10, "mean": -0.44, "sd": 0.34}
+            ],
+            "clip": [-1.20, 1.29],
+            "median": 0.31,
+            "iqr": [-0.01, 0.58],
+            "violin": {
+              "bandwidth": 0.16,
+              "maxHalfWidth": 48,
+              "sampleStep": 0.06,
+              "fill": "#3b9ba0",
+              "stroke": "#00747d",
+              "fillOpacity": 0.43,
+              "strokeWidth": 1.8
+            }
+          }
+        ]
+      },
+      "marks": [
+        {
+          "id": "zero-line",
+          "type": "line",
+          "usesTransform": "gridness-violin-plot.y",
+          "orientation": "horizontal",
+          "value": 0,
+          "x1": 86,
+          "x2": 432,
+          "stroke": "#111111",
+          "strokeWidth": 1.5,
+          "dasharray": "5 4"
+        },
+        {"id": "env-a-violin", "type": "violin", "distribution": "env-a-dist", "renderer": "svg"},
+        {"id": "env-b-violin", "type": "violin", "distribution": "env-b-dist", "renderer": "svg"},
+        {
+          "id": "env-a-scatter",
+          "type": "scatter",
+          "distribution": "env-a-dist",
+          "renderer": "canvas",
+          "jitterHalfWidth": 46,
+          "radius": 2.05,
+          "fill": "#a65d2b",
+          "opacity": 0.72
+        },
+        {
+          "id": "env-b-scatter",
+          "type": "scatter",
+          "distribution": "env-b-dist",
+          "renderer": "canvas",
+          "jitterHalfWidth": 46,
+          "radius": 2.05,
+          "fill": "#087f87",
+          "opacity": 0.70
+        },
+        {
+          "id": "summary-bars",
+          "type": "summaryOverlay",
+          "distributions": ["env-a-dist", "env-b-dist"],
+          "medianMarker": {"radius": 5.6, "fill": "#111111", "stroke": "#ffffff", "strokeWidth": 1.4},
+          "iqrLine": {"stroke": "#111111", "strokeWidth": 2.3},
+          "categoryBarHalfWidth": 19
+        }
+      ],
+      "annotations": [
+        {
+          "id": "p-value-bracket",
+          "type": "bracket",
+          "x1": 169,
+          "x2": 340,
+          "y": 104,
+          "tickHeight": 0,
+          "stroke": "#111111",
+          "strokeWidth": 1.4,
+          "label": {
+            "text": "p = 3.1 x 10^-5",
+            "x": 254,
+            "y": 98,
+            "fontSize": 15,
+            "fontStyle": "italic",
+            "anchor": "middle",
+            "superscript": {"text": "-5", "start": 13}
+          }
+        },
+        {"id": "x-label-env-a", "type": "categoryLabel", "category": "env-a", "text": "Environment A", "x": 169, "y": 438, "fontSize": 18, "fontWeight": 400, "fill": "#8a3f12", "anchor": "middle"},
+        {"id": "x-sublabel-env-a", "type": "categorySubLabel", "category": "env-a", "text": "(n = 156 cells)", "x": 169, "y": 462, "fontSize": 16, "fontStyle": "italic", "fill": "#111111", "anchor": "middle"},
+        {"id": "x-label-env-b", "type": "categoryLabel", "category": "env-b", "text": "Environment B", "x": 340, "y": 438, "fontSize": 18, "fontWeight": 400, "fill": "#00747d", "anchor": "middle"},
+        {"id": "x-sublabel-env-b", "type": "categorySubLabel", "category": "env-b", "text": "(n = 156 cells)", "x": 340, "y": 462, "fontSize": 16, "fontStyle": "italic", "fill": "#111111", "anchor": "middle"}
+      ],
+      "provenance": [
+        {"target": "plot.dataBbox", "confidence": "high", "note": "Axis extents manually read from the source crop."},
+        {"target": "distribution shapes", "confidence": "medium", "note": "Cell dots and density envelopes are generated from editable mixture recipes to match visible range and shape; raw cell values are unavailable."},
+        {"target": "typography", "confidence": "medium", "note": "Manual first-pass typography without automated font calibration."}
+      ]
+    }
+  ],
+  "constraints": [
+    {"id": "axis-ticks-linked", "description": "All y tick marks and labels derive from plot.y.ticks and share the same y transform."},
+    {"id": "category-colors-linked", "description": "Violin, scatter, and category label colors are linked through category/distribution ids."},
+    {"id": "source-raster-qa-only", "description": "The source raster can only be displayed in the labeled reference view, never in generated SVG/canvas layers."}
+  ],
+  "validation": {
+    "expectedCanvas": {"width": 486, "height": 524},
+    "expectedCategories": 2,
+    "expectedYTicks": 7,
+    "expectedGeneratedScatterPoints": 312
+  },
+  "confidence": [
+    {"target": "overall first pass", "confidence": "medium", "note": "Editable reconstruction intended for visual inspection, not pixel-optimized final output."}
+  ]
+}

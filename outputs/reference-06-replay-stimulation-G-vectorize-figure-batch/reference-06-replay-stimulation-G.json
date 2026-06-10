@@ -1,0 +1,214 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-06-replay-stimulation-G",
+  "source": {
+    "path": "../../assets/reference/reference-06-replay-stimulation-G-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "First-pass editable reconstruction from visual inspection of a 380 x 524 px cropped paper panel."
+  },
+  "canvas": {
+    "width": 380,
+    "height": 524,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial Narrow, Helvetica Neue Condensed, Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial Narrow", "Helvetica Neue Condensed", "Arial", "Helvetica"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.06,
+      "notes": "Condensed sans-serif approximates the narrow journal typography; no source raster is rendered in the generated candidate."
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-g",
+      "bbox": {"x": 0, "y": 0, "width": 380, "height": 524},
+      "label": {
+        "id": "panel-label",
+        "text": "G",
+        "x": 16,
+        "y": 25,
+        "fontSize": 23,
+        "fontWeight": 700,
+        "sourceBox": {"x": 16, "y": 6, "width": 15, "height": 24},
+        "fit": "visual"
+      },
+      "title": {
+        "id": "panel-title",
+        "text": "Cumulative distribution of \u03c1",
+        "x": 46,
+        "y": 25,
+        "fontSize": 20,
+        "fontWeight": 700,
+        "sourceBox": {"x": 46, "y": 7, "width": 250, "height": 25},
+        "fit": "visual"
+      },
+      "layoutObjects": [
+        {
+          "id": "main-plot",
+          "type": "cartesianPlot",
+          "children": ["x-axis", "y-axis", "zero-reference", "series-legend", "ks-test"]
+        },
+        {
+          "id": "x-axis",
+          "type": "axis",
+          "orientation": "bottom",
+          "anchorTo": "rho-cdf.xy",
+          "children": ["x-ticks", "x-label"]
+        },
+        {
+          "id": "y-axis",
+          "type": "axis",
+          "orientation": "left",
+          "anchorTo": "rho-cdf.xy",
+          "children": ["y-ticks", "y-label"]
+        },
+        {
+          "id": "series-legend",
+          "type": "legend",
+          "references": ["pre-stim-cdf", "stim-cdf"],
+          "position": {"x": 102, "y": 63}
+        }
+      ],
+      "coordinateSystems": [
+        {
+          "id": "rho-cdf.xy",
+          "type": "cartesian2d",
+          "xDomain": [-1, 1],
+          "yDomain": [0, 1],
+          "plotBox": {"x": 74, "y": 86, "width": 292, "height": 306}
+        }
+      ],
+      "plots": [
+        {
+          "id": "rho-cdf",
+          "plotBox": {"x": 74, "y": 86, "width": 292, "height": 306},
+          "x": {
+            "domain": [-1, 1],
+            "ticks": [
+              {"value": -1, "label": "\u22121"},
+              {"value": -0.5, "label": "\u22120.5"},
+              {"value": 0, "label": "0"},
+              {"value": 0.5, "label": "0.5"},
+              {"value": 1, "label": "1.0"}
+            ],
+            "label": {"id": "x-label", "text": "Spearman \u03c1", "x": 220, "y": 447, "fontSize": 17, "anchor": "middle"}
+          },
+          "y": {
+            "domain": [0, 1],
+            "ticks": [
+              {"value": 0, "label": "0"},
+              {"value": 0.25, "label": "0.25"},
+              {"value": 0.5, "label": "0.50"},
+              {"value": 0.75, "label": "0.75"},
+              {"value": 1, "label": "1.00"}
+            ],
+            "label": {"id": "y-label", "text": "Cumulative probability", "x": 27, "y": 240, "rotation": -90, "fontSize": 17, "anchor": "middle"}
+          }
+        }
+      ],
+      "marks": [
+        {
+          "id": "zero-reference",
+          "type": "referenceLine",
+          "usesTransform": "rho-cdf.xy",
+          "orientation": "vertical",
+          "value": 0,
+          "stroke": "#777777",
+          "strokeWidth": 1.3,
+          "strokeDasharray": "7 8",
+          "yRange": [0, 1]
+        },
+        {
+          "id": "pre-stim-cdf",
+          "type": "lineSeries",
+          "usesTransform": "rho-cdf.xy",
+          "stroke": "#006b6b",
+          "strokeWidth": 2,
+          "fill": "none",
+          "points": [
+            [-1.00,0.00],[-0.88,0.005],[-0.78,0.015],[-0.68,0.035],[-0.58,0.055],[-0.50,0.085],
+            [-0.44,0.145],[-0.38,0.230],[-0.33,0.310],[-0.28,0.420],[-0.23,0.535],[-0.18,0.640],
+            [-0.13,0.760],[-0.08,0.820],[-0.02,0.870],[0.04,0.900],[0.10,0.930],[0.18,0.955],
+            [0.28,0.975],[0.42,0.988],[0.60,0.995],[0.82,0.999],[1.00,1.00]
+          ],
+          "provenance": {"confidence": "medium", "note": "Approximate monotone CDF anchors traced visually from the teal source curve."}
+        },
+        {
+          "id": "stim-cdf",
+          "type": "lineSeries",
+          "usesTransform": "rho-cdf.xy",
+          "stroke": "#ff5a00",
+          "strokeWidth": 2,
+          "fill": "none",
+          "points": [
+            [-1.00,0.00],[-0.82,0.00],[-0.68,0.002],[-0.54,0.006],[-0.42,0.014],[-0.30,0.028],
+            [-0.20,0.052],[-0.10,0.090],[-0.02,0.145],[0.06,0.240],[0.13,0.335],[0.20,0.455],
+            [0.27,0.575],[0.34,0.685],[0.40,0.800],[0.47,0.890],[0.55,0.940],[0.65,0.972],
+            [0.78,0.990],[0.92,0.998],[1.00,1.00]
+          ],
+          "provenance": {"confidence": "medium", "note": "Approximate monotone CDF anchors traced visually from the orange source curve."}
+        }
+      ],
+      "annotations": [
+        {
+          "id": "legend-pre-stim",
+          "type": "legendItem",
+          "series": "pre-stim-cdf",
+          "line": {"x1": 102, "y1": 63, "x2": 121, "y2": 63, "stroke": "#006b6b", "strokeWidth": 3},
+          "label": {"text": "Pre-stim", "x": 128, "y": 68, "fontSize": 14, "fill": "#006b6b"}
+        },
+        {
+          "id": "legend-stim",
+          "type": "legendItem",
+          "series": "stim-cdf",
+          "line": {"x1": 102, "y1": 86, "x2": 121, "y2": 86, "stroke": "#ff5a00", "strokeWidth": 3},
+          "label": {"text": "Stim", "x": 128, "y": 91, "fontSize": 14, "fill": "#ff5a00"}
+        },
+        {
+          "id": "ks-test",
+          "type": "text",
+          "text": "KS test\np < 0.001",
+          "x": 293,
+          "y": 350,
+          "fontSize": 15,
+          "lineHeight": 1.18,
+          "fill": "#111111",
+          "anchor": "start"
+        }
+      ],
+      "provenance": [
+        {
+          "target": "panel-g",
+          "confidence": "medium",
+          "note": "Axes, title, legend, annotation, and CDF curves are first-pass visual approximations intended for editable inspection."
+        }
+      ]
+    }
+  ],
+  "rendering": {
+    "renderer": "svg-dom",
+    "layers": ["background", "axes", "reference-lines", "data", "annotations"],
+    "styleTokens": {
+      "axisStroke": "#111111",
+      "axisWidth": 1.1,
+      "tickLength": 5,
+      "tickFontSize": 15
+    }
+  },
+  "validation": {
+    "expectedCanvas": {"width": 380, "height": 524},
+    "expectedMarks": {"lineSeries": 2, "referenceLine": 1},
+    "generatedRasterReuse": "none; source path is QA-reference metadata only"
+  },
+  "confidence": [
+    {"target": "typography", "confidence": "medium", "note": "Condensed sans-serif is approximate."},
+    {"target": "curve-data", "confidence": "medium", "note": "Curves preserve shape and relative offset but are not exact extracted empirical CDF samples."},
+    {"target": "plot-geometry", "confidence": "medium", "note": "Plot box and text anchors are visually estimated from the source crop."}
+  ]
+}

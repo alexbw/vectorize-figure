@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-02-decision-dynamics-F reconstruction</title>
+  <style>
+    :root {
+      color: #111;
+      background: #f4f4f4;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    body {
+      margin: 0;
+      padding: 24px;
+    }
+    .workspace {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .figure-wrap {
+      background: #fff;
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
+      width: 356px;
+      height: 510px;
+    }
+    svg {
+      display: block;
+      width: 356px;
+      height: 510px;
+      background: #fff;
+    }
+    .qa {
+      font-size: 13px;
+      line-height: 1.3;
+      color: #333;
+    }
+    .qa img {
+      display: block;
+      width: 356px;
+      height: 510px;
+      margin-top: 8px;
+      border: 1px solid #bbb;
+      background: #fff;
+    }
+    .axis path,
+    .axis line {
+      shape-rendering: crispEdges;
+    }
+    text {
+      dominant-baseline: alphabetic;
+    }
+  </style>
+</head>
+<body>
+  <div class="workspace">
+    <div class="figure-wrap" aria-label="Generated reconstruction">
+      <svg id="figure" role="img"></svg>
+    </div>
+    <details class="qa">
+      <summary>QA reference only: source raster</summary>
+      <img src="../../assets/reference/reference-02-decision-dynamics-F-reference.png" alt="Reference raster for QA only">
+    </details>
+  </div>
+  <script>
+    const fallbackSpec = null;
+
+    function svgEl(name, attrs = {}) {
+      const el = document.createElementNS('http://www.w3.org/2000/svg', name);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) el.setAttribute(key, value);
+      }
+      return el;
+    }
+
+    function textEl(attrs, content) {
+      const el = svgEl('text', attrs);
+      el.textContent = content;
+      return el;
+    }
+
+    function formatStyle(spec, extra = {}) {
+      return {
+        'font-family': spec.typography.fontFamily,
+        fill: spec.typography.color,
+        ...extra
+      };
+    }
+
+    function render(spec) {
+      const svg = document.getElementById('figure');
+      svg.setAttribute('viewBox', `0 0 ${spec.canvas.width} ${spec.canvas.height}`);
+      svg.setAttribute('width', spec.canvas.width);
+      svg.setAttribute('height', spec.canvas.height);
+      svg.replaceChildren();
+      svg.appendChild(svgEl('rect', {
+        id: 'page-background',
+        width: spec.canvas.width,
+        height: spec.canvas.height,
+        fill: spec.canvas.background
+      }));
+
+      for (const panel of spec.panels) {
+        renderPanel(svg, spec, panel);
+      }
+    }
+
+    function renderPanel(svg, spec, panel) {
+      const group = svgEl('g', {'data-panel-id': panel.id});
+      svg.appendChild(group);
+
+      const plot = panel.plot;
+      const box = plot.dataBbox;
+      const xScale = v => box.x + ((v - plot.x.domain[0]) / (plot.x.domain[1] - plot.x.domain[0])) * box.width;
+      const yScale = v => box.y + box.height - ((v - plot.y.domain[0]) / (plot.y.domain[1] - plot.y.domain[0])) * box.height;
+
+      group.appendChild(textEl(formatStyle(spec, {
+        id: panel.label.id,
+        x: panel.label.x,
+        y: panel.label.y,
+        'font-size': panel.label.fontSize,
+        'font-weight': panel.label.fontWeight,
+        'text-anchor': panel.label.textAnchor
+      }), panel.label.text));
+      group.appendChild(textEl(formatStyle(spec, {
+        id: panel.title.id,
+        x: panel.title.x,
+        y: panel.title.y,
+        'font-size': panel.title.fontSize,
+        'font-weight': panel.title.fontWeight,
+        'text-anchor': panel.title.textAnchor
+      }), panel.title.text));
+
+      const defs = svgEl('defs');
+      defs.appendChild(svgEl('clipPath', {id: plot.clipId}));
+      defs.querySelector('clipPath').appendChild(svgEl('rect', {
+        x: box.x,
+        y: box.y,
+        width: box.width,
+        height: box.height
+      }));
+      group.appendChild(defs);
+
+      const dataLayer = svgEl('g', {id: 'data-layer', 'clip-path': `url(#${plot.clipId})`});
+      group.appendChild(dataLayer);
+
+      for (const mark of panel.marks) {
+        if (mark.type === 'histogramStep') renderHistogram(dataLayer, panel, mark, xScale, yScale);
+      }
+      for (const mark of panel.marks) {
+        if (mark.type === 'eventLine') renderEventLine(dataLayer, mark, xScale, yScale);
+      }
+
+      renderAxes(group, spec, plot, xScale, yScale);
+      renderAnnotations(group, spec, panel.annotations);
+      renderLegend(group, spec, panel);
+    }
+
+    function renderHistogram(layer, panel, mark, xScale, yScale) {
+      const data = panel.data.histograms.find(d => d.id === mark.dataRef);
+      const half = data.binWidth / 2;
+      const baseline = yScale(0);
+      let fillPath = `M ${xScale(data.values[0][0] - half)} ${baseline}`;
+      let stepPath = '';
+      data.values.forEach(([center, height], index) => {
+        const left = xScale(center - half);
+        const right = xScale(center + half);
+        const y = yScale(height);
+        if (index === 0) {
+          stepPath += `M ${left} ${baseline} L ${left} ${y} L ${right} ${y}`;
+          fillPath += ` L ${left} ${y} L ${right} ${y}`;
+        } else {
+          stepPath += ` L ${left} ${y} L ${right} ${y}`;
+          fillPath += ` L ${left} ${y} L ${right} ${y}`;
+        }
+      });
+      const last = data.values[data.values.length - 1][0] + half;
+      stepPath += ` L ${xScale(last)} ${baseline}`;
+      fillPath += ` L ${xScale(last)} ${baseline} Z`;
+
+      layer.appendChild(svgEl('path', {
+        id: `${mark.id}-fill`,
+        d: fillPath,
+        fill: mark.fill,
+        'fill-opacity': mark.fillOpacity,
+        stroke: 'none',
+        'data-series-id': mark.id
+      }));
+      layer.appendChild(svgEl('path', {
+        id: `${mark.id}-outline`,
+        d: stepPath,
+        fill: 'none',
+        stroke: mark.stroke,
+        'stroke-width': mark.strokeWidth,
+        'stroke-linejoin': 'miter',
+        'stroke-linecap': 'butt',
+        'data-series-id': mark.id
+      }));
+    }
+
+    function renderEventLine(layer, mark, xScale, yScale) {
+      const x = xScale(mark.value);
+      layer.appendChild(svgEl('line', {
+        id: mark.id,
+        x1: x,
+        y1: yScale(mark.yRange[0]),
+        x2: x,
+        y2: yScale(mark.yRange[1]),
+        stroke: mark.stroke,
+        'stroke-width': mark.strokeWidth,
+        'stroke-dasharray': mark.strokeDasharray,
+        'data-event-value': mark.value
+      }));
+    }
+
+    function renderAxes(group, spec, plot, xScale, yScale) {
+      const axisStyle = {stroke: '#111', 'stroke-width': 1.2, fill: 'none'};
+      const axes = svgEl('g', {id: 'axes', class: 'axis'});
+      group.appendChild(axes);
+      axes.appendChild(svgEl('line', {...axisStyle, ...plot.axes.xAxis.line, id: plot.axes.xAxis.id}));
+      axes.appendChild(svgEl('line', {...axisStyle, ...plot.axes.yAxis.line, id: plot.axes.yAxis.id}));
+
+      for (const tick of plot.x.ticks) {
+        const x = xScale(tick.value);
+        axes.appendChild(svgEl('line', {
+          id: `${tick.id}-mark`,
+          x1: x,
+          y1: plot.axes.xAxis.line.y1,
+          x2: x,
+          y2: plot.axes.xAxis.line.y1 + plot.axes.xAxis.tickLength,
+          stroke: '#111',
+          'stroke-width': 1
+        }));
+        axes.appendChild(textEl(formatStyle(spec, {
+          id: `${tick.id}-label`,
+          x,
+          y: plot.axes.xAxis.line.y1 + 28,
+          'font-size': 14,
+          'text-anchor': 'middle'
+        }), tick.label));
+      }
+
+      for (const tick of plot.y.ticks) {
+        const y = yScale(tick.value);
+        axes.appendChild(svgEl('line', {
+          id: `${tick.id}-mark`,
+          x1: plot.axes.yAxis.line.x1 - plot.axes.yAxis.tickLength,
+          y1: y,
+          x2: plot.axes.yAxis.line.x1,
+          y2: y,
+          stroke: '#111',
+          'stroke-width': 1
+        }));
+        axes.appendChild(textEl(formatStyle(spec, {
+          id: `${tick.id}-label`,
+          x: plot.axes.yAxis.line.x1 - 11,
+          y: y + 5,
+          'font-size': 14,
+          'text-anchor': 'end'
+        }), tick.label));
+      }
+
+      axes.appendChild(textEl(formatStyle(spec, {
+        id: plot.x.label.id,
+        x: plot.dataBbox.x + plot.dataBbox.width / 2,
+        y: 448,
+        'font-size': plot.x.label.fontSize,
+        'text-anchor': 'middle'
+      }), plot.x.label.text));
+
+      const yLabel = textEl(formatStyle(spec, {
+        id: plot.y.label.id,
+        x: 18,
+        y: plot.dataBbox.y + plot.dataBbox.height / 2,
+        'font-size': plot.y.label.fontSize,
+        'text-anchor': 'middle',
+        transform: `rotate(-90 18 ${plot.dataBbox.y + plot.dataBbox.height / 2})`
+      }), plot.y.label.text);
+      axes.appendChild(yLabel);
+    }
+
+    function renderAnnotations(group, spec, annotations) {
+      const anno = svgEl('g', {id: 'annotations'});
+      group.appendChild(anno);
+      for (const item of annotations) {
+        if (item.type !== 'text') continue;
+        anno.appendChild(textEl(formatStyle(spec, {
+          id: item.id,
+          x: item.x,
+          y: item.y,
+          'font-size': item.fontSize,
+          'font-weight': item.fontWeight || 400,
+          fill: item.fill || spec.typography.color,
+          'text-anchor': item.textAnchor
+        }), item.text));
+      }
+    }
+
+    function renderLegend(group, spec, panel) {
+      const legend = panel.legends[0];
+      const g = svgEl('g', {id: legend.id, 'data-layout-object': 'legend'});
+      group.appendChild(g);
+      legend.items.forEach((item, index) => {
+        const mark = panel.marks.find(m => m.id === item.seriesId);
+        const y = legend.y + index * 24;
+        g.appendChild(svgEl('line', {
+          id: `${legend.id}-${item.seriesId}-swatch`,
+          x1: legend.x,
+          y1: y,
+          x2: legend.x + 21,
+          y2: y,
+          stroke: mark.stroke,
+          'stroke-width': 1.6
+        }));
+        g.appendChild(textEl(formatStyle(spec, {
+          id: `${legend.id}-${item.seriesId}-label`,
+          x: legend.x + 29,
+          y: y + 5,
+          'font-size': 14,
+          'text-anchor': 'start'
+        }), item.label));
+      });
+    }
+
+    fetch('reference-02-decision-dynamics-F.json')
+      .then(response => response.ok ? response.json() : fallbackSpec)
+      .then(spec => render(spec))
+      .catch(error => {
+        document.body.insertAdjacentHTML('beforeend', `<pre>${error.message}</pre>`);
+      });
+  </script>
+</body>
+</html>

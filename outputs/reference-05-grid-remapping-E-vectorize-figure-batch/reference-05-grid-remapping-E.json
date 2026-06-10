@@ -1,0 +1,242 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-05-grid-remapping-E",
+  "source": {
+    "path": "../../assets/reference/reference-05-grid-remapping-E-reference.png",
+    "usage": "QA-only; not used by generated candidate visual layers.",
+    "nativeSize": {"width": 484, "height": 524},
+    "notes": "Single cropped panel E showing two decoded-position posterior heatmaps and a logarithmic colorbar. Plot geometry and text locations are visually estimated from the source crop."
+  },
+  "canvas": {"width": 484, "height": 524, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 16,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Roboto", "Source Sans 3", "Noto Sans"],
+    "calibration": {
+      "lineHeight": 1.1,
+      "letterSpacing": 0,
+      "notes": "First-pass typography tuned visually to the source crop; no font-scoring harness was run."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "env-a.data",
+      "type": "cartesian",
+      "xDomain": [0, 220],
+      "yDomain": [0, 220],
+      "bbox": {"x": 75, "y": 145, "width": 158, "height": 213}
+    },
+    {
+      "id": "env-b.data",
+      "type": "cartesian",
+      "xDomain": [0, 220],
+      "yDomain": [0, 220],
+      "bbox": {"x": 249, "y": 145, "width": 158, "height": 213}
+    },
+    {
+      "id": "posterior.color",
+      "type": "logColor",
+      "domain": [0.0001, 1],
+      "range": ["#050505", "#2f1409", "#7b3611", "#d7852f", "#ffd476", "#fff7d6"]
+    }
+  ],
+  "layoutObjects": [
+    {
+      "id": "panel-label",
+      "type": "panelLabel",
+      "text": "E",
+      "x": 30,
+      "y": 57,
+      "fontSize": 28,
+      "fontWeight": 700,
+      "anchor": "start"
+    },
+    {
+      "id": "panel-title",
+      "type": "title",
+      "text": "Decoding posterior (position)",
+      "x": 73,
+      "y": 60,
+      "fontSize": 23,
+      "fontWeight": 700,
+      "anchor": "start",
+      "sourceBox": {"x": 73, "y": 42, "width": 282, "height": 26}
+    },
+    {
+      "id": "env-a-heading",
+      "type": "panelTitle",
+      "lines": [
+        {"text": "True position", "x": 151, "y": 109},
+        {"text": "Env. A", "x": 151, "y": 135}
+      ],
+      "fontSize": 17,
+      "fontWeight": 700,
+      "fill": "#78320f",
+      "anchor": "middle"
+    },
+    {
+      "id": "env-b-heading",
+      "type": "panelTitle",
+      "lines": [
+        {"text": "True position", "x": 326, "y": 109},
+        {"text": "Env. B", "x": 326, "y": 135}
+      ],
+      "fontSize": 17,
+      "fontWeight": 700,
+      "fill": "#075f68",
+      "anchor": "middle"
+    },
+    {
+      "id": "shared-x-label",
+      "type": "axisTitle",
+      "axis": "env-a.x, env-b.x",
+      "text": "True position (cm)",
+      "x": 241,
+      "y": 413,
+      "fontSize": 20,
+      "fontWeight": 400,
+      "anchor": "middle"
+    },
+    {
+      "id": "shared-y-label",
+      "type": "axisTitle",
+      "axis": "env-a.y",
+      "text": "Decoded position (cm)",
+      "x": 18,
+      "y": 252,
+      "fontSize": 18,
+      "fontWeight": 400,
+      "anchor": "middle",
+      "rotation": -90
+    },
+    {
+      "id": "posterior-colorbar",
+      "type": "colorbar",
+      "colorScale": "posterior.color",
+      "bbox": {"x": 440, "y": 185, "width": 14, "height": 184},
+      "title": {
+        "lines": ["Posterior", "probability"],
+        "x": 439,
+        "y": 148,
+        "fontSize": 14,
+        "anchor": "start"
+      },
+      "ticks": [
+        {"value": 1, "label": "10⁰"},
+        {"value": 0.1, "label": "10⁻¹"},
+        {"value": 0.01, "label": "10⁻²"},
+        {"value": 0.0001, "label": "10⁻⁴"}
+      ]
+    }
+  ],
+  "panels": [
+    {
+      "id": "env-a",
+      "bbox": {"x": 75, "y": 145, "width": 158, "height": 213},
+      "plot": {
+        "usesTransform": "env-a.data",
+        "axes": {
+          "x": {
+            "id": "env-a-x-axis",
+            "domain": [0, 220],
+            "ticks": [{"value": 0, "label": "0"}, {"value": 100, "label": "100"}, {"value": 200, "label": "200"}],
+            "tickLength": 6
+          },
+          "y": {
+            "id": "env-a-y-axis",
+            "domain": [0, 220],
+            "ticks": [{"value": 0, "label": "0"}, {"value": 100, "label": "100"}, {"value": 200, "label": "200"}],
+            "tickLength": 6
+          }
+        }
+      },
+      "marks": [
+        {
+          "id": "env-a-posterior-field",
+          "type": "heatmap",
+          "renderer": "canvas",
+          "colorScale": "posterior.color",
+          "usesTransform": "env-a.data",
+          "recipe": {
+            "kind": "diagonalPosterior",
+            "seed": 5105,
+            "grid": {"columns": 96, "rows": 128},
+            "ridge": {
+              "points": [[0, 0], [45, 42], [90, 84], [125, 128], [165, 162], [220, 218]],
+              "sigma": 5.3,
+              "amplitude": 0.94
+            },
+            "backgroundNoise": 0.028,
+            "speckleDensity": 0.018,
+            "blur": 0.65
+          }
+        }
+      ]
+    },
+    {
+      "id": "env-b",
+      "bbox": {"x": 249, "y": 145, "width": 158, "height": 213},
+      "plot": {
+        "usesTransform": "env-b.data",
+        "axes": {
+          "x": {
+            "id": "env-b-x-axis",
+            "domain": [0, 220],
+            "ticks": [{"value": 0, "label": "0"}, {"value": 100, "label": "100"}, {"value": 200, "label": "200"}],
+            "tickLength": 6
+          },
+          "y": {
+            "id": "env-b-y-axis",
+            "domain": [0, 220],
+            "ticks": [{"value": 0, "label": "0"}, {"value": 100, "label": ""}, {"value": 200, "label": ""}],
+            "tickLength": 6
+          }
+        }
+      },
+      "marks": [
+        {
+          "id": "env-b-posterior-field",
+          "type": "heatmap",
+          "renderer": "canvas",
+          "colorScale": "posterior.color",
+          "usesTransform": "env-b.data",
+          "recipe": {
+            "kind": "diagonalPosterior",
+            "seed": 5115,
+            "grid": {"columns": 96, "rows": 128},
+            "ridge": {
+              "points": [[0, 2], [42, 38], [76, 68], [105, 101], [124, 142], [164, 172], [220, 220]],
+              "sigma": 6.5,
+              "amplitude": 0.88
+            },
+            "backgroundNoise": 0.04,
+            "speckleDensity": 0.034,
+            "blur": 0.55
+          }
+        }
+      ]
+    }
+  ],
+  "rendering": {
+    "layers": ["canvas-heatmaps", "svg-axes", "svg-text", "svg-colorbar"],
+    "styleTokens": {
+      "axisStroke": "#111111",
+      "axisStrokeWidth": 1.2,
+      "tickFontSize": 17,
+      "plotBorder": "#111111"
+    }
+  },
+  "validation": {
+    "expectedPanelCount": 2,
+    "expectedColorbarCount": 1,
+    "sourceReusePolicy": "Generated candidate must procedurally render all visible figure layers and must not use the source raster as a CSS background. Source path is only assigned to the reference-only img element."
+  },
+  "confidence": [
+    {"target": "heatmap recipes", "confidence": "medium", "note": "Diagonal ridge structure, noise density, and color scale are inferred visually, not extracted data."},
+    {"target": "typography", "confidence": "medium", "note": "Font family and sizes are approximate first-pass matches."},
+    {"target": "right y-axis labels", "confidence": "high", "note": "Source shows tick marks on the second panel but omits repeated y tick labels."}
+  ]
+}

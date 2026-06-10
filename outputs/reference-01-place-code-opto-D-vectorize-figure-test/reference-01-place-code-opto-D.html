@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-01-place-code-opto-D reconstruction</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #aaaaaa;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .surface,
+    .reference {
+      position: absolute;
+      inset: 0;
+    }
+
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+    }
+
+    .show-reference .surface {
+      display: none;
+    }
+
+    .show-reference .reference {
+      display: block;
+    }
+
+    svg {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-01-place-code-opto-D</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA-only reference source image">
+    </div>
+  </main>
+
+  <script>
+    const SPEC_URL = './reference-01-place-code-opto-D.json';
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function byId(id) {
+      return document.getElementById(id);
+    }
+
+    function svgNode(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function append(svg, tag, attrs = {}) {
+      const node = svgNode(tag, attrs);
+      svg.appendChild(node);
+      return node;
+    }
+
+    function scale(domain, range, value) {
+      return range[0] + ((value - domain[0]) / (domain[1] - domain[0])) * (range[1] - range[0]);
+    }
+
+    function plotScales(plot) {
+      const box = plot.dataBbox;
+      return {
+        x: value => scale(plot.x.domain, [box.x, box.x + box.width], value),
+        y: value => scale(plot.y.domain, [box.y + box.height, box.y], value)
+      };
+    }
+
+    function text(svg, spec, defaults = {}) {
+      const x = spec.x;
+      const y = spec.y;
+      const node = svgNode('text', {
+        x,
+        y,
+        fill: spec.fill || spec.color || defaults.color || '#111111',
+        'font-size': spec.fontSize || defaults.defaultSize || 14,
+        'font-weight': spec.fontWeight || 400,
+        'font-family': spec.fontFamily || defaults.fontFamily || 'Arial, Helvetica, sans-serif',
+        'letter-spacing': spec.letterSpacing ?? defaults.calibration?.letterSpacing ?? 0,
+        'text-anchor': spec.anchor || 'start',
+        'dominant-baseline': spec.baseline || 'alphabetic',
+        transform: spec.rotation ? `rotate(${spec.rotation} ${x} ${y})` : undefined,
+        'data-role': spec.role || 'text',
+        'data-text-id': spec.id,
+        'data-fit': spec.fit,
+        'data-target-width': spec.targetWidth
+      });
+
+      String(spec.text || '').split('\n').forEach((line, index) => {
+        const tspan = svgNode('tspan', {
+          x,
+          dy: index === 0 ? 0 : (spec.lineHeight || defaults.calibration?.lineHeight || 1.08) * (spec.fontSize || defaults.defaultSize || 14)
+        });
+        tspan.textContent = line;
+        node.appendChild(tspan);
+      });
+
+      svg.appendChild(node);
+      return node;
+    }
+
+    function applyTextFits(svg) {
+      for (const node of svg.querySelectorAll('text[data-fit="scaleX"]')) {
+        const targetWidth = Number(node.dataset.targetWidth || 0);
+        if (!targetWidth) continue;
+        const box = node.getBBox();
+        if (!box.width) continue;
+        const scaleX = Math.max(0.85, Math.min(1.18, targetWidth / box.width));
+        const x = Number(node.getAttribute('x') || 0);
+        const y = Number(node.getAttribute('y') || 0);
+        const existing = node.getAttribute('transform') || '';
+        node.setAttribute('transform', `${existing} translate(${x} ${y}) scale(${scaleX} 1) translate(${-x} ${-y})`.trim());
+      }
+    }
+
+    function sampledSeries(mark) {
+      const anchors = mark.points;
+      const sampled = [];
+      const step = mark.sampleStep || 0.05;
+
+      for (let i = 0; i < anchors.length - 1; i += 1) {
+        const [x0, y0] = anchors[i];
+        const [x1, y1] = anchors[i + 1];
+        const n = Math.max(1, Math.ceil((x1 - x0) / step));
+        for (let j = 0; j < n; j += 1) {
+          const t = j / n;
+          const smooth = t * t * (3 - 2 * t);
+          const x = x0 + (x1 - x0) * t;
+          let y = y0 + (y1 - y0) * smooth;
+          if (mark.jitter) {
+            const jv = Math.sin((x + mark.jitter.phase) * mark.jitter.frequency) * 0.55 +
+              Math.sin((x * 2.7 + mark.jitter.phase) * (mark.jitter.frequency * 0.73)) * 0.45;
+            y += jv * mark.jitter.amplitude;
+          }
+          sampled.push([x, y]);
+        }
+      }
+
+      sampled.push(anchors[anchors.length - 1]);
+      return sampled;
+    }
+
+    function pathFromPoints(points, scales) {
+      return points.map(([x, y], index) => {
+        const command = index === 0 ? 'M' : 'L';
+        return `${command}${scales.x(x).toFixed(1)},${scales.y(y).toFixed(1)}`;
+      }).join(' ');
+    }
+
+    function bandPath(points, scales, halfWidth) {
+      const upper = points.map(([x, y]) => [x, y + halfWidth]);
+      const lower = points.map(([x, y]) => [x, y - halfWidth]).reverse();
+      return `${pathFromPoints(upper, scales)} ${lower.map(([x, y]) => `L${scales.x(x).toFixed(1)},${scales.y(y).toFixed(1)}`).join(' ')} Z`;
+    }
+
+    function line(svg, attrs) {
+      return append(svg, 'line', {
+        x1: attrs.x1,
+        y1: attrs.y1,
+        x2: attrs.x2,
+        y2: attrs.y2,
+        stroke: attrs.stroke || '#111111',
+        'stroke-width': attrs.strokeWidth || 1,
+        'stroke-linecap': attrs.linecap || 'butt',
+        'stroke-dasharray': attrs.dasharray,
+        'data-role': attrs.role || 'line',
+        'data-id': attrs.id
+      });
+    }
+
+    function drawAxes(svg, panel, defaults) {
+      const plot = panel.plot;
+      const scales = plotScales(plot);
+      const xAxis = plot.axes.xAxis;
+      const yAxis = plot.axes.yAxis;
+
+      line(svg, {...xAxis.line, strokeWidth: 1.2, id: xAxis.id, role: 'axis'});
+      line(svg, {...yAxis.line, strokeWidth: 1.2, id: yAxis.id, role: 'axis'});
+
+      for (const tick of plot.x.ticks) {
+        const x = scales.x(tick.value);
+        line(svg, {
+          x1: x,
+          y1: xAxis.line.y1,
+          x2: x,
+          y2: xAxis.line.y1 + xAxis.tickLength,
+          strokeWidth: 1,
+          role: 'x-tick',
+          id: `x-tick-${tick.value}`
+        });
+        text(svg, {
+          id: `x-tick-label-${tick.value}`,
+          text: tick.label,
+          x,
+          y: xAxis.line.y1 + 22,
+          fontSize: 15,
+          anchor: 'middle'
+        }, defaults);
+      }
+
+      for (const tick of plot.y.ticks) {
+        const y = scales.y(tick.value);
+        line(svg, {
+          x1: yAxis.line.x1,
+          y1: y,
+          x2: yAxis.line.x1 - yAxis.tickLength,
+          y2: y,
+          strokeWidth: 1,
+          role: 'y-tick',
+          id: `y-tick-${tick.value}`
+        });
+        text(svg, {
+          id: `y-tick-label-${tick.value}`,
+          text: tick.label,
+          x: yAxis.line.x1 - 8,
+          y: y + 5,
+          fontSize: 15,
+          anchor: 'end'
+        }, defaults);
+      }
+
+      text(svg, plot.x.label, defaults);
+      text(svg, plot.y.label, defaults);
+    }
+
+    function drawSeries(svg, panel) {
+      const scales = plotScales(panel.plot);
+      const lineSeries = new Map(panel.marks.filter(mark => mark.type === 'lineSeries').map(mark => [mark.id, mark]));
+
+      for (const band of panel.marks.filter(mark => mark.type === 'uncertaintyBand')) {
+        const series = lineSeries.get(band.seriesId);
+        if (!series) continue;
+        const points = sampledSeries(series);
+        append(svg, 'path', {
+          d: bandPath(points, scales, band.bandHalfWidth || series.bandHalfWidth || 1),
+          fill: band.fill,
+          stroke: 'none',
+          'data-role': 'uncertainty-band',
+          'data-mark-id': band.id,
+          'data-series-id': band.seriesId
+        });
+      }
+
+      for (const mark of lineSeries.values()) {
+        append(svg, 'path', {
+          d: pathFromPoints(sampledSeries(mark), scales),
+          fill: 'none',
+          stroke: mark.stroke,
+          'stroke-width': mark.strokeWidth,
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          'data-role': 'line-series',
+          'data-mark-id': mark.id
+        });
+      }
+    }
+
+    function drawAnnotations(svg, panel, defaults) {
+      const scales = plotScales(panel.plot);
+
+      for (const annotation of panel.annotations) {
+        if (annotation.type === 'line') {
+          const x = scales.x(annotation.x);
+          line(svg, {
+            id: annotation.id,
+            x1: x,
+            y1: scales.y(annotation.y1),
+            x2: x,
+            y2: scales.y(annotation.y2),
+            stroke: annotation.stroke,
+            strokeWidth: annotation.strokeWidth,
+            dasharray: annotation.dasharray,
+            role: 'event-line'
+          });
+        }
+
+        if (annotation.type === 'horizontalReference') {
+          const y = scales.y(annotation.y);
+          line(svg, {
+            id: annotation.id,
+            x1: scales.x(annotation.x1),
+            y1: y,
+            x2: scales.x(annotation.x2),
+            y2: y,
+            stroke: annotation.stroke,
+            strokeWidth: annotation.strokeWidth,
+            dasharray: annotation.dasharray,
+            role: 'reference-line'
+          });
+          append(svg, 'rect', {
+            x: annotation.label.x - 3,
+            y: annotation.label.y - 16,
+            width: 90,
+            height: 21,
+            fill: '#ffffff',
+            stroke: 'none',
+            'data-role': 'label-mask'
+          });
+          text(svg, annotation.label, defaults);
+        }
+
+        if (annotation.type === 'rectWithLabel') {
+          append(svg, 'rect', {
+            x: annotation.x,
+            y: annotation.y,
+            width: annotation.width,
+            height: annotation.height,
+            fill: annotation.fill,
+            stroke: 'none',
+            'data-role': 'event-bar',
+            'data-id': annotation.id
+          });
+          text(svg, annotation.label, defaults);
+        }
+      }
+    }
+
+    function drawLegend(svg, legend, defaults) {
+      for (const item of legend.items) {
+        line(svg, {
+          id: item.id,
+          x1: item.x,
+          y1: item.y,
+          x2: item.x + item.lineLength,
+          y2: item.y,
+          stroke: item.stroke,
+          strokeWidth: 2.4,
+          linecap: 'round',
+          role: 'legend-key'
+        });
+        text(svg, {
+          id: `${item.id}-label`,
+          text: item.label,
+          x: item.x + item.lineLength + 12,
+          y: item.y + 5,
+          fontSize: 14,
+          anchor: 'start'
+        }, defaults);
+      }
+    }
+
+    function render(spec) {
+      const frame = byId('frame');
+      const surface = byId('surface');
+      const reference = byId('reference');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      reference.src = spec.source.path;
+      byId('title').textContent = spec.id;
+
+      surface.replaceChildren();
+      const svg = svgNode('svg', {
+        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
+        width: spec.canvas.width,
+        height: spec.canvas.height,
+        role: 'img',
+        'aria-label': `${spec.id} generated reconstruction`
+      });
+      surface.appendChild(svg);
+
+      append(svg, 'rect', {
+        x: 0,
+        y: 0,
+        width: spec.canvas.width,
+        height: spec.canvas.height,
+        fill: spec.canvas.background,
+        stroke: spec.styles?.panelBorder || '#111111',
+        'stroke-width': 1,
+        'data-role': 'canvas-background'
+      });
+
+      const defaults = spec.typography || {};
+      const panel = spec.panels[0];
+      drawAxes(svg, panel, defaults);
+      drawAnnotations(svg, panel, defaults);
+      drawSeries(svg, panel);
+      drawLegend(svg, panel.legend, defaults);
+      text(svg, panel.label, defaults);
+      text(svg, panel.title, defaults);
+      applyTextFits(svg);
+    }
+
+    async function loadSpec() {
+      const response = await fetch(SPEC_URL);
+      if (!response.ok) throw new Error(`Could not load ${SPEC_URL}`);
+      return response.json();
+    }
+
+    byId('generatedButton').addEventListener('click', () => {
+      byId('frame').classList.remove('show-reference');
+      byId('generatedButton').classList.add('active');
+      byId('referenceButton').classList.remove('active');
+    });
+
+    byId('referenceButton').addEventListener('click', () => {
+      byId('frame').classList.add('show-reference');
+      byId('referenceButton').classList.add('active');
+      byId('generatedButton').classList.remove('active');
+    });
+
+    loadSpec().then(render).catch(error => {
+      byId('surface').textContent = error.message;
+      console.error(error);
+    });
+  </script>
+</body>
+</html>

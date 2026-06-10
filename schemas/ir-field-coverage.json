@@ -1,0 +1,548 @@
+{
+  "version": 1,
+  "defaults": {
+    "allowedProvenancePaths": [
+      "source",
+      "provenance",
+      "notes",
+      "note",
+      "confidence",
+      "sourceData",
+      "sourceEvidence",
+      "sourceBox",
+      "sourceBoxes",
+      "typography.calibration.notes"
+    ],
+    "highRiskPrefixes": [
+      "panels[].plot",
+      "panels[].plots[]",
+      "panels[].plotGroups[]",
+      "panels[].layoutObjects",
+      "panels[].marks[]",
+      "panels[].annotations[]",
+      "validation"
+    ],
+    "renderedLeafFields": [
+      "amplitude",
+      "anchor",
+      "anchorTo",
+      "anchorPoint",
+      "axis",
+      "axes",
+      "axisDomain",
+      "axisLine",
+      "axisStyle",
+      "axisX",
+      "band",
+      "background",
+      "baseline",
+      "bbox",
+      "box",
+      "boundedMarks",
+      "bursts",
+      "brightness",
+      "category",
+      "cellCount",
+      "cellHeight",
+      "cellWidth",
+      "ci",
+      "clip",
+      "clipId",
+      "color",
+      "colorGroup",
+      "colors",
+      "colorScale",
+      "cols",
+      "columns",
+      "count",
+      "curve",
+      "dash",
+      "dasharray",
+      "dayBoundaryValues",
+      "density",
+      "domain",
+      "dy",
+      "edge",
+      "end",
+      "endX",
+      "endY",
+      "exponent",
+      "features",
+      "field",
+      "fit",
+      "fill",
+      "fontSize",
+      "fontStyle",
+      "fontWeight",
+      "forceXTicks",
+      "frequency",
+      "from",
+      "fromX",
+      "fromY",
+      "gap",
+      "h",
+      "headLength",
+      "headSize",
+      "headWidth",
+      "height",
+      "horizontalSmoothing",
+      "id",
+      "intercept",
+      "interpolation",
+      "jitter",
+      "kind",
+      "label",
+      "labelAnchor",
+      "labelOnly",
+      "labelsVisible",
+      "layoutObjects",
+      "left",
+      "level",
+      "line",
+      "lineHeight",
+      "matrixBbox",
+      "markerSize",
+      "max",
+      "mean",
+      "median",
+      "min",
+      "n",
+      "noise",
+      "offset",
+      "opacity",
+      "orientation",
+      "owner",
+      "peakEnd",
+      "peakEndCm",
+      "peakJitterCm",
+      "peakStart",
+      "peakStartCm",
+      "peakWidthCm",
+      "pixelNoise",
+      "plot",
+      "points",
+      "q1",
+      "q3",
+      "range",
+      "radius",
+      "renderer",
+      "recipe",
+      "requireEndpointsInside",
+      "right",
+      "rotate",
+      "rotation",
+      "rowBanding",
+      "rowCenter",
+      "rows",
+      "rowWidth",
+      "scale",
+      "seed",
+      "separatorX",
+      "showVerticalBorders",
+      "sourceCalibrated",
+      "sem",
+      "secondaryText",
+      "series",
+      "shape",
+      "sigma",
+      "sigmaX",
+      "sigmaY",
+      "side",
+      "slope",
+      "smooth",
+      "spikeEvery",
+      "start",
+      "startX",
+      "startY",
+      "stroke",
+      "strokeDasharray",
+      "strokeWidth",
+      "tailWidthCm",
+      "targetWidth",
+      "text",
+      "textAnchor",
+      "textureNoise",
+      "ticks",
+      "tickDirection",
+      "tickHeight",
+      "tickLength",
+      "tickSide",
+      "tickValues",
+      "tickInside",
+      "to",
+      "toX",
+      "toY",
+      "traceColor",
+      "type",
+      "truncateXAxisAfter",
+      "uses",
+      "usesTransform",
+      "value",
+      "values",
+      "visible",
+      "visibleLine",
+      "visibleLabel",
+      "visibleTicks",
+      "w",
+      "width",
+      "x",
+      "x0",
+      "x1",
+      "x1Value",
+      "x2",
+      "x2Value",
+      "xCenter",
+      "xDomain",
+      "xLabel",
+      "xOffset",
+      "xTicks",
+      "xAxis",
+      "xValue",
+      "xWidth",
+      "y",
+      "y0",
+      "y1",
+      "y1Value",
+      "y2",
+      "y2Value",
+      "yBottom",
+      "yDomain",
+      "yLabel",
+      "yMid",
+      "yTop",
+      "yTicks",
+      "yAxis",
+      "yValue",
+      "zero",
+      "z"
+    ],
+    "renderedSubtrees": [
+      "data",
+      "matrix",
+      "recipe",
+      "domain",
+      "range",
+      "styleTokens"
+    ],
+    "validatedPrefixes": [
+      "validation"
+    ],
+    "renderedPrefixes": [
+      "panels[].annotations[]",
+      "panels[].marks[]",
+      "panels[].plots[]",
+      "panels[].plot.annotations",
+      "panels[].plot.arrow",
+      "panels[].plot.axes.grid",
+      "panels[].plot.axes.x.ticks",
+      "panels[].plot.axes.xAxis.categories",
+      "panels[].plot.axes.xAxis.ticks",
+      "panels[].plot.axes.y.ticks",
+      "panels[].plot.axes.yAxis.tickLabelBand",
+      "panels[].plot.axes.yAxis.ticks",
+      "panels[].plot.axes.zeroGuides",
+      "panels[].plot.axes.zeroLine",
+      "panels[].plot.boundedMarks",
+      "panels[].plot.brackets",
+      "panels[].plot.categories",
+      "panels[].plot.cellText",
+      "panels[].plot.chanceLine",
+      "panels[].plot.colorbar",
+      "panels[].plot.coordinateSystem",
+      "panels[].plot.epochs",
+      "panels[].plot.eventLines",
+      "panels[].plot.groupLabels",
+      "panels[].plot.headers",
+      "panels[].plot.helperStrip",
+      "panels[].plot.leftHeader",
+      "panels[].plot.legend",
+      "panels[].plot.marks",
+      "panels[].plot.missingValue",
+      "panels[].plot.occluders",
+      "panels[].plot.phaseBands",
+      "panels[].plot.referenceLines",
+      "panels[].plot.regionStrip",
+      "panels[].plot.rightHeader",
+      "panels[].plot.rows",
+      "panels[].plot.series",
+      "panels[].plot.shadedEpochs",
+      "panels[].plot.split",
+      "panels[].plot.x.categories",
+      "panels[].plot.x.tickBand",
+      "panels[].plot.x.ticks",
+      "panels[].plot.xAxis",
+      "panels[].plot.xCategories",
+      "panels[].plot.xScale",
+      "panels[].plot.y.categories",
+      "panels[].plot.y.tickBand",
+      "panels[].plot.y.ticks",
+      "panels[].plot.yAxes",
+      "panels[].plot.yLeft",
+      "panels[].plot.yRight",
+      "panels[].plot.yScales",
+      "panels[].plotGroups[].axes.x",
+      "panels[].plotGroups[].axes.xAxis.tickLabelBand",
+      "panels[].plotGroups[].axes.y",
+      "panels[].plotGroups[].groupLabel",
+      "panels[].plotGroups[].marks",
+      "panels[].plotGroups[].title",
+      "panels[].plotGroups[].x",
+      "panels[].plotGroups[].y"
+    ]
+  },
+  "fields": {
+    "source": {
+      "status": ["provenance-only"]
+    },
+    "provenance": {
+      "status": ["provenance-only"]
+    },
+    "sourceEvidence": {
+      "status": ["provenance-only"]
+    },
+    "confidence": {
+      "status": ["provenance-only"]
+    },
+    "notes": {
+      "status": ["provenance-only"]
+    },
+    "validation": {
+      "status": ["validated"],
+      "validators": ["structural_checks"]
+    },
+    "panels[].plot.dataBbox": {
+      "status": ["rendered", "validated"],
+      "rendererEvidence": ["canvas geometry", "plot box geometry"],
+      "validators": ["structural_checks", "audit_semantic_layout_contract"]
+    },
+    "panels[].plot.axisBbox": {
+      "status": ["rendered"],
+      "rendererEvidence": ["axis layout geometry"]
+    },
+    "panels[].plot.plotBbox": {
+      "status": ["rendered"],
+      "rendererEvidence": ["plot box geometry"]
+    },
+    "panels[].plot.axes.xAxis.line": {
+      "status": ["rendered", "preserved", "validated"],
+      "rendererEvidence": ["line[data-axis]"],
+      "validators": ["audit_explicit_axis_rendering"]
+    },
+    "panels[].plot.axes.yAxis.line": {
+      "status": ["rendered", "preserved", "validated"],
+      "rendererEvidence": ["line[data-axis]"],
+      "validators": ["audit_explicit_axis_rendering"]
+    },
+    "panels[].plot.axes.xAxis.originAlignment": {
+      "status": ["preserved", "validated"],
+      "rendererEvidence": ["[data-alignment-target]"],
+      "validators": ["audit_semantic_layout_contract", "audit_explicit_axis_rendering"]
+    },
+    "panels[].plot.axes.xAxis.originAlignment.id": {
+      "status": ["preserved", "validated"],
+      "rendererEvidence": ["[data-alignment-id]"],
+      "validators": ["audit_semantic_layout_contract", "audit_explicit_axis_rendering"]
+    },
+    "panels[].plot.axes.xAxis.originAlignment.tickValue": {
+      "status": ["preserved", "validated"],
+      "rendererEvidence": ["[data-value]"],
+      "validators": ["audit_semantic_layout_contract", "audit_explicit_axis_rendering"]
+    },
+    "panels[].plot.axes.xAxis.originAlignment.target": {
+      "status": ["preserved", "validated"],
+      "rendererEvidence": ["[data-alignment-target]"],
+      "validators": ["audit_semantic_layout_contract", "audit_explicit_axis_rendering"]
+    },
+    "panels[].plot.axes.xAxis.originAlignment.deltaPx": {
+      "status": ["preserved", "validated"],
+      "rendererEvidence": ["[data-alignment-delta-px]"],
+      "validators": ["audit_semantic_layout_contract", "audit_explicit_axis_rendering"]
+    },
+    "panels[].plot.axes.xAxis.originAlignment.semantic": {
+      "status": ["provenance-only"]
+    },
+    "panels[].plot.x.ticks[].alignment": {
+      "status": ["preserved", "validated"],
+      "rendererEvidence": ["[data-alignment-target]"],
+      "validators": ["audit_semantic_layout_contract", "audit_explicit_axis_rendering"]
+    },
+    "panels[].plot.x.ticks[].alignment.id": {
+      "status": ["preserved", "validated"],
+      "rendererEvidence": ["[data-alignment-id]"],
+      "validators": ["audit_semantic_layout_contract", "audit_explicit_axis_rendering"]
+    },
+    "panels[].plot.x.ticks[].alignment.target": {
+      "status": ["preserved", "validated"],
+      "rendererEvidence": ["[data-alignment-target]"],
+      "validators": ["audit_semantic_layout_contract", "audit_explicit_axis_rendering"]
+    },
+    "panels[].plot.x.ticks[].alignment.deltaPx": {
+      "status": ["preserved", "validated"],
+      "rendererEvidence": ["[data-alignment-delta-px]"],
+      "validators": ["audit_semantic_layout_contract", "audit_explicit_axis_rendering"]
+    },
+    "panels[].plot.x.ticks[].alignment.semantic": {
+      "status": ["provenance-only"]
+    },
+    "panels[].plotGroups[].dataBbox": {
+      "status": ["rendered", "validated"],
+      "rendererEvidence": ["canvas geometry", "plot group geometry"],
+      "validators": ["audit_semantic_layout_contract"]
+    },
+    "panels[].plotGroups[].axes.xAxis.line": {
+      "status": ["rendered", "preserved", "validated"],
+      "rendererEvidence": ["line[data-axis]"],
+      "validators": ["audit_semantic_layout_contract", "audit_explicit_axis_rendering"]
+    },
+    "panels[].plotGroups[].axes.xAxis.offsetFromDataBbox": {
+      "status": ["validated"],
+      "validators": ["audit_semantic_layout_contract"]
+    },
+    "panels[].plotGroups[].axes.xAxis.offsetFromDataBbox.edge": {
+      "status": ["validated"],
+      "validators": ["audit_semantic_layout_contract"]
+    },
+    "panels[].plotGroups[].axes.xAxis.offsetFromDataBbox.pixels": {
+      "status": ["validated"],
+      "validators": ["audit_semantic_layout_contract"]
+    },
+    "panels[].marks[].ownerBox": {
+      "status": ["rendered", "preserved", "validated"],
+      "rendererEvidence": ["[data-owner-box]", "[data-anchor-to]"],
+      "validators": ["audit_layout_qa_report"]
+    },
+    "panels[].marks[].clipToOwner": {
+      "status": ["rendered", "validated"],
+      "rendererEvidence": ["clip-path", "bounded mark geometry"],
+      "validators": ["audit_layout_qa_report"]
+    },
+    "panels[].plotGroups[].marks[].ownerBox": {
+      "status": ["rendered", "preserved", "validated"],
+      "rendererEvidence": ["[data-owner-box]", "[data-anchor-to]"],
+      "validators": ["audit_layout_qa_report"]
+    },
+    "panels[].plotGroups[].marks[].clipToOwner": {
+      "status": ["rendered", "validated"],
+      "rendererEvidence": ["clip-path", "bounded mark geometry"],
+      "validators": ["audit_layout_qa_report"]
+    },
+    "panels[].layoutObjects[type=sideRowBlockStrip].linkedAxis": {
+      "status": ["preserved", "validated"],
+      "rendererEvidence": ["[data-linked-axis]"],
+      "validators": ["audit_semantic_layout_contract", "audit_side_strip_rendering"]
+    },
+    "panels[].layoutObjects[type=sideRowBlockStrip].sharedLayoutFrame": {
+      "status": ["preserved", "validated"],
+      "rendererEvidence": ["[data-shared-layout-frame]"],
+      "validators": ["audit_semantic_layout_contract", "audit_side_strip_rendering"]
+    },
+    "panels[].layoutObjects[type=sideRowBlockStrip].alignments": {
+      "status": ["preserved", "validated"],
+      "rendererEvidence": ["[data-role=side-row-block-strip][data-alignments]"],
+      "validators": ["audit_semantic_layout_contract", "audit_side_strip_rendering"]
+    },
+    "panels[].layoutObjects[type=sideRowBlockStrip].alignments[].id": {
+      "status": ["preserved", "validated"],
+      "rendererEvidence": ["[data-alignments]"],
+      "validators": ["audit_semantic_layout_contract", "audit_side_strip_rendering"]
+    },
+    "panels[].layoutObjects[type=sideRowBlockStrip].alignments[].sourceEdge": {
+      "status": ["validated"],
+      "validators": ["audit_semantic_layout_contract"]
+    },
+    "panels[].layoutObjects[type=sideRowBlockStrip].alignments[].target": {
+      "status": ["validated"],
+      "validators": ["audit_semantic_layout_contract"]
+    },
+    "panels[].layoutObjects[type=sideRowBlockStrip].alignments[].deltaPx": {
+      "status": ["validated"],
+      "validators": ["audit_semantic_layout_contract"]
+    },
+    "panels[].layoutObjects[type=sideRowBlockStrip].exclusionZone": {
+      "status": ["rendered", "validated"],
+      "rendererEvidence": ["layout QA exclusion zones"],
+      "validators": ["audit_semantic_layout_contract", "audit_layout_qa_report"]
+    },
+    "panels[].layoutObjects[type=sideRowBlockStrip].expectedComponentCount": {
+      "status": ["validated"],
+      "validators": ["audit_semantic_layout_contract", "audit_side_strip_rendering"]
+    },
+    "panels[].layoutObjects[type=sideRowBlockStrip].components": {
+      "status": ["rendered", "preserved", "validated"],
+      "rendererEvidence": ["[data-role=side-row-block-component]"],
+      "validators": ["audit_semantic_layout_contract", "audit_side_strip_rendering"]
+    },
+    "panels[].layoutObjects[type=sideRowBlockStrip].components[].id": {
+      "status": ["rendered", "preserved", "validated"],
+      "rendererEvidence": ["[data-role=side-row-block-component]"],
+      "validators": ["audit_semantic_layout_contract", "audit_side_strip_rendering"]
+    },
+    "panels[].layoutObjects[type=sideRowBlockStrip].components[].kind": {
+      "status": ["rendered", "validated"],
+      "rendererEvidence": ["[data-role=side-row-block-component]"],
+      "validators": ["audit_semantic_layout_contract", "audit_side_strip_rendering"]
+    },
+    "panels[].layoutObjects[type=sideRowBlockStrip].components[].bbox": {
+      "status": ["rendered", "validated"],
+      "rendererEvidence": ["[data-role=side-row-block-component]"],
+      "validators": ["audit_semantic_layout_contract", "audit_side_strip_rendering"]
+    },
+    "panels[].layoutObjects[type=sideRowBlockStrip].components[].fill": {
+      "status": ["rendered", "validated"],
+      "rendererEvidence": ["[data-role=side-row-block-component]"],
+      "validators": ["audit_semantic_layout_contract", "audit_side_strip_rendering"]
+    },
+    "panels[].layoutObjects[type=sideRowBlockStrip].segments": {
+      "status": ["rendered", "validated"],
+      "rendererEvidence": ["[data-role=side-row-block-segment]"],
+      "validators": ["audit_semantic_layout_contract", "audit_side_strip_rendering"]
+    },
+    "panels[].layoutObjects[type=sideRowBlockStrip].separators": {
+      "status": ["rendered", "validated"],
+      "rendererEvidence": ["[data-role=side-row-block-separator]"],
+      "validators": ["audit_semantic_layout_contract", "audit_side_strip_rendering"]
+    },
+    "panels[].layoutObjects[type=sideRowBlockStrip].borders": {
+      "status": ["rendered", "validated"],
+      "rendererEvidence": ["[data-role=side-row-block-border]"],
+      "validators": ["audit_semantic_layout_contract", "audit_side_strip_rendering"]
+    },
+    "panels[].layoutObjects[type=colorbar].ticks": {
+      "status": ["rendered"],
+      "rendererEvidence": ["colorbar tick marks and labels"]
+    },
+    "panels[].layoutObjects[type=colorbar].tickSide": {
+      "status": ["rendered", "validated"],
+      "rendererEvidence": ["colorbar tick geometry"],
+      "validators": ["audit_figure_ir_relationships"]
+    },
+    "panels[].layoutObjects[type=colorbar].tickDirection": {
+      "status": ["rendered", "validated"],
+      "rendererEvidence": ["colorbar tick geometry"],
+      "validators": ["audit_figure_ir_relationships"]
+    },
+    "panels[].layoutObjects[type=legend].items": {
+      "status": ["rendered"],
+      "rendererEvidence": ["legend item DOM/SVG marks"]
+    },
+    "panels[].layoutObjects[type=table].cells": {
+      "status": ["rendered", "validated"],
+      "rendererEvidence": ["table cell text/rules"],
+      "validators": ["audit_layout_qa_report"]
+    },
+    "panels[].annotations[].anchorTo": {
+      "status": ["preserved"],
+      "rendererEvidence": ["[data-anchor-to]"]
+    },
+    "panels[].annotations[].ownerBox": {
+      "status": ["rendered", "preserved", "validated"],
+      "rendererEvidence": ["[data-owner-box]", "[data-anchor-to]"],
+      "validators": ["audit_layout_qa_report"]
+    },
+    "panels[].annotations[].clipToOwner": {
+      "status": ["rendered", "validated"],
+      "rendererEvidence": ["clip-path", "bounded annotation geometry"],
+      "validators": ["audit_layout_qa_report"]
+    }
+  }
+}

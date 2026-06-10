@@ -1,0 +1,992 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-01-place-code-opto-F",
+  "source": {
+    "path": "../../assets/reference/reference-01-place-code-opto-F-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Two spatial rate maps reconstructed from visual inspection. Rate fields and trajectories are generated recipes approximating the source raster, not copied from it."
+  },
+  "canvas": {
+    "width": 560,
+    "height": 512,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "Known font mismatch is tracked in GitHub issue #1."
+    }
+  },
+  "styles": {
+    "axis": "#111111",
+    "boundary": "#ffffff",
+    "trajectory": "rgba(255,255,255,0.78)",
+    "colormap": [
+      {
+        "value": 0.08,
+        "color": "#440154"
+      },
+      {
+        "value": 0.2,
+        "color": "#414487"
+      },
+      {
+        "value": 0.5,
+        "color": "#2a788e"
+      },
+      {
+        "value": 1,
+        "color": "#22a884"
+      },
+      {
+        "value": 2,
+        "color": "#5ec962"
+      },
+      {
+        "value": 5,
+        "color": "#aadc32"
+      },
+      {
+        "value": 10,
+        "color": "#e5e419"
+      },
+      {
+        "value": 20,
+        "color": "#fde725"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": "panel-f",
+      "type": "dual_spatial_rate_maps",
+      "label": {
+        "text": "F",
+        "x": 3,
+        "y": 28,
+        "fontSize": 24,
+        "fontWeight": 700
+      },
+      "title": {
+        "text": "Example spatial rate map (same session)",
+        "x": 38,
+        "y": 29,
+        "fontSize": 18,
+        "fontWeight": 700
+      },
+      "xAxis": {
+        "domain": [
+          0,
+          210
+        ],
+        "ticks": [
+          {
+            "value": 0,
+            "label": "0"
+          },
+          {
+            "value": 100,
+            "label": "100"
+          },
+          {
+            "value": 200,
+            "label": "200"
+          }
+        ],
+        "label": {
+          "text": "X position (cm)",
+          "fontSize": 17
+        }
+      },
+      "yAxis": {
+        "domain": [
+          0,
+          200
+        ],
+        "ticks": [
+          {
+            "value": 0,
+            "label": "0"
+          },
+          {
+            "value": 50,
+            "label": "50"
+          },
+          {
+            "value": 100,
+            "label": "100"
+          },
+          {
+            "value": 150,
+            "label": "150"
+          },
+          {
+            "value": 200,
+            "label": "200"
+          }
+        ],
+        "label": {
+          "text": "Y position (cm)",
+          "anchorTo": "yAxis",
+          "targetMapId": "control-rate-map",
+          "targetPoint": "middle-left",
+          "anchorPoint": "center",
+          "dx": -37,
+          "dy": 0,
+          "fontSize": 17,
+          "anchor": "middle",
+          "rotation": -90
+        }
+      },
+      "rateMaps": [
+        {
+          "id": "control-rate-map",
+          "title": {
+            "text": "Control (no light)",
+            "x": 150,
+            "y": 82,
+            "fontSize": 14,
+            "anchor": "middle"
+          },
+          "dataBbox": {
+            "x": 51,
+            "y": 96,
+            "width": 197,
+            "height": 280
+          },
+          "axes": {
+            "xAxis": {
+              "id": "control-x-axis",
+              "line": {
+                "x1": 51,
+                "y1": 382,
+                "x2": 248,
+                "y2": 382
+              },
+              "tickLength": 7
+            },
+            "yAxis": {
+              "id": "control-y-axis",
+              "line": {
+                "x1": 45,
+                "y1": 96,
+                "x2": 45,
+                "y2": 376
+              },
+              "tickLength": 7
+            },
+            "dataBorder": [
+              "top",
+              "right",
+              "bottom",
+              "left"
+            ]
+          },
+          "xLabel": {
+            "text": "X position (cm)",
+            "anchorTo": "xAxis",
+            "targetAxisId": "control-x-axis",
+            "targetPoint": "bottom-center",
+            "anchorPoint": "top-center",
+            "dx": 0,
+            "dy": 36,
+            "fontSize": 17,
+            "anchor": "middle",
+            "baseline": "hanging"
+          },
+          "recipe": {
+            "kind": "spatialRateMap",
+            "seed": 2021,
+            "cols": 150,
+            "rows": 210,
+            "background": 0.1,
+            "noise": 0.15,
+            "smooth": 0.12,
+            "fields": [
+              {
+                "x": 78,
+                "y": 150,
+                "sigmaX": 19,
+                "sigmaY": 22,
+                "amplitude": 9
+              },
+              {
+                "x": 82,
+                "y": 68,
+                "sigmaX": 21,
+                "sigmaY": 22,
+                "amplitude": 8.2
+              },
+              {
+                "x": 135,
+                "y": 128,
+                "sigmaX": 35,
+                "sigmaY": 30,
+                "amplitude": 1.8
+              },
+              {
+                "x": 54,
+                "y": 174,
+                "sigmaX": 20,
+                "sigmaY": 18,
+                "amplitude": 2.8
+              }
+            ]
+          },
+          "arenaBoundary": {
+            "type": "roundedRectPath",
+            "x": 68,
+            "y": 117,
+            "width": 166,
+            "height": 232,
+            "scaleToDataBox": false,
+            "dasharray": "8 7",
+            "strokeWidth": 2.4
+          },
+          "trajectory": {
+            "seed": 2121,
+            "count": 2,
+            "points": 115,
+            "strokeWidth": 0.9,
+            "opacity": 0.72
+          }
+        },
+        {
+          "id": "opto-rate-map",
+          "title": {
+            "text": "Optogenetic inhibition\n(ArchT, 532 nm)",
+            "x": 366,
+            "y": 64,
+            "fontSize": 14,
+            "anchor": "middle",
+            "lineHeight": 1.1
+          },
+          "dataBbox": {
+            "x": 266,
+            "y": 96,
+            "width": 207,
+            "height": 280
+          },
+          "axes": {
+            "xAxis": {
+              "id": "opto-x-axis",
+              "line": {
+                "x1": 266,
+                "y1": 382,
+                "x2": 473,
+                "y2": 382
+              },
+              "tickLength": 7
+            },
+            "yAxis": {
+              "id": "opto-y-axis",
+              "line": {
+                "x1": 260,
+                "y1": 96,
+                "x2": 260,
+                "y2": 376
+              },
+              "tickLength": 0
+            },
+            "dataBorder": [
+              "top",
+              "right",
+              "bottom",
+              "left"
+            ]
+          },
+          "xLabel": {
+            "text": "X position (cm)",
+            "anchorTo": "xAxis",
+            "targetAxisId": "opto-x-axis",
+            "targetPoint": "bottom-center",
+            "anchorPoint": "top-center",
+            "dx": 0,
+            "dy": 36,
+            "fontSize": 17,
+            "anchor": "middle",
+            "baseline": "hanging"
+          },
+          "recipe": {
+            "kind": "spatialRateMap",
+            "seed": 2037,
+            "cols": 155,
+            "rows": 210,
+            "background": 0.1,
+            "noise": 0.13,
+            "smooth": 0.11,
+            "fields": [
+              {
+                "x": 106,
+                "y": 92,
+                "sigmaX": 25,
+                "sigmaY": 25,
+                "amplitude": 5.2
+              },
+              {
+                "x": 141,
+                "y": 55,
+                "sigmaX": 31,
+                "sigmaY": 23,
+                "amplitude": 3.1
+              },
+              {
+                "x": 94,
+                "y": 133,
+                "sigmaX": 29,
+                "sigmaY": 27,
+                "amplitude": 2.4
+              },
+              {
+                "x": 157,
+                "y": 104,
+                "sigmaX": 20,
+                "sigmaY": 22,
+                "amplitude": 2
+              }
+            ]
+          },
+          "arenaBoundary": {
+            "type": "roundedRectPath",
+            "x": 282,
+            "y": 119,
+            "width": 170,
+            "height": 232,
+            "scaleToDataBox": false,
+            "dasharray": "8 7",
+            "strokeWidth": 2.4
+          },
+          "trajectory": {
+            "seed": 2137,
+            "count": 2,
+            "points": 120,
+            "strokeWidth": 0.9,
+            "opacity": 0.72
+          }
+        }
+      ],
+      "colorbar": {
+        "bbox": {
+          "x": 491,
+          "y": 96,
+          "width": 20,
+          "height": 280
+        },
+        "domain": [
+          0.08,
+          20
+        ],
+        "scale": "log",
+        "label": {
+          "text": "Rate\n(Hz)",
+          "anchorTo": "colorbar",
+          "targetPoint": "top-center",
+          "anchorPoint": "bottom-center",
+          "dx": 0,
+          "dy": -8,
+          "fontSize": 15,
+          "anchor": "middle",
+          "baseline": "hanging",
+          "lineHeight": 1.04
+        },
+        "ticks": [
+          {
+            "value": 0.1,
+            "label": "0.1"
+          },
+          {
+            "value": 0.2,
+            "label": "0.2"
+          },
+          {
+            "value": 0.5,
+            "label": "0.5"
+          },
+          {
+            "value": 1,
+            "label": "1"
+          },
+          {
+            "value": 2,
+            "label": "2"
+          },
+          {
+            "value": 5,
+            "label": "5"
+          },
+          {
+            "value": 10,
+            "label": "10"
+          },
+          {
+            "value": 20,
+            "label": "20"
+          }
+        ]
+      },
+      "legend": [
+        {
+          "id": "arena-boundary-legend",
+          "type": "line",
+          "x1": 76,
+          "y1": 458,
+          "x2": 122,
+          "y2": 458,
+          "stroke": "#111111",
+          "strokeWidth": 2,
+          "dasharray": "8 6",
+          "label": {
+            "text": "Arena boundary",
+            "x": 137,
+            "y": 463,
+            "fontSize": 14
+          }
+        },
+        {
+          "id": "trajectory-legend",
+          "type": "line",
+          "x1": 273,
+          "y1": 458,
+          "x2": 315,
+          "y2": 458,
+          "stroke": "#111111",
+          "strokeWidth": 2,
+          "label": {
+            "text": "Example trajectory",
+            "x": 327,
+            "y": 463,
+            "fontSize": 14
+          }
+        }
+      ],
+      "provenance": [
+        {
+          "target": "panel-f.rateMaps",
+          "confidence": "medium",
+          "note": "Spatial rate fields and trajectories are generated from recipes to match the visual grammar; exact occupancy/rate data are unavailable."
+        },
+        {
+          "target": "panel-f.layout",
+          "confidence": "high",
+          "note": "Panel label, title, axes, colorbar, and legend layout are inferred directly from the source image."
+        }
+      ],
+      "textCalibration": {
+        "panel-label": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 23.12,
+          "fontWeight": 600,
+          "lineHeight": 1,
+          "targetWidth": 11.06,
+          "fit": "scaleX",
+          "minScale": 0.955,
+          "maxScale": 0.955,
+          "overlayX": 1,
+          "overlayY": 25.75,
+          "sourceBox": {
+            "x": 1,
+            "y": 8,
+            "width": 11,
+            "height": 19
+          },
+          "calibrationScore": 0.40467
+        },
+        "panel-title": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 19.26,
+          "fontWeight": 600,
+          "lineHeight": 1,
+          "targetWidth": 308.13,
+          "fit": "scaleX",
+          "minScale": 1,
+          "maxScale": 1,
+          "overlayX": 39,
+          "overlayY": 28.25,
+          "sourceBox": {
+            "x": 39,
+            "y": 13,
+            "width": 305,
+            "height": 20
+          },
+          "calibrationScore": 0.33799
+        },
+        "control-title": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 17.74,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 102.15,
+          "fit": "scaleX",
+          "minScale": 0.95,
+          "maxScale": 0.95,
+          "overlayX": 139.5,
+          "overlayY": 82.75,
+          "sourceBox": {
+            "x": 89,
+            "y": 70,
+            "width": 101,
+            "height": 17
+          },
+          "calibrationScore": 0.23186
+        },
+        "opto-title": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 17.74,
+          "fontWeight": 300,
+          "lineHeight": 1.1,
+          "targetWidth": 136.43,
+          "fit": "scaleX",
+          "minScale": 0.975,
+          "maxScale": 0.975,
+          "overlayX": 374.25,
+          "overlayY": 63,
+          "sourceBox": {
+            "x": 307,
+            "y": 49,
+            "width": 136,
+            "height": 39
+          },
+          "calibrationScore": 0.31666
+        },
+        "y-label": {
+          "fontFamily": "Arial, Helvetica, sans-serif",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "lineHeight": 1,
+          "overlayX": 12,
+          "overlayY": 236,
+          "sourceBox": {
+            "x": 0,
+            "y": 117,
+            "width": 18,
+            "height": 151
+          },
+          "calibrationScore": 2.63359,
+          "calibrationNote": "manual visual override for cropped rotated source label; second pass moved right to match the source column without entering the map"
+        },
+        "y-tick-200": {
+          "fontFamily": "Arial, Helvetica, sans-serif",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "lineHeight": 1,
+          "overlayX": 42,
+          "overlayY": 101,
+          "sourceBox": {
+            "x": 19,
+            "y": 89,
+            "width": 23,
+            "height": 14
+          },
+          "calibrationScore": 0.23577,
+          "anchor": "end",
+          "calibrationNote": "manual visual y-axis tick override"
+        },
+        "y-tick-100": {
+          "fontFamily": "Arial, Helvetica, sans-serif",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "lineHeight": 1,
+          "overlayX": 42,
+          "overlayY": 241,
+          "sourceBox": {
+            "x": 20,
+            "y": 220,
+            "width": 23,
+            "height": 14
+          },
+          "calibrationScore": 0.36615,
+          "anchor": "end",
+          "calibrationNote": "manual visual y-axis tick override"
+        },
+        "y-tick-0": {
+          "fontFamily": "Arial, Helvetica, sans-serif",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "lineHeight": 1,
+          "overlayX": 42,
+          "overlayY": 381,
+          "sourceBox": {
+            "x": 49,
+            "y": 390,
+            "width": 8,
+            "height": 14
+          },
+          "calibrationScore": 0.11343,
+          "anchor": "end",
+          "calibrationNote": "manual visual y-axis tick override"
+        },
+        "control-x-tick-0": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 19.04,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 8.07,
+          "fit": "scaleX",
+          "minScale": 0.93,
+          "maxScale": 0.93,
+          "overlayX": 53,
+          "overlayY": 404,
+          "sourceBox": {
+            "x": 49,
+            "y": 390,
+            "width": 8,
+            "height": 14
+          },
+          "calibrationScore": 0.11555
+        },
+        "control-x-tick-100": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 17.92,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 23.29,
+          "fit": "scaleX",
+          "minScale": 0.95,
+          "maxScale": 0.95,
+          "overlayX": 146,
+          "overlayY": 404,
+          "sourceBox": {
+            "x": 135,
+            "y": 390,
+            "width": 22,
+            "height": 14
+          },
+          "calibrationScore": 0.34935
+        },
+        "control-x-tick-200": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 19.04,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 24.23,
+          "fit": "scaleX",
+          "minScale": 0.93,
+          "maxScale": 0.93,
+          "overlayX": 237.5,
+          "overlayY": 404,
+          "sourceBox": {
+            "x": 226,
+            "y": 390,
+            "width": 23,
+            "height": 14
+          },
+          "calibrationScore": 0.22303
+        },
+        "control-x-label": {
+          "fontFamily": "Helvetica Neue, Helvetica, Arial, sans-serif",
+          "fontSize": 15.42,
+          "fontWeight": 500,
+          "lineHeight": 1,
+          "targetWidth": 103.6,
+          "fit": "scaleX",
+          "minScale": 0.975,
+          "maxScale": 0.975,
+          "overlayX": 150,
+          "overlayY": 421,
+          "sourceBox": {
+            "x": 99,
+            "y": 415,
+            "width": 102,
+            "height": 20
+          },
+          "calibrationScore": 0.44182,
+          "calibrationNote": "manual visual override: source x-axis title baseline is above the renderer-derived axis label band"
+        },
+        "opto-x-tick-0": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 18.64,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 7.27,
+          "fit": "scaleX",
+          "minScale": 0.855,
+          "maxScale": 0.855,
+          "overlayX": 266.5,
+          "overlayY": 404,
+          "sourceBox": {
+            "x": 263,
+            "y": 390,
+            "width": 7,
+            "height": 14
+          },
+          "calibrationScore": 0.29213
+        },
+        "opto-x-tick-100": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 18.64,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 23.71,
+          "fit": "scaleX",
+          "minScale": 0.93,
+          "maxScale": 0.93,
+          "overlayX": 361,
+          "overlayY": 404,
+          "sourceBox": {
+            "x": 350,
+            "y": 390,
+            "width": 22,
+            "height": 14
+          },
+          "calibrationScore": 0.30553
+        },
+        "opto-x-tick-200": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 18.64,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 24.35,
+          "fit": "scaleX",
+          "minScale": 0.955,
+          "maxScale": 0.955,
+          "overlayX": 453.5,
+          "overlayY": 404,
+          "sourceBox": {
+            "x": 442,
+            "y": 390,
+            "width": 23,
+            "height": 14
+          },
+          "calibrationScore": 0.22942
+        },
+        "opto-x-label": {
+          "fontFamily": "Helvetica Neue, Helvetica, Arial, sans-serif",
+          "fontSize": 15.42,
+          "fontWeight": 500,
+          "lineHeight": 1,
+          "targetWidth": 100.95,
+          "fit": "scaleX",
+          "minScale": 0.95,
+          "maxScale": 0.95,
+          "overlayX": 369.25,
+          "overlayY": 421,
+          "sourceBox": {
+            "x": 318,
+            "y": 415,
+            "width": 101,
+            "height": 20
+          },
+          "calibrationScore": 0.41044,
+          "calibrationNote": "manual visual override: source x-axis title baseline is above the renderer-derived axis label band"
+        },
+        "colorbar-label": {
+          "fontFamily": "Arial, Helvetica, sans-serif",
+          "fontSize": 15,
+          "fontWeight": 400,
+          "lineHeight": 1.04,
+          "overlayX": 506,
+          "overlayY": 49,
+          "sourceBox": {
+            "x": 495,
+            "y": 49,
+            "width": 43,
+            "height": 39
+          },
+          "calibrationScore": 0.71041,
+          "calibrationNote": "manual visual override: multi-line colorbar title is top-aligned in the source; automated fit made it too large and treated the y value as a baseline; second pass moved left to match source"
+        },
+        "colorbar-tick-20": {
+          "fontFamily": "Arial, Helvetica, sans-serif",
+          "fontSize": 15,
+          "fontWeight": 400,
+          "lineHeight": 1,
+          "sourceBox": {
+            "x": 521,
+            "y": 96,
+            "width": 15,
+            "height": 15
+          },
+          "calibrationScore": 0.39513,
+          "calibrationNote": "manual colorbar tick override; keep renderer tick position"
+        },
+        "colorbar-tick-10": {
+          "fontFamily": "Arial, Helvetica, sans-serif",
+          "fontSize": 15,
+          "fontWeight": 400,
+          "lineHeight": 1,
+          "sourceBox": {
+            "x": 521,
+            "y": 132,
+            "width": 15,
+            "height": 14
+          },
+          "calibrationScore": 0.42482,
+          "calibrationNote": "manual colorbar tick override; keep renderer tick position"
+        },
+        "colorbar-tick-5": {
+          "fontFamily": "Arial, Helvetica, sans-serif",
+          "fontSize": 15,
+          "fontWeight": 400,
+          "lineHeight": 1,
+          "sourceBox": {
+            "x": 521,
+            "y": 241,
+            "width": 4,
+            "height": 14
+          },
+          "calibrationScore": 0.71089,
+          "calibrationNote": "manual colorbar tick override; keep renderer tick position"
+        },
+        "colorbar-tick-1": {
+          "fontFamily": "Arial, Helvetica, sans-serif",
+          "fontSize": 15,
+          "fontWeight": 400,
+          "lineHeight": 1,
+          "sourceBox": {
+            "x": 521,
+            "y": 274,
+            "width": 19,
+            "height": 14
+          },
+          "calibrationScore": 1.16253,
+          "calibrationNote": "manual colorbar tick override; keep renderer tick position"
+        },
+        "colorbar-tick-05": {
+          "fontFamily": "Arial, Helvetica, sans-serif",
+          "fontSize": 15,
+          "fontWeight": 400,
+          "lineHeight": 1,
+          "sourceBox": {
+            "x": 520,
+            "y": 316,
+            "width": 19,
+            "height": 15
+          },
+          "calibrationScore": 0.40549,
+          "calibrationNote": "manual colorbar tick override; keep renderer tick position"
+        },
+        "colorbar-tick-02": {
+          "fontFamily": "Arial, Helvetica, sans-serif",
+          "fontSize": 15,
+          "fontWeight": 400,
+          "lineHeight": 1,
+          "sourceBox": {
+            "x": 520,
+            "y": 351,
+            "width": 17,
+            "height": 15
+          },
+          "calibrationScore": 0.51819,
+          "calibrationNote": "manual colorbar tick override; keep renderer tick position"
+        },
+        "colorbar-tick-01": {
+          "fontFamily": "Arial, Helvetica, sans-serif",
+          "fontSize": 15,
+          "fontWeight": 400,
+          "lineHeight": 1,
+          "sourceBox": {
+            "x": 520,
+            "y": 390,
+            "width": 19,
+            "height": 15
+          },
+          "calibrationScore": 1.81386,
+          "calibrationNote": "manual colorbar tick override; keep renderer tick position"
+        },
+        "legend-boundary": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 16.94,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 98.85,
+          "fit": "scaleX",
+          "minScale": 1,
+          "maxScale": 1,
+          "overlayX": 135.25,
+          "overlayY": 457,
+          "sourceBox": {
+            "x": 132,
+            "y": 447,
+            "width": 101,
+            "height": 26
+          },
+          "calibrationScore": 0.38122,
+          "calibrationNote": "manual visual override: legend text baseline was below the source because marker-line anchoring is separate from text fitting"
+        },
+        "legend-trajectory": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 16.54,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 115.13,
+          "fit": "scaleX",
+          "minScale": 1.025,
+          "maxScale": 1.025,
+          "overlayX": 322.5,
+          "overlayY": 457,
+          "sourceBox": {
+            "x": 320,
+            "y": 447,
+            "width": 116,
+            "height": 27
+          },
+          "calibrationScore": 0.52305,
+          "calibrationNote": "manual visual override: legend text baseline was below the source because marker-line anchoring is separate from text fitting"
+        },
+        "y-tick-150": {
+          "fontFamily": "Arial, Helvetica, sans-serif",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "lineHeight": 1,
+          "overlayX": 42,
+          "overlayY": 171,
+          "anchor": "end",
+          "calibrationNote": "manual visual y-axis tick override"
+        },
+        "y-tick-50": {
+          "fontFamily": "Arial, Helvetica, sans-serif",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "lineHeight": 1,
+          "overlayX": 42,
+          "overlayY": 311,
+          "anchor": "end",
+          "calibrationNote": "manual visual y-axis tick override"
+        },
+        "colorbar-tick-2": {
+          "fontFamily": "Arial, Helvetica, sans-serif",
+          "fontSize": 15,
+          "fontWeight": 400,
+          "lineHeight": 1,
+          "calibrationNote": "manual colorbar tick override; keep renderer tick position"
+        }
+      }
+    }
+  ],
+  "semanticFigureIR": {
+    "version": "relationship-inventory.v1",
+    "status": "metadata-only migration; renderer-visible output must remain unchanged",
+    "coordinateSystems": [
+      "panel-f.control-rate-map-image-grid",
+      "panel-f.opto-rate-map-image-grid",
+      "panel-f.color-scale"
+    ],
+    "layoutObjects": [
+      "panel-f.xAxis",
+      "panel-f.yAxis",
+      "panel-f.legend",
+      "panel-f.colorbar"
+    ],
+    "derivedRelationships": [
+      "rate-map canvas fields derive from editable map recipes and map bboxes",
+      "axis labels and ticks derive from map axes rather than page-positioned text",
+      "legend and colorbar are layout objects linked to map classes and color scale"
+    ],
+    "validationConstraints": [
+      "source raster is QA-only",
+      "colorbar owns ticks/title",
+      "axes remain editable and separate from dense canvas map layers"
+    ]
+  },
+  "confidence": [
+    {
+      "target": "reference-01-place-code-opto-F",
+      "confidence": "medium",
+      "note": "Rate map textures and trajectories are approximate; structural layout and labels are high-confidence."
+    }
+  ]
+}

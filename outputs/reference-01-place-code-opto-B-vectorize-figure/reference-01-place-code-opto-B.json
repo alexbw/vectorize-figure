@@ -1,0 +1,740 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-01-place-code-opto-B",
+  "source": {
+    "path": "../../assets/reference/reference-01-place-code-opto-B-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Single cropped line-chart panel. Curves, bands, and individual traces are visually inferred from the raster source; source image is not reused in generated layers."
+  },
+  "canvas": {
+    "width": 464,
+    "height": 512,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111"
+  },
+  "styles": {
+    "axis": "#111111",
+    "control": "#111111",
+    "opto": "#009a9b",
+    "controlTrace": "rgba(180,180,180,0.32)",
+    "optoTrace": "rgba(0,154,155,0.22)",
+    "controlBand": "rgba(0,0,0,0.24)",
+    "optoBand": "rgba(0,154,155,0.26)"
+  },
+  "panels": [
+    {
+      "id": "panel-b",
+      "type": "population_place_fields_line_chart",
+      "label": {
+        "text": "B",
+        "x": 7,
+        "y": 32,
+        "fontSize": 24,
+        "fontWeight": 700
+      },
+      "title": {
+        "text": "Population place fields",
+        "x": 42,
+        "y": 33,
+        "fontSize": 17,
+        "fontWeight": 700
+      },
+      "plot": {
+        "bbox": {
+          "x": 58,
+          "y": 70,
+          "width": 347,
+          "height": 369
+        },
+        "x": {
+          "domain": [
+            0,
+            210
+          ],
+          "ticks": [
+            {
+              "value": 0,
+              "label": "0"
+            },
+            {
+              "value": 50,
+              "label": "50"
+            },
+            {
+              "value": 100,
+              "label": "100"
+            },
+            {
+              "value": 150,
+              "label": "150"
+            },
+            {
+              "value": 200,
+              "label": "200"
+            }
+          ],
+          "label": {
+            "text": "Position (cm)",
+            "x": 232,
+            "y": 489,
+            "fontSize": 17,
+            "anchor": "middle"
+          }
+        },
+        "y": {
+          "domain": [
+            0,
+            20
+          ],
+          "ticks": [
+            {
+              "value": 0,
+              "label": "0"
+            },
+            {
+              "value": 5,
+              "label": "5"
+            },
+            {
+              "value": 10,
+              "label": "10"
+            },
+            {
+              "value": 15,
+              "label": "15"
+            },
+            {
+              "value": 20,
+              "label": "20"
+            }
+          ],
+          "label": {
+            "text": "Mean firing rate (Hz)",
+            "x": 20,
+            "y": 255,
+            "fontSize": 17,
+            "anchor": "middle",
+            "rotation": -90
+          }
+        }
+      },
+      "legend": [
+        {
+          "id": "control-legend",
+          "seriesId": "control-mean",
+          "x": 71,
+          "y": 76,
+          "lineLength": 28,
+          "textX": 109,
+          "textY": 81,
+          "fontSize": 14
+        },
+        {
+          "id": "opto-legend",
+          "seriesId": "opto-mean",
+          "x": 71,
+          "y": 98,
+          "lineLength": 28,
+          "textX": 109,
+          "textY": 103,
+          "fontSize": 14
+        }
+      ],
+      "marks": [
+        {
+          "id": "control-traces",
+          "type": "traceCloud",
+          "seriesId": "control-mean",
+          "count": 32,
+          "seed": 4001,
+          "stroke": "rgba(180,180,180,0.30)",
+          "strokeWidth": 0.8,
+          "amplitude": 2.2,
+          "peakJitter": 18,
+          "baselineJitter": 0.7,
+          "notes": "Approximate individual-cell traces inferred from pale gray curves in source raster."
+        },
+        {
+          "id": "opto-traces",
+          "type": "traceCloud",
+          "seriesId": "opto-mean",
+          "count": 30,
+          "seed": 4011,
+          "stroke": "rgba(0,154,155,0.24)",
+          "strokeWidth": 0.8,
+          "amplitude": 1.35,
+          "peakJitter": 18,
+          "baselineJitter": 0.45,
+          "notes": "Approximate individual-cell traces inferred from pale teal curves in source raster."
+        },
+        {
+          "id": "control-band",
+          "type": "uncertaintyBand",
+          "seriesId": "control-mean",
+          "fill": "rgba(0,0,0,0.24)",
+          "halfWidth": [
+            [
+              0,
+              0.3
+            ],
+            [
+              30,
+              0.36
+            ],
+            [
+              60,
+              0.62
+            ],
+            [
+              85,
+              0.9
+            ],
+            [
+              95,
+              0.94
+            ],
+            [
+              110,
+              0.82
+            ],
+            [
+              140,
+              0.58
+            ],
+            [
+              175,
+              0.36
+            ],
+            [
+              210,
+              0.26
+            ]
+          ]
+        },
+        {
+          "id": "opto-band",
+          "type": "uncertaintyBand",
+          "seriesId": "opto-mean",
+          "fill": "rgba(0,154,155,0.26)",
+          "halfWidth": [
+            [
+              0,
+              0.2
+            ],
+            [
+              35,
+              0.25
+            ],
+            [
+              65,
+              0.38
+            ],
+            [
+              90,
+              0.52
+            ],
+            [
+              100,
+              0.5
+            ],
+            [
+              120,
+              0.38
+            ],
+            [
+              155,
+              0.28
+            ],
+            [
+              210,
+              0.18
+            ]
+          ]
+        },
+        {
+          "id": "control-mean",
+          "type": "lineSeries",
+          "label": "Control (no light)",
+          "stroke": "#111111",
+          "strokeWidth": 4.2,
+          "points": [
+            [
+              0,
+              1.7
+            ],
+            [
+              12,
+              2.2
+            ],
+            [
+              28,
+              3.4
+            ],
+            [
+              45,
+              5.6
+            ],
+            [
+              62,
+              8.4
+            ],
+            [
+              78,
+              10.9
+            ],
+            [
+              92,
+              12.5
+            ],
+            [
+              100,
+              12.8
+            ],
+            [
+              112,
+              11.9
+            ],
+            [
+              126,
+              10.4
+            ],
+            [
+              143,
+              8
+            ],
+            [
+              160,
+              5.6
+            ],
+            [
+              178,
+              3.5
+            ],
+            [
+              198,
+              2.1
+            ],
+            [
+              210,
+              1.6
+            ]
+          ]
+        },
+        {
+          "id": "opto-mean",
+          "type": "lineSeries",
+          "label": "Optogenetic inhibition (ArchT)",
+          "stroke": "#009a9b",
+          "strokeWidth": 4.2,
+          "points": [
+            [
+              0,
+              1.2
+            ],
+            [
+              15,
+              1.6
+            ],
+            [
+              32,
+              2.2
+            ],
+            [
+              50,
+              3
+            ],
+            [
+              66,
+              4
+            ],
+            [
+              82,
+              5.2
+            ],
+            [
+              94,
+              5.7
+            ],
+            [
+              104,
+              5.6
+            ],
+            [
+              118,
+              4.8
+            ],
+            [
+              136,
+              3.8
+            ],
+            [
+              154,
+              3
+            ],
+            [
+              174,
+              2.1
+            ],
+            [
+              195,
+              1.4
+            ],
+            [
+              210,
+              1.1
+            ]
+          ]
+        }
+      ],
+      "provenance": [
+        {
+          "target": "panel-b.plot.bbox",
+          "confidence": "high",
+          "note": "Plot box inferred from visible axes and tick locations in the 464 x 512 raster."
+        },
+        {
+          "target": "panel-b.marks",
+          "confidence": "medium",
+          "note": "Mean curves, uncertainty bands, and trace distributions are visually approximated; raw data are unavailable."
+        }
+      ],
+      "textCalibration": {
+        "panel-label": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 24.8,
+          "fontWeight": 600,
+          "lineHeight": 1,
+          "targetWidth": 14.02,
+          "fit": "scaleX",
+          "minScale": 0.955,
+          "maxScale": 0.955,
+          "overlayX": 10,
+          "overlayY": 33.75,
+          "sourceBox": {
+            "x": 10,
+            "y": 16,
+            "width": 14,
+            "height": 19
+          },
+          "calibrationScore": 0.27213
+        },
+        "panel-title": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 19.38,
+          "fontWeight": 600,
+          "lineHeight": 1,
+          "targetWidth": 169.56,
+          "fit": "scaleX",
+          "minScale": 0.98,
+          "maxScale": 0.98,
+          "overlayX": 41.25,
+          "overlayY": 35,
+          "sourceBox": {
+            "x": 43,
+            "y": 20,
+            "width": 167,
+            "height": 19
+          },
+          "calibrationScore": 0.17103
+        },
+        "legend-control": {
+          "fontFamily": "Arimo, Helvetica, Arial, sans-serif",
+          "fontSize": 15.78,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 105.76,
+          "fit": "scaleX",
+          "minScale": 0.95,
+          "maxScale": 0.95,
+          "overlayX": 107,
+          "overlayY": 81.25,
+          "sourceBox": {
+            "x": 107,
+            "y": 70,
+            "width": 104,
+            "height": 16
+          },
+          "calibrationScore": 0.45215
+        },
+        "legend-opto": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 16.94,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 192.97,
+          "fit": "scaleX",
+          "minScale": 1.05,
+          "maxScale": 1.05,
+          "overlayX": 106.25,
+          "overlayY": 104,
+          "sourceBox": {
+            "x": 107,
+            "y": 92,
+            "width": 189,
+            "height": 15
+          },
+          "calibrationScore": 0.3131
+        },
+        "y-tick-20": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 17.92,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 16.42,
+          "fit": "scaleX",
+          "minScale": 1.005,
+          "maxScale": 1.005,
+          "overlayX": 30.25,
+          "overlayY": 76.75,
+          "sourceBox": {
+            "x": 31,
+            "y": 64,
+            "width": 15,
+            "height": 13
+          },
+          "calibrationScore": 0.22761
+        },
+        "y-tick-15": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 17.92,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 16.42,
+          "fit": "scaleX",
+          "minScale": 1.005,
+          "maxScale": 1.005,
+          "overlayX": 30.25,
+          "overlayY": 168.75,
+          "sourceBox": {
+            "x": 31,
+            "y": 156,
+            "width": 15,
+            "height": 13
+          },
+          "calibrationScore": 0.24328
+        },
+        "y-tick-10": {
+          "fontFamily": "Arimo, Helvetica, Arial, sans-serif",
+          "fontSize": 16.8,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 15.95,
+          "fit": "scaleX",
+          "minScale": 0.95,
+          "maxScale": 0.95,
+          "overlayX": 31,
+          "overlayY": 259.75,
+          "sourceBox": {
+            "x": 31,
+            "y": 247,
+            "width": 16,
+            "height": 14
+          },
+          "calibrationScore": 0.32909
+        },
+        "y-tick-5": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 16.8,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 7.28,
+          "fit": "scaleX",
+          "minScale": 0.95,
+          "maxScale": 0.95,
+          "overlayX": 39,
+          "overlayY": 352.25,
+          "sourceBox": {
+            "x": 39,
+            "y": 339,
+            "width": 7,
+            "height": 13
+          },
+          "calibrationScore": 0.32924
+        },
+        "y-tick-0": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 17.92,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 7.6,
+          "fit": "scaleX",
+          "minScale": 0.93,
+          "maxScale": 0.93,
+          "overlayX": 39,
+          "overlayY": 445,
+          "sourceBox": {
+            "x": 39,
+            "y": 431,
+            "width": 7,
+            "height": 14
+          },
+          "calibrationScore": 0.31619
+        },
+        "y-label": {
+          "fontFamily": "Arial, Helvetica, sans-serif",
+          "fontSize": 17,
+          "fontWeight": 400,
+          "lineHeight": 1,
+          "overlayX": 20,
+          "overlayY": 255,
+          "sourceBox": {
+            "x": 5,
+            "y": 176,
+            "width": 18,
+            "height": 177
+          },
+          "calibrationScore": 3.67859,
+          "calibrationNote": "manual visual override after rotated fitter collapsed text"
+        },
+        "x-tick-0": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 17.84,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 8.18,
+          "fit": "scaleX",
+          "minScale": 1.005,
+          "maxScale": 1.005,
+          "overlayX": 58,
+          "overlayY": 462.25,
+          "sourceBox": {
+            "x": 54,
+            "y": 449,
+            "width": 8,
+            "height": 13
+          },
+          "calibrationScore": 0.18625
+        },
+        "x-tick-50": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 17.84,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 16.76,
+          "fit": "scaleX",
+          "minScale": 1.03,
+          "maxScale": 1.03,
+          "overlayX": 141.5,
+          "overlayY": 462.25,
+          "sourceBox": {
+            "x": 134,
+            "y": 449,
+            "width": 15,
+            "height": 13
+          },
+          "calibrationScore": 0.23933
+        },
+        "x-tick-100": {
+          "fontFamily": "Arimo, Helvetica, Arial, sans-serif",
+          "fontSize": 16.8,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 25.18,
+          "fit": "scaleX",
+          "minScale": 1,
+          "maxScale": 1,
+          "overlayX": 224.5,
+          "overlayY": 461,
+          "sourceBox": {
+            "x": 213,
+            "y": 449,
+            "width": 23,
+            "height": 13
+          },
+          "calibrationScore": 0.37404
+        },
+        "x-tick-150": {
+          "fontFamily": "Helvetica Neue, Helvetica, Arial, sans-serif",
+          "fontSize": 15.68,
+          "fontWeight": 500,
+          "lineHeight": 1,
+          "targetWidth": 24.84,
+          "fit": "scaleX",
+          "minScale": 0.95,
+          "maxScale": 0.95,
+          "overlayX": 307,
+          "overlayY": 461,
+          "sourceBox": {
+            "x": 295,
+            "y": 449,
+            "width": 24,
+            "height": 13
+          },
+          "calibrationScore": 0.29989
+        },
+        "x-tick-200": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 17.84,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 25.63,
+          "fit": "scaleX",
+          "minScale": 1.05,
+          "maxScale": 1.05,
+          "overlayX": 392,
+          "overlayY": 462.25,
+          "sourceBox": {
+            "x": 380,
+            "y": 449,
+            "width": 24,
+            "height": 13
+          },
+          "calibrationScore": 0.15794
+        },
+        "x-label": {
+          "fontFamily": "Arial Narrow, Helvetica, Arial, sans-serif",
+          "fontSize": 18.99,
+          "fontWeight": 300,
+          "lineHeight": 1,
+          "targetWidth": 88.59,
+          "fit": "scaleX",
+          "minScale": 0.975,
+          "maxScale": 0.975,
+          "overlayX": 229.5,
+          "overlayY": 486,
+          "sourceBox": {
+            "x": 186,
+            "y": 476,
+            "width": 87,
+            "height": 17
+          },
+          "calibrationScore": 0.28939,
+          "calibrationNote": "manual visual override: source x-axis title baseline sits above the renderer-derived axis label band"
+        }
+      }
+    }
+  ],
+  "semanticFigureIR": {
+    "version": "relationship-inventory.v1",
+    "status": "metadata-only migration; renderer-visible output must remain unchanged",
+    "coordinateSystems": [
+      "panel-b.plot.xy"
+    ],
+    "layoutObjects": [
+      "panel-b.plot.xAxis",
+      "panel-b.plot.yAxis",
+      "panel-b.legend"
+    ],
+    "derivedRelationships": [
+      "mean curves, individual traces, and uncertainty bands derive from the same plot.xy transform",
+      "legend entries reference concrete series ids",
+      "axis titles derive from their corresponding axes"
+    ],
+    "validationConstraints": [
+      "source raster is QA-only",
+      "visible quantitative axes keep tick marks and tick labels",
+      "uncertainty bands follow series grammar and are not rectangular stand-ins"
+    ]
+  },
+  "confidence": [
+    {
+      "target": "reference-01-place-code-opto-B",
+      "confidence": "medium",
+      "note": "Scientific chart grammar and labels are clear; fine trace-level data and exact uncertainty widths are approximate."
+    }
+  ]
+}

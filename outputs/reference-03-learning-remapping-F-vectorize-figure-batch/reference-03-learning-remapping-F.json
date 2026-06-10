@@ -1,0 +1,468 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-03-learning-remapping-F",
+  "source": {
+    "path": "../../assets/reference/reference-03-learning-remapping-F-reference.png",
+    "usage": "QA-only; not used by generated candidate layers.",
+    "nativeSize": {
+      "width": 425,
+      "height": 498
+    },
+    "notes": "Single cropped panel F reconstructed from visual inspection. Source may be shown only by the HTML QA toggle."
+  },
+  "canvas": {
+    "width": 425,
+    "height": 498,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": [
+      "Arial",
+      "Helvetica",
+      "Nimbus Sans",
+      "Roboto Condensed"
+    ],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Approximate first-pass typography: compact sans-serif, regular title, bold panel letter."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "panel-f.place-map.xy",
+      "type": "cartesianHeatmap",
+      "x": {
+        "domain": [
+          0,
+          150
+        ],
+        "range": [
+          74,
+          293
+        ]
+      },
+      "y": {
+        "domain": [
+          312,
+          1
+        ],
+        "range": [
+          51,
+          356
+        ]
+      },
+      "colorScale": "activity-rate"
+    },
+    {
+      "id": "panel-f.occupancy.xy",
+      "type": "cartesianLine",
+      "x": {
+        "domain": [
+          0,
+          70
+        ],
+        "range": [
+          350,
+          395
+        ]
+      },
+      "y": {
+        "domain": [
+          312,
+          1
+        ],
+        "range": [
+          100,
+          356
+        ]
+      }
+    }
+  ],
+  "colorScales": [
+    {
+      "id": "activity-rate",
+      "domain": [
+        0,
+        2
+      ],
+      "ticks": [
+        {
+          "value": 0,
+          "label": "0"
+        },
+        {
+          "value": 1,
+          "label": "1.0"
+        },
+        {
+          "value": 2,
+          "label": "2.0"
+        }
+      ],
+      "stops": [
+        {
+          "value": 0,
+          "color": "#05020f"
+        },
+        {
+          "value": 0.25,
+          "color": "#201040"
+        },
+        {
+          "value": 0.65,
+          "color": "#63206f"
+        },
+        {
+          "value": 1.05,
+          "color": "#b73670"
+        },
+        {
+          "value": 1.5,
+          "color": "#f68a45"
+        },
+        {
+          "value": 2,
+          "color": "#fff06a"
+        }
+      ]
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-f",
+      "label": {
+        "id": "panel-f-label",
+        "text": "F",
+        "x": 10,
+        "y": 28,
+        "fontSize": 20,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {
+          "x": 10,
+          "y": 13,
+          "width": 14,
+          "height": 20
+        }
+      },
+      "title": {
+        "id": "panel-f-title",
+        "text": "Occupancy-normalized spatial map (Day 1)",
+        "x": 37,
+        "y": 29,
+        "fontSize": 16,
+        "fontWeight": 400,
+        "anchor": "start",
+        "sourceBox": {
+          "x": 38,
+          "y": 17,
+          "width": 292,
+          "height": 19
+        }
+      },
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 425,
+        "height": 498
+      },
+      "layoutObjects": [
+        {
+          "id": "place-map-plot",
+          "type": "heatmapPlot",
+          "bbox": {
+            "x": 74,
+            "y": 51,
+            "width": 219,
+            "height": 305
+          },
+          "usesTransform": "panel-f.place-map.xy",
+          "axes": {
+            "x": {
+              "id": "place-map-x-axis",
+              "domain": [
+                0,
+                150
+              ],
+              "ticks": [
+                {
+                  "value": 0,
+                  "label": "0"
+                },
+                {
+                  "value": 50,
+                  "label": "50"
+                },
+                {
+                  "value": 100,
+                  "label": "100"
+                }
+              ],
+              "label": {
+                "id": "place-map-x-label",
+                "text": "Position (cm)",
+                "fontSize": 16,
+                "offset": 38
+              }
+            },
+            "y": {
+              "id": "place-map-y-axis",
+              "visibleLine": false,
+              "domain": [
+                1,
+                312
+              ],
+              "label": {
+                "id": "place-map-y-label",
+                "text": "Place cells (n = 312)",
+                "fontSize": 15,
+                "rotation": -90,
+                "x": 29,
+                "y": 204,
+                "anchor": "middle"
+              }
+            }
+          }
+        },
+        {
+          "id": "dorsal-ventral-bracket",
+          "type": "directionBracket",
+          "x": 49,
+          "y1": 82,
+          "y2": 325,
+          "labels": [
+            {
+              "text": "dorsal",
+              "x": 49,
+              "y": 70,
+              "anchor": "middle"
+            },
+            {
+              "text": "ventral",
+              "x": 49,
+              "y": 345,
+              "anchor": "middle"
+            }
+          ]
+        },
+        {
+          "id": "activity-colorbar",
+          "type": "colorbar",
+          "colorScale": "activity-rate",
+          "orientation": "vertical",
+          "bbox": {
+            "x": 304,
+            "y": 247,
+            "width": 8,
+            "height": 108
+          },
+          "title": {
+            "id": "activity-colorbar-title",
+            "text": "Activity rate\n(ΔF/F / s)",
+            "x": 296,
+            "y": 221,
+            "fontSize": 9.5,
+            "anchor": "start"
+          },
+          "ticks": [
+            {
+              "value": 0,
+              "label": "0"
+            },
+            {
+              "value": 1,
+              "label": "1.0"
+            },
+            {
+              "value": 2,
+              "label": "2.0"
+            }
+          ],
+          "tickSide": "right",
+          "tickDirection": "outward",
+          "tickLength": 5,
+          "exclusionZone": {
+            "paddingPx": 1,
+            "allowTextIds": [
+              "activity-colorbar-title"
+            ]
+          }
+        },
+        {
+          "id": "occupancy-panel",
+          "type": "linePlot",
+          "bbox": {
+            "x": 350,
+            "y": 100,
+            "width": 45,
+            "height": 256
+          },
+          "usesTransform": "panel-f.occupancy.xy",
+          "title": {
+            "text": "Occupancy\n(s)",
+            "x": 373,
+            "y": 70,
+            "fontSize": 14,
+            "anchor": "middle"
+          },
+          "axes": {
+            "x": {
+              "domain": [
+                0,
+                70
+              ],
+              "ticks": [
+                {
+                  "value": 0,
+                  "label": "0"
+                },
+                {
+                  "value": 50,
+                  "label": "50"
+                }
+              ]
+            },
+            "y": {
+              "domain": [
+                1,
+                312
+              ],
+              "ticks": []
+            }
+          }
+        }
+      ],
+      "data": [
+        {
+          "id": "place-map-data-recipe",
+          "type": "generatedHeatmap",
+          "rows": 312,
+          "columns": 150,
+          "seed": 90317,
+          "features": {
+            "dominantBand": {
+              "startPosition": 10,
+              "endPosition": 128,
+              "widthCm": 10.5,
+              "amplitude": 1.85,
+              "jitterCm": 8
+            },
+            "secondaryBand": {
+              "centerPosition": 55,
+              "rows": [
+                35,
+                155
+              ],
+              "widthCm": 8,
+              "amplitude": 0.72
+            },
+            "rowDropout": 0.21,
+            "horizontalStreaks": true,
+            "noiseAmplitude": 0.34
+          },
+          "provenance": {
+            "confidence": "medium",
+            "note": "Synthetic matrix mimics diagonal remapping gradient and sparse horizontal place-cell streaks."
+          }
+        },
+        {
+          "id": "occupancy-trace-data-recipe",
+          "type": "generatedLine",
+          "samples": 220,
+          "seed": 4312,
+          "domain": {
+            "yRows": [
+              1,
+              312
+            ],
+            "occupancySeconds": [
+              0,
+              70
+            ]
+          },
+          "features": {
+            "baseline": 24,
+            "noise": 8,
+            "peaks": [
+              {
+                "row": 55,
+                "height": 18
+              },
+              {
+                "row": 185,
+                "height": 31
+              },
+              {
+                "row": 285,
+                "height": 25
+              }
+            ]
+          }
+        }
+      ],
+      "marks": [
+        {
+          "id": "place-cell-activity-map",
+          "type": "heatmap",
+          "data": "place-map-data-recipe",
+          "layout": "place-map-plot",
+          "renderer": "canvas",
+          "interpolation": "nearest",
+          "colorScale": "activity-rate"
+        },
+        {
+          "id": "occupancy-trace",
+          "type": "lineSeries",
+          "data": "occupancy-trace-data-recipe",
+          "layout": "occupancy-panel",
+          "renderer": "svg",
+          "stroke": "#111111",
+          "strokeWidth": 1,
+          "fill": "none"
+        }
+      ],
+      "provenance": [
+        {
+          "target": "place-map-plot",
+          "confidence": "medium",
+          "note": "Plot rectangle and tick placement measured visually from crop."
+        },
+        {
+          "target": "occupancy-panel",
+          "confidence": "low",
+          "note": "Trace is visually matched in density and amplitude but not digitized."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "nativeCanvasSize": [
+      425,
+      498
+    ],
+    "requiredGeneratedLayers": [
+      "canvas.heatmap",
+      "svg.axes",
+      "svg.colorbar",
+      "svg.occupancy-trace"
+    ],
+    "forbiddenSourceReuse": [
+      "sourceRasterCanvasBlit",
+      "cssBackgroundSourceRaster",
+      "flattenedAxes"
+    ]
+  },
+  "confidence": [
+    {
+      "target": "overall",
+      "confidence": "first-pass",
+      "note": "Independent editable reconstruction for visual inspection; not a data extraction."
+    }
+  ]
+}

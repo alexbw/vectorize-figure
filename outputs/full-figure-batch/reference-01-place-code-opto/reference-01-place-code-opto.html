@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-01-place-code-opto reconstruction</title>
+  <style>
+    html, body { margin: 0; background: #eee; color: #111; font-family: Arial, Helvetica, sans-serif; }
+    header { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 10px 14px; background: #fff; border-bottom: 1px solid #ccc; }
+    h1 { margin: 0; font-size: 16px; }
+    .note { margin-top: 3px; font-size: 12px; color: #555; }
+    .toggle { display: inline-flex; border: 1px solid #999; border-radius: 4px; overflow: hidden; }
+    .toggle button { border: 0; padding: 5px 10px; background: #fff; font: inherit; font-size: 12px; cursor: pointer; }
+    .toggle button.active { background: #111; color: #fff; }
+    main { min-height: calc(100vh - 48px); display: grid; place-items: center; padding: 16px; box-sizing: border-box; }
+    .frame { position: relative; width: 1536px; height: 1024px; background: #fff; border: 1px solid #d0d0d0; box-shadow: 0 1px 5px rgba(0,0,0,.08); overflow: hidden; }
+    .surface, .reference { position: absolute; inset: 0; }
+    .reference { display: none; width: 100%; height: 100%; object-fit: contain; background: #fff; }
+    .show-reference .surface { display: none; }
+    .show-reference .reference { display: block; }
+    canvas, svg { position: absolute; inset: 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <div><h1>reference-01-place-code-opto</h1><div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div></div>
+    <div class="toggle"><button id="generatedButton" class="active" type="button">Generated</button><button id="referenceButton" type="button">Reference</button></div>
+  </header>
+  <main><div id="frame" class="frame"><div id="surface" class="surface"></div><img id="reference" class="reference" alt="QA reference source image"></div></main>
+  <script>
+    const SPEC_URL = './reference-01-place-code-opto.json';
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const $ = id => document.getElementById(id);
+    const make = (tag, attrs = {}) => { const n = document.createElementNS(SVG_NS, tag); for (const [k,v] of Object.entries(attrs)) if (v !== undefined && v !== null) n.setAttribute(k, v); return n; };
+    const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+    const rng = seed => () => { let t = seed += 0x6D2B79F5; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+    const interp = (d, r, v) => r[0] + (v - d[0]) / (d[1] - d[0]) * (r[1] - r[0]);
+    function text(svg, s, defaults = {}) {
+      const lines = s.lines || String(s.text || '').split('\n');
+      const fs = s.fontSize || defaults.fontSize || 16;
+      const n = make('text', {x:s.x, y:s.y, fill:s.fill || '#000', 'font-size':fs, 'font-family':'Arial, Helvetica, sans-serif', 'font-weight':s.fontWeight || 400, 'text-anchor':s.anchor || 'start', transform:s.rotation ? `rotate(${s.rotation} ${s.x} ${s.y})` : null});
+      lines.forEach((line, i) => { const t = make('tspan', {x:s.x, dy:i ? fs * (s.lineHeight || 1.08) : 0}); t.textContent = line; n.appendChild(t); });
+      svg.appendChild(n); return n;
+    }
+    function line(svg, a) { svg.appendChild(make('line', {x1:a.x1,y1:a.y1,x2:a.x2,y2:a.y2,stroke:a.stroke || '#111','stroke-width':a.w || 1.3,'stroke-dasharray':a.dash || null,'stroke-linecap':a.cap || 'butt'})); }
+    function path(svg, d, a) { svg.appendChild(make('path', {d, fill:a.fill || 'none', stroke:a.stroke || '#111', 'stroke-width':a.w || 2, 'stroke-linejoin':'round', 'stroke-linecap':'round', opacity:a.opacity || 1, 'stroke-dasharray':a.dash || null})); }
+    function rect(svg, a) { svg.appendChild(make('rect', {x:a.x,y:a.y,width:a.width,height:a.height,fill:a.fill || 'none',stroke:a.stroke || null,'stroke-width':a.w || null,'stroke-dasharray':a.dash || null,rx:a.rx || null})); }
+    function circle(svg, a) { svg.appendChild(make('circle', {cx:a.x,cy:a.y,r:a.r || 3,fill:a.fill || '#111',stroke:a.stroke || null,'stroke-width':a.w || null})); }
+    function mapColor(v, scale) {
+      const p = scale.palette; for (let i=1;i<p.length;i++) if (v <= p[i].value) {
+        const a=p[i-1], b=p[i], t=(v-a.value)/(b.value-a.value), ca=hex(a.color), cb=hex(b.color);
+        return [0,1,2].map(j => Math.round(ca[j]+(cb[j]-ca[j])*t));
+      } return hex(p[p.length-1].color);
+    }
+    function hex(c) { const m = c.match(/\w\w/g).map(x => parseInt(x,16)); return m.slice(0,3); }
+    function axes(svg, box, x, y, opts = {}) {
+      line(svg,{x1:box.x,y1:box.y+box.height,x2:box.x+box.width,y2:box.y+box.height});
+      line(svg,{x1:box.x,y1:box.y,x2:box.x,y2:box.y+box.height});
+      (x.ticks || []).forEach(v => { const px = interp(x.domain,[box.x,box.x+box.width],v); line(svg,{x1:px,y1:box.y+box.height,x2:px,y2:box.y+box.height+6}); text(svg,{text:String(v),x:px,y:box.y+box.height+22,fontSize:16,anchor:'middle'}); });
+      (y.ticks || []).forEach(v => { const py = interp(y.domain,[box.y+box.height,box.y],v); line(svg,{x1:box.x-6,y1:py,x2:box.x,y2:py}); if (y.labelsVisible !== false) text(svg,{text:String(v),x:box.x-10,y:py+5,fontSize:16,anchor:'end'}); });
+      if (x.label) text(svg,{text:x.label,x:box.x+box.width/2,y:box.y+box.height+50,fontSize:16,anchor:'middle'});
+      if (y.label) text(svg,{text:y.label,x:box.x-42,y:box.y+box.height/2,fontSize:16,anchor:'middle',rotation:-90});
+      if (opts.frame) rect(svg,{...box,stroke:'#111',w:1});
+    }
+    function canvasLayer(surface, spec) { const c=document.createElement('canvas'); c.width=spec.canvas.width; c.height=spec.canvas.height; surface.appendChild(c); return c.getContext('2d'); }
+    function drawHeat(ctx, plot, scale) {
+      const {x,y,width,height}=plot.plotBox, rnd=rng(plot.mark.seed), rows=162, cols=211, img=ctx.createImageData(width,height);
+      for (let py=0; py<height; py++) for (let px=0; px<width; px++) {
+        const r=py/height, c=px/width*210, peak=plot.mark.peakStart+(plot.mark.peakEnd-plot.mark.peakStart)*r+(rnd()-.5)*3;
+        const stripe=(rnd()<.004?1.2:0), val=plot.mark.baseline+plot.mark.amplitude*Math.exp(-((c-peak)**2)/(2*13*13))+stripe+(rnd()-.5)*plot.mark.noise*2;
+        const rgb=mapColor(val,scale), i=(py*width+px)*4; img.data[i]=rgb[0]; img.data[i+1]=rgb[1]; img.data[i+2]=rgb[2]; img.data[i+3]=255;
+      } ctx.putImageData(img,x,y);
+    }
+    function drawRateMap(ctx, plot, scale) {
+      const b=plot.plotBox, rnd=rng(plot.mark.seed), img=ctx.createImageData(b.width,b.height);
+      for (let py=0; py<b.height; py++) for (let px=0; px<b.width; px++) {
+        const X=px/b.width*210, Y=200-py/b.height*200; let v=.08+rnd()*.3;
+        plot.mark.hotspots.forEach(h => v += h[2]*Math.exp(-(((X-h[0])**2+(Y-h[1])**2)/(2*22*22))));
+        const rgb=mapColor(Math.min(20,v),scale), i=(py*b.width+px)*4; img.data[i]=rgb[0]; img.data[i+1]=rgb[1]; img.data[i+2]=rgb[2]; img.data[i+3]=255;
+      } ctx.putImageData(img,b.x,b.y);
+    }
+    function curvePts(box, xd, yd, f, n=90) { let d=''; for(let i=0;i<n;i++){ const x=xd[0]+(xd[1]-xd[0])*i/(n-1), y=f(x), px=interp(xd,[box.x,box.x+box.width],x), py=interp(yd,[box.y+box.height,box.y],y); d += (i?'L':'M')+px.toFixed(1)+' '+py.toFixed(1); } return d; }
+    function band(svg, box, xd, yd, f, w, fill) { const top=[], bot=[]; for(let i=0;i<90;i++){ const x=xd[0]+(xd[1]-xd[0])*i/89; top.push([interp(xd,[box.x,box.x+box.width],x),interp(yd,[box.y+box.height,box.y],f(x)+w)]); bot.unshift([interp(xd,[box.x,box.x+box.width],x),interp(yd,[box.y+box.height,box.y],f(x)-w)]); } path(svg,'M'+top.concat(bot).map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join('L')+'Z',{fill,stroke:'none'}); }
+    function render(spec) {
+      const surface=$('surface'); surface.innerHTML=''; $('frame').style.width=spec.canvas.width+'px'; $('frame').style.height=spec.canvas.height+'px'; $('reference').src=spec.source.path;
+      const ctx=canvasLayer(surface,spec), svg=make('svg',{viewBox:`0 0 ${spec.canvas.width} ${spec.canvas.height}`,width:spec.canvas.width,height:spec.canvas.height}); surface.appendChild(svg);
+      const scales=Object.fromEntries(spec.colorScales.map(s=>[s.id,s]));
+      spec.panels.forEach(p => { text(svg,p.label); text(svg,p.title); if(p.subtitle) text(svg,p.subtitle);
+        if(p.id==='A'){ p.plots.forEach(pl=>{ drawHeat(ctx,pl,scales.viridisLike); text(svg,{...(pl.title),fontSize:16,anchor:'middle'}); axes(svg,pl.plotBox,pl.x,pl.y); }); colorbar(svg,p.colorbar,scales.viridisLike); }
+        if(p.id==='B'){ axes(svg,p.plotBox,p.x,p.y); legend(svg,p.legend,584,76); for(let k=0;k<28;k++){ const rr=rng(2000+k), amp=8+rr()*8, c=80+rr()*35, w=28+rr()*20; path(svg,curvePts(p.plotBox,p.x.domain,p.y.domain,x=>.8+amp*Math.exp(-((x-c)**2)/(2*w*w))+rr()*.8),{stroke:'rgba(0,0,0,.10)',w:1}); } for(let k=0;k<18;k++) path(svg,curvePts(p.plotBox,p.x.domain,p.y.domain,x=>.9+(3+Math.sin(k)*2)*Math.exp(-((x-95)**2)/(2*(35+k%6*4)**2))+1.2*Math.exp(-((x-135)**2)/(2*35**2))),{stroke:'rgba(0,154,160,.16)',w:1}); band(svg,p.plotBox,p.x.domain,p.y.domain,x=>1.2+11.5*Math.exp(-((x-92)**2)/(2*39**2)),.75,'rgba(0,0,0,.22)'); path(svg,curvePts(p.plotBox,p.x.domain,p.y.domain,x=>1.2+11.5*Math.exp(-((x-92)**2)/(2*39**2))),{stroke:'#111',w:4}); band(svg,p.plotBox,p.x.domain,p.y.domain,x=>.9+4.7*Math.exp(-((x-92)**2)/(2*38**2))+1.2*Math.exp(-((x-135)**2)/(2*42**2)),.45,'rgba(0,154,160,.25)'); path(svg,curvePts(p.plotBox,p.x.domain,p.y.domain,x=>.9+4.7*Math.exp(-((x-92)**2)/(2*38**2))+1.2*Math.exp(-((x-135)**2)/(2*42**2))),{stroke:'#009aa0',w:4}); }
+        if(p.id==='C'){ drawRaster(svg,p); axes(svg,p.plotBox,p.x,p.y); const ex=interp(p.x.domain,[p.plotBox.x,p.plotBox.x+p.plotBox.width],0); line(svg,{x1:ex,y1:67,x2:ex,y2:419,stroke:'#009aa0',dash:'6 5'}); text(svg,{text:p.event.label,x:ex,y:62,fontSize:16,anchor:'middle',fill:'#009aa0'}); legend(svg,p.legend,1318,318); band(svg,p.plotBox,p.x.domain,p.y.domain,x=>x<0?18.5:9+7*(1-Math.exp(-x/1.2)),1.6,'rgba(0,0,0,.22)'); path(svg,curvePts(p.plotBox,p.x.domain,p.y.domain,x=>x<0?18.5+Math.sin(x*9)*.5:9+7*(1-Math.exp(-x/1.2))),{stroke:'#111',w:3}); band(svg,p.plotBox,p.x.domain,p.y.domain,x=>x<0?14.2:2+8*(1-Math.exp(-Math.max(0,x-.35)/1.1)),1.5,'rgba(0,154,160,.25)'); path(svg,curvePts(p.plotBox,p.x.domain,p.y.domain,x=>x<0?14.2+Math.sin(x*8)*.3:2+8*(1-Math.exp(-Math.max(0,x-.35)/1.1))),{stroke:'#009aa0',w:3}); rect(svg,{x:1227,y:448,width:130,height:9,fill:'#009aa0'}); text(svg,{text:'Light ON',x:1292,y:475,fontSize:16,anchor:'middle',fill:'#009aa0'}); }
+        if(p.id==='D'){ axes(svg,p.plotBox,p.x,p.y); legend(svg,p.legend,94,561); line(svg,{x1:p.plotBox.x,y1:interp(p.y.domain,[p.plotBox.y+p.plotBox.height,p.plotBox.y],40),x2:p.plotBox.x+p.plotBox.width,y2:interp(p.y.domain,[p.plotBox.y+p.plotBox.height,p.plotBox.y],40),stroke:'#777',dash:'5 4'}); text(svg,{text:p.chance.label,x:75,y:856,fontSize:16}); const ex=interp(p.x.domain,[p.plotBox.x,p.plotBox.x+p.plotBox.width],0); line(svg,{x1:ex,y1:p.plotBox.y,x2:ex,y2:p.plotBox.y+p.plotBox.height,stroke:'#009aa0',dash:'5 4'}); rect(svg,{x:ex,y:893,width:120,height:18,fill:'#009aa0'}); text(svg,{text:'Light ON',x:ex+60,y:908,fontSize:16,anchor:'middle',fill:'#fff'}); band(svg,p.plotBox,p.x.domain,p.y.domain,x=>x<0?79:75+4*(1-Math.exp(-((x-1.2)**2)/5)),1.2,'rgba(0,0,0,.22)'); path(svg,curvePts(p.plotBox,p.x.domain,p.y.domain,x=>x<0?79+Math.sin(x*4)*.8:75+4*(1-Math.exp(-((x-1.2)**2)/5))),{stroke:'#111',w:3}); band(svg,p.plotBox,p.x.domain,p.y.domain,x=>x<0?74:42+6*Math.max(0,x-0.2),1.5,'rgba(0,154,160,.25)'); path(svg,curvePts(p.plotBox,p.x.domain,p.y.domain,x=>x<0?74+Math.sin(x*5)*.8:42+6*Math.max(0,x-0.2)),{stroke:'#009aa0',w:3}); }
+        if(p.id==='E'){ axes(svg,p.plotBox,{domain:[0,9],ticks:[]},p.y); line(svg,{x1:p.plotBox.x,y1:interp(p.y.domain,[p.plotBox.y+p.plotBox.height,p.plotBox.y],0),x2:p.plotBox.x+p.plotBox.width+38,y2:interp(p.y.domain,[p.plotBox.y+p.plotBox.height,p.plotBox.y],0),stroke:'#777',dash:'5 4'}); const vals=[[35,52,70,78],[5,15,28,42],[10,22,44,63],[-12,-5,18,40],[0,8,20,35],[-4,8,24,38],[-20,-10,18,30],[18,35,48,67]]; vals.forEach((arr,i)=>{ const x=interp([0,9],[p.plotBox.x,p.plotBox.x+p.plotBox.width],i+1); text(svg,{text:p.x.categories[i],x,y:901,fontSize:16,anchor:'middle'}); for(let j=0;j<arr.length-1;j++) line(svg,{x1:x-7+j*5,y1:interp(p.y.domain,[p.plotBox.y+p.plotBox.height,p.plotBox.y],arr[j]),x2:x-7+(j+1)*5,y2:interp(p.y.domain,[p.plotBox.y+p.plotBox.height,p.plotBox.y],arr[j+1]),stroke:'#111',w:1}); arr.forEach((v,j)=>circle(svg,{x:x-7+j*5,y:interp(p.y.domain,[p.plotBox.y+p.plotBox.height,p.plotBox.y],v),r:3.5,fill:j===0?'#fff':j===1?'#009aa0':'#111',stroke:j<2?'#009aa0':null,w:1.2})); }); line(svg,{x1:887,y1:568,x2:887,y2:880,stroke:'#777',dash:'5 4'}); text(svg,{text:'All',x:918,y:901,fontSize:16,anchor:'middle'}); circle(svg,{x:918,y:interp(p.y.domain,[p.plotBox.y+p.plotBox.height,p.plotBox.y],16),r:7,fill:'#009aa0'}); line(svg,{x1:918,y1:interp(p.y.domain,[p.plotBox.y+p.plotBox.height,p.plotBox.y],6),x2:918,y2:interp(p.y.domain,[p.plotBox.y+p.plotBox.height,p.plotBox.y],26),stroke:'#111'}); }
+        if(p.id==='F'){ p.plots.forEach(pl=>{ drawRateMap(ctx,pl,scales.rateHzLog); text(svg,{...(pl.title),fontSize:16,anchor:'middle'}); axes(svg,pl.plotBox,p.x,p.y,{frame:true}); arena(svg,pl.plotBox,pl.mark.seed); }); colorbar(svg,p.colorbar,scales.rateHzLog); text(svg,{text:p.x.label,x:1130,y:941,fontSize:16,anchor:'middle'}); text(svg,{text:p.x.label,x:1346,y:941,fontSize:16,anchor:'middle'}); text(svg,{text:p.y.label,x:982,y:748,fontSize:16,anchor:'middle',rotation:-90}); line(svg,{x1:1051,y1:1001,x2:1115,y2:1001,stroke:'#111',dash:'7 6',w:2}); text(svg,{text:'Arena boundary',x:1126,y:1007,fontSize:14}); line(svg,{x1:1247,y1:1001,x2:1310,y2:1001,stroke:'#111',w:2}); text(svg,{text:'Example trajectory',x:1321,y:1007,fontSize:14}); }
+      });
+    }
+    function legend(svg, items, x, y) { items.forEach((it,i)=>{ line(svg,{x1:x,y1:y+i*23,x2:x+28,y2:y+i*23,stroke:it.color,w:3}); text(svg,{text:it.label,x:x+38,y:y+5+i*23,fontSize:14}); }); }
+    function colorbar(svg, cb, scale) { const g=make('defs'), id='grad-'+cb.id, lg=make('linearGradient',{id,x1:'0',x2:'0',y1:'1',y2:'0'}); scale.palette.forEach(p=>lg.appendChild(make('stop',{offset:((p.value-scale.domain[0])/(scale.domain[1]-scale.domain[0])*100)+'%','stop-color':p.color}))); g.appendChild(lg); svg.appendChild(g); rect(svg,{...cb.box,fill:`url(#${id})`,stroke:'#111',w:1}); cb.ticks.forEach(v=>{ const y=interp(scale.domain,[cb.box.y+cb.box.height,cb.box.y],v); line(svg,{x1:cb.box.x+cb.box.width,y1:y,x2:cb.box.x+cb.box.width+6,y2:y}); text(svg,{text:String(v),x:cb.box.x+cb.box.width+10,y:y+5,fontSize:14}); }); text(svg,{text:cb.title.join('\n'),x:cb.box.x-10,y:cb.box.y-31,fontSize:16}); }
+    function drawRaster(svg,p){ const r=rng(771), b=p.rasterBox; text(svg,{text:'Control\n(no light)\n\nn = 123\ncells',x:1038,y:91,fontSize:14,anchor:'middle'}); text(svg,{text:'Optogenetic\ninhibition\n(ArchT)\n\nn = 123\ncells',x:1038,y:196,fontSize:14,anchor:'middle',fill:'#008f96'}); for(let row=0;row<62;row++) for(let k=0;k<30;k++){ const x=b.x+r()*b.width, y=b.y+row*1.45+r()*2; circle(svg,{x,y,r:.8,fill:'#111'}); } for(let row=0;row<62;row++) for(let k=0;k<14;k++){ const x=b.x+r()*b.width, y=b.y+96+row*1.45+r()*2; circle(svg,{x,y,r:.8,fill:'#009aa0'}); } line(svg,{x1:b.x,y1:b.y+b.height,x2:b.x+b.width,y2:b.y+b.height}); p.x.ticks.forEach(v=>{const x=interp(p.x.domain,[b.x,b.x+b.width],v); line(svg,{x1:x,y1:b.y+b.height,x2:x,y2:b.y+b.height+6}); text(svg,{text:String(v),x,y:b.y+b.height+22,fontSize:16,anchor:'middle'});}); text(svg,{text:p.x.label,x:b.x+b.width/2,y:b.y+b.height+40,fontSize:16,anchor:'middle'}); }
+    function arena(svg,b,seed){ const r=rng(seed); const pts=[[18,22],[180,22],[184,253],[22,253]].map(p=>[b.x+p[0],b.y+p[1]]); path(svg,'M'+pts.map(p=>p.join(' ')).join('L')+'Z',{stroke:'#fff',w:2,dash:'8 7'}); let d='M'+(b.x+50)+' '+(b.y+35); for(let i=0;i<180;i++){ const x=b.x+25+r()*(b.width-50), y=b.y+25+r()*(b.height-50); d+='L'+x.toFixed(1)+' '+y.toFixed(1); } path(svg,d,{stroke:'rgba(255,255,255,.65)',w:1}); }
+    fetch(SPEC_URL).then(r=>r.json()).then(render);
+    $('generatedButton').onclick=()=>{$('frame').classList.remove('show-reference');$('generatedButton').classList.add('active');$('referenceButton').classList.remove('active');};
+    $('referenceButton').onclick=()=>{$('frame').classList.add('show-reference');$('referenceButton').classList.add('active');$('generatedButton').classList.remove('active');};
+  </script>
+</body>
+</html>

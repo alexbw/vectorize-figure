@@ -1,0 +1,142 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-04-motor-manifold-F",
+  "source": {
+    "path": "../../assets/reference/reference-04-motor-manifold-F-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "First-pass reconstruction inferred visually from the raster crop. Generated visual layers are canvas heatmaps plus SVG text, axes, legend swatches, and colorbar; the source raster is only available in the labeled QA/reference view."
+  },
+  "canvas": {
+    "width": 745,
+    "height": 296,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 13,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Liberation Sans", "Roboto Condensed"],
+    "calibration": {
+      "fontStretch": "condensed",
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "Approximate compact sans-serif typography from visual inspection; no OCR/font calibration run for this first pass."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "direction-matrix",
+      "type": "matrix",
+      "domain": {
+        "trueDirectionDegrees": [0, 45, 90, 135, 180, 225, 270, 315],
+        "predictedDirectionDegrees": [0, 45, 90, 135, 180, 225, 270, 315]
+      },
+      "cellCount": 8,
+      "directionTickLabels": [
+        {"value": 0, "label": "0"},
+        {"value": 90, "label": "90"},
+        {"value": 180, "label": "180"},
+        {"value": 270, "label": "270"}
+      ],
+      "notes": "Rows encode true movement direction and columns encode predicted movement direction; shared 8 x 8 matrix scale."
+    },
+    {
+      "id": "probability-blue",
+      "type": "colorScale",
+      "domain": [0, 1],
+      "range": ["#f7fbff", "#08306b"],
+      "interpolation": "linearRgb"
+    }
+  ],
+  "layoutObjects": [
+    {"id": "panel-label", "type": "panelLabel", "text": "F", "anchor": {"x": 160, "y": 32}},
+    {"id": "figure-title", "type": "title", "text": "Crosss-validated confusion matrices (movement epoch)", "anchor": {"x": 192, "y": 31}},
+    {
+      "id": "series-legend",
+      "type": "lineLegend",
+      "bbox": {"x": 30, "y": 91, "width": 116, "height": 121},
+      "items": [
+        {"id": "legend-pca10", "label": "PCA (10D)", "color": "#7f32d8", "y": 96},
+        {"id": "legend-pca20", "label": "PCA (20D)", "color": "#006de5", "y": 121},
+        {"id": "legend-pls", "label": "PLS", "color": "#249000", "y": 145},
+        {"id": "legend-lda", "label": "LDA", "color": "#ff5a00", "y": 170},
+        {"id": "legend-ridge", "label": "Ridge", "color": "#e90000", "y": 195}
+      ],
+      "chanceText": {"text": "Chance (12.5%)", "anchor": {"x": 6, "y": 232}}
+    },
+    {
+      "id": "shared-y-axis-title",
+      "type": "axisTitle",
+      "text": "True dir. (deg)",
+      "anchor": {"x": 171, "y": 147},
+      "rotation": -90,
+      "axis": "trueDirectionDegrees"
+    },
+    {
+      "id": "shared-x-axis-title",
+      "type": "axisTitle",
+      "text": "Predicted dir. (deg)",
+      "anchor": {"x": 405, "y": 255},
+      "axis": "predictedDirectionDegrees"
+    },
+    {
+      "id": "probability-colorbar",
+      "type": "colorbar",
+      "colorScale": "probability-blue",
+      "bbox": {"x": 701, "y": 134, "width": 11, "height": 86},
+      "ticks": [
+        {"value": 1, "label": "1.0"},
+        {"value": 0.5, "label": "0.5"},
+        {"value": 0, "label": "0"}
+      ],
+      "title": {"text": "Prob.", "anchor": {"x": 700, "y": 119}}
+    }
+  ],
+  "panels": [
+    {"id": "matrix-pca-10d", "decoder": "PCA (10D)", "title": {"text": "PCA (10D)"}, "plot": {"bbox": {"x": 208, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 209, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.86, "offDiagonalStrength": 0.18, "seed": 4101},
+    {"id": "matrix-pca-20d", "decoder": "PCA (20D)", "title": {"text": "PCA (20D)"}, "plot": {"bbox": {"x": 304, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 305, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.91, "offDiagonalStrength": 0.13, "seed": 4102},
+    {"id": "matrix-pls", "decoder": "PLS", "title": {"text": "PLS"}, "plot": {"bbox": {"x": 400, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 401, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.92, "offDiagonalStrength": 0.10, "seed": 4103},
+    {"id": "matrix-lda", "decoder": "LDA", "title": {"text": "LDA"}, "plot": {"bbox": {"x": 495, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 496, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.94, "offDiagonalStrength": 0.08, "seed": 4104},
+    {"id": "matrix-ridge", "decoder": "Ridge", "title": {"text": "Ridge"}, "plot": {"bbox": {"x": 592, "y": 91, "width": 86, "height": 111}, "matrixBbox": {"x": 593, "y": 92, "width": 83, "height": 109}}, "diagonalStrength": 0.93, "offDiagonalStrength": 0.07, "seed": 4105}
+  ],
+  "data": {
+    "matrixRecipe": {
+      "type": "generatedConfusionMatrix",
+      "size": 8,
+      "description": "Editable recipe creates strong diagonal probabilities with faint adjacent confusions and low-amplitude deterministic texture. Values are visual approximations, not digitized measurements."
+    }
+  },
+  "rendering": {
+    "renderer": "hybrid",
+    "layers": ["legend", "heatmapCells", "matrixAxes", "titles", "sharedAxisTitles", "colorbar"],
+    "styles": {
+      "axisStroke": "#222222",
+      "axisStrokeWidth": 1,
+      "tickStrokeWidth": 1,
+      "matrixBorder": "#222222",
+      "legendStrokeWidth": 3,
+      "heatmapCellGap": 0,
+      "heatmapLow": "#f7fbff",
+      "heatmapHigh": "#08306b"
+    }
+  },
+  "constraints": [
+    {"id": "shared-matrix-scale", "type": "sharedScale", "panels": "all", "coordinateSystem": "direction-matrix"},
+    {"id": "colorbar-uses-heatmap-scale", "type": "colorScaleReference", "colorbar": "probability-colorbar", "scale": "probability-blue"},
+    {"id": "qa-separation", "type": "sourceUsage", "rule": "Source raster appears only in labeled reference view and is not used for generated canvas/SVG layers."}
+  ],
+  "validation": {
+    "expectedMatrixCount": 5,
+    "expectedCellsPerMatrix": 64,
+    "expectedLegendItems": 5,
+    "expectedColorbarTicks": 3
+  },
+  "confidence": [
+    {"target": "matrix values", "confidence": "medium-low", "note": "Heatmap values are generated to match the visible diagonal-dominant pattern; exact probabilities were not digitized."},
+    {"target": "layout", "confidence": "medium", "note": "Panel boxes, colorbar, title, and axis labels were visually estimated from native-resolution crop."},
+    {"target": "typography", "confidence": "medium-low", "note": "The source uses compact publication typography; font metrics are approximate for this first pass."},
+    {"target": "title text", "confidence": "medium", "note": "Title is transcribed as visible in the raster, including the apparent triple-s spelling in Crosss-validated."}
+  ]
+}

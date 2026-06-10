@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-04-motor-manifold-E reconstruction</title>
+  <style>
+    html, body { margin: 0; background: #f5f5f5; font-family: Arial, Helvetica, sans-serif; color: #111; }
+    .wrap { display: flex; gap: 18px; align-items: flex-start; padding: 18px; }
+    .candidate, .reference { background: #fff; border: 1px solid #d0d0d0; }
+    .label { font-size: 12px; font-weight: 700; margin: 0 0 6px; color: #333; }
+    .reference img { display: block; width: 409px; height: 296px; }
+    svg { display: block; width: 409px; height: 296px; }
+    text { font-family: Arial, Helvetica, sans-serif; dominant-baseline: middle; }
+    .axis text { font-size: 14px; fill: #111; }
+    .epoch-label { font-size: 14px; fill: #111; }
+    .title { font-size: 16px; font-weight: 700; }
+    .panel-label { font-size: 22px; font-weight: 700; }
+    .axis-title { font-size: 16px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div>
+      <p class="label">Generated editable candidate</p>
+      <div id="figure" class="candidate" data-role="generated-candidate"></div>
+    </div>
+    <div>
+      <p class="label">QA reference only: source raster</p>
+      <div class="reference" data-role="qa-reference">
+        <img alt="QA reference source raster" src="../../assets/reference/reference-04-motor-manifold-E-reference.png">
+      </div>
+    </div>
+  </div>
+  <script>
+    async function loadSpec() {
+      try {
+        const response = await fetch('./reference-04-motor-manifold-E.json');
+        if (response.ok) return await response.json();
+      } catch (error) {}
+      return JSON.parse(document.getElementById('embedded-spec').textContent);
+    }
+
+    function render(spec) {
+      const panel = spec.panels[0];
+      const plot = panel.plot;
+      const box = plot.dataBbox;
+      const xDomain = plot.axes.x.domain;
+      const yDomain = plot.axes.y.domain;
+      const sx = value => box.x + ((value - xDomain[0]) / (xDomain[1] - xDomain[0])) * box.width;
+      const sy = value => box.y + box.height - ((value - yDomain[0]) / (yDomain[1] - yDomain[0])) * box.height;
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', `0 0 ${spec.canvas.width} ${spec.canvas.height}`);
+      svg.setAttribute('role', 'img');
+      svg.setAttribute('aria-label', panel.title.text);
+
+      const el = (name, attrs = {}, parent = svg) => {
+        const node = document.createElementNS('http://www.w3.org/2000/svg', name);
+        Object.entries(attrs).forEach(([key, value]) => node.setAttribute(key, value));
+        parent.appendChild(node);
+        return node;
+      };
+      const text = (content, attrs = {}, parent = svg) => {
+        const node = el('text', attrs, parent);
+        node.textContent = content;
+        return node;
+      };
+
+      el('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background});
+
+      const defs = el('defs');
+      const grad = el('linearGradient', {id: 'score-gradient', x1: '0', y1: '1', x2: '0', y2: '0'}, defs);
+      [['0%', '#2166ac'], ['50%', '#f7f7f7'], ['100%', '#d73027']].forEach(([offset, color]) => el('stop', {offset, 'stop-color': color}, grad));
+
+      const clip = el('clipPath', {id: 'plot-clip'}, defs);
+      el('rect', {x: box.x, y: box.y, width: box.width, height: box.height}, clip);
+
+      plot.epochs.forEach(epoch => {
+        el('rect', {
+          x: sx(epoch.x0),
+          y: box.y,
+          width: sx(epoch.x1) - sx(epoch.x0),
+          height: box.height,
+          fill: epoch.fill,
+          'data-epoch': epoch.id
+        });
+        text(epoch.label, {x: (sx(epoch.x0) + sx(epoch.x1)) / 2, y: box.y - 10, 'text-anchor': 'middle', class: 'epoch-label'});
+      });
+
+      el('line', {x1: box.x, y1: box.y, x2: box.x + box.width, y2: box.y, stroke: '#555', 'stroke-width': 1});
+      el('line', {x1: box.x, y1: box.y + box.height, x2: box.x + box.width, y2: box.y + box.height, stroke: '#111', 'stroke-width': 1});
+      el('line', {x1: box.x, y1: box.y, x2: box.x, y2: box.y + box.height, stroke: '#111', 'stroke-width': 1});
+
+      const axisGroup = el('g', {class: 'axis'});
+      plot.axes.x.ticks.forEach(tick => {
+        const x = sx(tick.value);
+        el('line', {x1: x, y1: box.y + box.height, x2: x, y2: box.y + box.height + 5, stroke: '#111'}, axisGroup);
+        text(tick.label, {x, y: box.y + box.height + 17, 'text-anchor': 'middle'}, axisGroup);
+      });
+      plot.axes.y.ticks.forEach(tick => {
+        const y = sy(tick.value);
+        el('line', {x1: box.x - 5, y1: y, x2: box.x, y2: y, stroke: '#111'}, axisGroup);
+        text(tick.label, {x: box.x - 10, y, 'text-anchor': 'end'}, axisGroup);
+      });
+      text(plot.axes.x.label.text, {x: box.x + box.width / 2, y: box.y + box.height + plot.axes.x.label.offset, 'text-anchor': 'middle', class: 'axis-title'});
+      text(plot.axes.y.label.text, {x: 80, y: box.y + box.height / 2, transform: `rotate(-90 80 ${box.y + box.height / 2})`, 'text-anchor': 'middle', class: 'axis-title'});
+
+      const chanceY = sy(plot.chanceLine.y);
+      el('line', {x1: box.x, y1: chanceY, x2: box.x + box.width, y2: chanceY, stroke: plot.chanceLine.stroke, 'stroke-width': 1.2, 'stroke-dasharray': plot.chanceLine.strokeDasharray});
+
+      const smoothPoints = points => {
+        const dense = [];
+        for (let i = 0; i < points.length - 1; i++) {
+          const a = points[i], b = points[i + 1];
+          for (let step = 0; step < 8; step++) {
+            const t = step / 8;
+            const x = a[0] + (b[0] - a[0]) * t;
+            const y = a[1] + (b[1] - a[1]) * t + Math.sin((i * 8 + step) * 1.9) * 1.2 + Math.sin((i * 8 + step) * 4.7) * 0.45;
+            dense.push([x, y]);
+          }
+        }
+        dense.push(points[points.length - 1]);
+        return dense;
+      };
+      const linePath = points => points.map((point, index) => `${index ? 'L' : 'M'} ${sx(point[0]).toFixed(2)} ${sy(point[1]).toFixed(2)}`).join(' ');
+      const bandPath = (points, halfWidth) => {
+        const upper = points.map(point => [point[0], point[1] + halfWidth]);
+        const lower = points.slice().reverse().map(point => [point[0], point[1] - halfWidth]);
+        return `${linePath(upper)} L ${lower.map(point => `${sx(point[0]).toFixed(2)} ${sy(point[1]).toFixed(2)}`).join(' L ')} Z`;
+      };
+
+      const marksGroup = el('g', {'clip-path': 'url(#plot-clip)'});
+      panel.marks.forEach(mark => {
+        const dense = smoothPoints(mark.points);
+        el('path', {d: bandPath(dense, mark.bandHalfWidth), fill: mark.color, opacity: mark.bandOpacity, 'data-series': mark.id, 'data-mark': 'uncertainty-band'}, marksGroup);
+      });
+      panel.marks.forEach(mark => {
+        const dense = smoothPoints(mark.points);
+        el('path', {d: linePath(dense), fill: 'none', stroke: mark.color, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', 'data-series': mark.id, 'data-mark': 'mean-line'}, marksGroup);
+      });
+
+      const event = panel.annotations.find(item => item.type === 'eventLine');
+      el('line', {x1: sx(event.x), y1: box.y, x2: sx(event.x), y2: box.y + box.height, stroke: event.stroke, 'stroke-width': event.strokeWidth, 'data-annotation': event.id});
+
+      text(panel.label.text, {x: panel.label.x, y: panel.label.y, class: 'panel-label'});
+      text(panel.title.text, {x: panel.title.x, y: panel.title.y, class: 'title'});
+
+      const colorbar = panel.legends[0];
+      el('rect', {x: colorbar.bbox.x, y: colorbar.bbox.y, width: colorbar.bbox.width, height: colorbar.bbox.height, fill: 'url(#score-gradient)', stroke: '#777', 'stroke-width': 0.4});
+      text('score', {x: 0, y: 135, 'text-anchor': 'start', style: 'font-size:12px'});
+      colorbar.ticks.forEach(tick => text(tick.label, {x: tick.x, y: tick.y, 'text-anchor': 'start', style: 'font-size:14px'}));
+
+      document.getElementById('figure').replaceChildren(svg);
+    }
+
+    loadSpec().then(render);
+  </script>
+  <script type="application/json" id="embedded-spec">
+  {
+    "canvas": {"width": 409, "height": 296, "background": "#ffffff"},
+    "panels": []
+  }
+  </script>
+</body>
+</html>

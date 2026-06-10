@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vectorize Figure Full Viewer</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --rail: 56px;
+      --ink: #161616;
+      --muted: #6b6b6b;
+      --line: #d7d7d7;
+      --active: #0b0b0b;
+      --bg: #f5f5f3;
+      --paper: #ffffff;
+      --accent: #1f7a8c;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    .app {
+      display: grid;
+      grid-template-columns: var(--rail) 1fr;
+      width: 100vw;
+      height: 100vh;
+    }
+    .rail {
+      border-right: 1px solid var(--line);
+      background: #eeeeeb;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 6px;
+      overflow-y: auto;
+    }
+    .thumb {
+      width: 42px;
+      height: 42px;
+      border: 1px solid transparent;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+      position: relative;
+    }
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border: 1px solid #c9c9c6;
+      background: var(--paper);
+      display: block;
+    }
+    .thumb.active {
+      border-color: var(--active);
+      background: var(--active);
+    }
+    .thumb span {
+      position: absolute;
+      left: 2px;
+      bottom: 2px;
+      min-width: 16px;
+      height: 14px;
+      padding: 0 3px;
+      background: rgba(255,255,255,.92);
+      border: 1px solid rgba(0,0,0,.18);
+      font-size: 10px;
+      line-height: 12px;
+      font-weight: 700;
+      text-align: center;
+    }
+    .workspace {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: 44px 1fr;
+      height: 100vh;
+    }
+    .bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 14px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfbfa;
+    }
+    .title {
+      min-width: 0;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .title strong { font-size: 14px; }
+    .title span { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+    .mode {
+      width: 88px;
+      height: 28px;
+      border: 1px solid var(--active);
+      background: var(--active);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0;
+      cursor: pointer;
+    }
+    .open-link {
+      display: inline-flex;
+      align-items: center;
+      height: 28px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      background: var(--paper);
+      text-decoration: none;
+      font-size: 12px;
+    }
+    .hint { color: var(--muted); font-size: 12px; }
+    .stage-wrap {
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      overflow: hidden;
+    }
+    .stage {
+      position: relative;
+      width: min(calc(100vw - var(--rail) - 36px), calc((100vh - 80px) * 1.5));
+      aspect-ratio: 1536 / 1024;
+      background: var(--paper);
+      border: 1px solid #bebeba;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,.08);
+    }
+    .view {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: var(--paper);
+    }
+    iframe.view {
+      width: 1536px;
+      height: 1024px;
+      pointer-events: none;
+      transform-origin: top left;
+    }
+    img.view {
+      object-fit: contain;
+      display: block;
+    }
+    .view.hidden { display: none; }
+    .badge {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      height: 22px;
+      padding: 0 8px;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,.9);
+      border: 1px solid rgba(0,0,0,.18);
+      color: var(--ink);
+      font-size: 11px;
+      font-weight: 700;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <nav id="rail" class="rail" aria-label="Full figures"></nav>
+    <main class="workspace">
+      <header class="bar">
+        <div class="title">
+          <strong id="figureId"></strong>
+          <span id="figureTitle"></span>
+        </div>
+        <div class="controls">
+          <span class="hint">j/k browse · space toggle</span>
+          <button id="modeButton" class="mode" type="button"></button>
+          <a id="openLink" class="open-link" href="#" target="_blank" rel="noreferrer">Open</a>
+        </div>
+      </header>
+      <section class="stage-wrap">
+        <div class="stage" id="stage">
+          <iframe id="genView" class="view" title="Generated figure"></iframe>
+          <img id="refView" class="view hidden" alt="Reference figure">
+          <div id="badge" class="badge"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script>
+    const VIEWER_VERSION = '20260608-generated-surface-v4';
+    const GENERATED_SURFACE_SELECTOR = '#surface, [data-role="generated-candidate"], .surface, .candidate, svg[viewBox], canvas';
+    const QA_REFERENCE_SELECTOR = '#reference, [data-role="reference"], .reference, .reference-wrap, img.reference, figure.reference';
+    const figures = [
+      ['reference-01-place-code-opto', 'Place code optogenetics'],
+      ['reference-02-decision-dynamics', 'Decision dynamics'],
+      ['reference-03-learning-remapping', 'Learning remapping'],
+      ['reference-04-motor-manifold', 'Motor manifold'],
+      ['reference-05-grid-remapping', 'Grid remapping'],
+      ['reference-06-replay-stimulation', 'Replay stimulation'],
+      ['reference-07-cross-region-small-multiples', 'Cross-region small multiples'],
+      ['reference-08-neuropixels-central-heatmap', 'Neuropixels central heatmap']
+    ].map(([id, title], index) => ({
+      id,
+      title,
+      number: String(index + 1).padStart(2, '0'),
+      ref: `../assets/full-reference/${id}.png`,
+      gen: `full-figure-batch/${id}/${id}.html`
+    }));
+
+    const initialParams = new URLSearchParams(window.location.search);
+
+    function initialSelectedIndex() {
+      const id = initialParams.get('id');
+      if (id) {
+        const index = figures.findIndex(figure => figure.id === id);
+        if (index >= 0) return index;
+      }
+      const figureParam = Number.parseInt(initialParams.get('figure') || '', 10);
+      if (Number.isFinite(figureParam)) {
+        return Math.min(figures.length - 1, Math.max(0, figureParam - 1));
+      }
+      return 0;
+    }
+
+    function initialMode() {
+      const value = (initialParams.get('mode') || '').toLowerCase();
+      return value === 'ref' ? 'ref' : 'gen';
+    }
+
+    let selected = initialSelectedIndex();
+    let mode = initialMode();
+
+    const rail = document.getElementById('rail');
+    const genView = document.getElementById('genView');
+    const refView = document.getElementById('refView');
+    const figureId = document.getElementById('figureId');
+    const figureTitle = document.getElementById('figureTitle');
+    const modeButton = document.getElementById('modeButton');
+    const openLink = document.getElementById('openLink');
+    const badge = document.getElementById('badge');
+
+    function renderRail() {
+      rail.replaceChildren(...figures.map((figure, index) => {
+        const button = document.createElement('button');
+        button.className = `thumb${index === selected ? ' active' : ''}`;
+        button.type = 'button';
+        button.title = `${figure.number} ${figure.title}`;
+        button.addEventListener('click', () => select(index));
+
+        const img = document.createElement('img');
+        img.src = figure.ref;
+        img.alt = '';
+
+        const label = document.createElement('span');
+        label.textContent = figure.number;
+
+        button.append(img, label);
+        return button;
+      }));
+    }
+
+    function syncUrl() {
+      const url = new URL(window.location.href);
+      url.searchParams.set('figure', String(selected + 1));
+      url.searchParams.set('id', figures[selected].id);
+      url.searchParams.set('mode', mode);
+      history.replaceState(null, '', url);
+    }
+
+    function findGeneratedSurface(doc) {
+      return Array.from(doc.querySelectorAll(GENERATED_SURFACE_SELECTOR))
+        .find(node => !node.closest(QA_REFERENCE_SELECTOR)) || null;
+    }
+
+    function forceGeneratedIframe() {
+      try {
+        const doc = genView.contentDocument;
+        const frame = doc && doc.querySelector('#frame');
+        const surface = doc && findGeneratedSurface(doc);
+        const reference = doc && doc.querySelector(QA_REFERENCE_SELECTOR);
+        if (!doc || !frame) return;
+
+        frame.classList.remove('show-reference');
+
+        if (!doc.getElementById('outer-viewer-generated-mode')) {
+          const style = doc.createElement('style');
+          style.id = 'outer-viewer-generated-mode';
+          style.textContent = `
+            html, body { margin: 0 !important; width: 1536px !important; height: 1024px !important; overflow: hidden !important; background: #fff !important; }
+            header { display: none !important; }
+            main { margin: 0 !important; padding: 0 !important; min-height: 0 !important; width: 1536px !important; height: 1024px !important; display: block !important; }
+            #frame { position: absolute !important; left: 0 !important; top: 0 !important; width: 1536px !important; height: 1024px !important; border: 0 !important; box-shadow: none !important; }
+            #surface, [data-role="generated-candidate"], .surface, .candidate { display: block !important; visibility: visible !important; opacity: 1 !important; }
+            #reference, [data-role="reference"], .reference, .reference-wrap, .qa-label, .reference-label { display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; }
+          `;
+          doc.head.appendChild(style);
+        }
+
+        if (surface) {
+          surface.style.display = 'block';
+          surface.style.visibility = 'visible';
+          surface.style.opacity = '1';
+        }
+        if (reference) {
+          reference.removeAttribute('srcset');
+          reference.style.display = 'none';
+          reference.style.visibility = 'hidden';
+          reference.style.opacity = '0';
+        }
+
+        document.body.dataset.genReady = '1';
+        document.body.dataset.generatedSurfaceDisplay = surface ? getComputedStyle(surface).display : 'missing';
+        document.body.dataset.surfaceChildren = String(surface ? surface.children.length : 0);
+        document.body.dataset.internalReferenceDisplay = reference ? getComputedStyle(reference).display : 'missing';
+      } catch (error) {
+        document.body.dataset.genReady = 'blocked';
+      }
+    }
+
+    function render() {
+      const figure = figures[selected];
+      document.body.dataset.figure = figure.id;
+      document.body.dataset.mode = mode;
+      figureId.textContent = figure.number;
+      figureTitle.textContent = figure.title;
+      const genSrc = `${figure.gen}?viewer=${encodeURIComponent(VIEWER_VERSION)}&figure=${encodeURIComponent(figure.id)}&mode=gen`;
+      if (genView.dataset.src !== genSrc) {
+        document.body.dataset.genReady = 'loading';
+        genView.src = genSrc;
+        genView.dataset.figure = figure.id;
+        genView.dataset.src = genSrc;
+      }
+      if (refView.dataset.src !== figure.ref) {
+        refView.src = figure.ref;
+        refView.dataset.src = figure.ref;
+      }
+
+      const showingGen = mode === 'gen';
+      genView.classList.toggle('hidden', !showingGen);
+      refView.classList.toggle('hidden', showingGen);
+      document.body.dataset.generatedFrameDisplay = getComputedStyle(genView).display;
+      document.body.dataset.outerReferenceDisplay = getComputedStyle(refView).display;
+      modeButton.textContent = showingGen ? 'GEN' : 'REF';
+      modeButton.setAttribute('aria-pressed', showingGen ? 'false' : 'true');
+      badge.textContent = showingGen ? 'Generated' : 'Reference';
+      openLink.href = showingGen ? figure.gen : figure.ref;
+      openLink.textContent = showingGen ? 'Open HTML' : 'Open PNG';
+      renderRail();
+      syncScale();
+      if (showingGen) forceGeneratedIframe();
+      syncUrl();
+    }
+
+    function syncScale() {
+      const stage = document.getElementById('stage');
+      const scale = stage.clientWidth / 1536;
+      genView.style.transform = `scale(${scale})`;
+    }
+
+    function select(index) {
+      selected = (index + figures.length) % figures.length;
+      render();
+    }
+
+    function toggleMode() {
+      mode = mode === 'gen' ? 'ref' : 'gen';
+      render();
+    }
+
+    modeButton.addEventListener('click', toggleMode);
+    window.addEventListener('resize', syncScale);
+    genView.addEventListener('load', () => {
+      forceGeneratedIframe();
+    });
+    window.addEventListener('keydown', event => {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.key === 'j' || event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+        event.preventDefault();
+        select(selected + 1);
+      } else if (event.key === 'k' || event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+        event.preventDefault();
+        select(selected - 1);
+      } else if (event.key === ' ' || event.key.toLowerCase() === 't') {
+        event.preventDefault();
+        toggleMode();
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>

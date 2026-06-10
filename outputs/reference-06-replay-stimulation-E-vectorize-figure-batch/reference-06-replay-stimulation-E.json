@@ -1,0 +1,227 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-06-replay-stimulation-E",
+  "source": {
+    "path": "../../assets/reference/reference-06-replay-stimulation-E-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "nativeSize": {"width": 378, "height": 524},
+    "notes": "Single cropped violin/scatter panel reconstructed from visual inspection."
+  },
+  "canvas": {"width": 378, "height": 524, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "fontCandidates": ["Arial", "Helvetica", "Roboto Condensed", "Noto Sans"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "Approximate first-pass typography; source resembles condensed bold sans for title and Arial-like axis text."
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-e",
+      "type": "violinScatter",
+      "bbox": {"x": 0, "y": 0, "width": 378, "height": 524},
+      "label": {
+        "id": "panel-label",
+        "text": "E",
+        "x": 8,
+        "y": 6,
+        "fontSize": 25,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 7, "y": 5, "width": 16, "height": 22}
+      },
+      "title": {
+        "id": "panel-title",
+        "text": "Rank-order correlation (position)",
+        "x": 37,
+        "y": 8,
+        "fontSize": 20,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 37, "y": 7, "width": 285, "height": 23}
+      },
+      "coordinateSystems": [
+        {
+          "id": "panel-e.xy",
+          "type": "cartesianCategorical",
+          "plotBbox": {"x": 66, "y": 70, "width": 278, "height": 314},
+          "x": {
+            "categories": [
+              {"id": "pre-stim", "label": "Pre-stim", "x": 147, "color": "#0b7f7f"},
+              {"id": "stim", "label": "Stim", "x": 272, "color": "#ff5b11"}
+            ]
+          },
+          "y": {
+            "domain": [-1, 1],
+            "ticks": [
+              {"value": -1, "label": "-1.0"},
+              {"value": -0.5, "label": "-0.5"},
+              {"value": 0, "label": "0"},
+              {"value": 0.5, "label": "0.5"},
+              {"value": 1, "label": "1.0"}
+            ],
+            "label": {
+              "id": "y-axis-title",
+              "text": "Spearman  ρ",
+              "x": 24,
+              "y": 227,
+              "rotation": -90,
+              "fontSize": 18,
+              "fontWeight": 400
+            }
+          }
+        }
+      ],
+      "layoutObjects": [
+        {
+          "id": "x-axis",
+          "type": "axis",
+          "orientation": "bottom",
+          "line": {"x1": 66, "y1": 384, "x2": 344, "y2": 384},
+          "stroke": "#111111",
+          "strokeWidth": 1.6
+        },
+        {
+          "id": "y-axis",
+          "type": "axis",
+          "orientation": "left",
+          "line": {"x1": 66, "y1": 70, "x2": 66, "y2": 384},
+          "tickLength": 4,
+          "stroke": "#111111",
+          "strokeWidth": 1.4
+        },
+        {
+          "id": "zero-line",
+          "type": "referenceLine",
+          "usesTransform": "panel-e.xy",
+          "axis": "y",
+          "value": 0,
+          "x1": 66,
+          "x2": 338,
+          "stroke": "#111111",
+          "strokeWidth": 1.2,
+          "dasharray": "5 5",
+          "opacity": 0.78
+        }
+      ],
+      "data": {
+        "groups": [
+          {
+            "id": "pre-stim",
+            "nSessions": 15,
+            "color": "#0b7f7f",
+            "fill": "#a9dfe0",
+            "distribution": {
+              "type": "violinDensity",
+              "category": "pre-stim",
+              "maxHalfWidth": 42,
+              "bandwidth": 0.18,
+              "profile": [
+                {"y": -0.68, "w": 0.06},
+                {"y": -0.52, "w": 0.28},
+                {"y": -0.35, "w": 0.54},
+                {"y": -0.18, "w": 0.82},
+                {"y": 0.00, "w": 1.00},
+                {"y": 0.18, "w": 0.88},
+                {"y": 0.36, "w": 0.55},
+                {"y": 0.56, "w": 0.17}
+              ]
+            },
+            "summary": {"median": 0.05, "q1": -0.13, "q3": 0.23, "whiskerLow": -0.50, "whiskerHigh": 0.44},
+            "pointsRecipe": {"type": "seededGaussianMixture", "seed": 1601, "count": 78, "jitter": 33, "clusters": [{"mean": -0.10, "sd": 0.19, "weight": 0.55}, {"mean": 0.17, "sd": 0.17, "weight": 0.45}], "clip": [-0.62, 0.58]}
+          },
+          {
+            "id": "stim",
+            "nSessions": 15,
+            "color": "#ff5b11",
+            "fill": "#ffb17d",
+            "distribution": {
+              "type": "violinDensity",
+              "category": "stim",
+              "maxHalfWidth": 39,
+              "bandwidth": 0.16,
+              "profile": [
+                {"y": -0.32, "w": 0.07},
+                {"y": -0.12, "w": 0.33},
+                {"y": 0.05, "w": 0.64},
+                {"y": 0.24, "w": 0.96},
+                {"y": 0.43, "w": 1.00},
+                {"y": 0.61, "w": 0.68},
+                {"y": 0.81, "w": 0.10}
+              ]
+            },
+            "summary": {"median": 0.37, "q1": 0.18, "q3": 0.56, "whiskerLow": -0.12, "whiskerHigh": 0.63},
+            "pointsRecipe": {"type": "seededGaussianMixture", "seed": 2602, "count": 82, "jitter": 31, "clusters": [{"mean": 0.23, "sd": 0.17, "weight": 0.42}, {"mean": 0.50, "sd": 0.14, "weight": 0.58}], "clip": [-0.28, 0.72]}
+          }
+        ]
+      },
+      "marks": [
+        {"id": "pre-stim-violin", "type": "violin", "group": "pre-stim", "usesTransform": "panel-e.xy"},
+        {"id": "stim-violin", "type": "violin", "group": "stim", "usesTransform": "panel-e.xy"},
+        {"id": "pre-stim-points", "type": "scatter", "group": "pre-stim", "usesTransform": "panel-e.xy", "radius": 2.4, "opacity": 0.68},
+        {"id": "stim-points", "type": "scatter", "group": "stim", "usesTransform": "panel-e.xy", "radius": 2.4, "opacity": 0.92},
+        {"id": "pre-stim-summary", "type": "summaryInterval", "group": "pre-stim", "usesTransform": "panel-e.xy"},
+        {"id": "stim-summary", "type": "summaryInterval", "group": "stim", "usesTransform": "panel-e.xy"}
+      ],
+      "annotations": [
+        {
+          "id": "p-value-bracket",
+          "type": "bracket",
+          "x1": 148,
+          "x2": 272,
+          "y": 79,
+          "tick": 5,
+          "stroke": "#111111",
+          "strokeWidth": 1.2,
+          "label": {"text": "p < 0.001", "x": 210, "y": 71, "fontSize": 14, "fontStyle": "italic", "anchor": "middle"}
+        },
+        {
+          "id": "pre-stim-x-label",
+          "type": "categoryLabel",
+          "category": "pre-stim",
+          "text": "Pre-stim",
+          "subtext": "(n=15 sessions)",
+          "x": 147,
+          "y": 408,
+          "fontSize": 14,
+          "color": "#0b7f7f",
+          "anchor": "middle"
+        },
+        {
+          "id": "stim-x-label",
+          "type": "categoryLabel",
+          "category": "stim",
+          "text": "Stim",
+          "subtext": "(n=15 sessions)",
+          "x": 272,
+          "y": 408,
+          "fontSize": 14,
+          "color": "#ff5b11",
+          "anchor": "middle"
+        }
+      ],
+      "provenance": [
+        {"target": "plotBbox", "confidence": "medium", "note": "Axes measured visually from crop: left spine x=66, top y=70, bottom y=384."},
+        {"target": "scatter", "confidence": "low", "note": "Individual dots are generated to match apparent density and spread; not digitized measurements."},
+        {"target": "violin", "confidence": "medium", "note": "Violin outlines encoded as editable density profiles approximating source silhouettes."}
+      ]
+    }
+  ],
+  "validation": {
+    "expected": {
+      "canvasSize": [378, 524],
+      "groups": 2,
+      "yTicks": 5,
+      "violinMarks": 2,
+      "scatterPointCount": 160,
+      "sourceRasterCandidateUse": false
+    }
+  },
+  "confidence": [
+    {"target": "overall", "confidence": "first-pass", "note": "Independent reconstruction for visual inspection; source raster only appears in optional QA reference view."}
+  ]
+}

@@ -1,0 +1,513 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-02-decision-dynamics-C",
+  "source": {
+    "path": "../../assets/reference/reference-02-decision-dynamics-C-reference.png",
+    "usage": "QA/reference only; never rendered as a generated visual layer.",
+    "nativeSize": {
+      "width": 361,
+      "height": 514
+    },
+    "notes": "Single cropped panel C with two event-aligned z-scored peri-event firing-rate heatmaps, shared time axis, colorbar, and behavioral epoch strip."
+  },
+  "canvas": {
+    "width": 361,
+    "height": 514,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 12,
+    "color": "#111111",
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "First-pass visual match to a compact journal sans serif; no font scoring harness used."
+    }
+  },
+  "coordinateSystems": [
+    {
+      "id": "time-ms",
+      "type": "linear",
+      "domain": [
+        -500,
+        1600
+      ],
+      "eventAnchors": [
+        {
+          "id": "stimulus-onset",
+          "value": 0
+        },
+        {
+          "id": "response",
+          "value": 1100
+        }
+      ]
+    },
+    {
+      "id": "neuron-rank",
+      "type": "linear",
+      "domain": [
+        1,
+        142
+      ],
+      "orientation": "top-to-bottom"
+    },
+    {
+      "id": "z-score-diverging",
+      "type": "colorScale",
+      "domain": [
+        -3,
+        0,
+        3
+      ],
+      "colors": [
+        "#0b58c6",
+        "#f7f7f7",
+        "#f04a2e"
+      ]
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-c",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 361,
+        "height": 514
+      },
+      "label": {
+        "id": "panel-label",
+        "text": "C",
+        "x": 10,
+        "y": 29,
+        "fontSize": 22,
+        "fontWeight": 700
+      },
+      "title": {
+        "id": "panel-title",
+        "text": "Peri-event firing rates (z-scored)",
+        "x": 35,
+        "y": 30,
+        "fontSize": 16,
+        "fontWeight": 700,
+        "sourceBox": {
+          "x": 35,
+          "y": 14,
+          "width": 263,
+          "height": 18
+        }
+      },
+      "plots": [
+        {
+          "id": "left-choice",
+          "title": [
+            {
+              "text": "Left choice",
+              "fill": "#0037b8",
+              "fontSize": 14,
+              "fontWeight": 400
+            },
+            {
+              "text": " (",
+              "fill": "#111111",
+              "fontSize": 14
+            },
+            {
+              "text": "n",
+              "fill": "#111111",
+              "fontSize": 14,
+              "fontStyle": "italic"
+            },
+            {
+              "text": " = 142 trials)",
+              "fill": "#111111",
+              "fontSize": 14
+            }
+          ],
+          "titleAnchor": {
+            "x": 80,
+            "y": 68
+          },
+          "dataBbox": {
+            "x": 45,
+            "y": 77,
+            "width": 242,
+            "height": 139
+          },
+          "x": {
+            "uses": "time-ms",
+            "ticks": [
+              {
+                "value": -500,
+                "label": "-500"
+              },
+              {
+                "value": 0,
+                "label": "0"
+              },
+              {
+                "value": 500,
+                "label": "500"
+              },
+              {
+                "value": 1000,
+                "label": "1,000"
+              },
+              {
+                "value": 1500,
+                "label": "1,500"
+              }
+            ]
+          },
+          "y": {
+            "uses": "neuron-rank",
+            "ticks": [
+              {
+                "value": 1,
+                "label": "1"
+              },
+              {
+                "value": 142,
+                "label": "N"
+              }
+            ]
+          },
+          "heatmap": {
+            "id": "left-choice-heatmap",
+            "type": "heatmap",
+            "renderer": "canvas",
+            "colorScale": "z-score-diverging",
+            "recipe": {
+              "kind": "syntheticPeriEventFiringRates",
+              "seed": 14217,
+              "rows": 142,
+              "columns": 210,
+              "rowOrder": "choice-sorted",
+              "features": [
+                {
+                  "shape": "negativeBlock",
+                  "xCenter": 1500,
+                  "xWidth": 380,
+                  "rowCenter": 94,
+                  "rowWidth": 62,
+                  "amplitude": -1.7
+                },
+                {
+                  "shape": "positiveBlock",
+                  "xCenter": 890,
+                  "xWidth": 460,
+                  "rowCenter": 100,
+                  "rowWidth": 54,
+                  "amplitude": 1.35
+                },
+                {
+                  "shape": "positiveBlock",
+                  "xCenter": 1390,
+                  "xWidth": 330,
+                  "rowCenter": 24,
+                  "rowWidth": 28,
+                  "amplitude": 1.65
+                },
+                {
+                  "shape": "negativeBlock",
+                  "xCenter": 230,
+                  "xWidth": 330,
+                  "rowCenter": 35,
+                  "rowWidth": 34,
+                  "amplitude": -0.95
+                }
+              ],
+              "noise": {
+                "rowBanding": 0.32,
+                "pixelNoise": 0.42,
+                "horizontalSmoothing": 0.78
+              }
+            }
+          }
+        },
+        {
+          "id": "right-choice",
+          "title": [
+            {
+              "text": "Right choice",
+              "fill": "#e00000",
+              "fontSize": 14,
+              "fontWeight": 400
+            },
+            {
+              "text": " (",
+              "fill": "#111111",
+              "fontSize": 14
+            },
+            {
+              "text": "n",
+              "fill": "#111111",
+              "fontSize": 14,
+              "fontStyle": "italic"
+            },
+            {
+              "text": " = 138 trials)",
+              "fill": "#111111",
+              "fontSize": 14
+            }
+          ],
+          "titleAnchor": {
+            "x": 78,
+            "y": 262
+          },
+          "dataBbox": {
+            "x": 45,
+            "y": 272,
+            "width": 242,
+            "height": 135
+          },
+          "x": {
+            "uses": "time-ms",
+            "ticks": [
+              {
+                "value": -500,
+                "label": "-500"
+              },
+              {
+                "value": 0,
+                "label": "0"
+              },
+              {
+                "value": 500,
+                "label": "500"
+              },
+              {
+                "value": 1000,
+                "label": "1,000"
+              },
+              {
+                "value": 1500,
+                "label": "1,500"
+              }
+            ],
+            "label": {
+              "text": "Time from stimulus onset (ms)",
+              "x": 166,
+              "y": 449,
+              "fontSize": 12
+            }
+          },
+          "y": {
+            "uses": "neuron-rank",
+            "ticks": [
+              {
+                "value": 1,
+                "label": "1"
+              },
+              {
+                "value": 138,
+                "label": "N"
+              }
+            ],
+            "label": {
+              "text": "Neurons (sorted)",
+              "x": 24,
+              "y": 244,
+              "rotation": -90,
+              "fontSize": 16
+            }
+          },
+          "heatmap": {
+            "id": "right-choice-heatmap",
+            "type": "heatmap",
+            "renderer": "canvas",
+            "colorScale": "z-score-diverging",
+            "recipe": {
+              "kind": "syntheticPeriEventFiringRates",
+              "seed": 13829,
+              "rows": 138,
+              "columns": 210,
+              "rowOrder": "choice-sorted",
+              "features": [
+                {
+                  "shape": "negativeBlock",
+                  "xCenter": 1470,
+                  "xWidth": 420,
+                  "rowCenter": 91,
+                  "rowWidth": 58,
+                  "amplitude": -1.75
+                },
+                {
+                  "shape": "positiveBlock",
+                  "xCenter": 830,
+                  "xWidth": 520,
+                  "rowCenter": 96,
+                  "rowWidth": 57,
+                  "amplitude": 1.45
+                },
+                {
+                  "shape": "positiveBlock",
+                  "xCenter": 1390,
+                  "xWidth": 350,
+                  "rowCenter": 24,
+                  "rowWidth": 28,
+                  "amplitude": 1.55
+                },
+                {
+                  "shape": "negativeBlock",
+                  "xCenter": 250,
+                  "xWidth": 330,
+                  "rowCenter": 36,
+                  "rowWidth": 34,
+                  "amplitude": -0.85
+                }
+              ],
+              "noise": {
+                "rowBanding": 0.34,
+                "pixelNoise": 0.43,
+                "horizontalSmoothing": 0.78
+              }
+            }
+          }
+        }
+      ],
+      "layoutObjects": [
+        {
+          "id": "z-score-colorbar",
+          "type": "colorbar",
+          "x": 305,
+          "y": 204,
+          "width": 13,
+          "height": 127,
+          "colorScale": "z-score-diverging",
+          "ticks": [
+            {
+              "value": 3,
+              "label": "3"
+            },
+            {
+              "value": 0,
+              "label": "0"
+            },
+            {
+              "value": -3,
+              "label": "-3"
+            }
+          ],
+          "label": {
+            "text": "z-score",
+            "x": 297,
+            "y": 187,
+            "fontSize": 12
+          }
+        },
+        {
+          "id": "epoch-strip",
+          "type": "epochStrip",
+          "bbox": {
+            "x": 45,
+            "y": 462,
+            "width": 242,
+            "height": 25
+          },
+          "segments": [
+            {
+              "id": "stim",
+              "label": "Stim",
+              "x0": -500,
+              "x1": 0,
+              "fill": "#dbe8ff",
+              "stroke": "#8aa8d8"
+            },
+            {
+              "id": "delay",
+              "label": "Delay",
+              "x0": 0,
+              "x1": 850,
+              "fill": "#f5f5f5",
+              "stroke": "#b9b9b9"
+            },
+            {
+              "id": "response",
+              "label": "Response",
+              "x0": 850,
+              "x1": 1100,
+              "fill": "#ffd8d8",
+              "stroke": "#dd9a9a"
+            },
+            {
+              "id": "outcome",
+              "label": "Outcome",
+              "x0": 1100,
+              "x1": 1600,
+              "fill": "#f6f6f6",
+              "stroke": "#c7c7c7"
+            }
+          ],
+          "gap": 2,
+          "strokeWidth": 1.15,
+          "labelYOffset": 18
+        }
+      ],
+      "annotations": [
+        {
+          "id": "stimulus-event-lines",
+          "type": "eventLine",
+          "eventAnchor": "stimulus-onset",
+          "stroke": "#111111",
+          "strokeDasharray": "5 3"
+        },
+        {
+          "id": "response-event-lines",
+          "type": "eventLine",
+          "eventAnchor": "response",
+          "stroke": "#111111",
+          "strokeDasharray": "5 3"
+        }
+      ]
+    }
+  ],
+  "rendering": {
+    "layerOrder": [
+      "background",
+      "heatmaps",
+      "axes",
+      "ticks",
+      "event-lines",
+      "labels",
+      "colorbar",
+      "epoch-strip",
+      "qa-reference"
+    ],
+    "styleTokens": {
+      "axisStroke": "#111111",
+      "axisWidth": 1,
+      "tickLength": 4,
+      "dash": "5 3"
+    }
+  },
+  "validation": {
+    "mustNotUseSourceRasterAsGeneratedLayer": true,
+    "expectedPlotCount": 2,
+    "expectedEventLinesPerPlot": 2,
+    "expectedColorbarTicks": 3,
+    "nativeCanvasSize": [
+      361,
+      514
+    ]
+  },
+  "confidence": [
+    {
+      "aspect": "plot boxes and event anchors",
+      "level": "medium",
+      "note": "Measured visually from the raster at native size."
+    },
+    {
+      "aspect": "heatmap data values",
+      "level": "low",
+      "note": "Synthetic semantic recipe approximates visible z-score texture and broad response fields, not recovered original data."
+    },
+    {
+      "aspect": "typography",
+      "level": "medium",
+      "note": "Arial-like sans serif selected by visual inspection for first pass."
+    }
+  ]
+}

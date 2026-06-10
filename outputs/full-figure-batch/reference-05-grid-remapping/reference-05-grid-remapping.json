@@ -1,0 +1,114 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-05-grid-remapping",
+  "source": {
+    "path": "../../../assets/full-reference/reference-05-grid-remapping.png",
+    "usage": "QA-only reference view; not used by generated candidate layers.",
+    "nativeSize": {"width": 1536, "height": 1024},
+    "notes": "Independent first-pass reconstruction of a six-panel grid-cell remapping composite. Dense scatter, heatmaps, autocorrelograms, violins, paired dots, and posterior matrices are generated from deterministic recipes rather than source pixels."
+  },
+  "canvas": {"width": 1536, "height": 1024, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 16,
+    "color": "#050505",
+    "calibration": {"letterSpacing": 0, "lineHeight": 1.08, "notes": "Condensed scientific sans approximation; first-pass manual placement."}
+  },
+  "palette": {
+    "envA": "#7a320f",
+    "envB": "#00777d",
+    "cyan": "#19bfd0",
+    "heatA": ["#050505", "#241106", "#8f4313", "#e8a345", "#fff4c9"],
+    "heatB": ["#031012", "#06383a", "#0b8888", "#9cf2db", "#f4fff2"]
+  },
+  "colorScales": [
+    {"id": "spike-density", "domain": [1, 100], "label": "Spike\ndensity", "ticks": [{"value": 1, "label": "10^0"}, {"value": 10, "label": "10^1"}, {"value": 100, "label": "10^2"}], "stops": [{"value": 1, "color": "#fff4c8"}, {"value": 10, "color": "#c9681c"}, {"value": 100, "color": "#0a0504"}]},
+    {"id": "rate-a", "domain": [0, 15], "label": "Rate\n(Hz)", "ticks": [{"value": 0, "label": "0"}, {"value": 7.5, "label": "7.5"}, {"value": 15, "label": "15"}], "stops": [{"value": 0, "color": "#050505"}, {"value": 4, "color": "#3b1b0a"}, {"value": 8, "color": "#b45a1d"}, {"value": 12, "color": "#f5bf62"}, {"value": 15, "color": "#fff6d0"}]},
+    {"id": "rate-b", "domain": [0, 15], "label": "Rate\n(Hz)", "ticks": [], "stops": [{"value": 0, "color": "#031012"}, {"value": 4, "color": "#06383a"}, {"value": 8, "color": "#0b8888"}, {"value": 12, "color": "#9cf2db"}, {"value": 15, "color": "#f4fff2"}]},
+    {"id": "norm-counts", "domain": [0, 1], "label": "Norm.\ncounts", "ticks": [{"value": 0, "label": "0"}, {"value": 0.5, "label": "0.5"}, {"value": 1, "label": "1.0"}], "stops": [{"value": 0, "color": "#050505"}, {"value": 0.28, "color": "#45200d"}, {"value": 0.58, "color": "#c56a20"}, {"value": 0.82, "color": "#f2be50"}, {"value": 1, "color": "#fff4c9"}]},
+    {"id": "posterior", "domain": [0.001, 1], "label": "Posterior\nprobability", "ticks": [{"value": 0.001, "label": "10^-3"}, {"value": 0.01, "label": "10^-2"}, {"value": 0.1, "label": "10^-1"}, {"value": 1, "label": "10^0"}], "stops": [{"value": 0.001, "color": "#050505"}, {"value": 0.01, "color": "#3a1a09"}, {"value": 0.1, "color": "#bb601c"}, {"value": 1, "color": "#fff3c3"}]}
+  ],
+  "panels": [
+    {
+      "id": "A",
+      "type": "phase_precession_scatter_density",
+      "bbox": {"x": 22, "y": 64, "width": 465, "height": 435},
+      "label": {"text": "A", "x": 2, "y": 28, "fontSize": 29, "fontWeight": 700},
+      "title": {"text": "Phase precession", "x": 55, "y": 28, "fontSize": 22, "fontWeight": 700},
+      "plot": {"dataBbox": {"x": 60, "y": 58, "width": 326, "height": 318}, "xDomain": [0, 200], "yDomain": [0, 360], "xTicks": [0, 50, 100, 150, 200], "yTicks": [0, 90, 180, 270, 360], "xLabel": "Position on track (cm)", "yLabel": "Spike phase (°)"},
+      "marks": [{"id": "phase-cloud", "type": "scatter", "renderer": "canvas", "seed": 5071, "count": 10500, "slope": -1.48, "intercept": 318, "xJitter": 30, "yJitter": 38}, {"id": "density-band", "type": "heatmap", "renderer": "canvas", "seed": 5072}],
+      "annotations": [{"type": "line", "label": "regression", "x1": 67, "y1": 90, "x2": 386, "y2": 355, "stroke": "#24bfd2", "strokeWidth": 3}, {"type": "text", "text": "r = -0.72\np < 10^-6", "x": 323, "y": 80, "fontSize": 18}],
+      "colorbar": {"x": 416, "y": 166, "width": 15, "height": 160, "scale": "spike-density"}
+    },
+    {
+      "id": "B",
+      "type": "firing_rate_map_across_laps",
+      "bbox": {"x": 530, "y": 64, "width": 465, "height": 435},
+      "label": {"text": "B", "x": 0, "y": 28, "fontSize": 29, "fontWeight": 700},
+      "title": {"text": "Firing rate map across laps", "x": 43, "y": 28, "fontSize": 22, "fontWeight": 700},
+      "plot": {"xDomain": [0, 220], "yDomain": [1, 40], "xTicks": [0, 100, 200], "yTicks": [1, 10, 20, 30, 40], "xLabel": "Linearized position (cm)", "yLabel": "Lap"},
+      "heatmaps": [
+        {"id": "env-a", "bbox": {"x": 38, "y": 99, "width": 179, "height": 280}, "scale": "rate-a", "seed": 5201, "ridgeCenter": 124, "ridgeWidth": 13, "wobble": 16, "color": "#7a320f", "title": "Environment A", "underline": [38, 86, 216, 86]},
+        {"id": "env-b", "bbox": {"x": 222, "y": 99, "width": 183, "height": 280}, "scale": "rate-b", "seed": 5202, "ridgeCenter": 126, "ridgeWidth": 14, "wobble": 18, "color": "#00777d", "title": "Environment B", "underline": [222, 86, 405, 86]}
+      ],
+      "colorbar": {"x": 421, "y": 185, "width": 14, "height": 154, "scale": "rate-a"}
+    },
+    {
+      "id": "C",
+      "type": "spatial_autocorrelogram_pair",
+      "bbox": {"x": 1018, "y": 64, "width": 470, "height": 435},
+      "label": {"text": "C", "x": 0, "y": 28, "fontSize": 29, "fontWeight": 700},
+      "title": {"text": "Spatial autocorrelogram", "x": 42, "y": 28, "fontSize": 22, "fontWeight": 700},
+      "plot": {"xDomain": [-60, 60], "yDomain": [-60, 60], "xTicks": [-60, 0, 60], "yTicks": [-60, 0, 60], "xLabel": "Δx (cm)", "yLabel": "Δy (cm)"},
+      "maps": [
+        {"id": "env-a", "bbox": {"x": 57, "y": 118, "width": 173, "height": 215}, "seed": 5301, "title": "Environment A", "color": "#7a320f", "latticeAngle": 0.06},
+        {"id": "env-b", "bbox": {"x": 242, "y": 118, "width": 183, "height": 215}, "seed": 5302, "title": "Environment B", "color": "#00777d", "latticeAngle": 0.23}
+      ],
+      "colorbar": {"x": 449, "y": 148, "width": 15, "height": 176, "scale": "norm-counts"}
+    },
+    {
+      "id": "D",
+      "type": "gridness_score_distribution",
+      "bbox": {"x": 20, "y": 530, "width": 430, "height": 420},
+      "label": {"text": "D", "x": 0, "y": 26, "fontSize": 29, "fontWeight": 700},
+      "title": {"text": "Gridness score distribution", "x": 52, "y": 27, "fontSize": 22, "fontWeight": 700},
+      "plot": {"dataBbox": {"x": 63, "y": 58, "width": 346, "height": 302}, "xCategories": [{"id": "A", "label": "Environment A\n(n = 156 cells)", "color": "#7a320f", "x": 150}, {"id": "B", "label": "Environment B\n(n = 156 cells)", "color": "#00777d", "x": 322}], "yDomain": [-1.5, 1.5], "yTicks": [-1.5, -1, -0.5, 0, 0.5, 1, 1.5], "yLabel": "Gridness score"},
+      "marks": [{"id": "violins", "type": "violin", "seed": 5401, "n": 156, "means": [0.22, 0.25], "sd": 0.42, "jitter": 34}],
+      "annotations": [{"type": "line", "x1": 150, "y1": 75, "x2": 322, "y2": 75}, {"type": "text", "text": "p = 3.1 x 10^-5", "x": 236, "y": 69, "fontSize": 16, "fontStyle": "italic", "anchor": "middle"}]
+    },
+    {
+      "id": "E",
+      "type": "decoding_posterior_position",
+      "bbox": {"x": 515, "y": 530, "width": 435, "height": 420},
+      "label": {"text": "E", "x": 0, "y": 26, "fontSize": 29, "fontWeight": 700},
+      "title": {"text": "Decoding posterior (position)", "x": 44, "y": 27, "fontSize": 22, "fontWeight": 700},
+      "plot": {"xDomain": [0, 220], "yDomain": [0, 220], "xTicks": [0, 100, 200], "yTicks": [0, 100, 200], "xLabel": "True position (cm)", "yLabel": "Decoded position (cm)"},
+      "matrices": [
+        {"id": "env-a", "bbox": {"x": 46, "y": 112, "width": 158, "height": 210}, "seed": 5501, "title": "True position\nEnv. A", "color": "#7a320f", "diagonalJitter": 5},
+        {"id": "env-b", "bbox": {"x": 220, "y": 112, "width": 158, "height": 210}, "seed": 5502, "title": "True position\nEnv. B", "color": "#00777d", "diagonalJitter": 7}
+      ],
+      "colorbar": {"x": 402, "y": 154, "width": 14, "height": 178, "scale": "posterior"}
+    },
+    {
+      "id": "F",
+      "type": "within_animal_remapping_paired",
+      "bbox": {"x": 1005, "y": 530, "width": 510, "height": 420},
+      "label": {"text": "F", "x": 0, "y": 26, "fontSize": 29, "fontWeight": 700},
+      "title": {"text": "Within-animal remapping (paired)", "x": 36, "y": 27, "fontSize": 22, "fontWeight": 700},
+      "pairedPlot": {"dataBbox": {"x": 64, "y": 58, "width": 240, "height": 302}, "yDomain": [-1.5, 1.5], "yTicks": [-1.5, -1, -0.5, 0, 0.5, 1, 1.5], "yLabel": "Gridness score", "categories": [{"id": "A", "label": "Environment A", "x": 105, "color": "#7a320f"}, {"id": "B", "label": "Environment B", "x": 295, "color": "#00777d"}], "seed": 5601, "n": 42},
+      "deltaPlot": {"dataBbox": {"x": 406, "y": 120, "width": 82, "height": 214}, "yDomain": [-1, 1], "yTicks": [-1, -0.5, 0, 0.5, 1], "title": "Δ Gridness\n(B - A)", "pText": "p = 2.7 x 10^-6", "seed": 5602}
+    }
+  ],
+  "provenance": [
+    {"target": "panel layout", "confidence": "high", "note": "Six panels A-F and full 1536x1024 canvas inferred from supplied raster."},
+    {"target": "data values", "confidence": "medium-low", "note": "Visible axes, p-values, r-value, sample sizes, and labels were transcribed by visual inspection; synthetic point clouds and matrices approximate the published visual grammar only."},
+    {"target": "generated dense fields", "confidence": "medium", "note": "Canvas layers are deterministic recipes encoded above; generated candidate does not use source raster pixels."}
+  ],
+  "validation": {
+    "constraints": [
+      "Generated visual layers must not call drawImage or use CSS background images.",
+      "The source PNG path may appear only in the clearly labeled QA/reference image element.",
+      "Panel boxes, plot boxes, ticks, labels, legends, colorbars, helper strips, annotations, and provenance notes are explicit and editable in JSON."
+    ]
+  }
+}

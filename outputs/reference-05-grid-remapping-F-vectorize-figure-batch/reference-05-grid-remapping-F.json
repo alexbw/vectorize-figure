@@ -1,0 +1,547 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-05-grid-remapping-F",
+  "source": {
+    "path": "../../assets/reference/reference-05-grid-remapping-F-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Single cropped panel reconstructed from visible axes, paired scatter lines, and a violin inset. Numeric values are visual approximations for editable first-pass inspection."
+  },
+  "canvas": {
+    "width": 566,
+    "height": 524,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": [
+      "Arial",
+      "Helvetica",
+      "Roboto",
+      "Noto Sans"
+    ],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "notes": "Approximate Arial/Helvetica match; title and panel label are bold condensed visually in source."
+    }
+  },
+  "styleTokens": {
+    "axisStroke": "#111111",
+    "dashStroke": "#222222",
+    "pairedLine": "#9a9a9a",
+    "environmentA": "#7a330e",
+    "environmentB": "#00757d",
+    "violinFill": "#4eb9b3",
+    "violinStroke": "#111111",
+    "quartileStroke": "#6d6d6d"
+  },
+  "coordinateSystems": [
+    {
+      "id": "paired.xy",
+      "type": "cartesian",
+      "x": {
+        "categories": [
+          {
+            "id": "A",
+            "label": "Environment A",
+            "value": 0
+          },
+          {
+            "id": "B",
+            "label": "Environment B",
+            "value": 1
+          }
+        ]
+      },
+      "y": {
+        "domain": [
+          -1.5,
+          1.5
+        ]
+      },
+      "plotBbox": {
+        "x": 99,
+        "y": 88,
+        "width": 272,
+        "height": 324
+      }
+    },
+    {
+      "id": "delta.xy",
+      "type": "cartesian",
+      "x": {
+        "domain": [
+          -1,
+          1
+        ]
+      },
+      "y": {
+        "domain": [
+          -1,
+          1
+        ]
+      },
+      "plotBbox": {
+        "x": 440,
+        "y": 151,
+        "width": 96,
+        "height": 212
+      }
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-F",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 566,
+        "height": 524
+      },
+      "label": {
+        "id": "panel-label",
+        "text": "F",
+        "x": 35,
+        "y": 55,
+        "fontSize": 31,
+        "fontWeight": 700,
+        "sourceBox": {
+          "x": 35,
+          "y": 31,
+          "width": 18,
+          "height": 27
+        },
+        "fit": "manual"
+      },
+      "title": {
+        "id": "panel-title",
+        "text": "Within-animal remapping (paired)",
+        "x": 72,
+        "y": 60,
+        "fontSize": 22,
+        "fontWeight": 700,
+        "sourceBox": {
+          "x": 72,
+          "y": 42,
+          "width": 286,
+          "height": 22
+        },
+        "fit": "manual"
+      },
+      "plot": {
+        "id": "paired-plot",
+        "usesTransform": "paired.xy",
+        "bbox": {
+          "x": 99,
+          "y": 88,
+          "width": 272,
+          "height": 324
+        },
+        "axes": {
+          "xAxis": {
+            "id": "paired-x-axis",
+            "visibleLine": false,
+            "categories": [
+              {
+                "value": 0,
+                "label": "Environment A",
+                "color": "#7a330e",
+                "x": 141
+              },
+              {
+                "value": 1,
+                "label": "Environment B",
+                "color": "#00757d",
+                "x": 330
+              }
+            ]
+          },
+          "yAxis": {
+            "id": "paired-y-axis",
+            "line": {
+              "x1": 99,
+              "y1": 88,
+              "x2": 99,
+              "y2": 412
+            },
+            "tickLength": 7,
+            "ticks": [
+              {
+                "value": -1.5,
+                "label": "-1.5"
+              },
+              {
+                "value": -1,
+                "label": "-1.0"
+              },
+              {
+                "value": -0.5,
+                "label": "-0.5"
+              },
+              {
+                "value": 0,
+                "label": "0"
+              },
+              {
+                "value": 0.5,
+                "label": "0.5"
+              },
+              {
+                "value": 1,
+                "label": "1.0"
+              },
+              {
+                "value": 1.5,
+                "label": "1.5"
+              }
+            ],
+            "label": {
+              "text": "Gridness score",
+              "x": 47,
+              "y": 250,
+              "rotation": -90
+            }
+          },
+          "zeroLine": {
+            "id": "paired-zero-line",
+            "value": 0,
+            "x1": 99,
+            "x2": 371,
+            "dasharray": "5 4"
+          }
+        }
+      },
+      "marks": [
+        {
+          "id": "paired-remapping-lines",
+          "type": "pairedScatter",
+          "usesTransform": "paired.xy",
+          "xPositions": {
+            "A": 141,
+            "B": 330
+          },
+          "markerRadius": 3.2,
+          "data": [
+            {
+              "id": 1,
+              "A": 1.32,
+              "B": 0.72
+            },
+            {
+              "id": 2,
+              "A": 1.2,
+              "B": 0.52
+            },
+            {
+              "id": 3,
+              "A": 1.13,
+              "B": 0.88
+            },
+            {
+              "id": 4,
+              "A": 1.06,
+              "B": 0.36
+            },
+            {
+              "id": 5,
+              "A": 0.99,
+              "B": 0.47
+            },
+            {
+              "id": 6,
+              "A": 0.93,
+              "B": 0.18
+            },
+            {
+              "id": 7,
+              "A": 0.86,
+              "B": 0.63
+            },
+            {
+              "id": 8,
+              "A": 0.8,
+              "B": 0.31
+            },
+            {
+              "id": 9,
+              "A": 0.74,
+              "B": 0.08
+            },
+            {
+              "id": 10,
+              "A": 0.67,
+              "B": 0.55
+            },
+            {
+              "id": 11,
+              "A": 0.61,
+              "B": -0.09
+            },
+            {
+              "id": 12,
+              "A": 0.55,
+              "B": 0.22
+            },
+            {
+              "id": 13,
+              "A": 0.5,
+              "B": -0.22
+            },
+            {
+              "id": 14,
+              "A": 0.43,
+              "B": 0.02
+            },
+            {
+              "id": 15,
+              "A": 0.35,
+              "B": -0.35
+            },
+            {
+              "id": 16,
+              "A": 0.27,
+              "B": 0.41
+            },
+            {
+              "id": 17,
+              "A": 0.18,
+              "B": -0.55
+            },
+            {
+              "id": 18,
+              "A": 0.1,
+              "B": -0.67
+            },
+            {
+              "id": 19,
+              "A": -0.08,
+              "B": -0.8
+            },
+            {
+              "id": 20,
+              "A": -0.28,
+              "B": -0.45
+            },
+            {
+              "id": 21,
+              "A": -0.45,
+              "B": -0.88
+            },
+            {
+              "id": 22,
+              "A": -0.62,
+              "B": -0.13
+            },
+            {
+              "id": 23,
+              "A": -0.95,
+              "B": -0.7
+            }
+          ],
+          "style": {
+            "lineStroke": "#9a9a9a",
+            "lineWidth": 1.15,
+            "lineOpacity": 0.86,
+            "fillA": "#7a330e",
+            "fillB": "#00757d"
+          }
+        },
+        {
+          "id": "delta-violin",
+          "type": "violin",
+          "usesTransform": "delta.xy",
+          "centerX": 488,
+          "outline": [
+            {
+              "y": -1,
+              "halfWidth": 1
+            },
+            {
+              "y": -0.78,
+              "halfWidth": 5
+            },
+            {
+              "y": -0.6,
+              "halfWidth": 11
+            },
+            {
+              "y": -0.42,
+              "halfWidth": 20
+            },
+            {
+              "y": -0.25,
+              "halfWidth": 27
+            },
+            {
+              "y": -0.08,
+              "halfWidth": 28
+            },
+            {
+              "y": 0.08,
+              "halfWidth": 23
+            },
+            {
+              "y": 0.24,
+              "halfWidth": 16
+            },
+            {
+              "y": 0.42,
+              "halfWidth": 9
+            },
+            {
+              "y": 0.62,
+              "halfWidth": 4
+            },
+            {
+              "y": 1,
+              "halfWidth": 1
+            }
+          ],
+          "fill": "#4eb9b3",
+          "fillOpacity": 0.88,
+          "stroke": "#111111",
+          "strokeWidth": 1.8,
+          "summary": {
+            "median": -0.1,
+            "quartiles": [
+              -0.37,
+              0.18
+            ],
+            "whiskers": [
+              -0.98,
+              0.88
+            ]
+          },
+          "interiorBands": [
+            {
+              "y1": -0.44,
+              "y2": -0.29,
+              "width": 40,
+              "fill": "#3aa9a9",
+              "opacity": 0.55
+            },
+            {
+              "y1": -0.19,
+              "y2": -0.04,
+              "width": 47,
+              "fill": "#87c8c6",
+              "opacity": 0.72
+            },
+            {
+              "y1": 0.08,
+              "y2": 0.22,
+              "width": 38,
+              "fill": "#3aa9a9",
+              "opacity": 0.55
+            }
+          ]
+        }
+      ],
+      "annotations": [
+        {
+          "id": "delta-title",
+          "type": "text",
+          "text": "Gridness\n(B - A)",
+          "x": 449,
+          "y": 84,
+          "fontSize": 16,
+          "fontWeight": 400,
+          "anchor": "start"
+        },
+        {
+          "id": "delta-symbol",
+          "type": "text",
+          "text": "Δ",
+          "x": 434,
+          "y": 84,
+          "fontSize": 17,
+          "fontWeight": 400,
+          "anchor": "start"
+        },
+        {
+          "id": "p-value",
+          "type": "text",
+          "text": "p = 2.7 × 10^-6",
+          "x": 453,
+          "y": 144,
+          "fontSize": 15,
+          "fontStyle": "italic",
+          "anchor": "start"
+        },
+        {
+          "id": "delta-axis",
+          "type": "axis",
+          "usesTransform": "delta.xy",
+          "orientation": "left",
+          "x": 440,
+          "ticks": [
+            {
+              "value": -1,
+              "label": "-1.0"
+            },
+            {
+              "value": -0.5,
+              "label": "-0.5"
+            },
+            {
+              "value": 0,
+              "label": "0"
+            },
+            {
+              "value": 0.5,
+              "label": "0.5"
+            },
+            {
+              "value": 1,
+              "label": "1.0"
+            }
+          ]
+        },
+        {
+          "id": "delta-zero-line",
+          "type": "zeroLine",
+          "usesTransform": "delta.xy",
+          "value": 0,
+          "x1": 440,
+          "x2": 536,
+          "dasharray": "5 4"
+        }
+      ],
+      "provenance": [
+        {
+          "target": "paired values",
+          "confidence": "low",
+          "note": "Values are visually approximated from the raster; line count and trend are prioritized over exact measurements."
+        },
+        {
+          "target": "violin density",
+          "confidence": "medium",
+          "note": "Outline is hand-approximated to match the visible silhouette and summary marker."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "expectedCanvas": {
+      "width": 566,
+      "height": 524
+    },
+    "expectedCounts": {
+      "pairedAnimals": 23,
+      "yTicks": 7,
+      "deltaTicks": 5
+    },
+    "noGeneratedRasterReuse": true
+  },
+  "confidence": [
+    {
+      "target": "overall first-pass reconstruction",
+      "confidence": "medium",
+      "note": "Editable semantic reconstruction intended for visual inspection, not pixel-perfect data extraction."
+    }
+  ]
+}

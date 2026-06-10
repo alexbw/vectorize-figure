@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-02-decision-dynamics-G reconstruction</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #aaaaaa;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .surface,
+    .reference {
+      position: absolute;
+      inset: 0;
+    }
+
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+    }
+
+    .show-reference .surface {
+      display: none;
+    }
+
+    .show-reference .reference {
+      display: block;
+    }
+
+    svg {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-02-decision-dynamics-G</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">QA reference</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA reference source image">
+    </div>
+  </main>
+
+  <script>
+    const SPEC_URL = './reference-02-decision-dynamics-G.json';
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function byId(id) {
+      return document.getElementById(id);
+    }
+
+    function node(tag, attrs = {}) {
+      const item = document.createElementNS(SVG_NS, tag);
+      Object.entries(attrs).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) item.setAttribute(key, value);
+      });
+      return item;
+    }
+
+    function addText(svg, spec, defaults = {}) {
+      const text = node('text', {
+        x: spec.x,
+        y: spec.y,
+        fill: spec.fill || defaults.color || '#111111',
+        'font-family': spec.fontFamily || defaults.fontFamily,
+        'font-size': spec.fontSize || defaults.defaultSize || 14,
+        'font-weight': spec.fontWeight || 400,
+        'text-anchor': spec.anchor || 'start',
+        'dominant-baseline': spec.baseline || 'alphabetic',
+        'letter-spacing': spec.letterSpacing ?? defaults.calibration?.letterSpacing ?? 0,
+        transform: spec.rotation ? `rotate(${spec.rotation} ${spec.x} ${spec.y})` : undefined,
+        'data-id': spec.id,
+        'data-role': spec.role || 'text'
+      });
+      String(spec.text || '').split('\n').forEach((line, index) => {
+        const tspan = node('tspan', {
+          x: spec.x,
+          dy: index === 0 ? 0 : (spec.lineHeight || defaults.calibration?.lineHeight || 1.08) * (spec.fontSize || defaults.defaultSize || 14)
+        });
+        tspan.textContent = line;
+        text.appendChild(tspan);
+      });
+      svg.appendChild(text);
+      return text;
+    }
+
+    function makeScale(plot) {
+      const box = plot.dataBbox;
+      const [x0, x1] = plot.x.domain;
+      const [y0, y1] = plot.y.domain;
+      return {
+        x(value) {
+          return box.x + ((value - x0) / (x1 - x0)) * box.width;
+        },
+        y(value) {
+          return box.y + box.height - ((value - y0) / (y1 - y0)) * box.height;
+        }
+      };
+    }
+
+    function seeded(seed) {
+      let state = seed >>> 0;
+      return () => {
+        state = (1664525 * state + 1013904223) >>> 0;
+        return state / 4294967296;
+      };
+    }
+
+    function smoothPath(points, scale) {
+      const projected = points.map(point => [scale.x(point.pc1), scale.y(point.pc2)]);
+      if (projected.length < 2) return '';
+      let d = `M ${projected[0][0].toFixed(2)} ${projected[0][1].toFixed(2)}`;
+      for (let i = 1; i < projected.length; i += 1) {
+        const [x0, y0] = projected[i - 1];
+        const [x1, y1] = projected[i];
+        const cx1 = x0 + (x1 - x0) * 0.45;
+        const cy1 = y0;
+        const cx2 = x0 + (x1 - x0) * 0.55;
+        const cy2 = y1;
+        d += ` C ${cx1.toFixed(2)} ${cy1.toFixed(2)}, ${cx2.toFixed(2)} ${cy2.toFixed(2)}, ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+      }
+      return d;
+    }
+
+    function bandPath(series, scale) {
+      const upper = series.mean.map((point, index) => ({pc1: point.pc1, pc2: point.pc2 + series.sem[index]}));
+      const lower = series.mean.map((point, index) => ({pc1: point.pc1, pc2: point.pc2 - series.sem[index]})).reverse();
+      const all = upper.concat(lower);
+      const projected = all.map(point => [scale.x(point.pc1), scale.y(point.pc2)]);
+      let d = `M ${projected[0][0].toFixed(2)} ${projected[0][1].toFixed(2)}`;
+      for (let i = 1; i < projected.length; i += 1) d += ` L ${projected[i][0].toFixed(2)} ${projected[i][1].toFixed(2)}`;
+      return `${d} Z`;
+    }
+
+    function drawAxes(svg, panel, defaults, scale) {
+      const plot = panel.plot;
+      const axisGroup = node('g', {'data-role': 'axes', 'data-id': 'axes'});
+      axisGroup.appendChild(node('line', {
+        ...plot.axes.xAxis.line,
+        stroke: '#111111',
+        'stroke-width': 1.4,
+        'shape-rendering': 'crispEdges',
+        'data-id': plot.axes.xAxis.id
+      }));
+      axisGroup.appendChild(node('line', {
+        ...plot.axes.yAxis.line,
+        stroke: '#111111',
+        'stroke-width': 1.4,
+        'shape-rendering': 'crispEdges',
+        'data-id': plot.axes.yAxis.id
+      }));
+      plot.axes.zeroGuides.forEach(guide => {
+        const attrs = guide.axis === 'x'
+          ? {x1: scale.x(guide.value), y1: plot.dataBbox.y, x2: scale.x(guide.value), y2: plot.dataBbox.y + plot.dataBbox.height}
+          : {x1: plot.dataBbox.x, y1: scale.y(guide.value), x2: plot.dataBbox.x + plot.dataBbox.width, y2: scale.y(guide.value)};
+        axisGroup.appendChild(node('line', {
+          ...attrs,
+          stroke: '#555555',
+          'stroke-width': 1,
+          'stroke-dasharray': guide.dasharray,
+          'data-id': guide.id,
+          'data-role': 'zero-guide'
+        }));
+      });
+      plot.x.ticks.forEach(tick => {
+        const x = scale.x(tick.value);
+        axisGroup.appendChild(node('line', {
+          x1: x,
+          y1: plot.axes.xAxis.line.y1,
+          x2: x,
+          y2: plot.axes.xAxis.line.y1 + plot.axes.xAxis.tickLength,
+          stroke: '#111111',
+          'stroke-width': 1.2,
+          'data-axis': 'x',
+          'data-value': tick.value
+        }));
+        addText(axisGroup, {
+          id: `x-tick-${tick.label}`,
+          text: tick.label,
+          x,
+          y: plot.axes.xAxis.line.y1 + 20,
+          fontSize: 16,
+          anchor: 'middle'
+        }, defaults);
+      });
+      plot.y.ticks.forEach(tick => {
+        const y = scale.y(tick.value);
+        axisGroup.appendChild(node('line', {
+          x1: plot.axes.yAxis.line.x1,
+          y1: y,
+          x2: plot.axes.yAxis.line.x1 - plot.axes.yAxis.tickLength,
+          y2: y,
+          stroke: '#111111',
+          'stroke-width': 1.2,
+          'data-axis': 'y',
+          'data-value': tick.value
+        }));
+        addText(axisGroup, {
+          id: `y-tick-${tick.label}`,
+          text: tick.label,
+          x: plot.axes.yAxis.line.x1 - 13,
+          y: y + 5,
+          fontSize: 16,
+          anchor: 'end'
+        }, defaults);
+      });
+      addText(axisGroup, plot.x.label, defaults);
+      addText(axisGroup, plot.y.label, defaults);
+      svg.appendChild(axisGroup);
+    }
+
+    function drawLegend(svg, panel, defaults) {
+      const group = node('g', {'data-id': panel.legend.id, 'data-role': 'legend'});
+      panel.legend.items.forEach((item, index) => {
+        const y = panel.legend.y + index * panel.legend.rowGap;
+        if (item.type === 'line') {
+          group.appendChild(node('line', {
+            x1: panel.legend.x,
+            y1: y,
+            x2: panel.legend.x + panel.legend.lineLength,
+            y2: y,
+            stroke: item.stroke,
+            'stroke-width': 2.2,
+            'data-series': item.series
+          }));
+        } else {
+          group.appendChild(node('circle', {
+            cx: panel.legend.x + 8,
+            cy: y,
+            r: 5.5,
+            fill: item.fill,
+            'data-role': 'legend-marker'
+          }));
+        }
+        addText(group, {
+          id: `${item.id}-label`,
+          text: item.label,
+          x: panel.legend.x + 25,
+          y: y + 4,
+          fontSize: 14,
+          anchor: 'start'
+        }, defaults);
+      });
+      svg.appendChild(group);
+    }
+
+    function drawTrialCloud(svg, series, scale) {
+      const group = node('g', {'data-id': `trial-cloud-${series.id}`, 'data-role': 'trial-cloud', 'data-series': series.id});
+      const random = seeded(series.trialRecipe.seed);
+      for (let i = 0; i < series.trialRecipe.count; i += 1) {
+        const trial = series.mean.map((point, index) => {
+          const phase = (i / series.trialRecipe.count) * Math.PI * 2 + index * 0.8;
+          return {
+            pc1: point.pc1 + (random() - 0.5) * series.trialRecipe.pc1Jitter + Math.sin(phase) * series.trialRecipe.pc1Jitter * 0.35,
+            pc2: point.pc2 + (random() - 0.5) * series.trialRecipe.pc2Jitter + Math.cos(phase) * series.sem[index] * 0.9
+          };
+        });
+        group.appendChild(node('path', {
+          d: smoothPath(trial, scale),
+          fill: 'none',
+          stroke: series.stroke,
+          'stroke-width': 0.75,
+          opacity: series.trialRecipe.opacity,
+          'data-role': 'trial-path'
+        }));
+      }
+      svg.appendChild(group);
+    }
+
+    function drawSeries(svg, series, scale) {
+      drawTrialCloud(svg, series, scale);
+      svg.appendChild(node('path', {
+        d: bandPath(series, scale),
+        fill: series.bandFill,
+        opacity: 0.34,
+        stroke: 'none',
+        'data-id': `sem-band-${series.id}`,
+        'data-role': 'uncertainty-band',
+        'data-series': series.id
+      }));
+      svg.appendChild(node('path', {
+        d: smoothPath(series.mean, scale),
+        fill: 'none',
+        stroke: series.stroke,
+        'stroke-width': 3,
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round',
+        'data-id': `mean-${series.id}`,
+        'data-role': 'mean-path',
+        'data-series': series.id
+      }));
+      series.timepoints.forEach(point => {
+        const x = scale.x(point.pc1);
+        const y = scale.y(point.pc2);
+        svg.appendChild(node('circle', {
+          cx: x,
+          cy: y,
+          r: 4.3,
+          fill: '#050505',
+          stroke: '#050505',
+          'stroke-width': 1,
+          'data-id': point.id,
+          'data-role': 'timepoint-marker',
+          'data-series': series.id
+        }));
+        if (point.label) {
+          addText(svg, {
+            id: `${point.id}-label`,
+            text: point.label,
+            x: x + (point.labelOffset?.x || 0),
+            y: y + (point.labelOffset?.y || 0),
+            fontSize: 14,
+            anchor: point.anchor || 'start'
+          }, {fontFamily: 'Arial Narrow, Helvetica Neue, Arial, sans-serif', defaultSize: 14, color: '#111111'});
+        }
+      });
+    }
+
+    function render(spec) {
+      const frame = byId('frame');
+      const surface = byId('surface');
+      const reference = byId('reference');
+      const panel = spec.panels[0];
+      const defaults = spec.typography;
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      reference.src = spec.source.path;
+      byId('title').textContent = spec.id;
+
+      const svg = node('svg', {
+        width: spec.canvas.width,
+        height: spec.canvas.height,
+        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
+        role: 'img',
+        'aria-label': `${spec.id} generated reconstruction`
+      });
+      svg.appendChild(node('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
+      addText(svg, panel.label, defaults);
+      addText(svg, panel.title, defaults);
+      addText(svg, panel.subtitle, defaults);
+      drawLegend(svg, panel, defaults);
+      const scale = makeScale(panel.plot);
+      drawAxes(svg, panel, defaults, scale);
+      panel.data.series.forEach(series => drawSeries(svg, series, scale));
+      surface.replaceChildren(svg);
+    }
+
+    function setMode(mode) {
+      const showReference = mode === 'reference';
+      byId('frame').classList.toggle('show-reference', showReference);
+      byId('generatedButton').classList.toggle('active', !showReference);
+      byId('referenceButton').classList.toggle('active', showReference);
+    }
+
+    byId('generatedButton').addEventListener('click', () => setMode('generated'));
+    byId('referenceButton').addEventListener('click', () => setMode('reference'));
+
+    fetch(SPEC_URL)
+      .then(response => response.json())
+      .then(render)
+      .catch(error => {
+        byId('surface').textContent = `Unable to load ${SPEC_URL}: ${error.message}`;
+      });
+  </script>
+</body>
+</html>

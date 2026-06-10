@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-03-learning-remapping-B reconstruction</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    .stage {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      padding: 16px;
+    }
+    .figure-wrap {
+      position: relative;
+      width: 386px;
+      height: 526px;
+      background: #ffffff;
+      box-shadow: 0 0 0 1px #cfcfcf;
+    }
+    #svg-layer {
+      position: absolute;
+      inset: 0;
+      width: 386px;
+      height: 526px;
+    }
+    .qa {
+      width: 386px;
+      font-size: 12px;
+      line-height: 1.3;
+    }
+    .qa label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+    .qa p {
+      margin: 0 0 8px;
+      color: #333333;
+    }
+    .qa img {
+      display: block;
+      width: 386px;
+      height: 526px;
+      border: 1px solid #cfcfcf;
+      background: #ffffff;
+    }
+    .hidden { display: none; }
+    svg text {
+      dominant-baseline: auto;
+      letter-spacing: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="figure-wrap" aria-label="Generated editable reconstruction">
+      <svg id="svg-layer" viewBox="0 0 386 526" width="386" height="526" role="img"></svg>
+    </div>
+    <div class="qa">
+      <label><input id="qa-toggle" type="checkbox"> Show QA reference raster</label>
+      <p>Reference-only source view. The generated candidate at left is rendered from JSON as SVG elements.</p>
+      <img id="qa-reference" class="hidden" src="../../assets/reference/reference-03-learning-remapping-B-reference.png" alt="QA reference raster only">
+    </div>
+  </div>
+
+  <script id="fallback-spec" type="application/json">
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-03-learning-remapping-B",
+  "source": {
+    "path": "../../assets/reference/reference-03-learning-remapping-B-reference.png",
+    "usage": "QA/reference only; not used by generated candidate.",
+    "nativeSize": {"width": 386, "height": 526}
+  },
+  "canvas": {"width": 386, "height": 526, "background": "#ffffff"},
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "calibration": {"letterSpacing": 0, "lineHeight": 1.08, "notes": "Embedded fallback mirrors the adjacent JSON for direct file viewing."}
+  },
+  "coordinateSystems": [
+    {"id": "day-category-x", "type": "categorical", "domain": [1, 2, 3, 4, 5, 6, 7], "range": [40, 323]},
+    {"id": "day-category-y", "type": "categorical", "domain": [1, 2, 3, 4, 5, 6, 7], "range": [86, 420], "orientation": "top-to-bottom"},
+    {"id": "pearson-r-purple", "type": "colorScale", "domain": [0, 1], "colors": ["#ffffff", "#d8c4e9", "#6f1a9a", "#2f005b"]}
+  ],
+  "panels": [
+    {
+      "id": "panel-b",
+      "bbox": {"x": 0, "y": 0, "width": 386, "height": 526},
+      "label": {"id": "panel-label", "text": "B", "x": 7, "y": 30, "fontSize": 20, "fontWeight": 700},
+      "title": {"id": "panel-title", "text": "Remapping similarity (day-by-day)", "x": 34, "y": 30, "fontSize": 16, "fontWeight": 700},
+      "plot": {
+        "id": "similarity-matrix",
+        "type": "heatmap",
+        "dataBbox": {"x": 40, "y": 86, "width": 283, "height": 334},
+        "x": {
+          "ticks": [{"value": 1, "label": "1"}, {"value": 2, "label": "2"}, {"value": 3, "label": "3"}, {"value": 4, "label": "4"}, {"value": 5, "label": "5"}, {"value": 6, "label": "6"}, {"value": 7, "label": "7"}],
+          "label": {"id": "x-axis-label", "text": "Day", "x": 181.5, "y": 466, "fontSize": 16, "anchor": "middle"}
+        },
+        "y": {
+          "ticks": [{"value": 1, "label": "1"}, {"value": 2, "label": "2"}, {"value": 3, "label": "3"}, {"value": 4, "label": "4"}, {"value": 5, "label": "5"}, {"value": 6, "label": "6"}, {"value": 7, "label": "7"}],
+          "label": {"id": "y-axis-label", "text": "Day", "x": 9, "y": 253, "fontSize": 16, "rotation": -90, "anchor": "middle"}
+        },
+        "axes": {"box": {"stroke": "#4d4d4d", "strokeWidth": 1}, "grid": {"stroke": "#c7c7c7", "strokeWidth": 0.7}},
+        "colorScale": "pearson-r-purple",
+        "matrix": [
+          [null, 0.62, 0.48, 0.33, 0.25, 0.22, 0.18],
+          [0.62, null, 0.66, 0.45, 0.33, 0.26, 0.21],
+          [0.48, 0.66, null, 0.63, 0.46, 0.33, 0.24],
+          [0.33, 0.45, 0.63, null, 0.61, 0.44, 0.32],
+          [0.25, 0.33, 0.46, 0.61, null, 0.61, 0.46],
+          [0.22, 0.26, 0.33, 0.44, 0.61, null, 0.63],
+          [0.18, 0.21, 0.24, 0.32, 0.46, 0.63, null]
+        ],
+        "cellText": {"fontSize": 12, "fill": "#111111", "anchor": "middle"},
+        "missingValue": {"label": "-", "fontSize": 18, "fill": "#111111"}
+      },
+      "legends": [
+        {
+          "id": "similarity-colorbar",
+          "type": "colorbar",
+          "scale": "pearson-r-purple",
+          "bbox": {"x": 342, "y": 279, "width": 14, "height": 135},
+          "title": {"text": "Similarity\n(Pearson r)", "x": 337, "y": 235, "fontSize": 12, "anchor": "start"},
+          "ticks": [{"value": 0, "label": "0"}, {"value": 0.5, "label": "0.5"}, {"value": 1, "label": "1.0"}],
+          "tickLength": 5
+        }
+      ]
+    }
+  ]
+}
+  </script>
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function make(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function addText(parent, item, defaults = {}) {
+      const text = make('text', {
+        x: item.x,
+        y: item.y,
+        fill: item.fill || defaults.fill || '#111111',
+        'font-size': item.fontSize || defaults.fontSize || 12,
+        'font-weight': item.fontWeight || defaults.fontWeight || 400,
+        'text-anchor': item.anchor || defaults.anchor || 'start',
+        'data-id': item.id || ''
+      });
+      if (item.rotation) text.setAttribute('transform', `rotate(${item.rotation} ${item.x} ${item.y})`);
+      const lines = String(item.text).split('\n');
+      lines.forEach((line, index) => {
+        const tspan = make('tspan', {x: item.x, dy: index === 0 ? 0 : (item.lineHeight || 14)});
+        tspan.textContent = line;
+        text.appendChild(tspan);
+      });
+      parent.appendChild(text);
+      return text;
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function hexToRgb(hex) {
+      const clean = hex.replace('#', '');
+      return [
+        parseInt(clean.slice(0, 2), 16),
+        parseInt(clean.slice(2, 4), 16),
+        parseInt(clean.slice(4, 6), 16)
+      ];
+    }
+
+    function rgbToHex(rgb) {
+      return '#' + rgb.map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
+    }
+
+    function colorAt(scale, value) {
+      const domain = scale.domain;
+      const colors = scale.colors.map(hexToRgb);
+      const clamped = Math.max(domain[0], Math.min(domain[domain.length - 1], value));
+      const segments = colors.length - 1;
+      const t = (clamped - domain[0]) / (domain[domain.length - 1] - domain[0]);
+      const raw = Math.min(segments - 1e-9, Math.max(0, t * segments));
+      const index = Math.floor(raw);
+      const local = raw - index;
+      return rgbToHex([
+        lerp(colors[index][0], colors[index + 1][0], local),
+        lerp(colors[index][1], colors[index + 1][1], local),
+        lerp(colors[index][2], colors[index + 1][2], local)
+      ]);
+    }
+
+    function renderHeatmap(svg, spec, panel) {
+      const plot = panel.plot;
+      const box = plot.dataBbox;
+      const colorScale = spec.coordinateSystems.find(system => system.id === plot.colorScale);
+      const cellW = box.width / plot.matrix[0].length;
+      const cellH = box.height / plot.matrix.length;
+      const layer = make('g', {'data-layer': 'heatmap', 'data-panel': panel.id});
+      svg.appendChild(layer);
+
+      plot.matrix.forEach((row, rowIndex) => {
+        row.forEach((value, columnIndex) => {
+          const x = box.x + columnIndex * cellW;
+          const y = box.y + rowIndex * cellH;
+          layer.appendChild(make('rect', {
+            x, y, width: cellW, height: cellH,
+            fill: value === null ? '#f5f5f5' : colorAt(colorScale, value),
+            stroke: plot.axes.grid.stroke,
+            'stroke-width': plot.axes.grid.strokeWidth,
+            'data-row-day': rowIndex + 1,
+            'data-column-day': columnIndex + 1,
+            'data-value': value === null ? 'missing' : value.toFixed(2)
+          }));
+          addText(layer, {
+            text: value === null ? plot.missingValue.label : value.toFixed(2),
+            x: x + cellW / 2,
+            y: y + cellH / 2 + (value === null ? 5 : 4),
+            fontSize: value === null ? plot.missingValue.fontSize : plot.cellText.fontSize,
+            fill: value === null ? plot.missingValue.fill : plot.cellText.fill,
+            anchor: 'middle',
+            id: `cell-${rowIndex + 1}-${columnIndex + 1}-label`
+          });
+        });
+      });
+      layer.appendChild(make('rect', {
+        x: box.x, y: box.y, width: box.width, height: box.height,
+        fill: 'none',
+        stroke: plot.axes.box.stroke,
+        'stroke-width': plot.axes.box.strokeWidth,
+        'data-id': 'heatmap-border'
+      }));
+    }
+
+    function renderAxes(svg, panel) {
+      const plot = panel.plot;
+      const box = plot.dataBbox;
+      const cellW = box.width / plot.x.ticks.length;
+      const cellH = box.height / plot.y.ticks.length;
+      const axisLayer = make('g', {'data-layer': 'axes', 'data-panel': panel.id});
+      svg.appendChild(axisLayer);
+
+      plot.x.ticks.forEach((tick, index) => {
+        addText(axisLayer, {
+          text: tick.label,
+          x: box.x + index * cellW + cellW / 2,
+          y: box.y + box.height + 22,
+          fontSize: 16,
+          anchor: 'middle',
+          id: `x-tick-${tick.value}`
+        });
+      });
+      plot.y.ticks.forEach((tick, index) => {
+        addText(axisLayer, {
+          text: tick.label,
+          x: box.x - 14,
+          y: box.y + index * cellH + cellH / 2 + 5,
+          fontSize: 16,
+          anchor: 'end',
+          id: `y-tick-${tick.value}`
+        });
+      });
+      addText(axisLayer, plot.x.label);
+      addText(axisLayer, plot.y.label);
+    }
+
+    function renderColorbar(svg, spec, legend) {
+      const colorScale = spec.coordinateSystems.find(system => system.id === legend.scale);
+      const defs = svg.querySelector('defs') || svg.insertBefore(make('defs'), svg.firstChild);
+      const gradient = make('linearGradient', {id: `${legend.id}-gradient`, x1: '0%', y1: '100%', x2: '0%', y2: '0%'});
+      colorScale.colors.forEach((color, index) => {
+        gradient.appendChild(make('stop', {
+          offset: `${index / (colorScale.colors.length - 1) * 100}%`,
+          'stop-color': color
+        }));
+      });
+      defs.appendChild(gradient);
+
+      const box = legend.bbox;
+      const layer = make('g', {'data-layer': 'colorbar', 'data-id': legend.id});
+      svg.appendChild(layer);
+      addText(layer, legend.title);
+      layer.appendChild(make('rect', {
+        x: box.x, y: box.y, width: box.width, height: box.height,
+        fill: `url(#${legend.id}-gradient)`,
+        stroke: '#777777',
+        'stroke-width': 0.8
+      }));
+      legend.ticks.forEach(tick => {
+        const t = (tick.value - colorScale.domain[0]) / (colorScale.domain[1] - colorScale.domain[0]);
+        const y = box.y + box.height - t * box.height;
+        layer.appendChild(make('line', {
+          x1: box.x + box.width,
+          x2: box.x + box.width + legend.tickLength,
+          y1: y,
+          y2: y,
+          stroke: '#111111',
+          'stroke-width': 0.8
+        }));
+        addText(layer, {
+          text: tick.label,
+          x: box.x + box.width + legend.tickLength + 7,
+          y: y + 4,
+          fontSize: 14,
+          anchor: 'start',
+          id: `${legend.id}-tick-${tick.value}`
+        });
+      });
+    }
+
+    function render(spec) {
+      const svg = document.getElementById('svg-layer');
+      svg.innerHTML = '';
+      svg.setAttribute('viewBox', `0 0 ${spec.canvas.width} ${spec.canvas.height}`);
+      svg.style.background = spec.canvas.background;
+      svg.style.fontFamily = spec.typography.fontFamily;
+
+      const panel = spec.panels[0];
+      svg.appendChild(make('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
+      addText(svg, panel.label);
+      addText(svg, panel.title);
+      renderHeatmap(svg, spec, panel);
+      renderAxes(svg, panel);
+      panel.legends.forEach(legend => renderColorbar(svg, spec, legend));
+    }
+
+    async function loadSpec() {
+      try {
+        const response = await fetch('reference-03-learning-remapping-B.json', {cache: 'no-store'});
+        if (response.ok) return await response.json();
+      } catch (error) {
+        console.warn('Using fallback spec because adjacent JSON could not be loaded.', error);
+      }
+      return JSON.parse(document.getElementById('fallback-spec').textContent);
+    }
+
+    document.getElementById('qa-toggle').addEventListener('change', event => {
+      document.getElementById('qa-reference').classList.toggle('hidden', !event.target.checked);
+    });
+
+    loadSpec().then(render);
+  </script>
+</body>
+</html>

@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>reference-02-decision-dynamics-A reconstruction</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #aaaaaa;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .surface,
+    .reference {
+      position: absolute;
+      inset: 0;
+    }
+
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+    }
+
+    .show-reference .surface {
+      display: none;
+    }
+
+    .show-reference .reference {
+      display: block;
+    }
+
+    svg {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">reference-02-decision-dynamics-A</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">QA reference</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface"></div>
+      <img id="reference" class="reference" alt="QA reference source image">
+    </div>
+  </main>
+
+  <script>
+    const SPEC_URL = './reference-02-decision-dynamics-A.json';
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function byId(id) {
+      return document.getElementById(id);
+    }
+
+    function node(tag, attrs = {}) {
+      const item = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) item.setAttribute(key, value);
+      }
+      return item;
+    }
+
+    function addText(svg, spec, defaults = {}) {
+      const text = node('text', {
+        x: spec.x,
+        y: spec.y,
+        fill: spec.fill || defaults.color || '#111111',
+        'font-family': spec.fontFamily || defaults.fontFamily,
+        'font-size': spec.fontSize || defaults.defaultSize || 13,
+        'font-weight': spec.fontWeight || 400,
+        'text-anchor': spec.anchor || 'start',
+        'dominant-baseline': spec.baseline || 'alphabetic',
+        'letter-spacing': spec.letterSpacing ?? defaults.calibration?.letterSpacing ?? 0,
+        'data-id': spec.id,
+        'data-role': spec.role || 'text'
+      });
+      String(spec.text || '').split('\n').forEach((line, index) => {
+        const tspan = node('tspan', {
+          x: spec.x,
+          dy: index === 0 ? 0 : (spec.lineHeight || defaults.calibration?.lineHeight || 1.08) * (spec.fontSize || defaults.defaultSize || 13)
+        });
+        tspan.textContent = line;
+        text.appendChild(tspan);
+      });
+      svg.appendChild(text);
+      return text;
+    }
+
+    function addRichText(svg, x, y, runs, defaults, anchor = 'middle') {
+      const fontSize = defaults.defaultSize || 11;
+      const lineHeight = defaults.lineHeight || 1.15;
+      const text = node('text', {
+        x,
+        y,
+        fill: '#111111',
+        'font-family': defaults.fontFamily,
+        'font-size': fontSize,
+        'text-anchor': anchor,
+        'dominant-baseline': 'alphabetic'
+      });
+      let lineIndex = 0;
+      let atLineStart = true;
+      runs.forEach((run) => {
+        String(run.text).split('\n').forEach((part, partIndex) => {
+          if (partIndex > 0) {
+            lineIndex += 1;
+            atLineStart = true;
+          }
+          if (part === '') return;
+          const tspan = node('tspan', {
+            x: atLineStart ? x : undefined,
+            dy: atLineStart ? (lineIndex === 0 ? 0 : fontSize * lineHeight) : undefined,
+            fill: run.fill || '#111111'
+          });
+          tspan.textContent = part;
+          text.appendChild(tspan);
+          atLineStart = false;
+        });
+      });
+      text.dataset.lineCount = String(lineIndex + 1);
+      svg.appendChild(text);
+      return text;
+    }
+
+    function seeded(seed) {
+      let state = seed >>> 0;
+      return () => {
+        state = (1664525 * state + 1013904223) >>> 0;
+        return state / 4294967296;
+      };
+    }
+
+    function drawScreen(svg, epoch) {
+      const box = epoch.screen;
+      const group = node('g', {'data-id': epoch.id, 'data-role': 'epoch-screen'});
+      group.appendChild(node('rect', {
+        x: box.x,
+        y: box.y,
+        width: box.width,
+        height: box.height,
+        fill: '#050505',
+        stroke: epoch.border?.stroke || '#050505',
+        'stroke-width': epoch.border?.strokeWidth || 1
+      }));
+      const cx = box.x + box.width / 2;
+      const cy = box.y + box.height / 2;
+      if (epoch.screenType === 'fixation') {
+        group.appendChild(node('circle', {cx, cy, r: 4.6, fill: '#ffffff'}));
+      } else if (epoch.screenType === 'stimulus') {
+        const random = seeded(epoch.dotRecipe.seed);
+        const colors = [];
+        for (let i = 0; i < epoch.dotRecipe.blueCount; i += 1) colors.push('#1d5fae');
+        for (let i = 0; i < epoch.dotRecipe.redCount; i += 1) colors.push('#e01c1c');
+        while (colors.length < epoch.dotRecipe.count) colors.push('#dcdcdc');
+        for (let i = 0; i < epoch.dotRecipe.count; i += 1) {
+          const angle = random() * Math.PI * 2;
+          const radius = Math.sqrt(random()) * 28;
+          group.appendChild(node('circle', {
+            cx: cx + Math.cos(angle) * radius,
+            cy: cy + Math.sin(angle) * radius,
+            r: i % 5 === 0 ? 2.0 : 1.75,
+            fill: colors[i],
+            opacity: colors[i] === '#dcdcdc' ? 0.9 : 1
+          }));
+        }
+        group.appendChild(node('circle', {cx, cy, r: 2.2, fill: '#ffffff'}));
+      } else if (epoch.screenType === 'response') {
+        [
+          {cx: box.x + 14, cy, r: 8.7},
+          {cx, cy, r: 4.4},
+          {cx: box.x + box.width - 14, cy, r: 8.7}
+        ].forEach(circle => group.appendChild(node('circle', {
+          cx: circle.cx,
+          cy: circle.cy,
+          r: circle.r,
+          fill: '#050505',
+          stroke: '#ffffff',
+          'stroke-width': 1.4
+        })));
+      } else if (epoch.screenType === 'outcome') {
+        group.appendChild(node('path', {
+          d: `M ${cx} ${cy - 18} C ${cx - 10} ${cy - 4}, ${cx - 5} ${cy + 10}, ${cx} ${cy + 10} C ${cx + 7} ${cy + 10}, ${cx + 9} ${cy - 3}, ${cx} ${cy - 18} Z`,
+          fill: '#eeeeee'
+        }));
+      }
+      svg.appendChild(group);
+      return group;
+    }
+
+    function drawTimeline(svg, panel, defaults) {
+      const timeline = panel.timeline;
+      svg.appendChild(node('line', {
+        x1: timeline.line.x1,
+        y1: timeline.line.y1,
+        x2: timeline.line.x2,
+        y2: timeline.line.y2,
+        stroke: '#111111',
+        'stroke-width': timeline.strokeWidth,
+        'data-id': timeline.id
+      }));
+      timeline.guides.forEach(guide => {
+        svg.appendChild(node('line', {
+          x1: guide.x,
+          y1: guide.y1,
+          x2: guide.x,
+          y2: guide.y2,
+          stroke: timeline.guideStyle.stroke,
+          'stroke-width': timeline.guideStyle.strokeWidth,
+          'stroke-dasharray': timeline.guideStyle.dasharray,
+          'data-role': 'timeline-guide',
+          'data-event': guide.event
+        }));
+      });
+      timeline.ticks.forEach(tick => {
+        svg.appendChild(node('line', {
+          x1: tick.x,
+          y1: timeline.line.y1,
+          x2: tick.x,
+          y2: timeline.line.y1 + timeline.tickLength,
+          stroke: '#111111',
+          'stroke-width': 1,
+          'data-role': 'timeline-tick',
+          'data-value': tick.value
+        }));
+        addText(svg, {
+          text: tick.label,
+          x: tick.x,
+          y: timeline.line.y1 + 22,
+          anchor: 'middle',
+          fontSize: 14,
+          role: 'timeline-tick-label'
+        }, defaults);
+      });
+      addText(svg, timeline.label, defaults);
+    }
+
+    function drawTable(svg, table, defaults) {
+      table.columns.forEach((column, index) => {
+        const gap = table.columnGap || 0;
+        const cellWidth = table.columnWidth - gap;
+        const x = table.x + index * table.columnWidth + gap / 2;
+        svg.appendChild(node('rect', {
+          x,
+          y: table.topY,
+          width: cellWidth,
+          height: table.headerHeight,
+          fill: '#f7f7f7',
+          stroke: '#d0d0d0',
+          'stroke-width': table.headerStrokeWidth || 0.8,
+          'data-id': `${table.id}-${column.id}-header`
+        }));
+        svg.appendChild(node('line', {
+          x1: x,
+          y1: table.topY,
+          x2: x + cellWidth,
+          y2: table.topY,
+          stroke: column.accent,
+          'stroke-width': column.accentStrokeWidth || table.accentStrokeWidth || 2
+        }));
+        addText(svg, {
+          text: column.header,
+          x: x + cellWidth / 2,
+          y: table.topY + 23,
+          anchor: 'middle',
+          fontSize: table.headerFontSize || 13
+        }, defaults);
+        if (column.process) {
+          addText(svg, {
+            text: column.process,
+            x: x + cellWidth / 2,
+            y: table.topY + (table.processY || table.headerHeight + 27),
+            anchor: 'middle',
+            fontSize: table.cellFontSize || 12
+          }, defaults);
+        }
+        if (column.behavior) {
+          addText(svg, {
+            text: column.behavior,
+            x: x + cellWidth / 2,
+            y: table.topY + (table.behaviorY || table.headerHeight + 84),
+            anchor: 'middle',
+            fontSize: table.cellFontSize || 12
+          }, defaults);
+        } else if (column.behaviorRich) {
+          addRichText(svg, x + cellWidth / 2, table.topY + (table.behaviorY || table.headerHeight + 84), column.behaviorRich, {...defaults, defaultSize: table.richCellFontSize || 11, lineHeight: 1.2});
+        }
+      });
+    }
+
+    function render(spec) {
+      byId('title').textContent = spec.id;
+      const frame = byId('frame');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      frame.style.background = spec.canvas.background;
+      byId('reference').src = spec.source.path;
+
+      const surface = byId('surface');
+      surface.innerHTML = '';
+      const svg = node('svg', {
+        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
+        width: spec.canvas.width,
+        height: spec.canvas.height,
+        role: 'img',
+        'aria-label': `${spec.id} generated reconstruction`
+      });
+      svg.appendChild(node('rect', {x: 0, y: 0, width: spec.canvas.width, height: spec.canvas.height, fill: spec.canvas.background}));
+      surface.appendChild(svg);
+
+      const defaults = {
+        fontFamily: spec.typography.fontFamily,
+        defaultSize: spec.typography.defaultSize,
+        color: spec.typography.color,
+        calibration: spec.typography.calibration
+      };
+
+      spec.panels.forEach(panel => {
+        addText(svg, panel.label, defaults);
+        addText(svg, panel.title, defaults);
+        panel.epochs.forEach(epoch => {
+          addText(svg, {
+            text: epoch.title,
+            x: epoch.titleX,
+            y: epoch.titleY,
+            anchor: 'middle',
+            fontSize: 14
+          }, defaults);
+          drawScreen(svg, epoch);
+        });
+        drawTimeline(svg, panel, defaults);
+        drawTable(svg, panel.processTable, defaults);
+      });
+    }
+
+    async function boot() {
+      const response = await fetch(SPEC_URL);
+      const spec = await response.json();
+      render(spec);
+      const frame = byId('frame');
+      const generatedButton = byId('generatedButton');
+      const referenceButton = byId('referenceButton');
+      generatedButton.addEventListener('click', () => {
+        frame.classList.remove('show-reference');
+        generatedButton.classList.add('active');
+        referenceButton.classList.remove('active');
+      });
+      referenceButton.addEventListener('click', () => {
+        frame.classList.add('show-reference');
+        referenceButton.classList.add('active');
+        generatedButton.classList.remove('active');
+      });
+    }
+
+    boot().catch(error => {
+      console.error(error);
+      byId('surface').textContent = 'Failed to load reconstruction JSON.';
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,171 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "reference-02-decision-dynamics-H",
+  "source": {
+    "path": "../../assets/reference/reference-02-decision-dynamics-H-reference.png",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Single summary panel with two paired dot plots reconstructed by visual inspection."
+  },
+  "canvas": {
+    "width": 389,
+    "height": 510,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "defaultSize": 14,
+    "color": "#111111",
+    "fontImports": [],
+    "fontFaces": [],
+    "fontCandidates": ["Arial", "Helvetica", "Arial Narrow", "Roboto Condensed"],
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "First-pass compact sans typography tuned visually against the source crop."
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-h",
+      "bbox": {"x": 0, "y": 0, "width": 389, "height": 510},
+      "label": {
+        "id": "panel-label-h",
+        "text": "H",
+        "x": 10,
+        "y": 28,
+        "fontSize": 22,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 10, "y": 11, "width": 15, "height": 22}
+      },
+      "title": {
+        "id": "panel-title",
+        "text": "Summary across animals",
+        "x": 39,
+        "y": 29,
+        "fontSize": 17,
+        "fontWeight": 700,
+        "anchor": "start",
+        "sourceBox": {"x": 39, "y": 17, "width": 178, "height": 18}
+      },
+      "plots": [
+        {
+          "id": "decoding-accuracy",
+          "title": {"id": "accuracy-title", "text": "Decoding accuracy (%)", "x": 114, "y": 89, "fontSize": 16, "anchor": "middle"},
+          "coordinateSystem": {"id": "decoding-accuracy.data", "type": "pairedCategoricalY", "xCategories": ["Left decode", "Right decode"], "yDomain": [50, 100], "dataBbox": {"x": 45, "y": 124, "width": 136, "height": 256}},
+          "dataBbox": {"x": 45, "y": 124, "width": 136, "height": 256},
+          "axes": {
+            "xAxis": {"id": "accuracy-x-axis", "line": {"x1": 45, "y1": 380, "x2": 181, "y2": 380}, "tickLength": 5},
+            "yAxis": {"id": "accuracy-y-axis", "line": {"x1": 45, "y1": 124, "x2": 45, "y2": 380}, "tickLength": 5}
+          },
+          "x": {
+            "categories": [
+              {"id": "accuracy-left", "value": "Left decode", "x": 84, "labelLines": ["Left", "decode"], "fill": "#0044aa"},
+              {"id": "accuracy-right", "value": "Right decode", "x": 146, "labelLines": ["Right", "decode"], "fill": "#e00000"}
+            ]
+          },
+          "y": {
+            "domain": [50, 100],
+            "ticks": [
+              {"value": 50, "label": "50"},
+              {"value": 60, "label": "60"},
+              {"value": 70, "label": "70"},
+              {"value": 80, "label": "80"},
+              {"value": 90, "label": "90"},
+              {"value": 100, "label": "100"}
+            ]
+          },
+          "data": {
+            "pairedAnimals": [
+              {"animal": "animal-1", "left": 92.5, "right": 84.5},
+              {"animal": "animal-2", "left": 87.0, "right": 89.0},
+              {"animal": "animal-3", "left": 84.2, "right": 86.0},
+              {"animal": "animal-4", "left": 81.5, "right": 82.5},
+              {"animal": "animal-5", "left": 75.8, "right": 78.0},
+              {"animal": "animal-6", "left": 71.8, "right": 73.0},
+              {"animal": "animal-7", "left": 69.2, "right": 68.0},
+              {"animal": "animal-8", "left": 59.5, "right": 61.8}
+            ]
+          },
+          "marks": [
+            {"id": "accuracy-paired-lines", "type": "pairedLineSeries", "dataRef": "pairedAnimals", "leftField": "left", "rightField": "right", "stroke": "#9b9b9b", "strokeWidth": 1.1},
+            {"id": "accuracy-left-points", "type": "pairedScatter", "dataRef": "pairedAnimals", "field": "left", "xCategory": "Left decode", "marker": {"shape": "circle", "radius": 3.6, "fill": "#0044aa", "stroke": "#0044aa", "strokeWidth": 0.8}},
+            {"id": "accuracy-right-points", "type": "pairedScatter", "dataRef": "pairedAnimals", "field": "right", "xCategory": "Right decode", "marker": {"shape": "circle", "radius": 3.6, "fill": "#e00000", "stroke": "#e00000", "strokeWidth": 0.8}}
+          ],
+          "annotations": [
+            {"id": "accuracy-ns-bracket", "type": "bracket", "x1": 84, "x2": 146, "y": 136, "height": 10, "stroke": "#111111", "strokeWidth": 1.1},
+            {"id": "accuracy-ns-label", "type": "text", "text": "n.s.", "x": 115, "y": 125, "fontSize": 16, "anchor": "middle"}
+          ]
+        },
+        {
+          "id": "median-rt",
+          "title": {"id": "rt-title", "text": "Median RT (ms)", "x": 303, "y": 89, "fontSize": 16, "anchor": "middle"},
+          "coordinateSystem": {"id": "median-rt.data", "type": "pairedCategoricalY", "xCategories": ["Left RT", "Right RT"], "yDomain": [300, 800], "dataBbox": {"x": 238, "y": 124, "width": 132, "height": 256}},
+          "dataBbox": {"x": 238, "y": 124, "width": 132, "height": 256},
+          "axes": {
+            "xAxis": {"id": "rt-x-axis", "line": {"x1": 238, "y1": 380, "x2": 370, "y2": 380}, "tickLength": 5},
+            "yAxis": {"id": "rt-y-axis", "line": {"x1": 238, "y1": 124, "x2": 238, "y2": 380}, "tickLength": 5}
+          },
+          "x": {
+            "categories": [
+              {"id": "rt-left", "value": "Left RT", "x": 280, "labelLines": ["Left", "RT"], "fill": "#0044aa"},
+              {"id": "rt-right", "value": "Right RT", "x": 341, "labelLines": ["Right", "RT"], "fill": "#e00000"}
+            ]
+          },
+          "y": {
+            "domain": [300, 800],
+            "ticks": [
+              {"value": 300, "label": "300"},
+              {"value": 400, "label": "400"},
+              {"value": 500, "label": "500"},
+              {"value": 600, "label": "600"},
+              {"value": 700, "label": "700"},
+              {"value": 800, "label": "800"}
+            ]
+          },
+          "data": {
+            "pairedAnimals": [
+              {"animal": "animal-1", "left": 651, "right": 716},
+              {"animal": "animal-2", "left": 608, "right": 642},
+              {"animal": "animal-3", "left": 579, "right": 620},
+              {"animal": "animal-4", "left": 559, "right": 585},
+              {"animal": "animal-5", "left": 509, "right": 540},
+              {"animal": "animal-6", "left": 504, "right": 485},
+              {"animal": "animal-7", "left": 464, "right": 457},
+              {"animal": "animal-8", "left": 432, "right": 443}
+            ]
+          },
+          "marks": [
+            {"id": "rt-paired-lines", "type": "pairedLineSeries", "dataRef": "pairedAnimals", "leftField": "left", "rightField": "right", "stroke": "#9b9b9b", "strokeWidth": 1.1},
+            {"id": "rt-left-points", "type": "pairedScatter", "dataRef": "pairedAnimals", "field": "left", "xCategory": "Left RT", "marker": {"shape": "circle", "radius": 3.6, "fill": "#0044aa", "stroke": "#0044aa", "strokeWidth": 0.8}},
+            {"id": "rt-right-points", "type": "pairedScatter", "dataRef": "pairedAnimals", "field": "right", "xCategory": "Right RT", "marker": {"shape": "circle", "radius": 3.6, "fill": "#e00000", "stroke": "#e00000", "strokeWidth": 0.8}}
+          ],
+          "annotations": [
+            {"id": "rt-ns-bracket", "type": "bracket", "x1": 280, "x2": 341, "y": 136, "height": 10, "stroke": "#111111", "strokeWidth": 1.1},
+            {"id": "rt-ns-label", "type": "text", "text": "n.s.", "x": 310.5, "y": 125, "fontSize": 16, "anchor": "middle"}
+          ]
+        }
+      ],
+      "annotations": [
+        {"id": "animal-count", "type": "text", "text": "n = 8 animals", "x": 194, "y": 476, "fontSize": 14, "fontStyle": "italic", "anchor": "middle"}
+      ],
+      "provenance": [
+        {"target": "plot geometry", "confidence": "medium", "note": "Axes, bracket anchors, and category positions were measured visually from the raster."},
+        {"target": "pairedAnimals", "confidence": "medium-low", "note": "Animal values are approximate from source dot positions and intended for editable first-pass visual inspection."},
+        {"target": "typography", "confidence": "medium", "note": "Font family and sizes are visual approximations; no OCR/font calibration harness was run."}
+      ]
+    }
+  ],
+  "validation": {
+    "expectedMarks": {"pairedAnimalsPerPlot": 8, "plots": 2, "xTicksPerPlot": 2, "yTicksPerPlot": 6, "brackets": 2},
+    "constraints": [
+      "Generated candidate must not render the source raster as a figure layer.",
+      "Each paired animal line connects the left and right category values within the same plot transform.",
+      "Axis ticks, tick labels, category labels, brackets, and dot marks remain editable SVG elements.",
+      "The QA reference image is separate from the generated candidate view and clearly labeled in the interface."
+    ]
+  },
+  "confidence": [
+    {"target": "overall", "confidence": "medium", "note": "Independent first-pass reconstruction for visual inspection; values are approximate rather than digitized measurements."}
+  ]
+}
