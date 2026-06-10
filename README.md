@@ -4,14 +4,34 @@ Generative image models (Nano Banana, gpt-image, and the like) draw beautiful sc
 
 This is a skill that teaches a coding agent to take one of those raster figures and rebuild it as a semantic JSON spec plus an HTML file that renders the figure from that spec. Every axis, tick, label, legend, and data mark becomes an editable field. You swap in your real numbers, change a domain or a color, and the figure redraws. The source image is never reused as a visual layer — the reconstruction is drawn from scratch, so what you ship is structure, not pixels.
 
-## Before and after
+![A hippocampal place-cell figure: the AI-generated image on the left, the editable reconstruction on the right](docs/images/hero-place-code-opto.png)
 
-`assets/reference/reference-01-place-code-opto-A-reference.png` is an AI-generated panel: two place-cell heatmaps with a colorbar. Point the skill at it and you get `outputs/reference-01-place-code-opto-A-vectorize-figure/`:
+The left panel is a flat PNG from an image model. The right panel is the reconstruction — same figure, redrawn from a JSON spec, with every heatmap, curve, raster, and label now a value you can edit. They look alike on purpose. The difference is that one is pixels and the other is data.
 
-- `reference-01-place-code-opto-A.json` — the figure as data: canvas dimensions, a viridis colormap with stop values, panel geometry, axis lines, tick coordinates, labels, and the recipes that generate the heatmap values.
-- `reference-01-place-code-opto-A.html` — a renderer that reads the JSON and draws the panel with canvas for the heatmap and SVG/DOM for axes and text.
+## It works across figure types
 
-Edit the JSON, reload the HTML, and the panel changes. No prompt, no model, no pixels copied from the original.
+Heatmaps, raster plots, line plots with confidence bands, violin distributions, polar manifolds, network schematics, small multiples — the reconstruction renders each from its own semantic objects, never from the source image.
+
+![Three more before/after pairs: grid-cell remapping, a Neuropixels population heatmap, and a motor-cortex manifold figure](docs/images/gallery.png)
+
+## What "editable" means
+
+The JSON is the figure. Panel B above — the population place-field line plot — is just this:
+
+```json
+{
+  "id": "B",
+  "title": { "text": "Population place fields" },
+  "x": { "domain": [0, 210], "ticks": [0, 50, 100, 150, 200], "label": "Position (cm)" },
+  "y": { "domain": [0, 20],  "ticks": [0, 5, 10, 15, 20],     "label": "Mean firing rate (Hz)" },
+  "legend": [
+    { "label": "Control (no light)", "color": "#111111" },
+    { "label": "Optogenetic inhibition (ArchT)", "color": "#009aa0" }
+  ]
+}
+```
+
+Change the domain, retitle the axis, recolor a series, or point a heatmap at your real array. Reload the HTML and the figure redraws. No prompt, no model, no pixels copied from the original.
 
 ## Quickstart
 
