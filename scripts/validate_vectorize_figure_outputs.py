@@ -363,6 +363,8 @@ def audit_layout_qa_report(html: Path, report: dict | None) -> list[str]:
         "protectedTextExclusionCollisions": "protected text intersects an exclusion zone",
         "protectedTextMetadataMissing": "protected text is missing stable semantic metadata",
         "boundedMarkEscapes": "bounded marks escape owner boxes",
+        "legendFrameMarginViolations": "legend labels violate derived frame margins",
+        "legendFrameCriticalGeometryCollisions": "legend frames overlap critical plot geometry",
     }
     errors = []
     for key, label in failures.items():

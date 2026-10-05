@@ -65,6 +65,7 @@ python3 -m http.server 8765
 - `http://localhost:8765/outputs/` — inspection hub linking every generated viewer
 - `http://localhost:8765/outputs/full-figure-batch-viewer.html` — full composites, generated vs. reference toggle
 - `http://localhost:8765/outputs/vectorize-figure-batch-gallery.html` — 62 cropped subpanels, generated vs. reference toggle
+- `http://localhost:8765/outputs/twitter-teacher-accuracy-vectorize-figure/twitter-teacher-accuracy.html` — a three-panel log-line reconstruction from an external social-media raster, with editable JSON and a QA-only reference toggle
 - `http://localhost:8765/examples/no-image-1c/index.html` — a single panel reconstruction with a QA-only reference toggle
 - `http://localhost:8765/examples/no-image-four/index.html` — a four-panel reconstruction built from synthetic data, no reference image at all
 

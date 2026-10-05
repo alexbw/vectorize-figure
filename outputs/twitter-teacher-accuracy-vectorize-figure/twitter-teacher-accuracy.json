@@ -1,0 +1,1209 @@
+{
+  "schema": "scientific_figure_reconstruction.v1",
+  "id": "twitter-teacher-accuracy",
+  "source": {
+    "path": "./twitter-teacher-accuracy.jpg",
+    "url": "https://pbs.twimg.com/media/HLfecLiaQAAJYLX?format=jpg&name=4096x4096",
+    "usage": "QA-only; not used by generated candidate.",
+    "notes": "Three-panel scientific line plot reconstructed from a social-media raster. Plot geometry, visible ticks, labels, legends, and annotations are generated from this JSON; faint background trajectories are deterministic recipes because the underlying data is unavailable."
+  },
+  "canvas": {
+    "width": 3076,
+    "height": 1286,
+    "background": "#ffffff"
+  },
+  "typography": {
+    "fontFamily": "Times New Roman, Times, serif",
+    "defaultSize": 42,
+    "color": "#111111",
+    "calibration": {
+      "letterSpacing": 0,
+      "lineHeight": 1.08,
+      "notes": "Serif typography chosen to match the source figure. Text sizes and anchors were manually calibrated from the native 3076x1286 raster."
+    }
+  },
+  "rendering": {
+    "renderer": "svg",
+    "styleTokens": {
+      "axis": "#111111",
+      "gridMajor": "#d9d9d9",
+      "gridMinor": "#ececec",
+      "tealTopRule": "#72afa2",
+      "blue": "#3f78ad",
+      "green": "#629b80",
+      "orange": "#c86f2c",
+      "olive": "#9a8d32",
+      "black": "#000000"
+    },
+    "layoutRules": {
+      "legendFrame": {
+        "bboxStrategy": "deriveFromChildren",
+        "minLabelEndGapEm": 1.25,
+        "minChildGapPx": 10,
+        "minCriticalGeometryGapPx": 14,
+        "avoidRoles": [
+          "axis-line",
+          "axis-tick-mark",
+          "minor-axis-tick-mark"
+        ],
+        "notes": "Legend frames are resolved after browser text measurement. The right edge is padded by at least 1.25 label ems so terminal glyphs do not visually sit on the frame border. The resolved frame is then translated away from same-panel critical axis geometry."
+      }
+    }
+  },
+  "relationshipInventory": {
+    "plotType": "Three adjacent log-x line/scatter panels with deterministic generated background trajectories.",
+    "coordinateSystems": [
+      "Each panel owns a log x scale and a shared linear y domain of 72 to 83.",
+      "Tick marks and labels store source-calibrated pixel anchors separately from numeric values.",
+      "Dashed line markers use semantic x/y data values and the panel transform."
+    ],
+    "layoutObjects": [
+      "Panel titles anchor to each plot top rule.",
+      "Panel 1 owns the shared y-axis title.",
+      "Each panel owns a legend with explicit item rows; legend frames are derived from the padded union of owned line, marker, and label children, with label-end padding derived from rendered font size and same-panel axis geometry treated as protected avoidance zones.",
+      "Panels 1 and 2 own page-positioned 4x arrow annotations anchored to dashed line comparisons."
+    ],
+    "validation": [
+      "Generated surface root is id=surface.",
+      "Protected text and exclusion-zone QA are published under window.figureLayoutQa and #figure-qa-output for ?qaDom=1.",
+      "No source raster is rendered inside the generated candidate."
+    ]
+  },
+  "panels": [
+    {
+      "id": "panel-1",
+      "type": "log_line_panel",
+      "title": {
+        "id": "panel-1-title",
+        "text": "Teacher accuracy",
+        "x": 818,
+        "y": 166,
+        "fontSize": 52,
+        "anchor": "middle",
+        "baseline": "alphabetic",
+        "role": "panel-title",
+        "anchorTo": "panel-1-plot-top-rule"
+      },
+      "yAxisTitle": {
+        "id": "panel-1-y-axis-title",
+        "text": "ImageNet top-1 accuracy",
+        "x": 185,
+        "y": 640,
+        "fontSize": 48,
+        "rotation": -90,
+        "anchor": "middle",
+        "baseline": "middle",
+        "role": "axis-title",
+        "anchorTo": "panel-1-y-axis"
+      },
+      "plot": {
+        "id": "panel-1-plot",
+        "dataBbox": {
+          "x": 283,
+          "y": 178,
+          "width": 720,
+          "height": 880
+        },
+        "axes": {
+          "xAxis": {
+            "id": "panel-1-x-axis",
+            "sourceCalibrated": true,
+            "line": {
+              "x1": 283,
+              "y1": 1058,
+              "x2": 1003,
+              "y2": 1058
+            },
+            "tickLength": 13,
+            "tickDirection": "out",
+            "tickLabelBand": {
+              "id": "panel-1-x-tick-label-band",
+              "x": 283,
+              "y": 1062,
+              "width": 720,
+              "height": 104
+            },
+            "label": {
+              "id": "panel-1-x-axis-title",
+              "text": "Epochs",
+              "x": 644,
+              "y": 1242,
+              "fontSize": 48,
+              "anchor": "middle",
+              "baseline": "alphabetic",
+              "role": "axis-title",
+              "anchorTo": "panel-1-x-tick-label-band"
+            }
+          },
+          "yAxis": {
+            "id": "panel-1-y-axis",
+            "sourceCalibrated": true,
+            "line": {
+              "x1": 283,
+              "y1": 178,
+              "x2": 283,
+              "y2": 1058
+            },
+            "tickLength": 12,
+            "tickDirection": "out",
+            "tickLabelBand": {
+              "id": "panel-1-y-tick-label-band",
+              "x": 211,
+              "y": 178,
+              "width": 58,
+              "height": 880
+            }
+          }
+        },
+        "x": {
+          "scale": "log",
+          "domain": [
+            20,
+            10000
+          ],
+          "ticks": [
+            {
+              "value": 30,
+              "label": "30",
+              "x": 330
+            },
+            {
+              "value": 90,
+              "label": "90",
+              "x": 457
+            },
+            {
+              "value": 300,
+              "label": "300",
+              "x": 597
+            },
+            {
+              "value": 1200,
+              "label": "1200",
+              "x": 757,
+              "labelDx": 62,
+              "fontSize": 40
+            },
+            {
+              "value": 4800,
+              "label": "4800",
+              "x": 918
+            },
+            {
+              "value": 9600,
+              "label": "9600",
+              "x": 998,
+              "labelDx": 70,
+              "fontSize": 40
+            }
+          ]
+        },
+        "y": {
+          "scale": "linear",
+          "domain": [
+            72,
+            83
+          ],
+          "ticks": [
+            {
+              "value": 75,
+              "label": "75"
+            },
+            {
+              "value": 80,
+              "label": "80"
+            },
+            {
+              "value": 83,
+              "label": "83"
+            }
+          ],
+          "minorTicks": [
+            72,
+            73,
+            74,
+            76,
+            77,
+            78,
+            79,
+            81,
+            82
+          ]
+        }
+      },
+      "layoutObjects": [
+        {
+          "id": "panel-1-legend",
+          "type": "legend",
+          "bbox": {
+            "x": 343,
+            "y": 790,
+            "width": 640,
+            "height": 255
+          },
+          "bboxStrategy": "deriveFromChildren",
+          "framePadding": {
+            "left": 38,
+            "right": 38,
+            "top": 31,
+            "bottom": 28
+          },
+          "anchorTo": "panel-1-plot",
+          "exclusionZone": {
+            "paddingPx": 2
+          },
+          "layout": {
+            "sampleX": 393,
+            "sampleLength": 160,
+            "markerX": 473,
+            "labelX": 566,
+            "rowCenters": [
+              845,
+              927,
+              1009
+            ],
+            "fontSize": 48
+          },
+          "items": [
+            {
+              "series": "panel-1-consistent",
+              "label": "consistent teaching"
+            },
+            {
+              "series": "panel-1-fixed",
+              "label": "fixed teacher"
+            },
+            {
+              "series": "panel-1-function",
+              "label": "function matching"
+            }
+          ]
+        }
+      ],
+      "marks": [
+        {
+          "id": "panel-1-ghost-blue",
+          "type": "ghostTrajectories",
+          "usesTransform": "panel-1.plot.xy",
+          "series": "panel-1-consistent",
+          "count": 7,
+          "seed": 1103,
+          "stroke": "#3f78ad",
+          "opacity": 0.11,
+          "strokeWidth": 4.0,
+          "domain": [
+            28,
+            9400
+          ],
+          "yStart": 72.0,
+          "yEnd": 81.7,
+          "steepness": 6.4
+        },
+        {
+          "id": "panel-1-ghost-green",
+          "type": "ghostTrajectories",
+          "usesTransform": "panel-1.plot.xy",
+          "series": "panel-1-function",
+          "count": 7,
+          "seed": 1147,
+          "stroke": "#629b80",
+          "opacity": 0.13,
+          "strokeWidth": 4.0,
+          "domain": [
+            28,
+            9400
+          ],
+          "yStart": 72.1,
+          "yEnd": 82.2,
+          "steepness": 5.7
+        },
+        {
+          "id": "panel-1-consistent",
+          "type": "lineSeries",
+          "usesTransform": "panel-1.plot.xy",
+          "label": "consistent teaching",
+          "stroke": "#3f78ad",
+          "strokeWidth": 4,
+          "dasharray": "12 9",
+          "marker": {
+            "shape": "circle",
+            "size": 42,
+            "fill": "#3f78ad"
+          },
+          "points": [
+            {
+              "x": 30,
+              "y": 74.95
+            },
+            {
+              "x": 90,
+              "y": 78.22
+            },
+            {
+              "x": 300,
+              "y": 80.05
+            },
+            {
+              "x": 1200,
+              "y": 81.18
+            },
+            {
+              "x": 4800,
+              "y": 81.55
+            },
+            {
+              "x": 9600,
+              "y": 81.72
+            }
+          ]
+        },
+        {
+          "id": "panel-1-fixed",
+          "type": "lineSeries",
+          "usesTransform": "panel-1.plot.xy",
+          "label": "fixed teacher",
+          "stroke": "#000000",
+          "strokeWidth": 4,
+          "dasharray": "12 9",
+          "marker": {
+            "shape": "star",
+            "size": 40,
+            "fill": "#000000"
+          },
+          "points": [
+            {
+              "x": 30,
+              "y": 73.85
+            },
+            {
+              "x": 90,
+              "y": 76.45
+            },
+            {
+              "x": 300,
+              "y": 77.75
+            },
+            {
+              "x": 1200,
+              "y": 78.0
+            },
+            {
+              "x": 4800,
+              "y": 77.6
+            },
+            {
+              "x": 9600,
+              "y": 77.1
+            }
+          ]
+        },
+        {
+          "id": "panel-1-function",
+          "type": "lineSeries",
+          "usesTransform": "panel-1.plot.xy",
+          "label": "function matching",
+          "stroke": "#629b80",
+          "strokeWidth": 4,
+          "dasharray": "12 9",
+          "marker": {
+            "shape": "triangle-up",
+            "size": 46,
+            "fill": "#629b80"
+          },
+          "points": [
+            {
+              "x": 30,
+              "y": 73.95
+            },
+            {
+              "x": 90,
+              "y": 78.0
+            },
+            {
+              "x": 300,
+              "y": 80.2
+            },
+            {
+              "x": 1200,
+              "y": 81.5
+            },
+            {
+              "x": 4800,
+              "y": 82.45
+            },
+            {
+              "x": 9600,
+              "y": 82.55
+            }
+          ]
+        }
+      ],
+      "annotations": [
+        {
+          "id": "panel-1-4x",
+          "type": "arrowLabel",
+          "text": "4x",
+          "role": "annotation-label",
+          "anchorTo": "panel-1-consistent",
+          "textAnchor": {
+            "x": 843,
+            "y": 278,
+            "fontSize": 50,
+            "anchor": "start",
+            "baseline": "alphabetic"
+          },
+          "arrow": {
+            "kind": "horizontalComparison",
+            "direction": "right-to-left",
+            "headAt": "end",
+            "x1": 918,
+            "y1": 288,
+            "x2": 780,
+            "y2": 288,
+            "stroke": "#000000",
+            "strokeWidth": 7
+          }
+        }
+      ],
+      "provenance": [
+        {
+          "target": "panel-1.plot",
+          "confidence": "high",
+          "note": "Axes and major ticks measured from native raster. X domain inferred from log-spaced tick positions."
+        },
+        {
+          "target": "panel-1.marks",
+          "confidence": "medium",
+          "note": "Displayed marker values visually approximated; underlying source data unavailable."
+        }
+      ]
+    },
+    {
+      "id": "panel-2",
+      "type": "log_line_panel",
+      "title": {
+        "id": "panel-2-title",
+        "text": "Teacher accuracy",
+        "x": 1583,
+        "y": 166,
+        "fontSize": 52,
+        "anchor": "middle",
+        "baseline": "alphabetic",
+        "role": "panel-title",
+        "anchorTo": "panel-2-plot-top-rule"
+      },
+      "plot": {
+        "id": "panel-2-plot",
+        "dataBbox": {
+          "x": 1216,
+          "y": 178,
+          "width": 731,
+          "height": 880
+        },
+        "axes": {
+          "xAxis": {
+            "id": "panel-2-x-axis",
+            "sourceCalibrated": true,
+            "line": {
+              "x1": 1216,
+              "y1": 1058,
+              "x2": 1947,
+              "y2": 1058
+            },
+            "tickLength": 13,
+            "tickDirection": "out",
+            "tickLabelBand": {
+              "id": "panel-2-x-tick-label-band",
+              "x": 1216,
+              "y": 1062,
+              "width": 731,
+              "height": 104
+            },
+            "label": {
+              "id": "panel-2-x-axis-title",
+              "text": "Epochs",
+              "x": 1583,
+              "y": 1242,
+              "fontSize": 48,
+              "anchor": "middle",
+              "baseline": "alphabetic",
+              "role": "axis-title",
+              "anchorTo": "panel-2-x-tick-label-band"
+            }
+          },
+          "yAxis": {
+            "id": "panel-2-y-axis",
+            "sourceCalibrated": true,
+            "line": {
+              "x1": 1216,
+              "y1": 178,
+              "x2": 1216,
+              "y2": 1058
+            },
+            "tickLength": 12,
+            "tickDirection": "out",
+            "tickLabelBand": {
+              "id": "panel-2-y-tick-label-band",
+              "x": 1142,
+              "y": 178,
+              "width": 60,
+              "height": 880
+            }
+          }
+        },
+        "x": {
+          "scale": "log",
+          "domain": [
+            20,
+            6000
+          ],
+          "ticks": [
+            {
+              "value": 30,
+              "label": "30",
+              "x": 1268
+            },
+            {
+              "value": 90,
+              "label": "90",
+              "x": 1408
+            },
+            {
+              "value": 300,
+              "label": "300",
+              "x": 1562
+            },
+            {
+              "value": 600,
+              "label": "600",
+              "x": 1651
+            },
+            {
+              "value": 1200,
+              "label": "1200",
+              "x": 1740,
+              "labelDx": 62,
+              "fontSize": 40
+            },
+            {
+              "value": 4800,
+              "label": "4800",
+              "x": 1917
+            }
+          ]
+        },
+        "y": {
+          "scale": "linear",
+          "domain": [
+            72,
+            83
+          ],
+          "ticks": [
+            {
+              "value": 75,
+              "label": "75"
+            },
+            {
+              "value": 80,
+              "label": "80"
+            },
+            {
+              "value": 83,
+              "label": "83"
+            }
+          ],
+          "minorTicks": [
+            72,
+            73,
+            74,
+            76,
+            77,
+            78,
+            79,
+            81,
+            82
+          ]
+        }
+      },
+      "layoutObjects": [
+        {
+          "id": "panel-2-legend",
+          "type": "legend",
+          "bbox": {
+            "x": 1328,
+            "y": 860,
+            "width": 592,
+            "height": 185
+          },
+          "bboxStrategy": "deriveFromChildren",
+          "framePadding": {
+            "left": 38,
+            "right": 34,
+            "top": 31,
+            "bottom": 28
+          },
+          "anchorTo": "panel-2-plot",
+          "exclusionZone": {
+            "paddingPx": 2
+          },
+          "layout": {
+            "sampleX": 1378,
+            "sampleLength": 140,
+            "markerX": 1448,
+            "labelX": 1560,
+            "rowCenters": [
+              924,
+              1008
+            ],
+            "fontSize": 44
+          },
+          "items": [
+            {
+              "series": "panel-2-consistent",
+              "label": "consistent teaching"
+            },
+            {
+              "series": "panel-2-shampoo",
+              "label": "with Shampoo"
+            }
+          ]
+        }
+      ],
+      "marks": [
+        {
+          "id": "panel-2-ghost-blue",
+          "type": "ghostTrajectories",
+          "usesTransform": "panel-2.plot.xy",
+          "series": "panel-2-consistent",
+          "count": 8,
+          "seed": 2103,
+          "stroke": "#3f78ad",
+          "opacity": 0.11,
+          "strokeWidth": 4.0,
+          "domain": [
+            28,
+            4800
+          ],
+          "yStart": 72.0,
+          "yEnd": 81.7,
+          "steepness": 6.7
+        },
+        {
+          "id": "panel-2-ghost-orange",
+          "type": "ghostTrajectories",
+          "usesTransform": "panel-2.plot.xy",
+          "series": "panel-2-shampoo",
+          "count": 7,
+          "seed": 2197,
+          "stroke": "#c86f2c",
+          "opacity": 0.13,
+          "strokeWidth": 4.0,
+          "domain": [
+            28,
+            1300
+          ],
+          "yStart": 72.0,
+          "yEnd": 81.6,
+          "steepness": 5.3
+        },
+        {
+          "id": "panel-2-consistent",
+          "type": "lineSeries",
+          "usesTransform": "panel-2.plot.xy",
+          "label": "consistent teaching",
+          "stroke": "#3f78ad",
+          "strokeWidth": 4,
+          "dasharray": "12 9",
+          "marker": {
+            "shape": "circle",
+            "size": 42,
+            "fill": "#3f78ad"
+          },
+          "points": [
+            {
+              "x": 30,
+              "y": 74.95
+            },
+            {
+              "x": 90,
+              "y": 78.25
+            },
+            {
+              "x": 300,
+              "y": 80.05
+            },
+            {
+              "x": 600,
+              "y": 80.65
+            },
+            {
+              "x": 1200,
+              "y": 81.2
+            },
+            {
+              "x": 4800,
+              "y": 81.55
+            }
+          ]
+        },
+        {
+          "id": "panel-2-shampoo",
+          "type": "lineSeries",
+          "usesTransform": "panel-2.plot.xy",
+          "label": "with Shampoo",
+          "stroke": "#c86f2c",
+          "strokeWidth": 4,
+          "dasharray": "12 9",
+          "marker": {
+            "shape": "triangle-down",
+            "size": 46,
+            "fill": "#c86f2c"
+          },
+          "points": [
+            {
+              "x": 30,
+              "y": 76.0
+            },
+            {
+              "x": 90,
+              "y": 79.15
+            },
+            {
+              "x": 300,
+              "y": 80.7
+            },
+            {
+              "x": 600,
+              "y": 81.15
+            },
+            {
+              "x": 1200,
+              "y": 81.45
+            }
+          ]
+        }
+      ],
+      "annotations": [
+        {
+          "id": "panel-2-4x",
+          "type": "arrowLabel",
+          "text": "4x",
+          "role": "annotation-label",
+          "anchorTo": "panel-2-consistent",
+          "textAnchor": {
+            "x": 1810,
+            "y": 264,
+            "fontSize": 50,
+            "anchor": "start",
+            "baseline": "alphabetic"
+          },
+          "arrow": {
+            "kind": "horizontalComparison",
+            "direction": "right-to-left",
+            "headAt": "end",
+            "x1": 1914,
+            "y1": 284,
+            "x2": 1752,
+            "y2": 284,
+            "stroke": "#000000",
+            "strokeWidth": 7
+          }
+        }
+      ],
+      "provenance": [
+        {
+          "target": "panel-2.plot.x.domain",
+          "confidence": "medium",
+          "note": "The last labeled tick is 4800, while the visible axis extends beyond it; log-domain upper padding inferred as 6000 to match tick positions."
+        },
+        {
+          "target": "panel-2.marks",
+          "confidence": "medium",
+          "note": "Displayed marker values visually approximated; underlying source data unavailable."
+        }
+      ]
+    },
+    {
+      "id": "panel-3",
+      "type": "log_line_panel",
+      "title": {
+        "id": "panel-3-title",
+        "text": "Teacher accuracy",
+        "x": 2505,
+        "y": 166,
+        "fontSize": 52,
+        "anchor": "middle",
+        "baseline": "alphabetic",
+        "role": "panel-title",
+        "anchorTo": "panel-3-plot-top-rule"
+      },
+      "plot": {
+        "id": "panel-3-plot",
+        "dataBbox": {
+          "x": 2138,
+          "y": 178,
+          "width": 730,
+          "height": 880
+        },
+        "axes": {
+          "xAxis": {
+            "id": "panel-3-x-axis",
+            "sourceCalibrated": true,
+            "line": {
+              "x1": 2138,
+              "y1": 1058,
+              "x2": 2868,
+              "y2": 1058
+            },
+            "tickLength": 13,
+            "tickDirection": "out",
+            "tickLabelBand": {
+              "id": "panel-3-x-tick-label-band",
+              "x": 2138,
+              "y": 1062,
+              "width": 730,
+              "height": 104
+            },
+            "label": {
+              "id": "panel-3-x-axis-title",
+              "text": "Epochs",
+              "x": 2505,
+              "y": 1242,
+              "fontSize": 48,
+              "anchor": "middle",
+              "baseline": "alphabetic",
+              "role": "axis-title",
+              "anchorTo": "panel-3-x-tick-label-band"
+            }
+          },
+          "yAxis": {
+            "id": "panel-3-y-axis",
+            "sourceCalibrated": true,
+            "line": {
+              "x1": 2138,
+              "y1": 178,
+              "x2": 2138,
+              "y2": 1058
+            },
+            "tickLength": 12,
+            "tickDirection": "out",
+            "tickLabelBand": {
+              "id": "panel-3-y-tick-label-band",
+              "x": 2066,
+              "y": 178,
+              "width": 58,
+              "height": 880
+            }
+          }
+        },
+        "x": {
+          "scale": "log",
+          "domain": [
+            20,
+            6000
+          ],
+          "ticks": [
+            {
+              "value": 30,
+              "label": "30",
+              "x": 2189
+            },
+            {
+              "value": 90,
+              "label": "90",
+              "x": 2330
+            },
+            {
+              "value": 300,
+              "label": "300",
+              "x": 2484
+            },
+            {
+              "value": 600,
+              "label": "600",
+              "x": 2573
+            },
+            {
+              "value": 1200,
+              "label": "1200",
+              "x": 2662,
+              "labelDx": 62,
+              "fontSize": 40
+            },
+            {
+              "value": 4800,
+              "label": "4800",
+              "x": 2839
+            }
+          ]
+        },
+        "y": {
+          "scale": "linear",
+          "domain": [
+            72,
+            83
+          ],
+          "ticks": [
+            {
+              "value": 75,
+              "label": "75"
+            },
+            {
+              "value": 80,
+              "label": "80"
+            },
+            {
+              "value": 83,
+              "label": "83"
+            }
+          ],
+          "minorTicks": [
+            72,
+            73,
+            74,
+            76,
+            77,
+            78,
+            79,
+            81,
+            82
+          ]
+        }
+      },
+      "layoutObjects": [
+        {
+          "id": "panel-3-legend",
+          "type": "legend",
+          "bbox": {
+            "x": 2252,
+            "y": 860,
+            "width": 590,
+            "height": 185
+          },
+          "bboxStrategy": "deriveFromChildren",
+          "framePadding": {
+            "left": 38,
+            "right": 34,
+            "top": 31,
+            "bottom": 28
+          },
+          "anchorTo": "panel-3-plot",
+          "exclusionZone": {
+            "paddingPx": 2
+          },
+          "layout": {
+            "sampleX": 2302,
+            "sampleLength": 140,
+            "markerX": 2372,
+            "labelX": 2484,
+            "rowCenters": [
+              924,
+              1008
+            ],
+            "fontSize": 44
+          },
+          "items": [
+            {
+              "series": "panel-3-consistent",
+              "label": "consistent teaching"
+            },
+            {
+              "series": "panel-3-bit",
+              "label": "with BiT init"
+            }
+          ]
+        }
+      ],
+      "marks": [
+        {
+          "id": "panel-3-ghost-blue",
+          "type": "ghostTrajectories",
+          "usesTransform": "panel-3.plot.xy",
+          "series": "panel-3-consistent",
+          "count": 7,
+          "seed": 3103,
+          "stroke": "#3f78ad",
+          "opacity": 0.10,
+          "strokeWidth": 4.0,
+          "domain": [
+            28,
+            4800
+          ],
+          "yStart": 72.0,
+          "yEnd": 81.7,
+          "steepness": 6.5
+        },
+        {
+          "id": "panel-3-ghost-olive",
+          "type": "ghostTrajectories",
+          "usesTransform": "panel-3.plot.xy",
+          "series": "panel-3-bit",
+          "count": 7,
+          "seed": 3191,
+          "stroke": "#9a8d32",
+          "opacity": 0.12,
+          "strokeWidth": 4.0,
+          "domain": [
+            28,
+            4800
+          ],
+          "yStart": 72.1,
+          "yEnd": 81.5,
+          "steepness": 5.5
+        },
+        {
+          "id": "panel-3-consistent",
+          "type": "lineSeries",
+          "usesTransform": "panel-3.plot.xy",
+          "label": "consistent teaching",
+          "stroke": "#3f78ad",
+          "strokeWidth": 4,
+          "dasharray": "12 9",
+          "marker": {
+            "shape": "circle",
+            "size": 42,
+            "fill": "#3f78ad"
+          },
+          "points": [
+            {
+              "x": 30,
+              "y": 74.95
+            },
+            {
+              "x": 90,
+              "y": 78.25
+            },
+            {
+              "x": 300,
+              "y": 80.05
+            },
+            {
+              "x": 600,
+              "y": 80.65
+            },
+            {
+              "x": 1200,
+              "y": 81.25
+            },
+            {
+              "x": 4800,
+              "y": 81.6
+            }
+          ]
+        },
+        {
+          "id": "panel-3-bit",
+          "type": "lineSeries",
+          "usesTransform": "panel-3.plot.xy",
+          "label": "with BiT init",
+          "stroke": "#9a8d32",
+          "strokeWidth": 4,
+          "dasharray": "12 9",
+          "marker": {
+            "shape": "triangle-right",
+            "size": 46,
+            "fill": "#9a8d32"
+          },
+          "points": [
+            {
+              "x": 30,
+              "y": 76.65
+            },
+            {
+              "x": 90,
+              "y": 79.45
+            },
+            {
+              "x": 300,
+              "y": 80.45
+            },
+            {
+              "x": 600,
+              "y": 80.78
+            },
+            {
+              "x": 1200,
+              "y": 81.12
+            },
+            {
+              "x": 4800,
+              "y": 81.45
+            }
+          ]
+        }
+      ],
+      "annotations": [],
+      "provenance": [
+        {
+          "target": "panel-3.plot.x.domain",
+          "confidence": "medium",
+          "note": "The last labeled tick is 4800, while the visible axis extends beyond it; log-domain upper padding inferred as 6000 to match tick positions."
+        },
+        {
+          "target": "panel-3.marks",
+          "confidence": "medium",
+          "note": "Displayed marker values visually approximated; underlying source data unavailable."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "layoutQa": {
+      "minTextGapPx": 0,
+      "minZoneGapPx": 0,
+      "exclusionZones": [
+        {
+          "id": "panel-1-plot-zone",
+          "source": "panel-1-plot.dataBbox",
+          "bbox": {
+            "x": 283,
+            "y": 178,
+            "width": 720,
+            "height": 880
+          }
+        },
+        {
+          "id": "panel-2-plot-zone",
+          "source": "panel-2-plot.dataBbox",
+          "bbox": {
+            "x": 1216,
+            "y": 178,
+            "width": 731,
+            "height": 880
+          }
+        },
+        {
+          "id": "panel-3-plot-zone",
+          "source": "panel-3-plot.dataBbox",
+          "bbox": {
+            "x": 2138,
+            "y": 178,
+            "width": 730,
+            "height": 880
+          }
+        }
+      ],
+      "allowOverlaps": [
+        {
+          "id": "legend-overlay-plot",
+          "anchorToContains": "legend",
+          "zoneSuffix": "plot-zone",
+          "reason": "The source visibly places translucent legends inside the plotting area."
+        },
+        {
+          "id": "annotation-overlay-plot",
+          "role": "annotation-label",
+          "zoneSuffix": "plot-zone",
+          "reason": "The source visibly places the 4x annotation inside the plotting area."
+        }
+      ]
+    }
+  },
+  "confidence": [
+    {
+      "target": "figure",
+      "confidence": "medium",
+      "note": "Axes, labels, legends, and marker positions are calibrated from the raster. Exact source data, repeated-run trajectories, and antialiasing are approximated with semantic data and deterministic generated path recipes."
+    }
+  ]
+}

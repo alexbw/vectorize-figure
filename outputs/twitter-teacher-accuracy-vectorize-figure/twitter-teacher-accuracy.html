@@ -1,0 +1,1273 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>twitter-teacher-accuracy reconstruction</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      background: #eeeeee;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #cfcfcf;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .note {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #555555;
+    }
+
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #aaaaaa;
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .toggle button {
+      border: 0;
+      padding: 5px 10px;
+      background: #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .toggle button.active {
+      background: #111111;
+      color: #ffffff;
+    }
+
+    main {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .frame {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .surface,
+    .reference {
+      position: absolute;
+      inset: 0;
+    }
+
+    .reference {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #ffffff;
+    }
+
+    .show-reference .surface {
+      display: none;
+    }
+
+    .show-reference .reference {
+      display: block;
+    }
+
+    svg {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">twitter-teacher-accuracy</h1>
+      <div class="note">Generated candidate is rendered from JSON. Source image is QA-only.</div>
+    </div>
+    <div class="toggle" aria-label="View mode">
+      <button id="generatedButton" class="active" type="button">Generated</button>
+      <button id="referenceButton" type="button">Reference</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="frame" class="frame">
+      <div id="surface" class="surface" data-role="generated-candidate"></div>
+      <img id="reference" class="reference" alt="QA reference source image">
+    </div>
+  </main>
+
+  <script>
+    const SPEC_URL = './twitter-teacher-accuracy.json';
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function byId(id) {
+      return document.getElementById(id);
+    }
+
+    function svgNode(tag, attrs = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      return node;
+    }
+
+    function logScale(domain, range, value) {
+      const min = Math.log(domain[0]);
+      const max = Math.log(domain[1]);
+      return range[0] + (Math.log(value) - min) / (max - min) * (range[1] - range[0]);
+    }
+
+    function linearScale(domain, range, value) {
+      return range[0] + (value - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+    }
+
+    function panelScales(panel) {
+      const plot = panel.plot;
+      const box = plot.dataBbox;
+      return {
+        x(value) {
+          return plot.x.scale === 'log'
+            ? logScale(plot.x.domain, [box.x, box.x + box.width], value)
+            : linearScale(plot.x.domain, [box.x, box.x + box.width], value);
+        },
+        y(value) {
+          return linearScale(plot.y.domain, [box.y + box.height, box.y], value);
+        }
+      };
+    }
+
+    function seededRandom(seed) {
+      let value = seed >>> 0;
+      return function random() {
+        value += 0x6D2B79F5;
+        let t = value;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function pathFromPoints(points) {
+      return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point[0].toFixed(2)} ${point[1].toFixed(2)}`).join(' ');
+    }
+
+    function textNode(spec, defaults = {}) {
+      const node = svgNode('text', {
+        id: spec.id,
+        x: spec.x,
+        y: spec.y,
+        fill: spec.fill || spec.color || defaults.color || '#111111',
+        'font-size': spec.fontSize || defaults.defaultSize || 42,
+        'font-weight': spec.fontWeight || 400,
+        'font-family': spec.fontFamily || defaults.fontFamily || 'Times New Roman, Times, serif',
+        'letter-spacing': spec.letterSpacing ?? defaults.calibration?.letterSpacing ?? 0,
+        'text-anchor': spec.anchor || 'start',
+        'dominant-baseline': spec.baseline || 'alphabetic',
+        transform: spec.rotation ? `rotate(${spec.rotation} ${spec.x} ${spec.y})` : undefined,
+        'data-id': spec.id,
+        'data-role': spec.role || 'text',
+        'data-anchor-to': spec.anchorTo,
+        'data-protected': spec.protected === false ? undefined : 'true'
+      });
+      node.textContent = spec.text;
+      return node;
+    }
+
+    function markerPath(shape, size) {
+      const r = size / 2;
+      if (shape === 'triangle-up') {
+        return `M 0 ${-r} L ${r * 0.9} ${r * 0.78} L ${-r * 0.9} ${r * 0.78} Z`;
+      }
+      if (shape === 'triangle-down') {
+        return `M 0 ${r} L ${r * 0.9} ${-r * 0.78} L ${-r * 0.9} ${-r * 0.78} Z`;
+      }
+      if (shape === 'triangle-right') {
+        return `M ${r} 0 L ${-r * 0.78} ${-r * 0.9} L ${-r * 0.78} ${r * 0.9} Z`;
+      }
+      if (shape === 'star') {
+        const points = [];
+        for (let i = 0; i < 10; i += 1) {
+          const angle = -Math.PI / 2 + i * Math.PI / 5;
+          const radius = i % 2 === 0 ? r : r * 0.43;
+          points.push([Math.cos(angle) * radius, Math.sin(angle) * radius]);
+        }
+        return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point[0].toFixed(2)} ${point[1].toFixed(2)}`).join(' ') + ' Z';
+      }
+      return '';
+    }
+
+    function renderMarker(group, shape, x, y, size, fill, attrs = {}) {
+      if (shape === 'circle') {
+        group.appendChild(svgNode('circle', {
+          cx: x,
+          cy: y,
+          r: size / 2,
+          fill,
+          stroke: '#ffffff',
+          'stroke-width': 2,
+          ...attrs
+        }));
+        return;
+      }
+      group.appendChild(svgNode('path', {
+        d: markerPath(shape, size),
+        transform: `translate(${x} ${y})`,
+        fill,
+        stroke: '#ffffff',
+        'stroke-width': 2,
+        ...attrs
+      }));
+    }
+
+    function renderGridAndAxes(svg, panel, spec) {
+      const plot = panel.plot;
+      const box = plot.dataBbox;
+      const scales = panelScales(panel);
+      const layer = svgNode('g', {'data-panel-id': panel.id, 'data-role': 'axes'});
+      svg.appendChild(layer);
+
+      for (const value of plot.y.minorTicks || []) {
+        const y = scales.y(value);
+        layer.appendChild(svgNode('line', {
+          x1: box.x,
+          y1: y,
+          x2: box.x + box.width,
+          y2: y,
+          stroke: spec.rendering.styleTokens.gridMinor,
+          'stroke-width': 3,
+          'stroke-dasharray': '14 12',
+          'data-role': 'minor-grid',
+          'data-panel-id': panel.id,
+          'data-value': value
+        }));
+      }
+
+      for (const tick of plot.y.ticks) {
+        const y = scales.y(tick.value);
+        const isTop = Number(tick.value) === 83;
+        layer.appendChild(svgNode('line', {
+          x1: box.x,
+          y1: y,
+          x2: box.x + box.width,
+          y2: y,
+          stroke: isTop ? spec.rendering.styleTokens.tealTopRule : spec.rendering.styleTokens.gridMajor,
+          'stroke-width': isTop ? 5 : 3,
+          'data-role': 'major-grid',
+          'data-panel-id': panel.id,
+          'data-value': tick.value
+        }));
+      }
+
+      const axes = plot.axes;
+      for (const [axisName, axis] of Object.entries({xAxis: axes.xAxis, yAxis: axes.yAxis})) {
+        layer.appendChild(svgNode('line', {
+          x1: axis.line.x1,
+          y1: axis.line.y1,
+          x2: axis.line.x2,
+          y2: axis.line.y2,
+          stroke: spec.rendering.styleTokens.axis,
+          'stroke-width': 4,
+          'data-role': 'axis-line',
+          'data-axis': axis.id,
+          'data-axis-name': axisName,
+          'data-validation': 'ok'
+        }));
+      }
+
+      const allYTickValues = [...(plot.y.minorTicks || []), ...plot.y.ticks.map(tick => tick.value)];
+      for (const value of allYTickValues) {
+        const y = scales.y(value);
+        const major = plot.y.ticks.find(tick => tick.value === value);
+        layer.appendChild(svgNode('line', {
+          x1: axes.yAxis.line.x1,
+          y1: y,
+          x2: axes.yAxis.line.x1 - axes.yAxis.tickLength,
+          y2: y,
+          stroke: spec.rendering.styleTokens.axis,
+          'stroke-width': major ? 4 : 3,
+          'data-role': major ? 'axis-tick-mark' : 'minor-axis-tick-mark',
+          'data-axis': major ? axes.yAxis.id : undefined,
+          'data-value': major ? String(value) : undefined,
+          'data-source-y': y.toFixed(2)
+        }));
+        if (major) {
+          layer.appendChild(textNode({
+            id: `${axes.yAxis.id}-tick-${value}-label`,
+            text: major.label,
+            x: axes.yAxis.line.x1 - 24,
+            y,
+            fontSize: 43,
+            anchor: 'end',
+            baseline: 'middle',
+            role: 'tick-label',
+            anchorTo: axes.yAxis.id
+          }, spec.typography));
+          layer.lastChild.setAttribute('data-axis', axes.yAxis.id);
+          layer.lastChild.setAttribute('data-value', String(value));
+          layer.lastChild.setAttribute('data-source-y', y.toFixed(2));
+        }
+      }
+
+      renderMinorLogTicks(layer, panel);
+      for (const tick of plot.x.ticks) {
+        const x = tick.x ?? scales.x(tick.value);
+        layer.appendChild(svgNode('line', {
+          x1: x,
+          y1: axes.xAxis.line.y1,
+          x2: x,
+          y2: axes.xAxis.line.y1 + axes.xAxis.tickLength,
+          stroke: spec.rendering.styleTokens.axis,
+          'stroke-width': 4,
+          'data-role': 'axis-tick-mark',
+          'data-axis': axes.xAxis.id,
+          'data-value': String(tick.value),
+          'data-source-x': x.toFixed(2)
+        }));
+        const labelDx = tick.labelDx ?? 25;
+        const labelDy = tick.labelDy ?? 80;
+        const label = textNode({
+          id: `${axes.xAxis.id}-tick-${tick.value}-label`,
+          text: tick.label,
+          x: x + labelDx,
+          y: axes.xAxis.line.y1 + labelDy,
+          fontSize: tick.fontSize || 43,
+          rotation: tick.rotation ?? -45,
+          anchor: tick.labelAnchor || 'end',
+          baseline: 'middle',
+          role: 'tick-label',
+          anchorTo: axes.xAxis.id
+        }, spec.typography);
+        label.setAttribute('data-axis', axes.xAxis.id);
+        label.setAttribute('data-value', String(tick.value));
+        label.setAttribute('data-source-x', x.toFixed(2));
+        label.setAttribute('data-label-offset-x', String(labelDx));
+        label.setAttribute('data-label-offset-y', String(labelDy));
+        layer.appendChild(label);
+      }
+
+      const xLabel = axes.xAxis.label;
+      layer.appendChild(textNode(xLabel, spec.typography));
+      if (panel.yAxisTitle) layer.appendChild(textNode(panel.yAxisTitle, spec.typography));
+      layer.appendChild(textNode(panel.title, spec.typography));
+    }
+
+    function renderMinorLogTicks(layer, panel) {
+      const plot = panel.plot;
+      const xAxis = plot.axes.xAxis;
+      const majorValues = new Set(plot.x.ticks.map(tick => Number(tick.value)));
+      const min = plot.x.domain[0];
+      const max = plot.x.domain[1];
+      const scales = panelScales(panel);
+      for (let exponent = 1; exponent <= 4; exponent += 1) {
+        const base = 10 ** exponent;
+        for (let multiplier = 2; multiplier <= 9; multiplier += 1) {
+          const value = multiplier * base;
+          if (value <= min || value >= max || majorValues.has(value)) continue;
+          const x = scales.x(value);
+          if (x < xAxis.line.x1 + 2 || x > xAxis.line.x2 - 2) continue;
+          layer.appendChild(svgNode('line', {
+            x1: x,
+            y1: xAxis.line.y1,
+            x2: x,
+            y2: xAxis.line.y1 + 9,
+            stroke: '#111111',
+            'stroke-width': 3,
+            'data-role': 'minor-axis-tick-mark',
+            'data-axis': xAxis.id,
+            'data-source-x': x.toFixed(2)
+          }));
+        }
+      }
+    }
+
+    function renderGhostTrajectories(svg, panel, mark) {
+      const scales = panelScales(panel);
+      const group = svgNode('g', {
+        'data-panel-id': panel.id,
+        'data-mark-id': mark.id,
+        'data-role': 'generated-trajectory-recipe',
+        'data-series-id': mark.series,
+        clipPath: `url(#${panel.id}-clip)`
+      });
+      const random = seededRandom(mark.seed || 1);
+      const logMin = Math.log(mark.domain[0]);
+      const logMax = Math.log(mark.domain[1]);
+      for (let index = 0; index < mark.count; index += 1) {
+        const center = 0.43 + (random() - 0.5) * 0.42;
+        const steepness = mark.steepness + (random() - 0.5) * 2.2;
+        const amplitude = (mark.yEnd - mark.yStart) * (0.86 + random() * 0.24);
+        const offset = (random() - 0.5) * 0.38;
+        const points = [];
+        for (let step = 0; step <= 95; step += 1) {
+          const t = step / 95;
+          const value = Math.exp(logMin + t * (logMax - logMin));
+          const logistic = 1 / (1 + Math.exp(-steepness * (t - center)));
+          const ripple = (random() - 0.5) * 0.18 + Math.sin((t * 14 + index) * Math.PI) * 0.035;
+          const yValue = mark.yStart + offset + amplitude * logistic + ripple;
+          points.push([scales.x(value), scales.y(yValue)]);
+        }
+        group.appendChild(svgNode('path', {
+          d: pathFromPoints(points),
+          fill: 'none',
+          stroke: mark.stroke,
+          'stroke-width': mark.strokeWidth,
+          'stroke-opacity': mark.opacity,
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          'data-role': 'generated-trajectory',
+          'data-series-id': mark.series,
+          'data-recipe-index': index
+        }));
+      }
+      svg.appendChild(group);
+    }
+
+    function renderLineSeries(svg, panel, mark) {
+      const scales = panelScales(panel);
+      const group = svgNode('g', {
+        'data-panel-id': panel.id,
+        'data-mark-id': mark.id,
+        'data-role': 'line-series',
+        'data-series-id': mark.id,
+        'data-label': mark.label,
+        'data-uses-transform': mark.usesTransform
+      });
+      const points = mark.points.map(point => [scales.x(point.x), scales.y(point.y)]);
+      group.appendChild(svgNode('path', {
+        d: pathFromPoints(points),
+        fill: 'none',
+        stroke: mark.stroke,
+        'stroke-width': mark.strokeWidth,
+        'stroke-dasharray': mark.dasharray,
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round',
+        'data-role': 'series-line',
+        'data-series-id': mark.id
+      }));
+      for (let index = 0; index < points.length; index += 1) {
+        const [x, y] = points[index];
+        renderMarker(group, mark.marker.shape, x, y, mark.marker.size, mark.marker.fill, {
+          'data-role': 'series-marker',
+          'data-series-id': mark.id,
+          'data-point-index': index,
+          'data-x-value': mark.points[index].x,
+          'data-y-value': mark.points[index].y
+        });
+      }
+      svg.appendChild(group);
+    }
+
+    function renderLegend(svg, panel, legend, seriesById, spec) {
+      const group = svgNode('g', {
+        'data-panel-id': panel.id,
+        'data-role': 'legend',
+        'data-layout-id': legend.id,
+        'data-anchor-to': legend.anchorTo,
+        'data-bbox-strategy': legend.bboxStrategy || 'fixed'
+      });
+      const box = legend.bbox;
+      const framePadding = legend.framePadding || {};
+      const frameRules = spec.rendering?.layoutRules?.legendFrame || {};
+      const legendFrameRules = legend.frameRules || {};
+      const minLabelEndGapEm = legend.minLabelEndGapEm ?? legendFrameRules.minLabelEndGapEm ?? frameRules.minLabelEndGapEm ?? 0;
+      const minChildGapPx = legend.minChildGapPx ?? legendFrameRules.minChildGapPx ?? frameRules.minChildGapPx ?? 0;
+      const useDerivedFrame = legend.bboxStrategy === 'deriveFromChildren';
+      group.appendChild(svgNode('rect', {
+        x: box.x,
+        y: box.y,
+        width: box.width,
+        height: box.height,
+        rx: 8,
+        ry: 8,
+        fill: '#ffffff',
+        'fill-opacity': 0.82,
+        stroke: '#cfcfcf',
+        'stroke-width': 3,
+        'data-role': 'legend-frame',
+        'data-layout-id': legend.id,
+        'data-bbox-strategy': legend.bboxStrategy || 'fixed',
+        'data-derived-from-children': useDerivedFrame ? 'pending' : 'false',
+        'data-frame-padding-left': framePadding.left ?? 0,
+        'data-frame-padding-right': framePadding.right ?? 0,
+        'data-frame-padding-top': framePadding.top ?? 0,
+        'data-frame-padding-bottom': framePadding.bottom ?? 0,
+        'data-min-label-end-gap-em': minLabelEndGapEm,
+        'data-min-child-gap-px': minChildGapPx,
+        'data-source-x': box.x,
+        'data-source-y': box.y,
+        'data-source-width': box.width,
+        'data-source-height': box.height
+      }));
+      const layout = legend.layout || {};
+      const rowCenters = layout.rowCenters || [];
+      const defaultSampleX = layout.sampleX ?? box.x + 50;
+      const defaultSampleLength = layout.sampleLength ?? 160;
+      const defaultMarkerX = layout.markerX ?? defaultSampleX + defaultSampleLength / 2;
+      const defaultLabelX = layout.labelX ?? defaultSampleX + defaultSampleLength + 50;
+      const defaultFontSize = layout.fontSize ?? 49;
+      for (const [index, item] of legend.items.entries()) {
+        const series = seriesById.get(item.series);
+        if (!series) continue;
+        const rowY = item.y ?? rowCenters[index] ?? box.y + (index + 1) * box.height / (legend.items.length + 1);
+        const lineX1 = item.sampleX ?? defaultSampleX;
+        const sampleLength = item.sampleLength ?? defaultSampleLength;
+        const lineX2 = lineX1 + sampleLength;
+        const markerX = item.markerX ?? defaultMarkerX;
+        const labelX = item.labelX ?? defaultLabelX;
+        const fontSize = item.fontSize ?? defaultFontSize;
+        group.appendChild(svgNode('line', {
+          x1: lineX1,
+          y1: rowY,
+          x2: lineX2,
+          y2: rowY,
+          stroke: series.stroke,
+          'stroke-width': series.strokeWidth,
+          'stroke-dasharray': series.dasharray,
+          'data-role': 'legend-line',
+          'data-series-id': item.series,
+          'data-owner-box': legend.id,
+          'data-layout-row-index': index,
+          'data-layout-row-y': rowY
+        }));
+        renderMarker(group, series.marker.shape, markerX, rowY, series.marker.size, series.marker.fill, {
+          'data-role': 'legend-marker',
+          'data-series-id': item.series,
+          'data-owner-box': legend.id,
+          'data-layout-row-index': index,
+          'data-layout-row-y': rowY
+        });
+        const labelNode = textNode({
+          id: `${legend.id}-${item.series}-label`,
+          text: item.label,
+          x: labelX,
+          y: rowY,
+          fontSize,
+          anchor: 'start',
+          baseline: 'middle',
+          role: 'legend-label',
+          anchorTo: legend.id
+        }, spec.typography);
+        labelNode.setAttribute('data-owner-box', legend.id);
+        labelNode.setAttribute('data-layout-row-index', String(index));
+        labelNode.setAttribute('data-layout-row-y', String(rowY));
+        if (useDerivedFrame) {
+          labelNode.setAttribute('data-layout-parent-strategy', 'deriveFromChildren');
+        } else {
+          const labelRightPadding = layout.labelRightPadding ?? 24;
+          const labelFit = layout.labelFit || 'none';
+          const minLabelScale = layout.minLabelScale ?? 0.78;
+          const labelMaxWidth = Math.max(12, box.x + box.width - labelRightPadding - labelX);
+          labelNode.setAttribute('data-max-width', labelMaxWidth.toFixed(2));
+          labelNode.setAttribute('data-label-fit', labelFit);
+          labelNode.setAttribute('data-min-label-scale', String(minLabelScale));
+        }
+        group.appendChild(labelNode);
+      }
+      svg.appendChild(group);
+    }
+
+    function renderAnnotation(svg, panel, annotation, spec) {
+      if (annotation.type !== 'arrowLabel') return;
+      const group = svgNode('g', {
+        'data-panel-id': panel.id,
+        'data-role': 'annotation',
+        'data-annotation-id': annotation.id,
+        'data-anchor-to': annotation.anchorTo
+      });
+      const arrow = annotation.arrow;
+      const isHorizontalComparison = arrow.kind === 'horizontalComparison';
+      const y = arrow.y ?? arrow.y1;
+      const x1 = arrow.x1;
+      const x2 = arrow.x2;
+      const y1 = isHorizontalComparison ? y : arrow.y1;
+      const y2 = isHorizontalComparison ? y : arrow.y2;
+      const horizontalOk = !isHorizontalComparison || Math.abs(y1 - y2) <= 0.01;
+      const directionOk = !isHorizontalComparison ||
+        (arrow.direction === 'right-to-left' && x1 > x2) ||
+        (arrow.direction === 'left-to-right' && x2 > x1) ||
+        !['right-to-left', 'left-to-right'].includes(arrow.direction);
+      group.appendChild(svgNode('line', {
+        x1,
+        y1,
+        x2,
+        y2,
+        stroke: annotation.arrow.stroke,
+        'stroke-width': annotation.arrow.strokeWidth,
+        'stroke-linecap': 'butt',
+        'marker-end': arrow.headAt === 'start' ? undefined : 'url(#arrowhead-black)',
+        'marker-start': arrow.headAt === 'start' ? 'url(#arrowhead-black)' : undefined,
+        'data-role': 'annotation-arrow',
+        'data-annotation-id': annotation.id,
+        'data-arrow-kind': arrow.kind,
+        'data-arrow-direction': arrow.direction,
+        'data-horizontal-validation': isHorizontalComparison ? (horizontalOk ? 'ok' : 'mismatch') : undefined,
+        'data-direction-validation': isHorizontalComparison ? (directionOk ? 'ok' : 'mismatch') : undefined
+      }));
+      group.appendChild(textNode({
+        id: annotation.id,
+        text: annotation.text,
+        role: annotation.role,
+        anchorTo: annotation.anchorTo,
+        ...annotation.textAnchor
+      }, spec.typography));
+      svg.appendChild(group);
+    }
+
+    function buildDefinitions(svg, spec) {
+      const defs = svgNode('defs');
+      const marker = svgNode('marker', {
+        id: 'arrowhead-black',
+        viewBox: '0 0 14 14',
+        refX: 13,
+        refY: 7,
+        markerWidth: 7,
+        markerHeight: 7,
+        orient: 'auto-start-reverse'
+      });
+      marker.appendChild(svgNode('path', {d: 'M 0 0 L 14 7 L 0 14 Z', fill: '#000000'}));
+      defs.appendChild(marker);
+
+      for (const panel of spec.panels) {
+        const box = panel.plot.dataBbox;
+        const clip = svgNode('clipPath', {id: `${panel.id}-clip`});
+        clip.appendChild(svgNode('rect', {x: box.x, y: box.y, width: box.width, height: box.height}));
+        defs.appendChild(clip);
+      }
+      svg.appendChild(defs);
+    }
+
+    function renderExclusionZones(svg, spec) {
+      const group = svgNode('g', {'data-role': 'layout-exclusion-zones'});
+      for (const zone of spec.validation?.layoutQa?.exclusionZones || []) {
+        group.appendChild(svgNode('rect', {
+          x: zone.bbox.x,
+          y: zone.bbox.y,
+          width: zone.bbox.width,
+          height: zone.bbox.height,
+          fill: 'none',
+          stroke: 'none',
+          opacity: 0,
+          'data-role': 'exclusion-zone',
+          'data-zone-id': zone.id,
+          'data-source': zone.source
+        }));
+      }
+      svg.appendChild(group);
+    }
+
+    function renderFigure(spec) {
+      byId('title').textContent = spec.id;
+      const frame = byId('frame');
+      frame.style.width = `${spec.canvas.width}px`;
+      frame.style.height = `${spec.canvas.height}px`;
+      const reference = byId('reference');
+      reference.src = spec.source.path;
+
+      const surface = byId('surface');
+      surface.innerHTML = '';
+      const svg = svgNode('svg', {
+        id: 'figure-svg',
+        width: spec.canvas.width,
+        height: spec.canvas.height,
+        viewBox: `0 0 ${spec.canvas.width} ${spec.canvas.height}`,
+        role: 'img',
+        'aria-label': `${spec.id} generated reconstruction`,
+        'data-role': 'generated-candidate-svg'
+      });
+      surface.appendChild(svg);
+      svg.appendChild(svgNode('rect', {
+        x: 0,
+        y: 0,
+        width: spec.canvas.width,
+        height: spec.canvas.height,
+        fill: spec.canvas.background,
+        'data-role': 'background'
+      }));
+      buildDefinitions(svg, spec);
+
+      const seriesById = new Map();
+      for (const panel of spec.panels) {
+        for (const mark of panel.marks || []) {
+          if (mark.type === 'lineSeries') seriesById.set(mark.id, mark);
+        }
+      }
+
+      for (const panel of spec.panels) {
+        renderGridAndAxes(svg, panel, spec);
+      }
+      for (const panel of spec.panels) {
+        for (const mark of panel.marks || []) {
+          if (mark.type === 'ghostTrajectories') renderGhostTrajectories(svg, panel, mark);
+        }
+      }
+      for (const panel of spec.panels) {
+        for (const mark of panel.marks || []) {
+          if (mark.type === 'lineSeries') renderLineSeries(svg, panel, mark);
+        }
+      }
+      for (const panel of spec.panels) {
+        for (const annotation of panel.annotations || []) renderAnnotation(svg, panel, annotation, spec);
+      }
+      for (const panel of spec.panels) {
+        for (const layoutObject of panel.layoutObjects || []) {
+          if (layoutObject.type === 'legend') renderLegend(svg, panel, layoutObject, seriesById, spec);
+        }
+      }
+      renderExclusionZones(svg, spec);
+      return svg;
+    }
+
+    function fitLegendLabels(svg) {
+      for (const node of svg.querySelectorAll('[data-role="legend-label"][data-label-fit="scaleX"], [data-role="legend-label"][data-label-fit="textLength"]')) {
+        const maxWidth = Number(node.getAttribute('data-max-width'));
+        if (!Number.isFinite(maxWidth) || maxWidth <= 0) continue;
+        node.removeAttribute('textLength');
+        node.removeAttribute('lengthAdjust');
+        node.removeAttribute('transform');
+        const naturalWidth = node.getBBox().width;
+        if (!naturalWidth || naturalWidth <= maxWidth) {
+          node.setAttribute('data-fit-validation', 'ok');
+          node.setAttribute('data-validation', 'ok');
+          continue;
+        }
+        const minScale = Number(node.getAttribute('data-min-label-scale')) || 0.78;
+        const scale = maxWidth / naturalWidth;
+        const anchorX = Number(node.getAttribute('x')) || 0;
+        const anchorY = Number(node.getAttribute('y')) || 0;
+        node.setAttribute('transform', `translate(${anchorX} ${anchorY}) scale(${scale.toFixed(4)} 1) translate(${-anchorX} ${-anchorY})`);
+        node.setAttribute('data-fit-scale', scale.toFixed(3));
+        node.setAttribute('data-fit-method', 'scaleX');
+        node.setAttribute('data-fit-validation', scale >= minScale ? 'ok' : 'below-min-scale');
+        node.setAttribute('data-validation', scale >= minScale ? 'ok' : 'mismatch');
+      }
+    }
+
+    function svgPointFromClient(svg, clientX, clientY) {
+      const matrix = svg.getScreenCTM();
+      if (matrix) return new DOMPoint(clientX, clientY).matrixTransform(matrix.inverse());
+      const svgRect = svg.getBoundingClientRect();
+      const viewBox = svg.viewBox.baseVal;
+      const scaleX = viewBox.width / svgRect.width;
+      const scaleY = viewBox.height / svgRect.height;
+      return {
+        x: viewBox.x + (clientX - svgRect.left) * scaleX,
+        y: viewBox.y + (clientY - svgRect.top) * scaleY
+      };
+    }
+
+    function rectFromElement(element, svg) {
+      const rect = element.getBoundingClientRect();
+      const topLeft = svgPointFromClient(svg, rect.left, rect.top);
+      const bottomRight = svgPointFromClient(svg, rect.right, rect.bottom);
+      const x = Math.min(topLeft.x, bottomRight.x);
+      const y = Math.min(topLeft.y, bottomRight.y);
+      const width = Math.abs(bottomRight.x - topLeft.x);
+      const height = Math.abs(bottomRight.y - topLeft.y);
+      return {
+        id: element.getAttribute('id') || element.getAttribute('data-id') || element.getAttribute('data-role') || element.tagName,
+        role: element.getAttribute('data-role') || '',
+        anchorTo: element.getAttribute('data-anchor-to') || '',
+        ownerBox: element.getAttribute('data-owner-box') || '',
+        x,
+        y,
+        width,
+        height
+      };
+    }
+
+    function unionPair(a, b) {
+      const left = Math.min(a.x, b.x);
+      const top = Math.min(a.y, b.y);
+      const right = Math.max(a.x + a.width, b.x + b.width);
+      const bottom = Math.max(a.y + a.height, b.y + b.height);
+      return {
+        ...a,
+        x: left,
+        y: top,
+        width: right - left,
+        height: bottom - top
+      };
+    }
+
+    function boxFromSvgBBox(element) {
+      if (!element.getBBox) return null;
+      try {
+        const bbox = element.getBBox();
+        if (!bbox || !Number.isFinite(bbox.width) || !Number.isFinite(bbox.height)) return null;
+        const matrix = element.getCTM();
+        const points = [
+          new DOMPoint(bbox.x, bbox.y),
+          new DOMPoint(bbox.x + bbox.width, bbox.y),
+          new DOMPoint(bbox.x + bbox.width, bbox.y + bbox.height),
+          new DOMPoint(bbox.x, bbox.y + bbox.height)
+        ].map(point => matrix ? point.matrixTransform(matrix) : point);
+        const xs = points.map(point => point.x);
+        const ys = points.map(point => point.y);
+        const left = Math.min(...xs);
+        const top = Math.min(...ys);
+        const right = Math.max(...xs);
+        const bottom = Math.max(...ys);
+        return {x: left, y: top, width: right - left, height: bottom - top};
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function fontSizeFromNode(node) {
+      const attr = Number(node.getAttribute('font-size'));
+      if (Number.isFinite(attr) && attr > 0) return attr;
+      const computed = Number.parseFloat(getComputedStyle(node).fontSize);
+      return Number.isFinite(computed) && computed > 0 ? computed : 0;
+    }
+
+    function elementLayoutBox(element, svg) {
+      let box = rectFromElement(element, svg);
+      const svgBox = boxFromSvgBBox(element);
+      if (svgBox) box = unionPair(box, svgBox);
+
+      if (element.getAttribute('data-role') === 'legend-label') {
+        const anchorX = Number(element.getAttribute('x'));
+        const anchorY = Number(element.getAttribute('y'));
+        const fontSize = fontSizeFromNode(element);
+        let textLength = 0;
+        if (element.getComputedTextLength) {
+          try {
+            textLength = element.getComputedTextLength();
+          } catch (error) {
+            textLength = 0;
+          }
+        }
+        if (Number.isFinite(anchorX) && Number.isFinite(anchorY) && textLength > 0) {
+          const advanceBox = {
+            x: anchorX,
+            y: anchorY - fontSize * 0.72,
+            width: textLength,
+            height: fontSize * 1.08
+          };
+          box = unionPair(box, advanceBox);
+          element.setAttribute('data-measured-text-advance', textLength.toFixed(2));
+        }
+        element.setAttribute('data-measured-font-size', fontSize.toFixed(2));
+      }
+
+      return box;
+    }
+
+    function unionBoxes(boxes) {
+      const left = Math.min(...boxes.map(box => box.x));
+      const top = Math.min(...boxes.map(box => box.y));
+      const right = Math.max(...boxes.map(box => box.x + box.width));
+      const bottom = Math.max(...boxes.map(box => box.y + box.height));
+      return {
+        x: left,
+        y: top,
+        width: right - left,
+        height: bottom - top
+      };
+    }
+
+    function numericAttr(node, name, fallback = 0) {
+      const value = Number(node.getAttribute(name));
+      return Number.isFinite(value) ? value : fallback;
+    }
+
+    function setNumericAttr(node, name, value) {
+      if (!node.hasAttribute(name)) return;
+      const current = Number(node.getAttribute(name));
+      if (Number.isFinite(current)) node.setAttribute(name, (current + value).toFixed(2));
+    }
+
+    function translateElementGeometry(node, dx, dy) {
+      const tag = node.tagName.toLowerCase();
+      if (tag === 'rect') {
+        setNumericAttr(node, 'x', dx);
+        setNumericAttr(node, 'y', dy);
+      } else if (tag === 'line') {
+        setNumericAttr(node, 'x1', dx);
+        setNumericAttr(node, 'x2', dx);
+        setNumericAttr(node, 'y1', dy);
+        setNumericAttr(node, 'y2', dy);
+      } else if (tag === 'circle') {
+        setNumericAttr(node, 'cx', dx);
+        setNumericAttr(node, 'cy', dy);
+      } else if (tag === 'text') {
+        setNumericAttr(node, 'x', dx);
+        setNumericAttr(node, 'y', dy);
+        setNumericAttr(node, 'data-layout-row-y', dy);
+      } else if (tag === 'path') {
+        const transform = node.getAttribute('transform') || '';
+        const updated = transform.replace(/translate\(([-0-9.]+)[ ,]+([-0-9.]+)\)/, (_, x, y) => {
+          return `translate(${(Number(x) + dx).toFixed(2)} ${(Number(y) + dy).toFixed(2)})`;
+        });
+        if (updated !== transform) node.setAttribute('transform', updated);
+      }
+      setNumericAttr(node, 'data-layout-row-y', dy);
+      setNumericAttr(node, 'data-derived-child-union-x', dx);
+      setNumericAttr(node, 'data-derived-child-union-y', dy);
+    }
+
+    function translateLegendGroup(group, dx, dy) {
+      for (const node of group.children) translateElementGeometry(node, dx, dy);
+      const prevX = numericAttr(group, 'data-layout-adjustment-x');
+      const prevY = numericAttr(group, 'data-layout-adjustment-y');
+      group.setAttribute('data-layout-adjustment-x', (prevX + dx).toFixed(2));
+      group.setAttribute('data-layout-adjustment-y', (prevY + dy).toFixed(2));
+    }
+
+    function frameBoxFromNode(frame) {
+      return {
+        id: frame.getAttribute('data-layout-id') || frame.getAttribute('id') || 'legend-frame',
+        x: Number(frame.getAttribute('x')),
+        y: Number(frame.getAttribute('y')),
+        width: Number(frame.getAttribute('width')),
+        height: Number(frame.getAttribute('height'))
+      };
+    }
+
+    function elementPanelId(node) {
+      return node.getAttribute('data-panel-id') || node.closest('[data-panel-id]')?.getAttribute('data-panel-id') || '';
+    }
+
+    function criticalLegendGeometryBoxes(svg, panelId, roles) {
+      return [...svg.querySelectorAll('[data-role]')]
+        .filter(node => roles.includes(node.getAttribute('data-role')))
+        .filter(node => !panelId || elementPanelId(node) === panelId)
+        .map(node => rectFromElement(node, svg));
+    }
+
+    function legendCriticalGeometryCollisions(svg, frame, panelId, roles, minGap) {
+      const frameBox = frameBoxFromNode(frame);
+      return criticalLegendGeometryBoxes(svg, panelId, roles)
+        .filter(criticalBox => boxesOverlap(frameBox, criticalBox, minGap))
+        .map(criticalBox => ({frame: frameBox, critical: criticalBox}));
+    }
+
+    function resolveLegendCriticalGeometry(svg, group, frame, spec) {
+      const frameRules = spec.rendering?.layoutRules?.legendFrame || {};
+      const roles = frameRules.avoidRoles || [];
+      if (!roles.length) return;
+      const minGap = frameRules.minCriticalGeometryGapPx ?? 0;
+      const panelId = group.getAttribute('data-panel-id') || '';
+      const collisions = legendCriticalGeometryCollisions(svg, frame, panelId, roles, minGap);
+      if (!collisions.length) {
+        frame.setAttribute('data-critical-geometry-validation', 'ok');
+        return;
+      }
+
+      const frameBox = frameBoxFromNode(frame);
+      let shiftY = 0;
+      for (const {critical} of collisions) {
+        const frameCenterY = frameBox.y + frameBox.height / 2;
+        const criticalCenterY = critical.y + critical.height / 2;
+        if (criticalCenterY >= frameCenterY) {
+          shiftY = Math.min(shiftY, critical.y - minGap - (frameBox.y + frameBox.height));
+        } else {
+          shiftY = Math.max(shiftY, critical.y + critical.height + minGap - frameBox.y);
+        }
+      }
+      if (shiftY !== 0) translateLegendGroup(group, 0, shiftY);
+
+      const remaining = legendCriticalGeometryCollisions(svg, frame, panelId, roles, minGap);
+      frame.setAttribute('data-critical-geometry-validation', remaining.length ? 'mismatch' : 'ok');
+      frame.setAttribute('data-critical-geometry-adjustment-y', shiftY.toFixed(2));
+    }
+
+    function deriveLegendFrames(svg, spec) {
+      for (const group of svg.querySelectorAll('[data-role="legend"]')) {
+        const frame = group.querySelector('[data-role="legend-frame"]');
+        if (!frame || frame.getAttribute('data-bbox-strategy') !== 'deriveFromChildren') continue;
+        const ownerId = frame.getAttribute('data-layout-id') || group.getAttribute('data-layout-id');
+        const children = [...group.querySelectorAll('[data-owner-box]')]
+          .filter(node => node.getAttribute('data-owner-box') === ownerId);
+        if (!children.length) {
+          frame.setAttribute('data-derived-from-children', 'false');
+          frame.setAttribute('data-validation', 'mismatch');
+          frame.setAttribute('data-derived-error', 'no-owned-children');
+          continue;
+        }
+
+        const childBoxes = children.map(node => elementLayoutBox(node, svg));
+        const childUnion = unionBoxes(childBoxes);
+        const padLeft = numericAttr(frame, 'data-frame-padding-left');
+        const padRight = numericAttr(frame, 'data-frame-padding-right');
+        const padTop = numericAttr(frame, 'data-frame-padding-top');
+        const padBottom = numericAttr(frame, 'data-frame-padding-bottom');
+        const minChildGap = numericAttr(frame, 'data-min-child-gap-px');
+        const minLabelEndGapEm = numericAttr(frame, 'data-min-label-end-gap-em');
+        const labels = children.filter(node => node.getAttribute('data-role') === 'legend-label');
+        const minLabelEndGap = labels.reduce((gap, node) => {
+          const fontSize = fontSizeFromNode(node);
+          return Math.max(gap, fontSize * minLabelEndGapEm);
+        }, 0);
+        const resolvedPadLeft = Math.max(padLeft, minChildGap);
+        const resolvedPadRight = Math.max(padRight, minChildGap, minLabelEndGap);
+        const resolvedPadTop = Math.max(padTop, minChildGap);
+        const resolvedPadBottom = Math.max(padBottom, minChildGap);
+        const x = childUnion.x - resolvedPadLeft;
+        const y = childUnion.y - resolvedPadTop;
+        const width = childUnion.width + resolvedPadLeft + resolvedPadRight;
+        const height = childUnion.height + resolvedPadTop + resolvedPadBottom;
+
+        frame.setAttribute('x', x.toFixed(2));
+        frame.setAttribute('y', y.toFixed(2));
+        frame.setAttribute('width', width.toFixed(2));
+        frame.setAttribute('height', height.toFixed(2));
+        frame.setAttribute('data-resolved-padding-left', resolvedPadLeft.toFixed(2));
+        frame.setAttribute('data-resolved-padding-right', resolvedPadRight.toFixed(2));
+        frame.setAttribute('data-resolved-padding-top', resolvedPadTop.toFixed(2));
+        frame.setAttribute('data-resolved-padding-bottom', resolvedPadBottom.toFixed(2));
+        frame.setAttribute('data-min-label-end-gap', minLabelEndGap.toFixed(2));
+        frame.setAttribute('data-derived-from-children', 'true');
+        frame.setAttribute('data-derived-child-count', String(children.length));
+        frame.setAttribute('data-derived-child-union-x', childUnion.x.toFixed(2));
+        frame.setAttribute('data-derived-child-union-y', childUnion.y.toFixed(2));
+        frame.setAttribute('data-derived-child-union-width', childUnion.width.toFixed(2));
+        frame.setAttribute('data-derived-child-union-height', childUnion.height.toFixed(2));
+        frame.setAttribute('data-validation', 'ok');
+        group.setAttribute('data-derived-from-children', 'true');
+        resolveLegendCriticalGeometry(svg, group, frame, spec);
+      }
+    }
+
+    function boxesOverlap(a, b, minGap = 0) {
+      return !(
+        a.x + a.width + minGap <= b.x ||
+        b.x + b.width + minGap <= a.x ||
+        a.y + a.height + minGap <= b.y ||
+        b.y + b.height + minGap <= a.y
+      );
+    }
+
+    function boxContains(outer, inner, padding = 0) {
+      return (
+        inner.x >= outer.x + padding &&
+        inner.y >= outer.y + padding &&
+        inner.x + inner.width <= outer.x + outer.width - padding &&
+        inner.y + inner.height <= outer.y + outer.height - padding
+      );
+    }
+
+    function isAllowedExclusionOverlap(textBox, zoneBox, spec) {
+      const rules = spec.validation?.layoutQa?.allowOverlaps || [];
+      for (const rule of rules) {
+        if (rule.role && textBox.role !== rule.role) continue;
+        if (rule.anchorToContains && !textBox.anchorTo.includes(rule.anchorToContains)) continue;
+        if (rule.textAnchorPrefix && !textBox.anchorTo.startsWith(rule.textAnchorPrefix)) continue;
+        if (rule.zoneSuffix && !zoneBox.id.endsWith(rule.zoneSuffix)) continue;
+        return true;
+      }
+      return false;
+    }
+
+    function runLayoutQa(spec, svg) {
+      const layoutSpec = spec.validation?.layoutQa || {};
+      const minTextGap = layoutSpec.minTextGapPx ?? 0;
+      const minZoneGap = layoutSpec.minZoneGapPx ?? 0;
+      const protectedNodes = [...svg.querySelectorAll('[data-protected="true"]')];
+      const textBoxes = protectedNodes.map(node => ({node, box: elementLayoutBox(node, svg)}));
+      const protectedTextCollisions = [];
+      for (let i = 0; i < textBoxes.length; i += 1) {
+        for (let j = i + 1; j < textBoxes.length; j += 1) {
+          const a = textBoxes[i].box;
+          const b = textBoxes[j].box;
+          if (boxesOverlap(a, b, minTextGap)) protectedTextCollisions.push({a, b});
+        }
+      }
+
+      const clippedProtectedText = textBoxes
+        .filter(({box}) => box.x < -1 || box.y < -1 || box.x + box.width > spec.canvas.width + 1 || box.y + box.height > spec.canvas.height + 1)
+        .map(({box}) => box);
+
+      const protectedTextMetadataMissing = textBoxes
+        .filter(({box}) => !box.id || !box.role || !box.anchorTo)
+        .map(({box}) => box);
+
+      const zoneBoxes = [...svg.querySelectorAll('[data-role="exclusion-zone"]')].map(node => {
+        const x = Number(node.getAttribute('x'));
+        const y = Number(node.getAttribute('y'));
+        const width = Number(node.getAttribute('width'));
+        const height = Number(node.getAttribute('height'));
+        return {
+          id: node.getAttribute('data-zone-id') || node.getAttribute('id') || 'zone',
+          x,
+          y,
+          width,
+          height
+        };
+      });
+      const protectedTextExclusionCollisions = [];
+      for (const {box: textBox} of textBoxes) {
+        for (const zoneBox of zoneBoxes) {
+          if (!boxesOverlap(textBox, zoneBox, minZoneGap)) continue;
+          if (isAllowedExclusionOverlap(textBox, zoneBox, spec)) continue;
+          protectedTextExclusionCollisions.push({text: textBox, zone: zoneBox});
+        }
+      }
+
+      const ownerBoxes = new Map([...svg.querySelectorAll('[data-role="legend-frame"]')].map(node => {
+        const box = {
+          id: node.getAttribute('data-layout-id') || node.getAttribute('id') || 'legend-frame',
+          x: Number(node.getAttribute('x')),
+          y: Number(node.getAttribute('y')),
+          width: Number(node.getAttribute('width')),
+          height: Number(node.getAttribute('height')),
+          minChildGapPx: numericAttr(node, 'data-min-child-gap-px'),
+          minLabelEndGapEm: numericAttr(node, 'data-min-label-end-gap-em')
+        };
+        return [box.id, box];
+      }));
+      const legendRules = spec.rendering?.layoutRules?.legendFrame || {};
+      const legendCriticalRoles = legendRules.avoidRoles || [];
+      const legendCriticalGap = legendRules.minCriticalGeometryGapPx ?? 0;
+      const legendFrameCriticalGeometryCollisions = [...svg.querySelectorAll('[data-role="legend"]')]
+        .flatMap(group => {
+          const frame = group.querySelector('[data-role="legend-frame"]');
+          if (!frame || !legendCriticalRoles.length) return [];
+          return legendCriticalGeometryCollisions(
+            svg,
+            frame,
+            group.getAttribute('data-panel-id') || '',
+            legendCriticalRoles,
+            legendCriticalGap
+          ).map(collision => ({
+            id: frame.getAttribute('data-layout-id') || 'legend-frame',
+            frame: collision.frame,
+            critical: collision.critical,
+            requiredGap: legendCriticalGap,
+            reason: 'legend frame overlaps same-panel critical plot geometry'
+          }));
+        });
+      const legendFrameMarginViolations = [];
+      for (const {node, box: textBox} of textBoxes) {
+        if (textBox.role !== 'legend-label' || !textBox.ownerBox) continue;
+        const owner = ownerBoxes.get(textBox.ownerBox);
+        if (owner && !boxContains(owner, textBox, 2)) {
+          clippedProtectedText.push({
+            ...textBox,
+            owner: owner.id,
+            reason: 'legend-owned text escapes legend frame'
+          });
+        }
+        if (owner) {
+          const requiredEndGap = owner.minLabelEndGapEm * fontSizeFromNode(node);
+          const actualEndGap = owner.x + owner.width - (textBox.x + textBox.width);
+          if (actualEndGap + 0.5 < requiredEndGap) {
+            legendFrameMarginViolations.push({
+              id: textBox.id,
+              role: textBox.role,
+              owner: owner.id,
+              actualEndGap: Number(actualEndGap.toFixed(2)),
+              requiredEndGap: Number(requiredEndGap.toFixed(2)),
+              reason: 'legend label violates derived frame end margin'
+            });
+          }
+        }
+      }
+
+      const boundedMarkEscapes = [];
+      for (const node of svg.querySelectorAll('[data-owner-box]')) {
+        if (node.getAttribute('data-protected') === 'true') continue;
+        const ownerId = node.getAttribute('data-owner-box');
+        const owner = ownerBoxes.get(ownerId);
+        if (!owner) continue;
+        const markBox = elementLayoutBox(node, svg);
+        const minGap = Math.max(1, owner.minChildGapPx || 0);
+        if (!boxContains(owner, markBox, minGap)) {
+          boundedMarkEscapes.push({
+            id: markBox.id,
+            role: markBox.role,
+            owner: owner.id,
+            box: markBox,
+            reason: 'legend-owned mark escapes legend frame'
+          });
+        }
+      }
+      const layoutQa = {
+        protectedTextCollisions,
+        clippedProtectedText,
+        protectedTextExclusionCollisions,
+        protectedTextMetadataMissing,
+        boundedMarkEscapes,
+        legendFrameMarginViolations,
+        legendFrameCriticalGeometryCollisions
+      };
+      window.figureLayoutQa = layoutQa;
+      const report = {layoutQa};
+      window.figureQaReport = report;
+      if (new URLSearchParams(window.location.search).has('qaDom')) {
+        let output = document.getElementById('figure-qa-output');
+        if (!output) {
+          output = document.createElement('script');
+          output.type = 'application/json';
+          output.id = 'figure-qa-output';
+          document.body.appendChild(output);
+        }
+        output.textContent = JSON.stringify(report);
+      }
+      return report;
+    }
+
+    function setupToggle() {
+      const frame = byId('frame');
+      const generatedButton = byId('generatedButton');
+      const referenceButton = byId('referenceButton');
+      generatedButton.addEventListener('click', () => {
+        frame.classList.remove('show-reference');
+        generatedButton.classList.add('active');
+        referenceButton.classList.remove('active');
+      });
+      referenceButton.addEventListener('click', () => {
+        frame.classList.add('show-reference');
+        referenceButton.classList.add('active');
+        generatedButton.classList.remove('active');
+      });
+    }
+
+    async function loadSpec() {
+      const response = await fetch(SPEC_URL);
+      if (!response.ok) throw new Error(`Could not load ${SPEC_URL}: ${response.status}`);
+      return response.json();
+    }
+
+    setupToggle();
+    loadSpec()
+      .then(async spec => {
+        const svg = renderFigure(spec);
+        if (document.fonts && document.fonts.ready) await document.fonts.ready;
+        fitLegendLabels(svg);
+        deriveLegendFrames(svg, spec);
+        runLayoutQa(spec, svg);
+      })
+      .catch(error => {
+        console.error(error);
+        byId('surface').textContent = error.message;
+      });
+  </script>
+</body>
+</html>
